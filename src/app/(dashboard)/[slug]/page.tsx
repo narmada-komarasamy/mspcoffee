@@ -23,7 +23,7 @@ const pageInfo: Record<
   { label: string; icon: React.ElementType; description: string }
 > = {
   "fuel-expenses": {
-    label: "Fuel Expenses",
+    label: "Fleet Fuel Expenses",
     icon: Fuel,
     description: "Track diesel and petrol expenses across estates and vehicles.",
   },
