@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, RefreshCw, Palette } from "lucide-react";
+import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets } from "lucide-react";
 import { UploadModal } from "@/components/rainfall/UploadModal";
 import { RecordModal, type RainfallRecord } from "@/components/rainfall/RecordModal";
 import s from "./rainfall.module.css";
@@ -126,33 +126,13 @@ export default function RainfallPage() {
   // Weather
   const [weather, setWeather] = useState<(WeatherData | null)[]>([null, null, null]);
 
-  // Full theme (localStorage-backed)
-  const [theme, setTheme]               = useState<ThemeConfig>({ ...THEME_DEFAULT });
-  const [showPalettePanel, setShowPalettePanel] = useState(false);
+  // Theme (CSS vars — fixed defaults)
+  const theme = THEME_DEFAULT;
 
   // Last updated
   const [maxDataDate, setMaxDataDate]   = useState<string>("");
   const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
-  // ─── Load theme from localStorage ────────────────────────────────────────
-  useEffect(() => {
-    const saved = localStorage.getItem("mspc-theme");
-    if (saved) try { setTheme(JSON.parse(saved)); } catch {}
-  }, []);
-
-  // ─── Theme helpers ────────────────────────────────────────────────────────
-  const updateTheme = useCallback(<K extends keyof ThemeConfig>(key: K, val: ThemeConfig[K]) => {
-    setTheme((prev) => {
-      const next = { ...prev, [key]: val };
-      localStorage.setItem("mspc-theme", JSON.stringify(next));
-      return next;
-    });
-  }, []);
-
-  const resetTheme = () => {
-    setTheme({ ...THEME_DEFAULT });
-    localStorage.removeItem("mspc-theme");
-  };
 
   // ─── Clock ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -476,15 +456,6 @@ export default function RainfallPage() {
                 <Upload size={13} /> Upload Excel
               </button>
             </div>
-            <div className={s.ctrlGroup}>
-              <label className={s.ctrlLabel}>&nbsp;</label>
-              <button
-                className={`${s.actionBtn} ${showPalettePanel ? s.actionBtnActive : ""}`}
-                onClick={() => setShowPalettePanel((v) => !v)}
-              >
-                <Palette size={13} /> Colours
-              </button>
-            </div>
           </div>
 
           {/* ─── Estate Compare Selector ─────────────────────────────────── */}
@@ -759,82 +730,6 @@ export default function RainfallPage() {
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData} />}
       {editRecord !== undefined && <RecordModal record={editRecord} onClose={() => setEditRecord(undefined)} onSuccess={loadData} />}
 
-      {/* ─── Colour Customiser Panel ─────────────────────────────────────── */}
-      {showPalettePanel && (
-        <div className={s.cpOverlay} onClick={() => setShowPalettePanel(false)} />
-      )}
-      <div className={`${s.cpPanel} ${showPalettePanel ? s.cpPanelOpen : ""}`}>
-        {/* Tab button */}
-        <button className={s.cpTab} onClick={() => setShowPalettePanel((v) => !v)} title="Colour Customiser">
-          <Palette size={18} />
-        </button>
-
-        {/* Panel content */}
-        <div className={s.cpBody}>
-          <div className={s.cpHeader}>
-            <span>🎨</span>
-            <span className={s.cpTitle}>Colour Customiser</span>
-          </div>
-
-          {/* Theme colours */}
-          <div className={s.cpSectionTitle}>Theme</div>
-          {([
-            { key: "bg",      label: "Background" },
-            { key: "surface", label: "Surface / Inputs" },
-            { key: "card",    label: "Cards" },
-            { key: "border",  label: "Borders" },
-            { key: "text",    label: "Body Text" },
-            { key: "muted",   label: "Muted Labels" },
-          ] as { key: keyof ThemeConfig; label: string }[]).map(({ key, label }) => (
-            <label key={key} className={s.cpRow}>
-              <span className={s.cpLabel}>{label}</span>
-              <span className={s.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
-                <input type="color" value={theme[key] as string}
-                  onChange={(e) => updateTheme(key, e.target.value)}
-                  className={s.cpColorInput} />
-              </span>
-            </label>
-          ))}
-
-          <div className={s.cpDivider} />
-
-          {/* KPI accent colours */}
-          <div className={s.cpSectionTitle}>KPI Accents</div>
-          {([
-            { key: "accent", label: "Accent / Rain Blue" },
-            { key: "gold",   label: "Gold / Trophy KPI" },
-            { key: "coral",  label: "Coral / RTD KPI" },
-            { key: "green",  label: "Green / Days KPI" },
-            { key: "purple", label: "Purple / Since KPI" },
-          ] as { key: keyof ThemeConfig; label: string }[]).map(({ key, label }) => (
-            <label key={key} className={s.cpRow}>
-              <span className={s.cpLabel}>{label}</span>
-              <span className={s.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
-                <input type="color" value={theme[key] as string}
-                  onChange={(e) => updateTheme(key, e.target.value)}
-                  className={s.cpColorInput} />
-              </span>
-            </label>
-          ))}
-
-          <div className={s.cpDivider} />
-
-          {/* Estate chart colours */}
-          <div className={s.cpSectionTitle}>Estate Chart Colours</div>
-          {ESTATES.map((estate) => (
-            <label key={estate} className={s.cpRow}>
-              <span className={s.cpLabel}>{estate}</span>
-              <span className={s.cpSwatch} style={{ backgroundColor: theme.estates[estate] }}>
-                <input type="color" value={theme.estates[estate]}
-                  onChange={(e) => updateTheme("estates", { ...theme.estates, [estate]: e.target.value })}
-                  className={s.cpColorInput} />
-              </span>
-            </label>
-          ))}
-
-          <button className={s.cpResetBtn} onClick={resetTheme}>↺ Reset all to defaults</button>
-        </div>
-      </div>
     </>
   );
 }
