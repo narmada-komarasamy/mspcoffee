@@ -748,3 +748,165 @@
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+/* ─── Weather strip ─────────────────────────────────────────────────────────── */
+.weatherStrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .weatherStrip { grid-template-columns: 1fr; }
+}
+
+.weatherCard {
+  background: #0a1824;
+  border: 1px solid #162d44;
+  border-radius: 4px;
+  padding: 14px 18px;
+  transition: border-color 0.2s;
+}
+
+.weatherCard:hover {
+  border-color: #1e4060;
+}
+
+.weatherLoc {
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
+.weatherBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.weatherLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.weatherTemp {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #f0f9ff;
+  line-height: 1;
+}
+
+.weatherDesc {
+  font-size: 10px;
+  color: #3a6080;
+  margin-top: 2px;
+  letter-spacing: 0.06em;
+}
+
+.weatherRight {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.weatherStat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #4a7a9a;
+  font-family: var(--font-jetbrains), monospace;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Colour palette ────────────────────────────────────────────────────────── */
+.actionBtnActive {
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  background: rgba(56,189,248,0.08) !important;
+}
+
+.palettePanel {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #0f2437;
+}
+
+.paletteRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.paletteItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #07111a;
+  border: 1px solid #162d44;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  position: relative;
+}
+
+.paletteItem:hover {
+  border-color: #2a5070;
+}
+
+.paletteSwatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
+  transition: transform 0.15s;
+}
+
+.paletteItem:hover .paletteSwatch {
+  transform: scale(1.2);
+}
+
+.paletteEstateName {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.colorInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+}
+
+.resetColorsBtn {
+  background: transparent;
+  border: 1px solid #162d44;
+  color: #3a6080;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 10px;
+  padding: 6px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+
+.resetColorsBtn:hover {
+  border-color: #f87171;
+  color: #f87171;
+}

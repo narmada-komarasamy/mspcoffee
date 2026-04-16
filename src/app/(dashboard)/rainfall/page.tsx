@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Upload, Plus, Pencil } from "lucide-react";
+import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, RefreshCw, Palette } from "lucide-react";
 import { UploadModal } from "@/components/rainfall/UploadModal";
 import { RecordModal, type RainfallRecord } from "@/components/rainfall/RecordModal";
 import s from "./rainfall.module.css";
@@ -11,7 +11,7 @@ import s from "./rainfall.module.css";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ESTATES = ["Gowri", "Hidden Falls", "Moganad", "Orchardale", "Stanmore", "Vyapurikuttai"];
 
-const ESTATE_COLORS: Record<string, string> = {
+const ESTATE_COLORS_DEFAULT: Record<string, string> = {
   "Gowri":         "#38bdf8",
   "Hidden Falls":  "#f87171",
   "Moganad":       "#4ade80",
@@ -28,6 +28,44 @@ const MONTHS = [
 ];
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MEDALS = ["🥇","🥈","🥉"];
+
+// ─── Weather ──────────────────────────────────────────────────────────────────
+const WEATHER_LOCATIONS = [
+  { name: "Nagalur",      lat: 11.775258, lon: 78.2092506 },
+  { name: "Mangalam",     lat: 11.096053, lon: 77.266380  },
+  { name: "Yercaud Town", lat: 11.789393, lon: 78.216629  },
+] as const;
+
+type WeatherData = { temp: number; humidity: number; precip: number; wind: number; code: number; desc: string; icon: string; };
+
+const wmoIcon = (code: number): string => {
+  if (code === 0) return "sun";
+  if (code <= 2)  return "cloud-sun";
+  if (code <= 48) return "cloud";
+  return "cloud-rain";
+};
+
+const wmoDesc = (code: number): string => {
+  if (code === 0)  return "Clear Sky";
+  if (code === 1)  return "Mainly Clear";
+  if (code === 2)  return "Partly Cloudy";
+  if (code === 3)  return "Overcast";
+  if (code <= 48)  return "Foggy";
+  if (code <= 55)  return "Drizzle";
+  if (code <= 65)  return "Rain";
+  if (code <= 77)  return "Snow";
+  if (code <= 82)  return "Showers";
+  return "Thunderstorm";
+};
+
+// ─── Weather icon component ───────────────────────────────────────────────────
+function WIcon({ icon, size = 32 }: { icon: string; size?: number }) {
+  const cls = "opacity-80";
+  if (icon === "sun")        return <Sun       size={size} className={cls} style={{ color: "#fde68a" }} />;
+  if (icon === "cloud-sun")  return <CloudSun  size={size} className={cls} style={{ color: "#93c5fd" }} />;
+  if (icon === "cloud-rain") return <CloudRain size={size} className={cls} style={{ color: "#38bdf8" }} />;
+  return                            <Cloud     size={size} className={cls} style={{ color: "#93c5fd" }} />;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Row = { id: number; date: string; estate: string; rainfall_mm: number; inches: number; year: number; month: number; };
@@ -69,6 +107,36 @@ export default function RainfallPage() {
   const [recordPage, setRecordPage]   = useState(0);
   const PER_PAGE = 20;
 
+  // Weather
+  const [weather, setWeather] = useState<(WeatherData | null)[]>([null, null, null]);
+
+  // Estate colours (localStorage-backed)
+  const [estateColors, setEstateColors] = useState<Record<string, string>>({ ...ESTATE_COLORS_DEFAULT });
+  const [showPalette, setShowPalette]   = useState(false);
+
+  // Last updated
+  const [maxDataDate, setMaxDataDate]   = useState<string>("");
+  const [lastRefreshed, setLastRefreshed] = useState<string>("");
+
+  // ─── Load saved colours from localStorage ────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("mspc-estate-colors");
+    if (saved) try { setEstateColors(JSON.parse(saved)); } catch {}
+  }, []);
+
+  // ─── Colour palette helpers ───────────────────────────────────────────────
+  const updateColor = (estate: string, color: string) => {
+    setEstateColors((prev) => {
+      const updated = { ...prev, [estate]: color };
+      localStorage.setItem("mspc-estate-colors", JSON.stringify(updated));
+      return updated;
+    });
+  };
+  const resetColors = () => {
+    setEstateColors({ ...ESTATE_COLORS_DEFAULT });
+    localStorage.removeItem("mspc-estate-colors");
+  };
+
   // ─── Clock ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const tick = () => {
@@ -80,6 +148,39 @@ export default function RainfallPage() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // ─── Weather fetch ────────────────────────────────────────────────────────
+  const fetchWeather = useCallback(async () => {
+    const results = await Promise.all(
+      WEATHER_LOCATIONS.map(async ({ lat, lon }) => {
+        try {
+          const res = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+            `&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m` +
+            `&wind_speed_unit=kmh&timezone=Asia%2FKolkata`
+          );
+          const j = await res.json();
+          const c = j.current;
+          return {
+            temp:     Math.round(c.temperature_2m * 10) / 10,
+            humidity: c.relative_humidity_2m,
+            precip:   c.precipitation,
+            wind:     Math.round(c.wind_speed_10m * 10) / 10,
+            code:     c.weather_code,
+            desc:     wmoDesc(c.weather_code),
+            icon:     wmoIcon(c.weather_code),
+          };
+        } catch { return null; }
+      })
+    );
+    setWeather(results);
+  }, []);
+
+  useEffect(() => {
+    fetchWeather();
+    const id = setInterval(fetchWeather, 10 * 60 * 1000); // refresh every 10 min
+    return () => clearInterval(id);
+  }, [fetchWeather]);
 
   // ─── Load data (paginated — Supabase caps at 1000 rows by default) ──────────
   const loadData = useCallback(async () => {
@@ -108,6 +209,8 @@ export default function RainfallPage() {
     }
 
     setData(allRows);
+    if (allRows.length > 0) setMaxDataDate(allRows[allRows.length - 1].date);
+    setLastRefreshed(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
     setLoading(false);
   }, []);
 
@@ -227,13 +330,6 @@ export default function RainfallPage() {
   const sortedRecords = useMemo(() => [...filtered].sort((a, b) => b.date.localeCompare(a.date)), [filtered]);
   const pagedRecords  = sortedRecords.slice(recordPage * PER_PAGE, (recordPage + 1) * PER_PAGE);
 
-  // ─── Last updated ──────────────────────────────────────────────────────────
-  const lastUpdatedDate = useMemo(() => {
-    if (!data.length) return "—";
-    const last = [...data].sort((a, b) => b.date.localeCompare(a.date))[0];
-    return fmtDate(last.date);
-  }, [data]);
-
   // ─── Tooltip style ─────────────────────────────────────────────────────────
   const ttStyle = { backgroundColor: "#0a1824", border: "1px solid #162d44", borderRadius: 4, color: "#d1e8f5", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
 
@@ -259,9 +355,42 @@ export default function RainfallPage() {
             <div>
               <div className={s.clockDisplay}>{clock}</div>
               <div className={s.dateDisplay}>{dateStr}</div>
-              <div className={s.lastUpdated}>Data last updated: <span>{lastUpdatedDate}</span></div>
+              <div className={s.lastUpdated}>
+                Data last updated: <span>{maxDataDate ? fmtDate(maxDataDate) : "—"}</span>
+                {lastRefreshed && <span style={{ color: "#2a4a62", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
+              </div>
             </div>
           </header>
+
+          {/* ─── Weather Strip ──────────────────────────────────────────── */}
+          <div className={s.weatherStrip}>
+            {WEATHER_LOCATIONS.map(({ name }, i) => {
+              const w = weather[i];
+              return (
+                <div key={name} className={s.weatherCard}>
+                  <div className={s.weatherLoc}>{name}</div>
+                  {w ? (
+                    <div className={s.weatherBody}>
+                      <div className={s.weatherLeft}>
+                        <WIcon icon={w.icon} size={30} />
+                        <div>
+                          <div className={s.weatherTemp}>{w.temp}°C</div>
+                          <div className={s.weatherDesc}>{w.desc}</div>
+                        </div>
+                      </div>
+                      <div className={s.weatherRight}>
+                        <span className={s.weatherStat}><Droplets size={11} />{w.humidity}%</span>
+                        <span className={s.weatherStat}><Cloud    size={11} />{w.precip} mm</span>
+                        <span className={s.weatherStat}><Wind     size={11} />{w.wind} km/h</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ color: "#3a6080", fontSize: 11, marginTop: 8 }}>Loading…</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
           {/* ─── Controls ───────────────────────────────────────────────── */}
           <div className={s.controlsPanel}>
@@ -312,6 +441,15 @@ export default function RainfallPage() {
                 <Upload size={13} /> Upload Excel
               </button>
             </div>
+            <div className={s.ctrlGroup}>
+              <label className={s.ctrlLabel}>&nbsp;</label>
+              <button
+                className={`${s.actionBtn} ${showPalette ? s.actionBtnActive : ""}`}
+                onClick={() => setShowPalette((v) => !v)}
+              >
+                <Palette size={13} /> Colours
+              </button>
+            </div>
           </div>
 
           {/* ─── Estate Compare Selector ─────────────────────────────────── */}
@@ -320,7 +458,7 @@ export default function RainfallPage() {
             <div className={s.pillsRow}>
               {ESTATES.map((estate) => {
                 const active = compareEstates.includes(estate);
-                const color  = ESTATE_COLORS[estate];
+                const color  = estateColors[estate];
                 return (
                   <button
                     key={estate}
@@ -335,6 +473,28 @@ export default function RainfallPage() {
               })}
             </div>
             <p className={s.compareHint}>Select 1 or more estates to populate comparison cards below</p>
+
+            {/* ─── Colour palette ─── */}
+            {showPalette && (
+              <div className={s.palettePanel}>
+                <span className={s.selectorLabel} style={{ marginBottom: 10 }}>Estate Colours — click a swatch to customise</span>
+                <div className={s.paletteRow}>
+                  {ESTATES.map((estate) => (
+                    <label key={estate} className={s.paletteItem} title={`Change colour for ${estate}`}>
+                      <span className={s.paletteSwatch} style={{ backgroundColor: estateColors[estate] }} />
+                      <span className={s.paletteEstateName} style={{ color: estateColors[estate] }}>{estate}</span>
+                      <input
+                        type="color"
+                        value={estateColors[estate]}
+                        onChange={(e) => updateColor(estate, e.target.value)}
+                        className={s.colorInput}
+                      />
+                    </label>
+                  ))}
+                  <button className={s.resetColorsBtn} onClick={resetColors}>↺ Reset defaults</button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ─── KPI Cards ──────────────────────────────────────────────── */}
@@ -362,7 +522,7 @@ export default function RainfallPage() {
               <div className={s.sectionLabel}>Estate Comparison</div>
               <div className={s.compareGrid}>
                 {compareCards.map(({ estate, total, maxEvent, rainyDays, avg, dslr, lastRain, rtdE, rank }) => {
-                  const color = ESTATE_COLORS[estate];
+                  const color = estateColors[estate];
                   return (
                     <div key={estate} className={s.estateCard} style={{ borderColor: `${color}33` }}>
                       <div className={s.estateCardHeader}>
@@ -431,7 +591,7 @@ export default function RainfallPage() {
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
-                      <Line key={e} type="monotone" dataKey={e} stroke={ESTATE_COLORS[e]} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls />
+                      <Line key={e} type="monotone" dataKey={e} stroke={estateColors[e]} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls />
                     ))}
                   </LineChart>
                 ) : (
@@ -442,7 +602,7 @@ export default function RainfallPage() {
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
-                      <Bar key={e} dataKey={e} fill={ESTATE_COLORS[e]} radius={[3, 3, 0, 0]} />
+                      <Bar key={e} dataKey={e} fill={estateColors[e]} radius={[3, 3, 0, 0]} />
                     ))}
                   </BarChart>
                 )}
@@ -476,8 +636,8 @@ export default function RainfallPage() {
                     <td style={{ color: "#7a9bb8" }}>{fmtDate(r.date)}</td>
                     <td>
                       <span className={s.estateTag}>
-                        <span className={s.tagDot} style={{ backgroundColor: ESTATE_COLORS[r.estate] }} />
-                        <span style={{ color: ESTATE_COLORS[r.estate] }}>{r.estate}</span>
+                        <span className={s.tagDot} style={{ backgroundColor: estateColors[r.estate] }} />
+                        <span style={{ color: estateColors[r.estate] }}>{r.estate}</span>
                       </span>
                     </td>
                     <td style={{ textAlign: "right" }}>
@@ -547,8 +707,8 @@ export default function RainfallPage() {
                           <td style={{ paddingLeft: 24, color: "#7a9bb8" }}>{fmtDate(r.date)}</td>
                           <td>
                             <span className={s.estateTag}>
-                              <span className={s.tagDot} style={{ backgroundColor: ESTATE_COLORS[r.estate] }} />
-                              <span style={{ color: ESTATE_COLORS[r.estate] }}>{r.estate}</span>
+                              <span className={s.tagDot} style={{ backgroundColor: estateColors[r.estate] }} />
+                              <span style={{ color: estateColors[r.estate] }}>{r.estate}</span>
                             </span>
                           </td>
                           <td style={{ textAlign: "right", color: "#38bdf8" }}>{r.rainfall_mm}</td>
