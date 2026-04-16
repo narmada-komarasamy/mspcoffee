@@ -20,7 +20,23 @@ const ESTATE_COLORS_DEFAULT: Record<string, string> = {
   "Vyapurikuttai": "#fb923c",
 };
 
-const KPI_ACCENTS = ["#38bdf8", "#e4b84a", "#f87171", "#4ade80", "#a78bfa"];
+// ─── Full theme config ────────────────────────────────────────────────────────
+type ThemeConfig = {
+  bg: string; surface: string; card: string;
+  border: string; subtle: string; heading: string;
+  text: string; muted: string;
+  accent: string; gold: string; coral: string; green: string; purple: string;
+  estates: Record<string, string>;
+};
+
+const THEME_DEFAULT: ThemeConfig = {
+  bg:      "#020508",  surface: "#07111a",  card:    "#0a1824",
+  border:  "#162d44",  subtle:  "#0f2437",  heading: "#f0f9ff",
+  text:    "#d1e8f5",  muted:   "#3a6080",
+  accent:  "#38bdf8",  gold:    "#e4b84a",  coral:   "#f87171",
+  green:   "#4ade80",  purple:  "#a78bfa",
+  estates: { ...ESTATE_COLORS_DEFAULT },
+};
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -92,8 +108,8 @@ export default function RainfallPage() {
   const [estateFilter, setEstateFilter] = useState<string>("all");
   const [unit, setUnit]             = useState<Unit>("mm");
 
-  // Compare pills (up to 3)
-  const [compareEstates, setCompareEstates] = useState<string[]>(["Gowri", "Moganad", "Orchardale"]);
+  // Compare pills (0–3; all deselectable)
+  const [compareEstates, setCompareEstates] = useState<string[]>([]);
 
   // Chart grouping
   const [grouping, setGrouping] = useState<Grouping>("monthly");
@@ -110,31 +126,32 @@ export default function RainfallPage() {
   // Weather
   const [weather, setWeather] = useState<(WeatherData | null)[]>([null, null, null]);
 
-  // Estate colours (localStorage-backed)
-  const [estateColors, setEstateColors] = useState<Record<string, string>>({ ...ESTATE_COLORS_DEFAULT });
-  const [showPalette, setShowPalette]   = useState(false);
+  // Full theme (localStorage-backed)
+  const [theme, setTheme]               = useState<ThemeConfig>({ ...THEME_DEFAULT });
+  const [showPalettePanel, setShowPalettePanel] = useState(false);
 
   // Last updated
   const [maxDataDate, setMaxDataDate]   = useState<string>("");
   const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
-  // ─── Load saved colours from localStorage ────────────────────────────────
+  // ─── Load theme from localStorage ────────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("mspc-estate-colors");
-    if (saved) try { setEstateColors(JSON.parse(saved)); } catch {}
+    const saved = localStorage.getItem("mspc-theme");
+    if (saved) try { setTheme(JSON.parse(saved)); } catch {}
   }, []);
 
-  // ─── Colour palette helpers ───────────────────────────────────────────────
-  const updateColor = (estate: string, color: string) => {
-    setEstateColors((prev) => {
-      const updated = { ...prev, [estate]: color };
-      localStorage.setItem("mspc-estate-colors", JSON.stringify(updated));
-      return updated;
+  // ─── Theme helpers ────────────────────────────────────────────────────────
+  const updateTheme = useCallback(<K extends keyof ThemeConfig>(key: K, val: ThemeConfig[K]) => {
+    setTheme((prev) => {
+      const next = { ...prev, [key]: val };
+      localStorage.setItem("mspc-theme", JSON.stringify(next));
+      return next;
     });
-  };
-  const resetColors = () => {
-    setEstateColors({ ...ESTATE_COLORS_DEFAULT });
-    localStorage.removeItem("mspc-estate-colors");
+  }, []);
+
+  const resetTheme = () => {
+    setTheme({ ...THEME_DEFAULT });
+    localStorage.removeItem("mspc-theme");
   };
 
   // ─── Clock ────────────────────────────────────────────────────────────────
@@ -320,15 +337,21 @@ export default function RainfallPage() {
   // ─── Toggle compare ────────────────────────────────────────────────────────
   const toggleCompare = (estate: string) => {
     setCompareEstates((prev) => {
-      if (prev.includes(estate)) return prev.length > 1 ? prev.filter((e) => e !== estate) : prev;
+      if (prev.includes(estate)) return prev.filter((e) => e !== estate); // allow deselect to 0
       if (prev.length < 3) return [...prev, estate];
-      return [...prev.slice(1), estate];
+      return [...prev.slice(1), estate]; // slide window when already at 3
     });
   };
 
   // ─── Records ───────────────────────────────────────────────────────────────
   const sortedRecords = useMemo(() => [...filtered].sort((a, b) => b.date.localeCompare(a.date)), [filtered]);
   const pagedRecords  = sortedRecords.slice(recordPage * PER_PAGE, (recordPage + 1) * PER_PAGE);
+
+  // ─── Dynamic KPI accents from theme ──────────────────────────────────────
+  const kpiAccents = useMemo(
+    () => [theme.accent, theme.gold, theme.coral, theme.green, theme.purple],
+    [theme]
+  );
 
   // ─── Tooltip style ─────────────────────────────────────────────────────────
   const ttStyle = { backgroundColor: "#0a1824", border: "1px solid #162d44", borderRadius: 4, color: "#d1e8f5", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
@@ -343,7 +366,19 @@ export default function RainfallPage() {
 
   return (
     <>
-      <div className={s.page}>
+      <div className={s.page} style={{
+        "--t-bg":      theme.bg,
+        "--t-surface": theme.surface,
+        "--t-card":    theme.card,
+        "--t-border":  theme.border,
+        "--t-subtle":  theme.subtle,
+        "--t-heading": theme.heading,
+        "--t-text":    theme.text,
+        "--t-muted":   theme.muted,
+        "--t-accent":  theme.accent,
+        "--t-gold":    theme.gold,
+        "--t-green":   theme.green,
+      } as React.CSSProperties}>
         <div className={s.content}>
 
           {/* ─── Header ─────────────────────────────────────────────────── */}
@@ -444,8 +479,8 @@ export default function RainfallPage() {
             <div className={s.ctrlGroup}>
               <label className={s.ctrlLabel}>&nbsp;</label>
               <button
-                className={`${s.actionBtn} ${showPalette ? s.actionBtnActive : ""}`}
-                onClick={() => setShowPalette((v) => !v)}
+                className={`${s.actionBtn} ${showPalettePanel ? s.actionBtnActive : ""}`}
+                onClick={() => setShowPalettePanel((v) => !v)}
               >
                 <Palette size={13} /> Colours
               </button>
@@ -458,7 +493,7 @@ export default function RainfallPage() {
             <div className={s.pillsRow}>
               {ESTATES.map((estate) => {
                 const active = compareEstates.includes(estate);
-                const color  = estateColors[estate];
+                const color  = theme.estates[estate];
                 return (
                   <button
                     key={estate}
@@ -472,40 +507,18 @@ export default function RainfallPage() {
                 );
               })}
             </div>
-            <p className={s.compareHint}>Select 1 or more estates to populate comparison cards below</p>
-
-            {/* ─── Colour palette ─── */}
-            {showPalette && (
-              <div className={s.palettePanel}>
-                <span className={s.selectorLabel} style={{ marginBottom: 10 }}>Estate Colours — click a swatch to customise</span>
-                <div className={s.paletteRow}>
-                  {ESTATES.map((estate) => (
-                    <label key={estate} className={s.paletteItem} title={`Change colour for ${estate}`}>
-                      <span className={s.paletteSwatch} style={{ backgroundColor: estateColors[estate] }} />
-                      <span className={s.paletteEstateName} style={{ color: estateColors[estate] }}>{estate}</span>
-                      <input
-                        type="color"
-                        value={estateColors[estate]}
-                        onChange={(e) => updateColor(estate, e.target.value)}
-                        className={s.colorInput}
-                      />
-                    </label>
-                  ))}
-                  <button className={s.resetColorsBtn} onClick={resetColors}>↺ Reset defaults</button>
-                </div>
-              </div>
-            )}
+            <p className={s.compareHint}>Select 1–3 estates · click again to deselect · chart shows all estates when none selected</p>
           </div>
 
           {/* ─── KPI Cards ──────────────────────────────────────────────── */}
           <div className={s.sectionLabel}>Key Performance Indicators</div>
           <div className={s.kpiGrid}>
             {[
-              { icon: "🌧", label: "Total Rainfall",        value: kpis.total,               unit: unitStr,  sub: `${filtered.filter(r=>r.rainfall_mm>0).length} events`,                                    accent: KPI_ACCENTS[0] },
-              { icon: "🏆", label: "Highest Single Event",  value: kpis.maxRow ? r1(val(kpis.maxRow)) : "—", unit: unitStr, sub: kpis.maxRow ? `${kpis.maxRow.estate} · ${fmtDate(kpis.maxRow.date)}` : "—", accent: KPI_ACCENTS[1] },
-              { icon: "📅", label: "Rain to Date",          value: kpis.rtd,                 unit: unitStr,  sub: `YTD ${kpis.curYear}`,                                                                    accent: KPI_ACCENTS[2] },
-              { icon: "☔", label: "Rainy Days",             value: kpis.rainyDays,           unit: "days",   sub: "in selected period",                                                                    accent: KPI_ACCENTS[3] },
-              { icon: "🕐", label: "Days Since Last Rain",  value: kpis.dslr ?? "—",         unit: kpis.dslr !== null ? "days" : "",  sub: kpis.lastRain ? `last rain ${fmtDate(kpis.lastRain)}` : "—",     accent: KPI_ACCENTS[4] },
+              { icon: "🌧", label: "Total Rainfall",        value: kpis.total,               unit: unitStr,  sub: `${filtered.filter(r=>r.rainfall_mm>0).length} events`,                                    accent: kpiAccents[0] },
+              { icon: "🏆", label: "Highest Single Event",  value: kpis.maxRow ? r1(val(kpis.maxRow)) : "—", unit: unitStr, sub: kpis.maxRow ? `${kpis.maxRow.estate} · ${fmtDate(kpis.maxRow.date)}` : "—", accent: kpiAccents[1] },
+              { icon: "📅", label: "Rain to Date",          value: kpis.rtd,                 unit: unitStr,  sub: `YTD ${kpis.curYear}`,                                                                    accent: kpiAccents[2] },
+              { icon: "☔", label: "Rainy Days",             value: kpis.rainyDays,           unit: "days",   sub: "in selected period",                                                                    accent: kpiAccents[3] },
+              { icon: "🕐", label: "Days Since Last Rain",  value: kpis.dslr ?? "—",         unit: kpis.dslr !== null ? "days" : "",  sub: kpis.lastRain ? `last rain ${fmtDate(kpis.lastRain)}` : "—",     accent: kpiAccents[4] },
             ].map(({ icon, label, value, unit: u, sub, accent }) => (
               <div key={label} className={s.kpiCard} style={{ "--accent": accent } as React.CSSProperties}>
                 <div className={s.kpiIcon}>{icon}</div>
@@ -522,7 +535,7 @@ export default function RainfallPage() {
               <div className={s.sectionLabel}>Estate Comparison</div>
               <div className={s.compareGrid}>
                 {compareCards.map(({ estate, total, maxEvent, rainyDays, avg, dslr, lastRain, rtdE, rank }) => {
-                  const color = estateColors[estate];
+                  const color = theme.estates[estate];
                   return (
                     <div key={estate} className={s.estateCard} style={{ borderColor: `${color}33` }}>
                       <div className={s.estateCardHeader}>
@@ -591,7 +604,7 @@ export default function RainfallPage() {
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
-                      <Line key={e} type="monotone" dataKey={e} stroke={estateColors[e]} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls />
+                      <Line key={e} type="monotone" dataKey={e} stroke={theme.estates[e]} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls />
                     ))}
                   </LineChart>
                 ) : (
@@ -602,7 +615,7 @@ export default function RainfallPage() {
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
-                      <Bar key={e} dataKey={e} fill={estateColors[e]} radius={[3, 3, 0, 0]} />
+                      <Bar key={e} dataKey={e} fill={theme.estates[e]} radius={[3, 3, 0, 0]} />
                     ))}
                   </BarChart>
                 )}
@@ -636,8 +649,8 @@ export default function RainfallPage() {
                     <td style={{ color: "#7a9bb8" }}>{fmtDate(r.date)}</td>
                     <td>
                       <span className={s.estateTag}>
-                        <span className={s.tagDot} style={{ backgroundColor: estateColors[r.estate] }} />
-                        <span style={{ color: estateColors[r.estate] }}>{r.estate}</span>
+                        <span className={s.tagDot} style={{ backgroundColor: theme.estates[r.estate] }} />
+                        <span style={{ color: theme.estates[r.estate] }}>{r.estate}</span>
                       </span>
                     </td>
                     <td style={{ textAlign: "right" }}>
@@ -707,8 +720,8 @@ export default function RainfallPage() {
                           <td style={{ paddingLeft: 24, color: "#7a9bb8" }}>{fmtDate(r.date)}</td>
                           <td>
                             <span className={s.estateTag}>
-                              <span className={s.tagDot} style={{ backgroundColor: estateColors[r.estate] }} />
-                              <span style={{ color: estateColors[r.estate] }}>{r.estate}</span>
+                              <span className={s.tagDot} style={{ backgroundColor: theme.estates[r.estate] }} />
+                              <span style={{ color: theme.estates[r.estate] }}>{r.estate}</span>
                             </span>
                           </td>
                           <td style={{ textAlign: "right", color: "#38bdf8" }}>{r.rainfall_mm}</td>
@@ -745,6 +758,83 @@ export default function RainfallPage() {
       {/* ─── Modals ──────────────────────────────────────────────────────── */}
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData} />}
       {editRecord !== undefined && <RecordModal record={editRecord} onClose={() => setEditRecord(undefined)} onSuccess={loadData} />}
+
+      {/* ─── Colour Customiser Panel ─────────────────────────────────────── */}
+      {showPalettePanel && (
+        <div className={s.cpOverlay} onClick={() => setShowPalettePanel(false)} />
+      )}
+      <div className={`${s.cpPanel} ${showPalettePanel ? s.cpPanelOpen : ""}`}>
+        {/* Tab button */}
+        <button className={s.cpTab} onClick={() => setShowPalettePanel((v) => !v)} title="Colour Customiser">
+          <Palette size={18} />
+        </button>
+
+        {/* Panel content */}
+        <div className={s.cpBody}>
+          <div className={s.cpHeader}>
+            <span>🎨</span>
+            <span className={s.cpTitle}>Colour Customiser</span>
+          </div>
+
+          {/* Theme colours */}
+          <div className={s.cpSectionTitle}>Theme</div>
+          {([
+            { key: "bg",      label: "Background" },
+            { key: "surface", label: "Surface / Inputs" },
+            { key: "card",    label: "Cards" },
+            { key: "border",  label: "Borders" },
+            { key: "text",    label: "Body Text" },
+            { key: "muted",   label: "Muted Labels" },
+          ] as { key: keyof ThemeConfig; label: string }[]).map(({ key, label }) => (
+            <label key={key} className={s.cpRow}>
+              <span className={s.cpLabel}>{label}</span>
+              <span className={s.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
+                <input type="color" value={theme[key] as string}
+                  onChange={(e) => updateTheme(key, e.target.value)}
+                  className={s.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <div className={s.cpDivider} />
+
+          {/* KPI accent colours */}
+          <div className={s.cpSectionTitle}>KPI Accents</div>
+          {([
+            { key: "accent", label: "Accent / Rain Blue" },
+            { key: "gold",   label: "Gold / Trophy KPI" },
+            { key: "coral",  label: "Coral / RTD KPI" },
+            { key: "green",  label: "Green / Days KPI" },
+            { key: "purple", label: "Purple / Since KPI" },
+          ] as { key: keyof ThemeConfig; label: string }[]).map(({ key, label }) => (
+            <label key={key} className={s.cpRow}>
+              <span className={s.cpLabel}>{label}</span>
+              <span className={s.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
+                <input type="color" value={theme[key] as string}
+                  onChange={(e) => updateTheme(key, e.target.value)}
+                  className={s.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <div className={s.cpDivider} />
+
+          {/* Estate chart colours */}
+          <div className={s.cpSectionTitle}>Estate Chart Colours</div>
+          {ESTATES.map((estate) => (
+            <label key={estate} className={s.cpRow}>
+              <span className={s.cpLabel}>{estate}</span>
+              <span className={s.cpSwatch} style={{ backgroundColor: theme.estates[estate] }}>
+                <input type="color" value={theme.estates[estate]}
+                  onChange={(e) => updateTheme("estates", { ...theme.estates, [estate]: e.target.value })}
+                  className={s.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <button className={s.cpResetBtn} onClick={resetTheme}>↺ Reset all to defaults</button>
+        </div>
+      </div>
     </>
   );
 }
