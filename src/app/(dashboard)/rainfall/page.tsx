@@ -81,19 +81,33 @@ export default function RainfallPage() {
     return () => clearInterval(id);
   }, []);
 
-  // ─── Load data ─────────────────────────────────────────────────────────────
+  // ─── Load data (paginated — Supabase caps at 1000 rows by default) ──────────
   const loadData = useCallback(async () => {
     setLoading(true);
-    const { data: rows } = await supabase.from("rainfall").select("*").order("date", { ascending: true });
-    const normalised: Row[] = (rows ?? []).map((r) => {
-      const [y, m] = r.date.split("-").map(Number);
-      return { ...r, year: y, month: m };
-    });
-    setData(normalised);
-    if (normalised.length > 0) {
-      const years = [...new Set(normalised.map((r) => r.year))];
-      setYear(String(Math.max(...years)));
+    let allRows: Row[] = [];
+    let from = 0;
+    const BATCH = 1000;
+
+    while (true) {
+      const { data: rows, error } = await supabase
+        .from("rainfall")
+        .select("*")
+        .order("date", { ascending: true })
+        .range(from, from + BATCH - 1);
+
+      if (error || !rows || rows.length === 0) break;
+
+      const normalised: Row[] = rows.map((r) => {
+        const [y, m] = r.date.split("-").map(Number);
+        return { ...r, year: y, month: m };
+      });
+
+      allRows = [...allRows, ...normalised];
+      if (rows.length < BATCH) break;
+      from += BATCH;
     }
+
+    setData(allRows);
     setLoading(false);
   }, []);
 
