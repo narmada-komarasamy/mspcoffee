@@ -95,10 +95,18 @@ export default function FleetPage() {
   const [periodB, setPeriodB] = useState({ from: `${thisYear-1}-01-01`, to: `${thisYear-1}-06-30` });
 
   /* ── Log table ───────────────────────────────────────────────────────────────── */
-  const [logPage,    setLogPage]    = useState(1);
-  const [logVehicle, setLogVehicle] = useState("ALL");
-  const [logYear,    setLogYear]    = useState("ALL");
-  const [logMonth,   setLogMonth]   = useState("ALL");
+  const [logPage,     setLogPage]     = useState(1);
+  const [logVehicle,  setLogVehicle]  = useState("ALL");
+  const [logYear,     setLogYear]     = useState("ALL");
+  const [logMonth,    setLogMonth]    = useState("ALL");
+  const [logDateFrom, setLogDateFrom] = useState("");
+  const [logDateTo,   setLogDateTo]   = useState("");
+
+  /* ── Trip calculator ─────────────────────────────────────────────────────────── */
+  const [tripFrom,    setTripFrom]    = useState("moganad");
+  const [tripTo,      setTripTo]      = useState("bangalore");
+  const [tripVehicle, setTripVehicle] = useState("");
+  const [fuelPrice,   setFuelPrice]   = useState(93);
 
   /* ── Modals ──────────────────────────────────────────────────────────────────── */
   const [showUpload, setShowUpload] = useState(false);
@@ -188,11 +196,86 @@ export default function FleetPage() {
   const delta  = (a: number, b: number) => b === 0 ? 0 : ((a - b) / b) * 100;
 
   /* Log table */
-  const logRows  = useMemo(() => filterRows(data, logVehicle, logYear, logMonth).reverse(), [data, logVehicle, logYear, logMonth]);
+  const logRows = useMemo(() => {
+    return filterRows(data, logVehicle, logYear, logMonth)
+      .filter(r => (!logDateFrom || r.date >= logDateFrom) && (!logDateTo || r.date <= logDateTo))
+      .reverse();
+  }, [data, logVehicle, logYear, logMonth, logDateFrom, logDateTo]);
   const logPages = Math.max(1, Math.ceil(logRows.length / LOG_PAGE_SIZE));
   const logSlice = logRows.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
 
+  /* Vehicle Registry — one row per vehicle, all-time totals */
+  const registry = useMemo(() => {
+    const map = new Map<string, { vehicle_id:string; fuel_type:string; account:string; vehicle_type:string; totalKm:number; totalLitres:number; totalCost:number }>();
+    data.forEach(r => {
+      const ex = map.get(r.vehicle_id);
+      if (ex) {
+        ex.totalKm     += r.km_run;
+        ex.totalLitres += r.fuel_filled_l;
+        ex.totalCost   += r.total_cost;
+        if (r.fuel_type)    ex.fuel_type    = r.fuel_type;
+        if (r.account)      ex.account      = r.account;
+        if (r.vehicle_type) ex.vehicle_type = r.vehicle_type;
+      } else {
+        map.set(r.vehicle_id, { vehicle_id:r.vehicle_id, fuel_type:r.fuel_type, account:r.account, vehicle_type:r.vehicle_type, totalKm:r.km_run, totalLitres:r.fuel_filled_l, totalCost:r.total_cost });
+      }
+    });
+    return Array.from(map.values()).sort((a,b) => a.vehicle_id.localeCompare(b.vehicle_id));
+  }, [data]);
+
+  /* Trip cost calculator */
+  const TRIP_DIST: Record<string, Record<string, number>> = {
+    moganad:     { bangalore:340, pattiveranpatti:45,  greenways_s:55,  chennai:390, eng_club_cbe:165 },
+    stanmore:    { bangalore:310, pattiveranpatti:30,  greenways_s:25,  chennai:360, eng_club_cbe:160 },
+    greenways_s: { bangalore:320, pattiveranpatti:40,  greenways_s:0,   chennai:350, moganad:55, stanmore:25, eng_club_cbe:155 },
+    eng_club_cbe:{ bangalore:365, pattiveranpatti:195, greenways_s:155, chennai:505, moganad:165, stanmore:160, eng_club_cbe:0 },
+  };
+  const LOC_LABELS: Record<string, string> = {
+    moganad:'Moganad Estate, Managalam', stanmore:'Stanmore Estate, Nagalur',
+    greenways_s:'7/95 Greenways Rd, Salem', eng_club_cbe:'English Club Race Course, CBE',
+    bangalore:'MG Road, Bangalore', pattiveranpatti:'Pattiveranpatti', chennai:'Adyar, Chennai',
+  };
+  const START_KEYS = ['moganad','stanmore','greenways_s','eng_club_cbe'];
+  const END_KEYS   = ['bangalore','pattiveranpatti','greenways_s','chennai','eng_club_cbe'];
+
+  const tripCalc = useMemo(() => {
+    const dist = TRIP_DIST[tripFrom]?.[tripTo] ?? null;
+    const vRows = tripVehicle ? data.filter(r => r.vehicle_id === tripVehicle) : [];
+    const latestYear = vRows.length > 0 ? Math.max(...vRows.map(r => r.year ?? new Date(r.date).getFullYear())) : null;
+    const latestRows = latestYear ? vRows.filter(r => (r.year ?? new Date(r.date).getFullYear()) === latestYear) : [];
+    const km = latestRows.reduce((a,r) => a+r.km_run,0);
+    const lt = latestRows.reduce((a,r) => a+r.fuel_filled_l,0);
+    const tc = latestRows.reduce((a,r) => a+r.total_cost,0);
+    const mileage  = lt > 0 ? km / lt : null;
+    const cpk      = km > 0 ? tc / km : null;
+    if (!dist || dist === 0) return { dist, mileage, cpk, fuelNeeded:null, cost1:null, cost2:null, totalCost:null, latestYear };
+    const fuelNeeded = mileage ? dist / mileage : null;
+    const cost1      = fuelNeeded ? fuelNeeded * fuelPrice : null;
+    const cost2      = cost1 ? cost1 * 2 : null;
+    const totalCost  = (cost2 && cpk) ? cost2 + cpk * dist * 2 : cost2;
+    return { dist, mileage, cpk, fuelNeeded, cost1, cost2, totalCost, latestYear };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, tripFrom, tripTo, tripVehicle, fuelPrice]);
+
   const vColor = (v: string) => VEHICLE_PALETTE[vehicles.indexOf(v) % VEHICLE_PALETTE.length];
+
+  const downloadCSV = useCallback(() => {
+    const headers = ["Date","Vehicle ID","Account","Starting KM","Closing KM","KM Run","Fuel Filled (L)","Fuel Cost (₹)","Maint Cost (₹)","Total Cost (₹)","Maintenance Performed","Remarks"];
+    const csvRows = logRows.map(r => [
+      r.date, r.vehicle_id, r.account,
+      r.starting_km, r.closing_km, r.km_run,
+      r.fuel_filled_l, r.fuel_cost, r.maint_cost, r.total_cost,
+      r.maintenance_performed, r.remarks,
+    ]);
+    const csv = [headers, ...csvRows]
+      .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "fleet_log.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }, [logRows]);
 
   const today = new Date().toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short", year:"numeric" });
 
@@ -559,9 +642,127 @@ export default function FleetPage() {
             </div>
 
             {/* ════════════════════════════════════════════════════════════════════
+                ◆ VEHICLE REGISTRY
+            ════════════════════════════════════════════════════════════════════ */}
+            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> VEHICLE REGISTRY</div>
+
+            <div className={s.registryWrapper}>
+              <table className={s.dailyTable}>
+                <thead>
+                  <tr>
+                    <th>Vehicle ID</th>
+                    <th>Fuel Type</th>
+                    <th>Account</th>
+                    <th>Vehicle Type</th>
+                    <th style={{ textAlign:"right" }}>Total KM</th>
+                    <th style={{ textAlign:"right" }}>Avg Mileage</th>
+                    <th style={{ textAlign:"right" }}>Cost / KM</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {registry.map(v => {
+                    const avgMileage = v.totalLitres > 0 ? v.totalKm / v.totalLitres : 0;
+                    const costPerKm  = v.totalKm > 0 ? v.totalCost / v.totalKm : 0;
+                    return (
+                      <tr key={v.vehicle_id}>
+                        <td className={s.colVehicle} style={{ color: vColor(v.vehicle_id) }}>{v.vehicle_id}</td>
+                        <td><span className={`${s.tag} ${v.fuel_type === "Petrol" ? s.tagPetrol : s.tagDiesel}`}>{v.fuel_type}</span></td>
+                        <td className={s.colAccount}>{v.account}</td>
+                        <td><span className={`${s.tag} ${v.vehicle_type === "Personal" ? s.tagPersonal : s.tagEstate}`}>{v.vehicle_type}</span></td>
+                        <td className={s.colNumber} style={{ color:TEAL }}>{fmt(v.totalKm,0)} km</td>
+                        <td className={s.colNumber} style={{ color:GREEN }}>{fmt(avgMileage,2)} km/L</td>
+                        <td className={s.colNumber} style={{ color:GOLD }}>₹{fmt(costPerKm,2)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ════════════════════════════════════════════════════════════════════
+                ◆ TRIP COST CALCULATOR
+            ════════════════════════════════════════════════════════════════════ */}
+            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> TRIP COST CALCULATOR</div>
+
+            <div className={s.filterBar} style={{ marginBottom:16 }}>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>From</span>
+                <select className={s.ctrlSelect} value={tripFrom} onChange={e => setTripFrom(e.target.value)}>
+                  {START_KEYS.map(k => <option key={k} value={k}>{LOC_LABELS[k]}</option>)}
+                </select>
+              </div>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>To</span>
+                <select className={s.ctrlSelect} value={tripTo} onChange={e => setTripTo(e.target.value)}>
+                  {END_KEYS.map(k => <option key={k} value={k}>{LOC_LABELS[k]}</option>)}
+                </select>
+              </div>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>Vehicle (for mileage)</span>
+                <select className={s.ctrlSelect} value={tripVehicle} onChange={e => setTripVehicle(e.target.value)}>
+                  <option value="">— Select Vehicle —</option>
+                  {vehicles.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>Fuel Price (₹/L)</span>
+                <input type="number" className={s.dateInput} value={fuelPrice} min={50} max={200}
+                  onChange={e => setFuelPrice(parseFloat(e.target.value) || 93)}
+                  style={{ width:100 }}/>
+              </div>
+            </div>
+
+            <div className={s.tripResultGrid}>
+              {[
+                { label:"Distance",        value: tripCalc.dist ? `${tripCalc.dist} km` : "N/A",                              accent:TEAL,   emoji:"📍", sub: null },
+                { label:"Fuel Needed",     value: tripCalc.fuelNeeded ? `${tripCalc.fuelNeeded.toFixed(1)} L` : "N/A",        accent:GOLD,   emoji:"⛽", sub: null },
+                { label:"One Way Cost",    value: tripCalc.cost1 ? `₹${fmt(tripCalc.cost1,0)}` : "N/A",                       accent:GREEN,  emoji:"➡️", sub: null },
+                { label:"Return Cost",     value: tripCalc.cost2 ? `₹${fmt(tripCalc.cost2,0)}` : "N/A",                       accent:RED,    emoji:"🔄", sub: null },
+                { label:"Total Trip Cost", value: tripCalc.totalCost ? `₹${fmt(tripCalc.totalCost,0)}` : "N/A",               accent:PURPLE, emoji:"💰", sub: null },
+                { label:"Vehicle Mileage", value: tripCalc.mileage ? `${tripCalc.mileage.toFixed(2)} km/L` : "N/A",           accent:BLUE,   emoji:"🌿", sub: tripCalc.latestYear ? `Based on ${tripCalc.latestYear} data` : null },
+              ].map(c => (
+                <div key={c.label} className={s.tripCard} style={{ ["--accent" as string]: c.accent }}>
+                  <div className={s.tripEmoji}>{c.emoji}</div>
+                  <div className={s.tripLabel}>{c.label}</div>
+                  <div className={s.tripValue}>{c.value}</div>
+                  {c.sub && <div className={s.tripSub}>{c.sub}</div>}
+                </div>
+              ))}
+            </div>
+
+            {/* Distance matrix */}
+            <div className={s.dailyTableWrapper} style={{ marginBottom:24 }}>
+              <table className={s.dailyTable}>
+                <thead>
+                  <tr>
+                    <th>From \ To</th>
+                    {END_KEYS.map(k => <th key={k} style={{ textAlign:"right" }}>{LOC_LABELS[k]}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {START_KEYS.map(from => (
+                    <tr key={from}>
+                      <td className={s.colVehicle} style={{ color:TEAL }}>{LOC_LABELS[from]}</td>
+                      {END_KEYS.map(to => {
+                        const d = TRIP_DIST[from]?.[to];
+                        const active = tripFrom === from && tripTo === to;
+                        return (
+                          <td key={to} className={s.colNumber}
+                            style={{ color: active ? GOLD : d ? "#e8edf4" : "#3a5070", fontWeight: active ? 700 : undefined }}>
+                            {d ? `${d} km` : "—"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ════════════════════════════════════════════════════════════════════
                 ◆ DAILY LOG
             ════════════════════════════════════════════════════════════════════ */}
-            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> DAILY LOG</div>
+            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> DAILY VEHICLE LOG</div>
 
             <div className={s.filterBar} style={{ marginBottom:14 }}>
               <div className={s.ctrlGroup}>
@@ -585,7 +786,18 @@ export default function FleetPage() {
                   {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
-              <button className={s.resetBtn} onClick={() => { setLogVehicle("ALL"); setLogYear("ALL"); setLogMonth("ALL"); setLogPage(1); }}>Reset</button>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>From Date</span>
+                <input type="date" className={s.dateInput} value={logDateFrom}
+                  onChange={e => { setLogDateFrom(e.target.value); setLogPage(1); }}/>
+              </div>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>To Date</span>
+                <input type="date" className={s.dateInput} value={logDateTo}
+                  onChange={e => { setLogDateTo(e.target.value); setLogPage(1); }}/>
+              </div>
+              <button className={s.csvBtn} onClick={downloadCSV}>⬇ Download CSV</button>
+              <button className={s.resetBtn} onClick={() => { setLogVehicle("ALL"); setLogYear("ALL"); setLogMonth("ALL"); setLogDateFrom(""); setLogDateTo(""); setLogPage(1); }}>Reset Filters</button>
             </div>
 
             <div style={{ fontSize:11, color:"#7a90b0", marginBottom:10 }}>{logRows.length.toLocaleString()} records · newest first</div>
@@ -594,17 +806,17 @@ export default function FleetPage() {
               <table className={s.dailyTable}>
                 <thead>
                   <tr>
-                    <th>Date</th><th>Vehicle</th><th>Type</th><th>Account</th><th>Fuel</th>
-                    <th style={{ textAlign:"right" }}>Start KM</th>
-                    <th style={{ textAlign:"right" }}>Close KM</th>
+                    <th>Date</th>
+                    <th>Vehicle</th>
+                    <th>Account</th>
+                    <th style={{ textAlign:"right" }}>Starting KM</th>
+                    <th style={{ textAlign:"right" }}>Closing KM</th>
                     <th style={{ textAlign:"right" }}>KM Run</th>
-                    <th style={{ textAlign:"right" }}>Litres</th>
-                    <th style={{ textAlign:"right" }}>Fuel ₹</th>
-                    <th style={{ textAlign:"right" }}>Maint ₹</th>
-                    <th style={{ textAlign:"right" }}>Total ₹</th>
-                    <th style={{ textAlign:"right" }}>km/L</th>
-                    <th style={{ textAlign:"right" }}>₹/km</th>
-                    <th>Maintenance</th>
+                    <th style={{ textAlign:"right" }}>Fuel Filled L</th>
+                    <th style={{ textAlign:"right" }}>Fuel Cost ₹</th>
+                    <th style={{ textAlign:"right" }}>Maint Cost ₹</th>
+                    <th style={{ textAlign:"right" }}>Total Cost ₹</th>
+                    <th>Maintenance Description</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -613,9 +825,7 @@ export default function FleetPage() {
                     <tr key={r.id}>
                       <td className={s.colDate}>{r.date}</td>
                       <td className={s.colVehicle} style={{ color: vColor(r.vehicle_id) }}>{r.vehicle_id}</td>
-                      <td><span className={`${s.tag} ${r.vehicle_type === "Personal" ? s.tagPersonal : s.tagEstate}`}>{r.vehicle_type}</span></td>
                       <td className={s.colAccount}>{r.account}</td>
-                      <td><span className={`${s.tag} ${r.fuel_type === "Petrol" ? s.tagPetrol : s.tagDiesel}`}>{r.fuel_type}</span></td>
                       <td className={s.colNumber}>{fmt(r.starting_km,0)}</td>
                       <td className={s.colNumber}>{fmt(r.closing_km,0)}</td>
                       <td className={s.colNumber} style={{ color:TEAL }}>{fmt(r.km_run,0)}</td>
@@ -623,9 +833,7 @@ export default function FleetPage() {
                       <td className={s.colNumber} style={{ color:GOLD }}>{fmt(r.fuel_cost,0)}</td>
                       <td className={s.colNumber} style={{ color:RED }}>{fmt(r.maint_cost,0)}</td>
                       <td className={s.colNumber} style={{ color:GOLD, fontWeight:700 }}>{fmt(r.total_cost,0)}</td>
-                      <td className={s.colNumber} style={{ color:GREEN }}>{fmt(r.avg_mileage,2)}</td>
-                      <td className={s.colNumber} style={{ color:PURPLE }}>{fmt(r.cost_per_km,2)}</td>
-                      <td style={{ color:"#7a90b0", maxWidth:130, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
+                      <td style={{ color:"#7a90b0", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
                       <td>
                         <button onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"#3a5070", cursor:"pointer", padding:"2px 4px" }}>
                           <Pencil size={13}/>
@@ -637,13 +845,14 @@ export default function FleetPage() {
                 {/* Summary row */}
                 <tfoot>
                   <tr className={s.summaryRow}>
-                    <td colSpan={7} style={{ color:TEAL, fontWeight:700 }}>TOTAL ({logRows.length} records)</td>
+                    <td colSpan={3} style={{ color:TEAL, fontWeight:700 }}>TOTAL ({logRows.length} records)</td>
+                    <td colSpan={2}/>
                     <td className={s.colNumber} style={{ color:TEAL }}>{fmt(logRows.reduce((a,r)=>a+r.km_run,0),0)}</td>
                     <td className={s.colNumber} style={{ color:TEAL }}>{fmt(logRows.reduce((a,r)=>a+r.fuel_filled_l,0),1)}</td>
                     <td className={s.colNumber} style={{ color:GOLD }}>{fmt(logRows.reduce((a,r)=>a+r.fuel_cost,0),0)}</td>
                     <td className={s.colNumber} style={{ color:RED  }}>{fmt(logRows.reduce((a,r)=>a+r.maint_cost,0),0)}</td>
                     <td className={s.colNumber} style={{ color:GOLD, fontWeight:700 }}>{fmt(logRows.reduce((a,r)=>a+r.total_cost,0),0)}</td>
-                    <td colSpan={4}/>
+                    <td colSpan={2}/>
                   </tr>
                 </tfoot>
               </table>

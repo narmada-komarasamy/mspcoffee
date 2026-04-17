@@ -302,6 +302,51 @@
 .tagDiesel  { background: rgba(122,144,176,0.12); color: #7a90b0; }
 .tagPetrol  { background: rgba(46,204,113,0.12);  color: #2ecc71; }
 
+/* ─── Vehicle Registry ───────────────────────────────────────────────────────── */
+.registryWrapper { margin: 0 28px 24px; overflow-x: auto; }
+
+/* ─── Trip Cost Calculator ───────────────────────────────────────────────────── */
+.tripResultGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 0 28px 8px;
+}
+@media (max-width: 900px) { .tripResultGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .tripResultGrid { grid-template-columns: 1fr; } }
+
+.tripCard {
+  background: #16253a;
+  border: 1px solid #2a3f5a;
+  border-radius: 12px;
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.tripCard:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.tripCard::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent, #1fc8c8);
+}
+.tripEmoji  { font-size: 28px; margin-bottom: 8px; }
+.tripLabel  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #7a90b0; margin-bottom: 8px; }
+.tripValue  { font-size: 24px; font-weight: 700; color: #fff; line-height: 1.1; }
+.tripSub    { font-size: 11px; color: #7a90b0; margin-top: 5px; }
+
+/* ─── Log action buttons ─────────────────────────────────────────────────────── */
+.csvBtn {
+  display: flex; align-items: center; gap: 6px;
+  background: #1b2a3d; border: 1px solid #1fc8c8; color: #1fc8c8;
+  font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  padding: 9px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  align-self: flex-end;
+}
+.csvBtn:hover { background: #223352; }
+
 /* ─── Pagination ─────────────────────────────────────────────────────────────── */
 .paginationRow {
   display: flex; align-items: center; justify-content: center; gap: 12px;
