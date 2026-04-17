@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
@@ -140,21 +140,35 @@ export default function FleetPage() {
       from += BATCH;
     }
     setData(all);
-    if (all.length > 0) {
-      setMaxDataDate(all[all.length - 1].date);
-      if (!cmpV1 && !cmpV2) {
-        const vs = Array.from(new Set(all.map(r => r.vehicle_id))).sort();
-        if (vs[0]) setCmpV1(vs[0]);
-        if (vs[1]) setCmpV2(vs[1]);
-        if (vs[0]) setSvVehicle(vs[0]);
-      }
-    }
+    if (all.length > 0) setMaxDataDate(all[all.length - 1].date);
     setLastRefreshed(new Date().toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true }));
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Initial vehicle selection — runs once after first data load */
+  const initialised = useRef(false);
+  useEffect(() => {
+    if (!initialised.current && data.length > 0) {
+      const vs = Array.from(new Set(data.map(r => r.vehicle_id))).sort();
+      if (vs[0]) { setCmpV1(vs[0]); setSvVehicle(vs[0]); }
+      if (vs[1]) setCmpV2(vs[1]);
+      initialised.current = true;
+    }
+  }, [data]);
+
+  /* Initial load */
   useEffect(() => { loadData(); }, [loadData]);
+
+  /* Real-time subscription — auto-refresh on any INSERT / UPDATE / DELETE */
+  useEffect(() => {
+    const channel = supabase
+      .channel("fleet_daily_changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fleet_daily" }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
 
   /* ─── Derived ─────────────────────────────────────────────────────────────────── */
   const vehicles = useMemo(() => Array.from(new Set(data.map(r => r.vehicle_id))).sort(), [data]);
