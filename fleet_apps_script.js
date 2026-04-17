@@ -2,29 +2,26 @@
  * MSP Coffee — Fleet Fuel Expenses
  * Google Apps Script: auto-sync Google Sheet → Supabase fleet_daily table
  *
- * SETUP:
+ * SETUP (one-time):
  *  1. Open your Fleet Expenses Google Sheet
  *  2. Extensions → Apps Script
- *  3. Paste this entire file, replace the constants below
- *  4. Save → Run → authorise
- *  5. Add a trigger: Triggers (clock icon) → Add Trigger
- *     - Function: syncFleetToSupabase
- *     - Event source: Time-driven
- *     - Type: Hour timer → Every hour  (or "From spreadsheet → On edit" for instant sync)
+ *  3. Paste this entire file (constants already filled in below)
+ *  4. Save → select setupTrigger → Run → authorise all permissions
+ *     This installs an onEdit trigger so the sheet syncs to Supabase
+ *     instantly every time a cell is changed.
+ *  5. Verify: select testSync → Run and check Execution log.
  *
  * SHEET FORMAT (first row = headers, data from row 2):
  *   Date | Vehicle ID | Vehicle Type | Account | Fuel Type |
  *   Starting KM | Closing KM | Fuel Filled (L) | Fuel Cost |
  *   Maint Cost | Maintenance Performed | Remarks
- *
- *  (KM Run, Total Cost, Avg Mileage, Cost/KM are computed here in the script)
  */
 
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
-const SUPABASE_URL  = "https://YOUR_PROJECT_REF.supabase.co";
-const SUPABASE_KEY  = "YOUR_SUPABASE_ANON_KEY";   // Settings → API → anon key
-const TABLE_NAME    = "fleet_daily";
-const SHEET_NAME    = "Fleet Data";                // exact tab name in your Sheet
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://aeawxovvyvpcjkhyxgcq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYXd4b3Z2eXZwY2praHl4Z2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDY1MTgsImV4cCI6MjA5MDUyMjUxOH0.V8Bu91H6lidK1A4qqyPAotp7KFRaF9dm2iEFZvWxWPg";
+const TABLE_NAME   = "fleet_daily";
+const SHEET_NAME   = "Fleet Data";  // exact tab name in your Sheet
 // ─────────────────────────────────────────────────────────────────────────────
 
 const VALID_ACCOUNTS      = ["BVE", "HFE", "ME", "ORE", "RSE", "SE"];
@@ -42,8 +39,8 @@ function syncFleetToSupabase() {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) { Logger.log("No data rows found."); return; }
 
-  const range  = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
-  const values = range.getValues();
+  const range   = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
+  const values  = range.getValues();
   const headers = values[0].map(h => String(h).trim().toLowerCase());
 
   // ── Header index map ───────────────────────────────────────────────────────
@@ -62,27 +59,24 @@ function syncFleetToSupabase() {
     remarks:               findCol(headers, ["remarks", "notes"]),
   };
 
-  const rows = [];
+  const rows    = [];
   const skipped = [];
 
   for (let i = 1; i < values.length; i++) {
-    const row = values[i];
+    const row    = values[i];
     const rowNum = i + 1;
 
-    // Date
     const rawDate = row[col.date];
-    if (!rawDate) continue;  // skip empty rows silently
+    if (!rawDate) continue; // skip empty rows silently
     const date = formatDate(rawDate);
     if (!date) { skipped.push("Row " + rowNum + ": invalid date '" + rawDate + "'"); continue; }
 
-    // Vehicle ID
     const vehicle_id = String(row[col.vehicle_id] ?? "").trim();
     if (!vehicle_id) { skipped.push("Row " + rowNum + ": missing Vehicle ID"); continue; }
 
-    // Coerce and validate
-    const vehicle_type    = coerce(row[col.vehicle_type], "Estate",  VALID_VEHICLE_TYPES);
-    const account         = coerce(row[col.account],      "BVE",     VALID_ACCOUNTS);
-    const fuel_type       = coerce(row[col.fuel_type],    "Diesel",  VALID_FUEL_TYPES);
+    const vehicle_type    = coerce(row[col.vehicle_type], "Estate", VALID_VEHICLE_TYPES);
+    const account         = coerce(row[col.account],      "BVE",    VALID_ACCOUNTS);
+    const fuel_type       = coerce(row[col.fuel_type],    "Diesel", VALID_FUEL_TYPES);
     const starting_km     = num(row[col.starting_km]);
     const closing_km      = num(row[col.closing_km]);
     const km_run          = Math.max(0, closing_km - starting_km);
@@ -109,7 +103,16 @@ function syncFleetToSupabase() {
   if (skipped.length > 0) Logger.log("Skipped rows:\n" + skipped.join("\n"));
   if (rows.length === 0) { Logger.log("No valid rows to sync."); return; }
 
-  Logger.log("Syncing " + rows.length + " rows to Supabase…");
+  // ── Deduplicate: keep last occurrence of each date + vehicle_id ───────────
+  const seen = new Map();
+  for (const row of rows) {
+    seen.set(row.date + "|" + row.vehicle_id, row);
+  }
+  const dedupedRows = Array.from(seen.values());
+  Logger.log(
+    "Parsed " + rows.length + " rows → " + dedupedRows.length +
+    " unique after dedup (removed " + (rows.length - dedupedRows.length) + " duplicates)"
+  );
 
   // ── Step 1: Delete all existing rows ──────────────────────────────────────
   const delResp = UrlFetchApp.fetch(
@@ -123,12 +126,12 @@ function syncFleetToSupabase() {
   Logger.log("DELETE status: " + delResp.getResponseCode());
 
   // ── Step 2: Batch insert ───────────────────────────────────────────────────
-  const BATCH = 500;
-  let inserted = 0;
+  const BATCH    = 500;
+  let inserted   = 0;
 
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const batch = rows.slice(i, i + BATCH);
-    const resp = UrlFetchApp.fetch(
+  for (let i = 0; i < dedupedRows.length; i += BATCH) {
+    const batch = dedupedRows.slice(i, i + BATCH);
+    const resp  = UrlFetchApp.fetch(
       SUPABASE_URL + "/rest/v1/" + TABLE_NAME,
       {
         method: "POST",
@@ -144,12 +147,14 @@ function syncFleetToSupabase() {
     if (code >= 200 && code < 300) {
       inserted += batch.length;
     } else {
-      Logger.log("Batch insert error (rows " + i + "–" + (i + batch.length - 1) + "): " +
-                 code + " — " + resp.getContentText().slice(0, 300));
+      Logger.log(
+        "Batch insert error (rows " + i + "–" + (i + batch.length - 1) + "): " +
+        code + " — " + resp.getContentText().slice(0, 300)
+      );
     }
   }
 
-  Logger.log("Sync complete: " + inserted + " / " + rows.length + " rows inserted.");
+  Logger.log("Sync complete: " + inserted + " / " + dedupedRows.length + " rows inserted.");
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,18 +183,17 @@ function formatDate(raw) {
     return y + "-" + m + "-" + d;
   }
   const s = String(raw).trim();
-  // DD/MM/YYYY or MM/DD/YYYY
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
     const parts = s.split("/");
-    // Assume DD/MM/YYYY (Indian format)
-    return parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
+    // DD/MM/YYYY (Indian format)
+    return parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
   }
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   const d = new Date(s);
   if (!isNaN(d.getTime())) {
     return d.getFullYear() + "-" +
-           String(d.getMonth()+1).padStart(2,"0") + "-" +
-           String(d.getDate()).padStart(2,"0");
+           String(d.getMonth() + 1).padStart(2, "0") + "-" +
+           String(d.getDate()).padStart(2, "0");
   }
   return null;
 }
@@ -209,7 +213,30 @@ function coerce(val, defaultVal, valid) {
   return valid.includes(s) ? s : defaultVal;
 }
 
-// ─── Test helper: run manually to verify one sync ─────────────────────────────
+// ─── Trigger setup ────────────────────────────────────────────────────────────
+/**
+ * Run this ONCE to install an onEdit trigger.
+ * After that, every cell edit in the sheet fires syncFleetToSupabase instantly.
+ * Re-running it is safe — it removes old triggers first to avoid duplicates.
+ */
+function setupTrigger() {
+  // Remove any existing fleet sync triggers to avoid duplicates
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === "syncFleetToSupabase") {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+
+  // Install onEdit installable trigger (fires on any cell change)
+  ScriptApp.newTrigger("syncFleetToSupabase")
+    .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
+    .onEdit()
+    .create();
+
+  Logger.log("✓ onEdit trigger installed — sheet will now sync to Supabase instantly on every edit.");
+}
+
+// ─── Test helper ──────────────────────────────────────────────────────────────
 function testSync() {
   syncFleetToSupabase();
 }
