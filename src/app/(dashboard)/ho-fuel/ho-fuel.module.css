@@ -1,4 +1,8 @@
 /* ── HO Fuel Dashboard — Navy/Teal/Gold theme ─────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600&display=swap');
+
+/* Font helpers */
+.rajdhani { font-family: 'Rajdhani', sans-serif; }
 
 /* Tabs */
 .tabs {
@@ -14,6 +18,7 @@
   border-bottom: 3px solid transparent;
   background: transparent;
   color: #7a90b0;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -54,6 +59,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.9375rem;
   font-weight: 700;
   letter-spacing: 0.125em;
@@ -102,6 +108,7 @@
 }
 
 .kpiLabel {
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -111,6 +118,7 @@
 }
 
 .kpiValue {
+  font-family: 'Rajdhani', sans-serif;
   font-size: 2rem;
   font-weight: 700;
   color: #fff;
@@ -120,12 +128,14 @@
 .kpiValueLow { color: #e8524a !important; }
 
 .kpiUnit {
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.8125rem;
   color: #7a90b0;
   margin-left: 0.25rem;
 }
 
 .kpiSub {
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.75rem;
   color: #7a90b0;
   margin-top: 0.25rem;
@@ -170,9 +180,10 @@
 }
 
 .chartSubTitle {
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: #7a90b0;
   margin-bottom: 0.875rem;
@@ -189,6 +200,7 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.75rem;
   color: #7a90b0;
 }
@@ -279,6 +291,7 @@
 
 .table th {
   text-align: left;
+  font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   font-size: 0.6875rem;
   text-transform: uppercase;
@@ -288,6 +301,10 @@
   border-bottom: 2px solid #2a3f5a;
   background: #1b2a3d;
   white-space: nowrap;
+}
+
+.table td {
+  font-family: 'Exo 2', sans-serif;
 }
 
 .table td {
@@ -370,8 +387,9 @@
 .ctrlGrp { display: flex; flex-direction: column; gap: 0.3rem; }
 
 .ctrlLbl {
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: #7a90b0;
@@ -382,6 +400,7 @@
   border: 1px solid #2a3f5a;
   border-radius: 0.375rem;
   color: #e8edf4;
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   cursor: pointer;
@@ -397,6 +416,7 @@
   border: 1px solid #2a3f5a;
   border-radius: 0.375rem;
   color: #e8edf4;
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   outline: none;
@@ -414,6 +434,7 @@
   background: #1b2a3d;
   border: 1px solid #2a3f5a;
   color: #1fc8c8;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -514,8 +535,8 @@
   50%       { opacity: 0.35; }
 }
 
-.saveLabel { color: #7a90b0; }
-.saveLabelCount { color: #2ecc71; font-weight: 600; }
+.saveLabel { font-family: 'Exo 2', sans-serif; color: #7a90b0; }
+.saveLabelCount { font-family: 'Exo 2', sans-serif; color: #2ecc71; font-weight: 600; }
 
 .saveBarActions {
   display: flex;
@@ -527,6 +548,7 @@
   background: #1b2a3d;
   border: 1px solid #2a3f5a;
   color: #1fc8c8;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -542,6 +564,7 @@
   background: rgba(232, 82, 74, 0.12);
   border: 1px solid rgba(232, 82, 74, 0.3);
   color: #e8524a;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -572,12 +595,16 @@
 
 .formGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 800px) {
+  .formGrid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 500px) {
   .formGrid { grid-template-columns: 1fr; }
 }
 
@@ -595,8 +622,9 @@
 }
 
 .formLabel {
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: #7a90b0;
@@ -607,11 +635,13 @@
   border: 1px solid #2a3f5a;
   border-radius: 0.375rem;
   color: #e8edf4;
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   outline: none;
   width: 100%;
   transition: border-color 0.15s;
+  cursor: pointer;
 }
 
 .formInput:focus { border-color: #1fc8c8; }
@@ -623,6 +653,7 @@
   border: 1px solid #2a3f5a;
   border-radius: 0.375rem;
   color: #e8edf4;
+  font-family: 'Exo 2', sans-serif;
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   outline: none;
@@ -646,6 +677,7 @@
   background: #1fc8c8;
   border: none;
   color: #0d1b2a;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -662,8 +694,9 @@
   background: #1b2a3d;
   border: 1px solid #2a3f5a;
   color: #7a90b0;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.6rem 1rem;
   border-radius: 0.375rem;
   cursor: pointer;
