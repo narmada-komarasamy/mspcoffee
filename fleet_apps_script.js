@@ -234,6 +234,10 @@ function setupTrigger() {
     .create();
 
   Logger.log("✓ onEdit trigger installed — sheet will now sync to Supabase instantly on every edit.");
+
+  // Run an immediate sync so data is up to date right now
+  Logger.log("Running initial sync...");
+  syncFleetToSupabase();
 }
 
 // ─── Test helper ──────────────────────────────────────────────────────────────
