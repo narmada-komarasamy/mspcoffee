@@ -51,11 +51,12 @@ const HO_SHEET_NAME   = "HO Fuel";  // exact tab name — adjust if different
 
 function syncHoFuelToSupabase() {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(HO_SHEET_NAME);
+  const sheet = ss.getSheetByName(HO_SHEET_NAME) || ss.getSheets()[0];
   if (!sheet) {
-    Logger.log("Sheet not found: " + HO_SHEET_NAME);
+    Logger.log("No sheets found in spreadsheet.");
     return;
   }
+  Logger.log("Using sheet: " + sheet.getName());
 
   const lastRow = sheet.getLastRow();
   if (lastRow < 3) { Logger.log("No data rows found (need at least row 3)."); return; }
