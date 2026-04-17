@@ -41,7 +41,7 @@ function fmtCur(n: number) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function HoFuelPage() {
-  const [tab, setTab] = useState<"overview" | "consumers" | "log">("overview");
+  const [tab, setTab] = useState<"overview" | "consumers" | "log" | "entry">("overview");
   const [rows, setRows] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(true);
   const realtimeRef = useRef(false);
@@ -99,13 +99,18 @@ export default function HoFuelPage() {
   return (
     <div>
       <div className={css.tabs}>
-        {(["overview","consumers","log"] as const).map((t) => (
+        {([
+          ["overview",  "📊 Overview"],
+          ["consumers", "🔥 Consumers"],
+          ["log",       "📋 Transaction Log"],
+          ["entry",     "➕ Log Fuel Entry"],
+        ] as const).map(([t, label]) => (
           <button
             key={t}
             className={`${css.tab} ${tab === t ? css.tabActive : ""}`}
             onClick={() => setTab(t)}
           >
-            {t === "overview" ? "📊 Overview" : t === "consumers" ? "🔥 Consumers" : "📋 Transaction Log"}
+            {label}
           </button>
         ))}
       </div>
@@ -113,6 +118,7 @@ export default function HoFuelPage() {
       {tab === "overview"  && <OverviewTab  rows={rows} totals={totals} />}
       {tab === "consumers" && <ConsumersTab rows={rows} />}
       {tab === "log"       && <LogTab       rows={rows} />}
+      {tab === "entry"     && <EntryTab     rows={rows} onSaved={loadData} />}
     </div>
   );
 }
@@ -760,6 +766,261 @@ function LogTab({ rows }: { rows: TxRow[] }) {
         <span>Page {page+1} / {totalPages}</span>
         <button className={css.pageBtn} disabled={page>=totalPages-1} onClick={() => setPage(p=>p+1)}>›</button>
         <button className={css.pageBtn} disabled={page>=totalPages-1} onClick={() => setPage(totalPages-1)}>»</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENTRY TAB
+// ─────────────────────────────────────────────────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+const EMPTY_PURCHASE = { date: todayStr(), fuel_type: "DIESEL", source: "", qty_l: "", amount: "", mode_of_payment: "", remarks: "" };
+const EMPTY_ISSUE    = { date: todayStr(), fuel_type: "PETROL", vehicle_number: "", vehicle_name: "", estate: "", qty_l: "", receiver_name: "", source: "HO STORE", remarks: "" };
+
+function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
+  const [sessionCount, setSessionCount] = useState(0);
+  const [purchase, setPurchase] = useState({ ...EMPTY_PURCHASE });
+  const [issue,    setIssue]    = useState({ ...EMPTY_ISSUE });
+  const [pMsg, setPMsg] = useState<{ type: "success"|"error"; text: string } | null>(null);
+  const [iMsg, setIMsg] = useState<{ type: "success"|"error"; text: string } | null>(null);
+  const [pSaving, setPSaving] = useState(false);
+  const [iSaving, setISaving] = useState(false);
+
+  const estates  = useMemo(() => Array.from(new Set(rows.filter(r=>r.estate).map(r=>r.estate))).sort(), [rows]);
+  const vehicles = useMemo(() => Array.from(new Set(rows.filter(r=>r.vehicle_number).map(r=>r.vehicle_number))).sort(), [rows]);
+
+  function parseDate(s: string) {
+    const d = new Date(s);
+    return { date: s, month: d.getMonth()+1, year: d.getFullYear() };
+  }
+
+  async function savePurchase() {
+    if (!purchase.date || !purchase.source || !purchase.qty_l) {
+      setPMsg({ type:"error", text:"Date, Supplier/Source and Quantity are required." }); return;
+    }
+    setPSaving(true); setPMsg(null);
+    const { date, month, year } = parseDate(purchase.date);
+    const { error } = await supabase.from("ho_fuel_log").insert([{
+      date, month, year,
+      transaction_type: "PURCHASE",
+      fuel_type: purchase.fuel_type,
+      source: purchase.source.trim(),
+      vehicle_number: "", estate: "", vehicle_name: "",
+      qty_l: parseFloat(purchase.qty_l),
+      amount: parseFloat(purchase.amount || "0") || 0,
+      mode_of_payment: purchase.mode_of_payment.trim(),
+      receiver_name: "",
+      remarks: purchase.remarks.trim(),
+    }]);
+    setPSaving(false);
+    if (error) { setPMsg({ type:"error", text: error.message }); }
+    else {
+      setPMsg({ type:"success", text: `✓ Purchase saved — ${purchase.qty_l} L of ${purchase.fuel_type} on ${purchase.date}` });
+      setSessionCount(c => c+1);
+      setPurchase({ ...EMPTY_PURCHASE, date: purchase.date, fuel_type: purchase.fuel_type });
+      onSaved();
+    }
+  }
+
+  async function saveIssue() {
+    if (!issue.date || !issue.vehicle_number || !issue.estate || !issue.qty_l) {
+      setIMsg({ type:"error", text:"Date, Vehicle/Equipment, Estate and Quantity are required." }); return;
+    }
+    setISaving(true); setIMsg(null);
+    const { date, month, year } = parseDate(issue.date);
+    const { error } = await supabase.from("ho_fuel_log").insert([{
+      date, month, year,
+      transaction_type: "ISSUE",
+      fuel_type: issue.fuel_type,
+      source: "HO STORE",
+      vehicle_number: issue.vehicle_number.trim(),
+      vehicle_name: issue.vehicle_name.trim(),
+      estate: issue.estate,
+      qty_l: parseFloat(issue.qty_l),
+      amount: 0,
+      mode_of_payment: "",
+      receiver_name: issue.receiver_name.trim(),
+      remarks: issue.remarks.trim(),
+    }]);
+    setISaving(false);
+    if (error) { setIMsg({ type:"error", text: error.message }); }
+    else {
+      setIMsg({ type:"success", text: `✓ Issue saved — ${issue.qty_l} L of ${issue.fuel_type} to ${issue.vehicle_number}` });
+      setSessionCount(c => c+1);
+      setIssue({ ...EMPTY_ISSUE, date: issue.date, fuel_type: issue.fuel_type });
+      onSaved();
+    }
+  }
+
+  return (
+    <div>
+      {/* Save bar */}
+      <div className={css.saveBar}>
+        <div>
+          <span className={css.saveDot} />
+          {sessionCount === 0
+            ? <span className={css.saveLabel}>No new entries saved yet this session</span>
+            : <span className={css.saveLabelCount}>{sessionCount} entr{sessionCount === 1 ? "y" : "ies"} saved this session</span>
+          }
+        </div>
+        <div className={css.saveBarActions}>
+          <button className={css.btnDanger} onClick={() => { setSessionCount(0); setPMsg(null); setIMsg(null); }}>
+            🗑 Clear Session Count
+          </button>
+        </div>
+      </div>
+
+      <div className={css.entryGrid}>
+        {/* ── PURCHASE FORM ── */}
+        <div>
+          <div className={css.sectionHdr}><span>◆</span> LOG FUEL PURCHASE (INTO STORE)</div>
+          <div className={css.formCard}>
+            <div className={css.formGrid}>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Date *</label>
+                <input type="date" className={css.formInput} value={purchase.date}
+                  onChange={e => setPurchase(p=>({...p, date:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Fuel Type *</label>
+                <select className={css.formInput} value={purchase.fuel_type}
+                  onChange={e => setPurchase(p=>({...p, fuel_type:e.target.value}))}>
+                  <option value="DIESEL">Diesel</option>
+                  <option value="PETROL">Petrol</option>
+                </select>
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Supplier / Source *</label>
+                <input type="text" className={css.formInput} placeholder="e.g. Shanmugha Traders"
+                  value={purchase.source}
+                  onChange={e => setPurchase(p=>({...p, source:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Quantity (Litres) *</label>
+                <input type="number" className={css.formInput} placeholder="e.g. 200" min="0" step="0.5"
+                  value={purchase.qty_l}
+                  onChange={e => setPurchase(p=>({...p, qty_l:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Total Cost (₹)</label>
+                <input type="number" className={css.formInput} placeholder="e.g. 18500" min="0"
+                  value={purchase.amount}
+                  onChange={e => setPurchase(p=>({...p, amount:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Mode of Payment</label>
+                <input type="text" className={css.formInput} placeholder="e.g. Cash / UPI"
+                  value={purchase.mode_of_payment}
+                  onChange={e => setPurchase(p=>({...p, mode_of_payment:e.target.value}))} />
+              </div>
+              <div className={css.formGroupFull}>
+                <label className={css.formLabel}>Remarks</label>
+                <textarea className={css.formTextarea} placeholder="Any notes…"
+                  value={purchase.remarks}
+                  onChange={e => setPurchase(p=>({...p, remarks:e.target.value}))} />
+              </div>
+            </div>
+            <div className={css.formActions}>
+              <button className={css.btnSave} disabled={pSaving} onClick={savePurchase}>
+                {pSaving ? "Saving…" : "✅ Save Purchase"}
+              </button>
+              <button className={css.btnClear} onClick={() => { setPurchase({...EMPTY_PURCHASE}); setPMsg(null); }}>
+                Clear
+              </button>
+            </div>
+            {pMsg && (
+              <div className={`${css.formMsg} ${pMsg.type === "success" ? css.formMsgSuccess : css.formMsgError}`}>
+                {pMsg.text}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── ISSUE FORM ── */}
+        <div>
+          <div className={css.sectionHdr}><span>◆</span> LOG FUEL ISSUE (FROM STORE)</div>
+          <div className={css.formCard}>
+            <div className={css.formGrid}>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Date *</label>
+                <input type="date" className={css.formInput} value={issue.date}
+                  onChange={e => setIssue(i=>({...i, date:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Fuel Type *</label>
+                <select className={css.formInput} value={issue.fuel_type}
+                  onChange={e => setIssue(i=>({...i, fuel_type:e.target.value}))}>
+                  <option value="PETROL">Petrol</option>
+                  <option value="DIESEL">Diesel</option>
+                </select>
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Vehicle / Equipment *</label>
+                <input type="text" className={css.formInput} placeholder="— Select or type —"
+                  list="vehicle-list"
+                  value={issue.vehicle_number}
+                  onChange={e => setIssue(i=>({...i, vehicle_number:e.target.value}))} />
+                <datalist id="vehicle-list">
+                  {vehicles.map(v => <option key={v} value={v} />)}
+                </datalist>
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Estate *</label>
+                <select className={css.formInput} value={issue.estate}
+                  onChange={e => setIssue(i=>({...i, estate:e.target.value}))}>
+                  <option value="">— Select —</option>
+                  {estates.map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Vehicle Name</label>
+                <input type="text" className={css.formInput} placeholder="e.g. Hero Impulse"
+                  value={issue.vehicle_name}
+                  onChange={e => setIssue(i=>({...i, vehicle_name:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Quantity (Litres) *</label>
+                <input type="number" className={css.formInput} placeholder="e.g. 5" min="0" step="0.5"
+                  value={issue.qty_l}
+                  onChange={e => setIssue(i=>({...i, qty_l:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Received By</label>
+                <input type="text" className={css.formInput} placeholder="Name of receiver"
+                  value={issue.receiver_name}
+                  onChange={e => setIssue(i=>({...i, receiver_name:e.target.value}))} />
+              </div>
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Source</label>
+                <input type="text" className={css.formInput} value="HO STORE" readOnly />
+              </div>
+              <div className={css.formGroupFull}>
+                <label className={css.formLabel}>Remarks</label>
+                <textarea className={css.formTextarea} placeholder="Any notes…"
+                  value={issue.remarks}
+                  onChange={e => setIssue(i=>({...i, remarks:e.target.value}))} />
+              </div>
+            </div>
+            <div className={css.formActions}>
+              <button className={css.btnSave} disabled={iSaving} onClick={saveIssue}>
+                {iSaving ? "Saving…" : "✅ Save Issue"}
+              </button>
+              <button className={css.btnClear} onClick={() => { setIssue({...EMPTY_ISSUE}); setIMsg(null); }}>
+                Clear
+              </button>
+            </div>
+            {iMsg && (
+              <div className={`${css.formMsg} ${iMsg.type === "success" ? css.formMsgSuccess : css.formMsgError}`}>
+                {iMsg.text}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
