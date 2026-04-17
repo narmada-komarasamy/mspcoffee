@@ -91,8 +91,11 @@ export default function FleetPage() {
 
   /* ── Period comparison ───────────────────────────────────────────────────────── */
   const thisYear = new Date().getFullYear();
-  const [periodA, setPeriodA] = useState({ from: `${thisYear}-01-01`, to: `${thisYear}-06-30` });
-  const [periodB, setPeriodB] = useState({ from: `${thisYear-1}-01-01`, to: `${thisYear-1}-06-30` });
+  const [periodVehicle, setPeriodVehicle] = useState("ALL");
+  const [periodAYear,   setPeriodAYear]   = useState(String(thisYear));
+  const [periodAMonth,  setPeriodAMonth]  = useState("ALL");
+  const [periodBYear,   setPeriodBYear]   = useState(String(thisYear - 1));
+  const [periodBMonth,  setPeriodBMonth]  = useState("ALL");
 
   /* ── Log table ───────────────────────────────────────────────────────────────── */
   const [logPage,     setLogPage]     = useState(1);
@@ -189,8 +192,22 @@ export default function FleetPage() {
   }, [cmpRows1, cmpRows2]);
 
   /* Period comparison */
-  const paRows = useMemo(() => data.filter(r => r.date >= periodA.from && r.date <= periodA.to), [data, periodA]);
-  const pbRows = useMemo(() => data.filter(r => r.date >= periodB.from && r.date <= periodB.to), [data, periodB]);
+  const paRows = useMemo(() => data.filter(r => {
+    const ry = String(r.year ?? new Date(r.date).getFullYear());
+    const rm = r.month ?? new Date(r.date).getMonth() + 1;
+    if (periodVehicle !== "ALL" && r.vehicle_id !== periodVehicle) return false;
+    if (ry !== periodAYear) return false;
+    if (periodAMonth !== "ALL" && MONTH_NAMES[rm - 1] !== periodAMonth) return false;
+    return true;
+  }), [data, periodVehicle, periodAYear, periodAMonth]);
+  const pbRows = useMemo(() => data.filter(r => {
+    const ry = String(r.year ?? new Date(r.date).getFullYear());
+    const rm = r.month ?? new Date(r.date).getMonth() + 1;
+    if (periodVehicle !== "ALL" && r.vehicle_id !== periodVehicle) return false;
+    if (ry !== periodBYear) return false;
+    if (periodBMonth !== "ALL" && MONTH_NAMES[rm - 1] !== periodBMonth) return false;
+    return true;
+  }), [data, periodVehicle, periodBYear, periodBMonth]);
   const paAgg  = useMemo(() => aggRows(paRows), [paRows]);
   const pbAgg  = useMemo(() => aggRows(pbRows), [pbRows]);
   const delta  = (a: number, b: number) => b === 0 ? 0 : ((a - b) / b) * 100;
@@ -579,66 +596,119 @@ export default function FleetPage() {
             {/* ════════════════════════════════════════════════════════════════════
                 ◆ PERIOD COMPARISON
             ════════════════════════════════════════════════════════════════════ */}
-            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> PERIOD COMPARISON</div>
+            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> PERIOD-ON-PERIOD COMPARISON</div>
 
-            <div className={s.periodControls}>
+            <div className={s.filterBar}>
               <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>Period A — From</span>
-                <input type="date" className={s.dateInput} value={periodA.from} onChange={e => setPeriodA(p => ({ ...p, from:e.target.value }))}/>
+                <span className={s.ctrlLabel}>Vehicle</span>
+                <select className={s.ctrlSelect} value={periodVehicle} onChange={e => setPeriodVehicle(e.target.value)}>
+                  <option value="ALL">All Vehicles</option>
+                  {vehicles.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
               </div>
               <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>To</span>
-                <input type="date" className={s.dateInput} value={periodA.to} onChange={e => setPeriodA(p => ({ ...p, to:e.target.value }))}/>
-              </div>
-              <div className={s.periodDivider}>vs</div>
-              <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>Period B — From</span>
-                <input type="date" className={s.dateInput} value={periodB.from} onChange={e => setPeriodB(p => ({ ...p, from:e.target.value }))}/>
+                <span className={s.ctrlLabel}>Period A — Year</span>
+                <select className={s.ctrlSelect} value={periodAYear} onChange={e => setPeriodAYear(e.target.value)}>
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
               </div>
               <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>To</span>
-                <input type="date" className={s.dateInput} value={periodB.to} onChange={e => setPeriodB(p => ({ ...p, to:e.target.value }))}/>
+                <span className={s.ctrlLabel}>Period A — Month</span>
+                <select className={s.ctrlSelect} value={periodAMonth} onChange={e => setPeriodAMonth(e.target.value)}>
+                  <option value="ALL">All Months</option>
+                  {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>Period B — Year</span>
+                <select className={s.ctrlSelect} value={periodBYear} onChange={e => setPeriodBYear(e.target.value)}>
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div className={s.ctrlGroup}>
+                <span className={s.ctrlLabel}>Period B — Month</span>
+                <select className={s.ctrlSelect} value={periodBMonth} onChange={e => setPeriodBMonth(e.target.value)}>
+                  <option value="ALL">All Months</option>
+                  {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
               </div>
             </div>
 
-            {/* Period A vs B table */}
-            <div className={s.periodLayout}>
-              <table className={s.periodTable}>
-                <thead>
-                  <tr>
-                    <th className={s.colMetric}>Metric</th>
-                    <th className={s.colA}>Period A · {periodA.from} → {periodA.to}</th>
-                    <th className={s.colB}>Period B · {periodB.from} → {periodB.to}</th>
-                    <th className={s.colDiff}>Difference</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { label:"Fuel Filled",        a:fmt(paAgg.totalLitres,0)+"L",  b:fmt(pbAgg.totalLitres,0)+"L",  d:delta(paAgg.totalLitres, pbAgg.totalLitres),  isUp: (x:number) => x > 0 },
-                    { label:"KM Run",             a:fmt(paAgg.totalKm,0)+" km",    b:fmt(pbAgg.totalKm,0)+" km",    d:delta(paAgg.totalKm, pbAgg.totalKm),           isUp: (x:number) => x > 0 },
-                    { label:"Avg Mileage",        a:fmt(paAgg.avgMileage,2)+" km/L",b:fmt(pbAgg.avgMileage,2)+" km/L",d:delta(paAgg.avgMileage, pbAgg.avgMileage),  isUp: (x:number) => x > 0 },
-                    { label:"Fuel Cost",          a:fmtC(paAgg.fuelCost),          b:fmtC(pbAgg.fuelCost),          d:delta(paAgg.fuelCost, pbAgg.fuelCost),         isUp: (x:number) => x < 0 },
-                    { label:"Maintenance Cost",   a:fmtC(paAgg.maintCost),         b:fmtC(pbAgg.maintCost),         d:delta(paAgg.maintCost, pbAgg.maintCost),        isUp: (x:number) => x < 0 },
-                    { label:"Total Cost",         a:fmtC(paAgg.totalCost),         b:fmtC(pbAgg.totalCost),         d:delta(paAgg.totalCost, pbAgg.totalCost),        isUp: (x:number) => x < 0 },
-                    { label:"Cost / KM",          a:"₹"+fmt(paAgg.costPerKm,2),    b:"₹"+fmt(pbAgg.costPerKm,2),    d:delta(paAgg.costPerKm, pbAgg.costPerKm),        isUp: (x:number) => x < 0 },
-                  ].map(row => {
-                    const good = row.isUp(row.d);
-                    const cls  = row.d === 0 ? s.diffNeutral : good ? s.diffDown : s.diffUp;
-                    return (
-                      <tr key={row.label}>
-                        <td className={s.colMetric}>{row.label}</td>
-                        <td className={s.colVal} style={{ color:TEAL }}>{row.a}</td>
-                        <td className={s.colVal} style={{ color:GOLD }}>{row.b}</td>
-                        <td className={s.colDiff}>
-                          <span className={`${s.diffBadge} ${cls}`}>
-                            {row.d > 0 ? "▲" : row.d < 0 ? "▼" : "—"} {Math.abs(row.d).toFixed(1)}%
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* Period table + Net Result card */}
+            <div className={s.periodOuterLayout}>
+              <div className={s.periodLayout}>
+                <table className={s.periodTable}>
+                  <thead>
+                    <tr>
+                      <th className={s.colMetric}>Metric</th>
+                      <th className={s.colA}>Period A — {periodAYear}{periodAMonth !== "ALL" ? ` · ${periodAMonth.toUpperCase()}` : ""}</th>
+                      <th className={s.colB}>Period B — {periodBYear}{periodBMonth !== "ALL" ? ` · ${periodBMonth.toUpperCase()}` : ""}</th>
+                      <th className={s.colDiff}>Difference (A vs B)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label:"Fuel Filled",  a:fmt(paAgg.totalLitres,1)+" L",    b:fmt(pbAgg.totalLitres,1)+" L",    pct:delta(paAgg.totalLitres,pbAgg.totalLitres),  abs:fmt(Math.abs(paAgg.totalLitres-pbAgg.totalLitres),1)+" L",    goodUp:true  },
+                      { label:"KM Run",       a:fmt(paAgg.totalKm,0)+" km",        b:fmt(pbAgg.totalKm,0)+" km",        pct:delta(paAgg.totalKm,pbAgg.totalKm),          abs:fmt(Math.abs(paAgg.totalKm-pbAgg.totalKm),0)+" km",           goodUp:true  },
+                      { label:"Avg Mileage",  a:fmt(paAgg.avgMileage,2)+" km/L",  b:fmt(pbAgg.avgMileage,2)+" km/L",  pct:delta(paAgg.avgMileage,pbAgg.avgMileage),    abs:fmt(Math.abs(paAgg.avgMileage-pbAgg.avgMileage),2)+" km/L",   goodUp:true  },
+                      { label:"Fuel Cost",    a:fmtC(paAgg.fuelCost),              b:fmtC(pbAgg.fuelCost),              pct:delta(paAgg.fuelCost,pbAgg.fuelCost),         abs:"₹"+fmt(Math.abs(paAgg.fuelCost-pbAgg.fuelCost),0),           goodUp:false },
+                      { label:"Fuel + Maint", a:fmtC(paAgg.totalCost),             b:fmtC(pbAgg.totalCost),             pct:delta(paAgg.totalCost,pbAgg.totalCost),        abs:"₹"+fmt(Math.abs(paAgg.totalCost-pbAgg.totalCost),0),          goodUp:false },
+                      { label:"Cost / KM",    a:"₹"+fmt(paAgg.costPerKm,2)+"/km", b:"₹"+fmt(pbAgg.costPerKm,2)+"/km", pct:delta(paAgg.costPerKm,pbAgg.costPerKm),       abs:"₹"+fmt(Math.abs(paAgg.costPerKm-pbAgg.costPerKm),2)+"/km",   goodUp:false },
+                    ].map(row => {
+                      const isUp = row.pct > 0;
+                      const good = isUp === row.goodUp;
+                      const cls  = row.pct === 0 ? s.diffNeutral : good ? s.diffDown : s.diffUp;
+                      return (
+                        <tr key={row.label}>
+                          <td className={s.colMetric}>{row.label}</td>
+                          <td className={s.colVal} style={{ color:TEAL }}>{row.a}</td>
+                          <td className={s.colVal} style={{ color:GOLD }}>{row.b}</td>
+                          <td className={s.colDiff}>
+                            <span className={`${s.diffBadge} ${cls}`}>
+                              {row.pct > 0 ? "▲" : row.pct < 0 ? "▼" : "—"} {Math.abs(row.pct).toFixed(1)}% ({row.abs})
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Net Result card */}
+              {(() => {
+                const costDiff  = paAgg.totalCost - pbAgg.totalCost;
+                const spentMore = costDiff > 0;
+                const kmDiff    = paAgg.totalKm - pbAgg.totalKm;
+                const litDiff   = paAgg.totalLitres - pbAgg.totalLitres;
+                const cpkDiff   = paAgg.costPerKm - pbAgg.costPerKm;
+                const cardBorder = spentMore ? RED : GREEN;
+                return (
+                  <div className={s.netResultCard} style={{ borderColor: cardBorder }}>
+                    <div className={s.netResultTitle} style={{ color: spentMore ? GOLD : GREEN }}>
+                      <span>{spentMore ? "⚠" : "✓"}</span>
+                      <span>{spentMore ? "SPENT MORE" : "SAVED"}</span>
+                    </div>
+                    <div className={s.netResultAmount} style={{ color: spentMore ? RED : GREEN }}>
+                      {costDiff > 0 ? "+" : "−"}₹{fmt(Math.abs(costDiff),0)}
+                    </div>
+                    <div className={s.netResultPct}>{Math.abs(delta(paAgg.totalCost,pbAgg.totalCost)).toFixed(1)}% vs Period B</div>
+                    <div className={s.netResultDivider}/>
+                    <div className={s.netResultRow}>
+                      <span className={s.netResultKey}>KM RUN</span>
+                      <span className={s.netResultVal} style={{ color:TEAL }}>{kmDiff >= 0 ? "+" : ""}{fmt(kmDiff,0)} km</span>
+                    </div>
+                    <div className={s.netResultRow}>
+                      <span className={s.netResultKey}>FUEL USED</span>
+                      <span className={s.netResultVal} style={{ color:TEAL }}>{litDiff >= 0 ? "+" : ""}{fmt(litDiff,1)} L</span>
+                    </div>
+                    <div className={s.netResultRow}>
+                      <span className={s.netResultKey}>COST/KM</span>
+                      <span className={s.netResultVal} style={{ color:TEAL }}>{cpkDiff >= 0 ? "+" : "−"}₹{fmt(Math.abs(cpkDiff),2)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* ════════════════════════════════════════════════════════════════════
@@ -714,18 +784,17 @@ export default function FleetPage() {
 
             <div className={s.tripResultGrid}>
               {[
-                { label:"Distance",        value: tripCalc.dist ? `${tripCalc.dist} km` : "N/A",                              accent:TEAL,   emoji:"📍", sub: null },
-                { label:"Fuel Needed",     value: tripCalc.fuelNeeded ? `${tripCalc.fuelNeeded.toFixed(1)} L` : "N/A",        accent:GOLD,   emoji:"⛽", sub: null },
-                { label:"One Way Cost",    value: tripCalc.cost1 ? `₹${fmt(tripCalc.cost1,0)}` : "N/A",                       accent:GREEN,  emoji:"➡️", sub: null },
-                { label:"Return Cost",     value: tripCalc.cost2 ? `₹${fmt(tripCalc.cost2,0)}` : "N/A",                       accent:RED,    emoji:"🔄", sub: null },
-                { label:"Total Trip Cost", value: tripCalc.totalCost ? `₹${fmt(tripCalc.totalCost,0)}` : "N/A",               accent:PURPLE, emoji:"💰", sub: null },
-                { label:"Vehicle Mileage", value: tripCalc.mileage ? `${tripCalc.mileage.toFixed(2)} km/L` : "N/A",           accent:BLUE,   emoji:"🌿", sub: tripCalc.latestYear ? `Based on ${tripCalc.latestYear} data` : null },
+                { label:"DISTANCE",         value: tripCalc.dist ? `${tripCalc.dist} km` : "N/A",                            sub:"km (one way)",                                                                   accent:TEAL   },
+                { label:"FUEL NEEDED",      value: tripCalc.fuelNeeded ? `${tripCalc.fuelNeeded.toFixed(1)} L` : "N/A",      sub:"litres (one way)",                                                               accent:GOLD   },
+                { label:"ONE WAY COST",     value: tripCalc.cost1 ? `₹${fmt(tripCalc.cost1,0)}` : "N/A",                     sub:"₹ fuel cost",                                                                    accent:GREEN  },
+                { label:"RETURN COST",      value: tripCalc.cost2 ? `₹${fmt(tripCalc.cost2,0)}` : "N/A",                     sub:"₹ fuel cost",                                                                    accent:RED    },
+                { label:"TOTAL TRIP COST",  value: tripCalc.totalCost ? `₹${fmt(tripCalc.totalCost,0)}` : "N/A",             sub:"₹ fuel + ₹/km run",                                                             accent:PURPLE },
+                { label:"VEHICLE MILEAGE",  value: tripCalc.mileage ? `${tripCalc.mileage.toFixed(1)} km/L` : "N/A",        sub: tripCalc.latestYear ? `km/L (${tripCalc.latestYear} avg)` : "km/L avg",         accent:BLUE   },
               ].map(c => (
                 <div key={c.label} className={s.tripCard} style={{ ["--accent" as string]: c.accent }}>
-                  <div className={s.tripEmoji}>{c.emoji}</div>
                   <div className={s.tripLabel}>{c.label}</div>
                   <div className={s.tripValue}>{c.value}</div>
-                  {c.sub && <div className={s.tripSub}>{c.sub}</div>}
+                  <div className={s.tripSub}>{c.sub}</div>
                 </div>
               ))}
             </div>
@@ -768,7 +837,7 @@ export default function FleetPage() {
               <div className={s.ctrlGroup}>
                 <span className={s.ctrlLabel}>Vehicle</span>
                 <select className={s.ctrlSelect} value={logVehicle} onChange={e => { setLogVehicle(e.target.value); setLogPage(1); }}>
-                  <option value="ALL">All Vehicles</option>
+                  <option value="ALL">— All Vehicles —</option>
                   {vehicles.map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
