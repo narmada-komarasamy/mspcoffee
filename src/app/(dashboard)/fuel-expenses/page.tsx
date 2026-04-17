@@ -869,7 +869,19 @@ export default function FleetPage() {
               <button className={s.resetBtn} onClick={() => { setLogVehicle("ALL"); setLogYear("ALL"); setLogMonth("ALL"); setLogDateFrom(""); setLogDateTo(""); setLogPage(1); }}>Reset Filters</button>
             </div>
 
-            <div style={{ fontSize:11, color:"#7a90b0", marginBottom:10 }}>{logRows.length.toLocaleString()} records · newest first</div>
+            {(() => {
+              const logReady = logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo;
+              if (!logReady) return (
+                <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"#3a5070", border:"1px dashed #2a3f5a", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
+                  Select a vehicle or apply a filter above to view records
+                </div>
+              );
+              return null;
+            })()}
+
+            {(logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo) && (
+              <>
+            <div style={{ fontSize:11, color:"#7a90b0", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
 
             <div className={s.dailyTableWrapper}>
               <table className={s.dailyTable}>
@@ -933,6 +945,8 @@ export default function FleetPage() {
                 <span style={{ fontSize:11, color:"#7a90b0" }}>Page {logPage} of {logPages}</span>
                 <button onClick={() => setLogPage(p => Math.min(logPages,p+1))} disabled={logPage===logPages} className={s.pageBtn}><ChevronRight size={14}/></button>
               </div>
+            )}
+              </>
             )}
           </>
         )}
