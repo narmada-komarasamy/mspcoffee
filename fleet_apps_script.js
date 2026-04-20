@@ -3,190 +3,315 @@
  * Google Apps Script: auto-sync Google Sheet → Supabase fleet_daily table
  *
  * SETUP (one-time):
- *  1. Open your Fleet Expenses Google Sheet
- *  2. Extensions → Apps Script
- *  3. Paste this entire file (constants already filled in below)
- *  4. Save → select setupTrigger → Run → authorise all permissions
- *     This installs an onEdit trigger so the sheet syncs to Supabase
- *     instantly every time a cell is changed.
- *  5. Verify: select testSync → Run and check Execution log.
+ *  1. Run setupProperties() — paste real values first, then run.
+ *  2. Run setupTrigger()    — installs onEdit trigger on onEditSync.
+ *  3. Run rebuildFleetFromSheet() — backfills DB from current sheet state.
  *
- * SHEET FORMAT (first row = headers, data from row 2):
+ * SHEET FORMAT (row 1 = headers, data from row 2):
  *   Date | Vehicle ID | Vehicle Type | Account | Fuel Type |
  *   Starting KM | Closing KM | Fuel Filled (L) | Fuel Cost |
  *   Maint Cost | Maintenance Performed | Remarks
  */
 
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const SUPABASE_URL = "https://aeawxovvyvpcjkhyxgcq.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYXd4b3Z2eXZwY2praHl4Z2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDY1MTgsImV4cCI6MjA5MDUyMjUxOH0.V8Bu91H6lidK1A4qqyPAotp7KFRaF9dm2iEFZvWxWPg";
-const TABLE_NAME   = "fleet_daily";
-const SHEET_NAME   = "Fleet Data";  // exact tab name in your Sheet
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ─── Non-secret constants ─────────────────────────────────────────────────────
 const VALID_ACCOUNTS      = ["BVE", "HFE", "ME", "ORE", "RSE", "SE"];
 const VALID_VEHICLE_TYPES = ["Estate", "Personal"];
 const VALID_FUEL_TYPES    = ["Diesel", "Petrol"];
 
-function syncFleetToSupabase() {
-  const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    Logger.log("Sheet not found: " + SHEET_NAME);
-    return;
-  }
+// ─── Script Properties (secrets live here, not in code) ──────────────────────
+/**
+ * Run ONCE. Replace placeholder values with real ones before running.
+ * After running, the values are stored in Script Properties — safe to leave
+ * this function in place (it just overwrites the same values on re-run).
+ */
+function setupProperties() {
+  PropertiesService.getScriptProperties().setProperties({
+    SUPABASE_URL: "https://aeawxovvyvpcjkhyxgcq.supabase.co",
+    SUPABASE_KEY: "<paste anon key here>",
+    TABLE_NAME:   "fleet_daily",
+    SHEET_NAME:   "Fleet Data",
+  }, true);
+  Logger.log("Script properties set. Delete this function body after running once.");
+}
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) { Logger.log("No data rows found."); return; }
+function cfg() {
+  const p   = PropertiesService.getScriptProperties();
+  const get = k => {
+    const v = p.getProperty(k);
+    if (!v) throw new Error(`Missing script property: ${k}. Run setupProperties() once.`);
+    return v;
+  };
+  return {
+    supabaseUrl: get("SUPABASE_URL"),
+    supabaseKey: get("SUPABASE_KEY"),
+    table:       get("TABLE_NAME"),
+    sheet:       get("SHEET_NAME"),
+  };
+}
 
-  const range   = sheet.getRange(1, 1, lastRow, sheet.getLastColumn());
-  const values  = range.getValues();
-  const headers = values[0].map(h => String(h).trim().toLowerCase());
-
-  // ── Header index map ───────────────────────────────────────────────────────
-  const col = {
-    date:                  findCol(headers, ["date"]),
-    vehicle_id:            findCol(headers, ["vehicle id", "vehicle"]),
-    vehicle_type:          findCol(headers, ["vehicle type", "type"]),
-    account:               findCol(headers, ["account"]),
-    fuel_type:             findCol(headers, ["fuel type", "fuel"]),
-    starting_km:           findCol(headers, ["starting km", "start km", "opening km"]),
-    closing_km:            findCol(headers, ["closing km", "close km", "ending km"]),
-    fuel_filled_l:         findCol(headers, ["fuel filled (l)", "fuel filled", "litres", "liters"]),
-    fuel_cost:             findCol(headers, ["fuel cost", "fuel expense"]),
-    maint_cost:            findCol(headers, ["maint cost", "maintenance cost", "maintenance"]),
-    maintenance_performed: findCol(headers, ["maintenance performed", "maint performed", "work done"]),
-    remarks:               findCol(headers, ["remarks", "notes"]),
+// ─── Header resolution ────────────────────────────────────────────────────────
+function resolveColumns(headers) {
+  const find = candidates => {
+    for (const c of candidates) {
+      const i = headers.indexOf(c);
+      if (i !== -1) return i;
+    }
+    return -1;
   };
 
-  const rows    = [];
-  const skipped = [];
+  const col = {
+    date:                  find(["date", "sync date", "entry date", "txn date"]),
+    vehicle_id:            find(["vehicle id", "vehicle"]),
+    vehicle_type:          find(["vehicle type", "type"]),
+    account:               find(["account"]),
+    fuel_type:             find(["fuel type", "fuel"]),
+    starting_km:           find(["starting km", "start km", "opening km"]),
+    closing_km:            find(["closing km", "close km", "ending km"]),
+    fuel_filled_l:         find(["fuel filled (l)", "fuel filled", "litres", "liters"]),
+    fuel_cost:             find(["fuel cost", "fuel expense"]),
+    maint_cost:            find(["maint cost", "maintenance cost", "maintenance"]),
+    maintenance_performed: find(["maintenance performed", "maint performed", "work done"]),
+    remarks:               find(["remarks", "notes"]),
+  };
 
-  for (let i = 1; i < values.length; i++) {
-    const row    = values[i];
-    const rowNum = i + 1;
-
-    const rawDate = row[col.date];
-    if (!rawDate) continue; // skip empty rows silently
-    const date = formatDate(rawDate);
-    if (!date) { skipped.push("Row " + rowNum + ": invalid date '" + rawDate + "'"); continue; }
-
-    const vehicle_id = String(row[col.vehicle_id] ?? "").trim();
-    if (!vehicle_id) { skipped.push("Row " + rowNum + ": missing Vehicle ID"); continue; }
-
-    const vehicle_type    = coerce(row[col.vehicle_type], "Estate", VALID_VEHICLE_TYPES);
-    const account         = coerce(row[col.account],      "BVE",    VALID_ACCOUNTS);
-    const fuel_type       = coerce(row[col.fuel_type],    "Diesel", VALID_FUEL_TYPES);
-    const starting_km     = num(row[col.starting_km]);
-    const closing_km      = num(row[col.closing_km]);
-    const km_run          = Math.max(0, closing_km - starting_km);
-    const fuel_filled_l   = num(row[col.fuel_filled_l]);
-    const fuel_cost       = num(row[col.fuel_cost]);
-    const maint_cost      = num(row[col.maint_cost]);
-    const total_cost      = fuel_cost + maint_cost;
-    const avg_mileage     = fuel_filled_l > 0 ? round3(km_run / fuel_filled_l) : 0;
-    const cost_per_km     = km_run > 0 ? round3(total_cost / km_run) : 0;
-    const maintenance_performed = String(row[col.maintenance_performed] ?? "").trim();
-    const remarks               = String(row[col.remarks]               ?? "").trim();
-
-    const d     = new Date(date);
-    const month = d.getMonth() + 1;
-    const year  = d.getFullYear();
-
-    rows.push({
-      date, month, year, vehicle_id, vehicle_type, account, fuel_type,
-      starting_km, closing_km, km_run, fuel_filled_l, fuel_cost, maint_cost,
-      total_cost, avg_mileage, cost_per_km, maintenance_performed, remarks,
-    });
+  // Required — throw loudly so execution turns red in Apps Script UI
+  const missing = ["date", "vehicle_id"].filter(k => col[k] === -1);
+  if (missing.length) {
+    throw new Error(
+      `Required header missing. Found headers: ${JSON.stringify(headers)}. Needed: ${missing.join(", ")}.`
+    );
   }
 
-  if (skipped.length > 0) Logger.log("Skipped rows:\n" + skipped.join("\n"));
-  if (rows.length === 0) { Logger.log("No valid rows to sync."); return; }
-
-  // ── Deduplicate: keep last occurrence of each date + vehicle_id ───────────
-  const seen = new Map();
-  for (const row of rows) {
-    seen.set(row.date + "|" + row.vehicle_id, row);
+  // Optional — log once per run
+  const OPTIONAL_DEFAULTS = {
+    vehicle_type: "Estate", account: "BVE", fuel_type: "Diesel",
+    starting_km: 0, closing_km: 0, fuel_filled_l: 0,
+    fuel_cost: 0, maint_cost: 0, maintenance_performed: "''", remarks: "''",
+  };
+  for (const [k, def] of Object.entries(OPTIONAL_DEFAULTS)) {
+    if (col[k] === -1) Logger.log(`Note: optional header '${k}' not found, defaulting to ${def}`);
   }
-  const dedupedRows = Array.from(seen.values());
+
+  return col;
+}
+
+// ─── Row parsing ──────────────────────────────────────────────────────────────
+/**
+ * Parses one data row. Returns a DB record object or null.
+ * Mutates `skip` to accumulate skip-reason counts and first-offender samples.
+ */
+function parseRow(rowValues, col, rowNum, skip) {
+  const rawDate = rowValues[col.date];
+  if (!rawDate) { skip.emptyDate++; return null; }
+
+  const date = formatDate(rawDate);
+  if (!date) {
+    skip.invalidDate++;
+    if (!skip.invalidDateSample) skip.invalidDateSample = `row ${rowNum} raw='${rawDate}'`;
+    return null;
+  }
+
+  const vehicle_id = String(rowValues[col.vehicle_id] ?? "").trim();
+  if (!vehicle_id) {
+    skip.missingVehicleId++;
+    if (!skip.missingVehicleSample) skip.missingVehicleSample = `row ${rowNum}`;
+    return null;
+  }
+
+  const vehicle_type  = coerce(rowValues[col.vehicle_type],  "Estate", VALID_VEHICLE_TYPES);
+  const account       = coerce(rowValues[col.account],       "BVE",    VALID_ACCOUNTS);
+  const fuel_type     = coerce(rowValues[col.fuel_type],     "Diesel", VALID_FUEL_TYPES);
+  const starting_km   = num(rowValues[col.starting_km]);
+  const closing_km    = num(rowValues[col.closing_km]);
+  const km_run        = Math.max(0, closing_km - starting_km);
+  const fuel_filled_l = num(rowValues[col.fuel_filled_l]);
+  const fuel_cost     = num(rowValues[col.fuel_cost]);
+  const maint_cost    = num(rowValues[col.maint_cost]);
+  const total_cost    = fuel_cost + maint_cost;
+  const avg_mileage   = fuel_filled_l > 0 ? round3(km_run / fuel_filled_l) : 0;
+  const cost_per_km   = km_run > 0 ? round3(total_cost / km_run) : 0;
+  const maintenance_performed = String(rowValues[col.maintenance_performed] ?? "").trim();
+  const remarks               = String(rowValues[col.remarks]               ?? "").trim();
+
+  const d = new Date(date);
+  skip.ok++;
+  return {
+    date, month: d.getMonth() + 1, year: d.getFullYear(),
+    vehicle_id, vehicle_type, account, fuel_type,
+    starting_km, closing_km, km_run, fuel_filled_l, fuel_cost, maint_cost,
+    total_cost, avg_mileage, cost_per_km, maintenance_performed, remarks,
+  };
+}
+
+// ─── Skip summary ─────────────────────────────────────────────────────────────
+function logSkipSummary(total, s) {
   Logger.log(
-    "Parsed " + rows.length + " rows → " + dedupedRows.length +
-    " unique after dedup (removed " + (rows.length - dedupedRows.length) + " duplicates)"
+    `Parsed ${total} rows from sheet:\n` +
+    `  ok:                ${s.ok}\n` +
+    `  empty date:        ${s.emptyDate}\n` +
+    `  invalid date:      ${s.invalidDate}` +
+      (s.invalidDateSample ? ` (sample: ${s.invalidDateSample})` : "") + "\n" +
+    `  missing vehicle:   ${s.missingVehicleId}` +
+      (s.missingVehicleSample ? ` (sample: ${s.missingVehicleSample})` : "")
   );
+}
 
-  // ── Step 1: Delete all existing rows ──────────────────────────────────────
-  const delResp = UrlFetchApp.fetch(
-    SUPABASE_URL + "/rest/v1/" + TABLE_NAME + "?id=gte.0",
-    {
-      method: "DELETE",
-      headers: buildHeaders(),
-      muteHttpExceptions: true,
-    }
-  );
-  Logger.log("DELETE status: " + delResp.getResponseCode());
-
-  // ── Step 2: Batch insert ───────────────────────────────────────────────────
-  const BATCH    = 500;
-  let inserted   = 0;
-
-  for (let i = 0; i < dedupedRows.length; i += BATCH) {
-    const batch = dedupedRows.slice(i, i + BATCH);
+// ─── Upsert helper ────────────────────────────────────────────────────────────
+/** Returns true if any batch failed. */
+function upsertRows(rows, config) {
+  const BATCH = 500;
+  let anyFailed = false;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
     const resp  = UrlFetchApp.fetch(
-      SUPABASE_URL + "/rest/v1/" + TABLE_NAME,
+      `${config.supabaseUrl}/rest/v1/${config.table}?on_conflict=date,vehicle_id`,
       {
-        method: "POST",
-        headers: {
-          ...buildHeaders(),
-          "Prefer": "return=minimal",
-        },
+        method:  "POST",
+        headers: { ...buildHeaders(config.supabaseKey), "Prefer": "resolution=merge-duplicates,return=minimal" },
         payload: JSON.stringify(batch),
         muteHttpExceptions: true,
       }
     );
     const code = resp.getResponseCode();
-    if (code >= 200 && code < 300) {
-      inserted += batch.length;
-    } else {
+    if (code < 200 || code >= 300) {
       Logger.log(
-        "Batch insert error (rows " + i + "–" + (i + batch.length - 1) + "): " +
-        code + " — " + resp.getContentText().slice(0, 300)
+        `Upsert error (rows ${i}–${i + batch.length - 1}): ${code} — ` +
+        resp.getContentText().slice(0, 500)
       );
+      anyFailed = true;
     }
   }
-
-  Logger.log("Sync complete: " + inserted + " / " + dedupedRows.length + " rows inserted.");
+  return anyFailed;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function buildHeaders() {
-  return {
-    "apikey":        SUPABASE_KEY,
-    "Authorization": "Bearer " + SUPABASE_KEY,
-    "Content-Type":  "application/json",
-  };
-}
-
-function findCol(headers, candidates) {
-  for (const c of candidates) {
-    const idx = headers.indexOf(c);
-    if (idx !== -1) return idx;
+// ─── onEdit fast path (one upsert per edit) ───────────────────────────────────
+function onEditSync(e) {
+  if (!e || !e.range) {
+    throw new Error(
+      "onEditSync called without an event. Use rebuildFleetFromSheet or wipeAndRebuildFleet instead."
+    );
   }
-  return -1;
+
+  const config = cfg();
+  const sheet  = e.range.getSheet();
+  if (sheet.getName() !== config.sheet) return;
+  if (e.range.getRow() === 1) { Logger.log("Header row edited — skipping sync."); return; }
+
+  const lastCol  = sheet.getLastColumn();
+  const headers  = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+                     .map(h => String(h).trim().toLowerCase());
+  const col = resolveColumns(headers); // throws (red execution) if required headers missing
+
+  const firstRow  = e.range.getRow();
+  const numRows   = e.range.getLastRow() - firstRow + 1;
+  const allValues = sheet.getRange(firstRow, 1, numRows, lastCol).getValues();
+  const skip      = { ok: 0, emptyDate: 0, invalidDate: 0, missingVehicleId: 0 };
+  const records   = [];
+
+  for (let i = 0; i < numRows; i++) {
+    const rec = parseRow(allValues[i], col, firstRow + i, skip);
+    if (rec) records.push(rec);
+  }
+
+  if (records.length === 0) {
+    // Don't throw — user may be mid-typing
+    Logger.log(`Edited rows ${firstRow}–${firstRow + numRows - 1} produced no valid records: ${JSON.stringify(skip)}`);
+    return;
+  }
+
+  upsertRows(records, config);
+  Logger.log(`Upserted ${records.length} record(s) from edited rows ${firstRow}–${firstRow + numRows - 1}.`);
+}
+
+// ─── Rebuild: safe upsert, no DELETE ─────────────────────────────────────────
+function rebuildFleetFromSheet() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { _rebuild(false); } finally { lock.releaseLock(); }
+}
+
+// ─── Nuclear option ───────────────────────────────────────────────────────────
+/**
+ * Do NOT run casually. This wipes the entire fleet_daily table and re-syncs
+ * from the current sheet state. If the sheet has bad/missing data, the DB
+ * will mirror that.
+ */
+function wipeAndRebuildFleet() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { _rebuild(true); } finally { lock.releaseLock(); }
+}
+
+function _rebuild(wipe) {
+  const config = cfg();
+  const sheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(config.sheet);
+  if (!sheet) throw new Error(`Sheet not found: ${config.sheet}`);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) throw new Error("No data rows found in sheet.");
+
+  const lastCol = sheet.getLastColumn();
+  const values  = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  const headers = values[0].map(h => String(h).trim().toLowerCase());
+  const col     = resolveColumns(headers); // throws (red) if required headers missing
+
+  const skip    = { ok: 0, emptyDate: 0, invalidDate: 0, missingVehicleId: 0 };
+  const records = [];
+  for (let i = 1; i < values.length; i++) {
+    const rec = parseRow(values[i], col, i + 1, skip);
+    if (rec) records.push(rec);
+  }
+
+  logSkipSummary(values.length - 1, skip);
+  if (skip.ok === 0) {
+    throw new Error("No valid rows produced from sheet — see row-skip summary above");
+  }
+
+  if (wipe) {
+    const del = UrlFetchApp.fetch(
+      `${config.supabaseUrl}/rest/v1/${config.table}?id=gte.0`,
+      { method: "DELETE", headers: buildHeaders(config.supabaseKey), muteHttpExceptions: true }
+    );
+    Logger.log(`DELETE all rows: ${del.getResponseCode()}`);
+  }
+
+  const anyFailed = upsertRows(records, config);
+  if (anyFailed) throw new Error("Some batches failed — see log");
+  Logger.log(`${wipe ? "Wipe+rebuild" : "Rebuild"} complete: ${skip.ok} rows upserted.`);
+}
+
+// ─── Trigger setup ────────────────────────────────────────────────────────────
+/**
+ * Run ONCE (or again to update). Cleans up stale triggers (old and new handler
+ * names) before installing the fresh one.
+ */
+function setupTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    const fn = t.getHandlerFunction();
+    if (fn === "onEditSync" || fn === "syncFleetToSupabase") ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger("onEditSync")
+    .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
+    .onEdit()
+    .create();
+  Logger.log("✓ Trigger installed. Run rebuildFleetFromSheet() once to backfill the DB from the current sheet state.");
+}
+
+// ─── Low-level helpers ────────────────────────────────────────────────────────
+function buildHeaders(key) {
+  return { "apikey": key, "Authorization": "Bearer " + key, "Content-Type": "application/json" };
 }
 
 function formatDate(raw) {
   if (raw instanceof Date) {
-    const y = raw.getFullYear();
-    const m = String(raw.getMonth() + 1).padStart(2, "0");
-    const d = String(raw.getDate()).padStart(2, "0");
-    return y + "-" + m + "-" + d;
+    return raw.getFullYear() + "-" +
+           String(raw.getMonth() + 1).padStart(2, "0") + "-" +
+           String(raw.getDate()).padStart(2, "0");
   }
   const s = String(raw).trim();
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
-    const parts = s.split("/");
-    // DD/MM/YYYY (Indian format)
-    return parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
+    const [day, mon, yr] = s.split("/");
+    return `${yr}-${mon.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   const d = new Date(s);
@@ -204,43 +329,9 @@ function num(v) {
   return isNaN(n) ? 0 : n;
 }
 
-function round3(v) {
-  return Math.round(v * 1000) / 1000;
-}
+function round3(v) { return Math.round(v * 1000) / 1000; }
 
 function coerce(val, defaultVal, valid) {
   const s = String(val ?? "").trim();
   return valid.includes(s) ? s : defaultVal;
-}
-
-// ─── Trigger setup ────────────────────────────────────────────────────────────
-/**
- * Run this ONCE to install an onEdit trigger.
- * After that, every cell edit in the sheet fires syncFleetToSupabase instantly.
- * Re-running it is safe — it removes old triggers first to avoid duplicates.
- */
-function setupTrigger() {
-  // Remove any existing fleet sync triggers to avoid duplicates
-  ScriptApp.getProjectTriggers().forEach(function(t) {
-    if (t.getHandlerFunction() === "syncFleetToSupabase") {
-      ScriptApp.deleteTrigger(t);
-    }
-  });
-
-  // Install onEdit installable trigger (fires on any cell change)
-  ScriptApp.newTrigger("syncFleetToSupabase")
-    .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
-    .onEdit()
-    .create();
-
-  Logger.log("✓ onEdit trigger installed — sheet will now sync to Supabase instantly on every edit.");
-
-  // Run an immediate sync so data is up to date right now
-  Logger.log("Running initial sync...");
-  syncFleetToSupabase();
-}
-
-// ─── Test helper ──────────────────────────────────────────────────────────────
-function testSync() {
-  syncFleetToSupabase();
 }
