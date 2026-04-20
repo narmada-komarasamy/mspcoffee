@@ -156,6 +156,14 @@ function logSkipSummary(total, s) {
   );
 }
 
+// ─── Dedup helper ─────────────────────────────────────────────────────────────
+/** Keeps last occurrence of each (date, vehicle_id) pair within rows. */
+function dedupRows(rows) {
+  const seen = new Map();
+  for (const r of rows) seen.set(r.date + "|" + r.vehicle_id, r);
+  return Array.from(seen.values());
+}
+
 // ─── Upsert helper ────────────────────────────────────────────────────────────
 /** Returns true if any batch failed. */
 function upsertRows(rows, config) {
@@ -219,8 +227,9 @@ function onEditSync(e) {
     return;
   }
 
-  upsertRows(records, config);
-  Logger.log(`Upserted ${records.length} record(s) from edited rows ${firstRow}–${firstRow + numRows - 1}.`);
+  const toUpsert = dedupRows(records);
+  upsertRows(toUpsert, config);
+  Logger.log(`Upserted ${toUpsert.length} record(s) from edited rows ${firstRow}–${firstRow + numRows - 1}.`);
 }
 
 // ─── Rebuild: safe upsert, no DELETE ─────────────────────────────────────────
@@ -267,6 +276,11 @@ function _rebuild(wipe) {
     throw new Error("No valid rows produced from sheet — see row-skip summary above");
   }
 
+  const deduped = dedupRows(records);
+  if (deduped.length < records.length) {
+    Logger.log(`Deduped ${records.length - deduped.length} duplicate (date, vehicle_id) pairs — keeping last occurrence.`);
+  }
+
   if (wipe) {
     const del = UrlFetchApp.fetch(
       `${config.supabaseUrl}/rest/v1/${config.table}?id=gte.0`,
@@ -275,9 +289,9 @@ function _rebuild(wipe) {
     Logger.log(`DELETE all rows: ${del.getResponseCode()}`);
   }
 
-  const anyFailed = upsertRows(records, config);
+  const anyFailed = upsertRows(deduped, config);
   if (anyFailed) throw new Error("Some batches failed — see log");
-  Logger.log(`${wipe ? "Wipe+rebuild" : "Rebuild"} complete: ${skip.ok} rows upserted.`);
+  Logger.log(`${wipe ? "Wipe+rebuild" : "Rebuild"} complete: ${deduped.length} rows upserted.`);
 }
 
 // ─── Trigger setup ────────────────────────────────────────────────────────────
