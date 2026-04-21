@@ -49,15 +49,19 @@ function syncFleetToSupabase() {
     vehicle_id:            findCol(headers, ["vehicle id", "vehicle"]),
     vehicle_type:          findCol(headers, ["vehicle type", "type"]),
     account:               findCol(headers, ["account"]),
-    fuel_type:             findCol(headers, ["fuel type", "fuel"]),
+    fuel_type:             findCol(headers, ["fuel type", "fuel category", "fuel"]),
     starting_km:           findCol(headers, ["starting km", "start km", "opening km"]),
     closing_km:            findCol(headers, ["closing km", "close km", "ending km"]),
     fuel_filled_l:         findCol(headers, ["fuel filled (l)", "fuel filled", "litres", "liters"]),
-    fuel_cost:             findCol(headers, ["fuel cost", "fuel expense"]),
-    maint_cost:            findCol(headers, ["maint cost", "maintenance cost", "maintenance"]),
+    fuel_cost:             findCol(headers, ["fuel cost (₹)", "fuel cost(₹)", "fuel cost", "fuel expense", "fuel amount", "fuel amt", "fuel charges", "fuel (₹)", "fuel(₹)", "cost of fuel", "petrol cost", "diesel cost", "petrol/diesel cost"]),
+    maint_cost:            findCol(headers, ["maint cost (₹)", "maint cost(₹)", "maint cost", "maintenance cost (₹)", "maintenance cost(₹)", "maintenance cost", "maintenance", "maint", "maintenance charges", "maintenance amt", "maintenance amount", "repair cost", "service cost", "maint charges", "maint amt", "maintenance expense"]),
     maintenance_performed: findCol(headers, ["maintenance performed", "maint performed", "work done"]),
     remarks:               findCol(headers, ["remarks", "notes"]),
   };
+
+  // ── Warn on undetected cost columns ───────────────────────────────────────
+  if (col.fuel_cost === -1)  Logger.log("⚠️  WARNING: 'Fuel Cost' column not found. Headers detected: " + headers.join(" | "));
+  if (col.maint_cost === -1) Logger.log("⚠️  WARNING: 'Maint Cost' column not found. Headers detected: " + headers.join(" | "));
 
   const rows    = [];
   const skipped = [];
@@ -114,30 +118,20 @@ function syncFleetToSupabase() {
     " unique after dedup (removed " + (rows.length - dedupedRows.length) + " duplicates)"
   );
 
-  // ── Step 1: Delete all existing rows ──────────────────────────────────────
-  const delResp = UrlFetchApp.fetch(
-    SUPABASE_URL + "/rest/v1/" + TABLE_NAME + "?id=gte.0",
-    {
-      method: "DELETE",
-      headers: buildHeaders(),
-      muteHttpExceptions: true,
-    }
-  );
-  Logger.log("DELETE status: " + delResp.getResponseCode());
-
-  // ── Step 2: Batch insert ───────────────────────────────────────────────────
-  const BATCH    = 500;
-  let inserted   = 0;
+  // ── Upsert in batches (no delete — keeps the table live during sync) ────────
+  // Conflict target: date + vehicle_id (unique constraint in DB)
+  const BATCH  = 500;
+  let upserted = 0;
 
   for (let i = 0; i < dedupedRows.length; i += BATCH) {
     const batch = dedupedRows.slice(i, i + BATCH);
     const resp  = UrlFetchApp.fetch(
-      SUPABASE_URL + "/rest/v1/" + TABLE_NAME,
+      SUPABASE_URL + "/rest/v1/" + TABLE_NAME + "?on_conflict=date,vehicle_id",
       {
         method: "POST",
         headers: {
           ...buildHeaders(),
-          "Prefer": "return=minimal",
+          "Prefer": "resolution=merge-duplicates,return=minimal",
         },
         payload: JSON.stringify(batch),
         muteHttpExceptions: true,
@@ -145,16 +139,16 @@ function syncFleetToSupabase() {
     );
     const code = resp.getResponseCode();
     if (code >= 200 && code < 300) {
-      inserted += batch.length;
+      upserted += batch.length;
     } else {
       Logger.log(
-        "Batch insert error (rows " + i + "–" + (i + batch.length - 1) + "): " +
+        "Batch upsert error (rows " + i + "–" + (i + batch.length - 1) + "): " +
         code + " — " + resp.getContentText().slice(0, 300)
       );
     }
   }
 
-  Logger.log("Sync complete: " + inserted + " / " + dedupedRows.length + " rows inserted.");
+  Logger.log("Sync complete: " + upserted + " / " + dedupedRows.length + " rows upserted.");
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -243,4 +237,42 @@ function setupTrigger() {
 // ─── Test helper ──────────────────────────────────────────────────────────────
 function testSync() {
   syncFleetToSupabase();
+}
+
+// ─── Diagnose headers ─────────────────────────────────────────────────────────
+/**
+ * Run this to see exactly what headers your sheet has and which columns
+ * the script found. Useful for debugging missing cost data.
+ */
+function diagnoseHeaders() {
+  const ss      = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet   = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) { Logger.log("Sheet not found: " + SHEET_NAME); return; }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn())
+                       .getValues()[0]
+                       .map(h => String(h).trim());
+
+  Logger.log("=== RAW HEADERS (as seen in row 1) ===");
+  headers.forEach(function(h, i) {
+    Logger.log("  Col " + (i + 1) + ": \"" + h + "\"");
+  });
+
+  const lc = headers.map(h => h.toLowerCase());
+
+  const checks = {
+    fuel_cost:  findCol(lc, ["fuel cost (₹)", "fuel cost(₹)", "fuel cost", "fuel expense", "fuel amount", "fuel amt", "fuel charges", "fuel (₹)", "fuel(₹)", "cost of fuel", "petrol cost", "diesel cost", "petrol/diesel cost"]),
+    maint_cost: findCol(lc, ["maint cost (₹)", "maint cost(₹)", "maint cost", "maintenance cost (₹)", "maintenance cost(₹)", "maintenance cost", "maintenance", "maint", "maintenance charges", "maintenance amt", "maintenance amount", "repair cost", "service cost", "maint charges", "maint amt", "maintenance expense"]),
+  };
+
+  Logger.log("\n=== COST COLUMN DETECTION ===");
+  for (var key in checks) {
+    var idx = checks[key];
+    if (idx === -1) {
+      Logger.log("  ❌ " + key + " → NOT FOUND (column will be 0)");
+    } else {
+      Logger.log("  ✅ " + key + " → found at Col " + (idx + 1) + ": \"" + headers[idx] + "\"");
+    }
+  }
+  Logger.log("\nIf a column shows NOT FOUND, rename that column header in the sheet to match one of the expected names listed in fleet_apps_script.js, then run testSync().");
 }

@@ -34,14 +34,17 @@ const VEHICLE_PALETTE = [
 const fmt  = (n: number, dec = 0) => n.toLocaleString("en-IN", { maximumFractionDigits: dec, minimumFractionDigits: dec });
 const fmtC = (n: number) => n >= 100000 ? "₹" + (n/100000).toFixed(2) + "L" : n >= 1000 ? "₹" + (n/1000).toFixed(1) + "k" : "₹" + fmt(n);
 
+// Supabase returns numeric PostgreSQL columns as strings — coerce everything to number
+const n = (v: unknown) => Number(v) || 0;
+
 function aggRows(rows: Row[]) {
-  const totalKm     = rows.reduce((a, r) => a + r.km_run, 0);
-  const totalLitres = rows.reduce((a, r) => a + r.fuel_filled_l, 0);
-  const fuelCost    = rows.reduce((a, r) => a + r.fuel_cost, 0);
-  const maintCost   = rows.reduce((a, r) => a + r.maint_cost, 0);
+  const totalKm     = rows.reduce((a, r) => a + n(r.km_run), 0);
+  const totalLitres = rows.reduce((a, r) => a + n(r.fuel_filled_l), 0);
+  const fuelCost    = rows.reduce((a, r) => a + n(r.fuel_cost), 0);
+  const maintCost   = rows.reduce((a, r) => a + n(r.maint_cost), 0);
   const totalCost   = fuelCost + maintCost;
-  const startKm     = rows.length > 0 ? Math.min(...rows.map(r => r.starting_km).filter(v => v > 0)) : 0;
-  const closeKm     = rows.length > 0 ? Math.max(...rows.map(r => r.closing_km)) : 0;
+  const startKm     = rows.length > 0 ? Math.min(...rows.map(r => n(r.starting_km)).filter(v => v > 0)) : 0;
+  const closeKm     = rows.length > 0 ? Math.max(...rows.map(r => n(r.closing_km))) : 0;
   return {
     totalKm, totalLitres, fuelCost, maintCost, totalCost,
     avgMileage: totalLitres > 0 ? totalKm / totalLitres : 0,
@@ -134,7 +137,8 @@ export default function FleetPage() {
         .from("fleet_daily").select("*")
         .order("date", { ascending: true })
         .range(from, from + BATCH - 1);
-      if (error || !rows || rows.length === 0) break;
+      if (error) { console.error("[fleet] loadData error:", error); break; }
+      if (!rows || rows.length === 0) break;
       all = [...all, ...rows];
       if (rows.length < BATCH) break;
       from += BATCH;
@@ -386,13 +390,14 @@ export default function FleetPage() {
               </div>
             </div>
 
-            <div className={s.kpiGrid2Col} style={{ marginBottom:28 }}>
+            <div className={s.kpiGrid3Col} style={{ marginBottom:28 }}>
               {[
                 { emoji:"⛽", label:"Total Fuel Filled",        value:fmt(svAgg.totalLitres,0),         unit:"L",    sub:`${svRows.length} fill-ups recorded`,                  accent:TEAL   },
                 { emoji:"🛣️", label:"Total KM Running",         value:fmt(svAgg.totalKm,0),              unit:"km",  sub:`Odometer: ${fmt(svAgg.startKm,0)} → ${fmt(svAgg.closeKm,0)}`, accent:GOLD   },
                 { emoji:"🌿", label:"Vehicle Mileage",           value:fmt(svAgg.avgMileage,2),          unit:"km/L", sub:"Average fuel efficiency",                             accent:GREEN  },
                 { emoji:"💰", label:"Vehicle Fuel Cost",         value:fmtC(svAgg.fuelCost),             unit:"",    sub:"Total fuel expenditure (₹)",                          accent:RED    },
-                { emoji:"🔧", label:"Fuel + Maintenance Cost",   value:fmtC(svAgg.totalCost),            unit:"",    sub:"Combined operational cost (₹)",                       accent:PURPLE },
+                { emoji:"🔧", label:"Maintenance Cost",          value:fmtC(svAgg.maintCost),            unit:"",    sub:"Total maintenance expenditure (₹)",                   accent:PURPLE },
+                { emoji:"💸", label:"Fuel + Maintenance Cost",   value:fmtC(svAgg.totalCost),            unit:"",    sub:"Combined operational cost (₹)",                       accent:"#e67e22"},
                 { emoji:"📊", label:"Running Cost / KM",         value:fmt(svAgg.costPerKm,2),           unit:"₹/km",sub:"Total vehicle cost per kilometre",                    accent:BLUE   },
                 { emoji:"🚀", label:"Starting KM",               value:fmt(svAgg.startKm,0),             unit:"",    sub:"First odometer reading",                              accent:"#1abc9c"},
                 { emoji:"🏁", label:"Closing KM",                value:fmt(svAgg.closeKm,0),             unit:"",    sub:"Final odometer reading",                              accent:"#e74c3c"},
@@ -449,14 +454,17 @@ export default function FleetPage() {
               <button className={s.resetBtn} onClick={() => { setKpiVehicle("ALL"); setKpiYear("ALL"); setKpiMonth("ALL"); setKpiType("ALL"); }}>Reset</button>
             </div>
 
-            <div className={s.kpiGrid2Col}>
+            <div className={s.kpiGrid3Col}>
               {[
                 { emoji:"⛽", label:"Total Fuel Filled",       value:fmt(kpiAgg.totalLitres,0),   unit:"L",    sub:"Litres of fuel consumed",                    accent:TEAL   },
                 { emoji:"🛣️", label:"Total KM Running",        value:fmt(kpiAgg.totalKm,0),        unit:"km",  sub:"Distance covered",                           accent:GOLD   },
                 { emoji:"🌿", label:"Vehicle Mileage",          value:fmt(kpiAgg.avgMileage,2),    unit:"km/L", sub:"Average fuel efficiency",                    accent:GREEN  },
                 { emoji:"💰", label:"Vehicle Fuel Cost",        value:fmtC(kpiAgg.fuelCost),       unit:"",    sub:"Total fuel expenditure (₹)",                 accent:RED    },
-                { emoji:"🔧", label:"Fuel + Maintenance Cost",  value:fmtC(kpiAgg.totalCost),      unit:"",    sub:"Combined operational cost (₹)",              accent:PURPLE },
+                { emoji:"🔧", label:"Maintenance Cost",         value:fmtC(kpiAgg.maintCost),      unit:"",    sub:"Total maintenance expenditure (₹)",          accent:PURPLE },
+                { emoji:"💸", label:"Fuel + Maintenance Cost",  value:fmtC(kpiAgg.totalCost),      unit:"",    sub:"Combined operational cost (₹)",              accent:"#e67e22"},
                 { emoji:"📊", label:"Running Cost / KM",        value:fmt(kpiAgg.costPerKm,2),     unit:"₹/km",sub:"Total vehicle cost per kilometre",           accent:BLUE   },
+                { emoji:"🚀", label:"Starting KM",              value:fmt(kpiAgg.startKm,0),       unit:"",    sub:"First odometer reading",                     accent:"#1abc9c"},
+                { emoji:"🏁", label:"Closing KM",               value:fmt(kpiAgg.closeKm,0),       unit:"",    sub:"Final odometer reading",                     accent:"#e74c3c"},
               ].map(k => (
                 <div key={k.label} className={s.kpiCard} style={{ ["--accent" as string]: k.accent }}>
                   <div className={s.kpiIconBox}>{k.emoji}</div>
