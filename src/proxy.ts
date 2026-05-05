@@ -85,21 +85,23 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: call getUser() — not getSession() — to validate the JWT
-  // server-side. This also refreshes the token cookie if needed.
+  // Use getSession() in the proxy for a fast, local cookie read — no network
+  // round-trip that can fail in Edge/Node cold starts.
+  // The real JWT validation happens in requireUser() inside every dashboard
+  // Server Component, so this is safe as a redirect-only guard.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   // Redirect unauthenticated users away from protected routes
-  if (!user && isProtected(pathname)) {
+  if (!session && isProtected(pathname)) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users away from auth pages
-  if (user && isAuthRoute(pathname)) {
+  if (session && isAuthRoute(pathname)) {
     return NextResponse.redirect(new URL('/rainfall', request.url));
   }
 
