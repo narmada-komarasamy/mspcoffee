@@ -14,7 +14,7 @@
  */
 
 // ─── Non-secret constants ─────────────────────────────────────────────────────
-const VALID_ACCOUNTS      = ["BVE", "HFE", "ME", "ORE", "RSE", "SE"];
+const VALID_ACCOUNTS      = ["BVE", "HFE", "ME", "ORE", "RSE", "SE", "MSPLTD"];
 const VALID_VEHICLE_TYPES = ["Estate", "Personal"];
 const VALID_FUEL_TYPES    = ["Diesel", "Petrol"];
 
@@ -68,8 +68,8 @@ function resolveColumns(headers) {
     starting_km:           find(["starting km", "start km", "opening km"]),
     closing_km:            find(["closing km", "close km", "ending km"]),
     fuel_filled_l:         find(["fuel filled (l)", "fuel filled", "litres", "liters"]),
-    fuel_cost:             find(["fuel cost", "fuel expense"]),
-    maint_cost:            find(["maint cost", "maintenance cost", "maintenance"]),
+    fuel_cost:             find(["fuel cost", "fuel expense", "fuel cost (₹)", "fuel cost (rs)", "fuel amt", "fuel amount"]),
+    maint_cost:            find(["maint cost", "maintenance cost", "maintenance", "maint cost (₹)", "maint cost (rs)", "maint amt", "maint amount", "maintenance expense"]),
     maintenance_performed: find(["maintenance performed", "maint performed", "work done"]),
     remarks:               find(["remarks", "notes"]),
   };
@@ -292,6 +292,32 @@ function _rebuild(wipe) {
   const anyFailed = upsertRows(deduped, config);
   if (anyFailed) throw new Error("Some batches failed — see log");
   Logger.log(`${wipe ? "Wipe+rebuild" : "Rebuild"} complete: ${deduped.length} rows upserted.`);
+}
+
+// ─── Debug helpers ────────────────────────────────────────────────────────────
+/** Run this manually to see exactly what headers the script is reading. */
+function debugHeaders() {
+  const config = cfg();
+  const sheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(config.sheet);
+  if (!sheet) { Logger.log("Sheet not found: " + config.sheet); return; }
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+                    .map(h => String(h).trim().toLowerCase());
+  Logger.log("Raw headers: " + JSON.stringify(headers));
+  try {
+    const col = resolveColumns(headers);
+    Logger.log("Resolved columns: " + JSON.stringify(col));
+  } catch (e) {
+    Logger.log("ERROR: " + e.message);
+  }
+}
+
+/** Run this to check which triggers are currently installed. */
+function debugTriggers() {
+  const triggers = ScriptApp.getProjectTriggers();
+  if (triggers.length === 0) { Logger.log("No triggers installed."); return; }
+  triggers.forEach(t => Logger.log(
+    `Trigger: ${t.getHandlerFunction()} | type: ${t.getEventType()} | source: ${t.getTriggerSource()}`
+  ));
 }
 
 // ─── Trigger setup ────────────────────────────────────────────────────────────
