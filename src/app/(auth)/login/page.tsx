@@ -1,18 +1,39 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { signIn } from './actions';
+import { createClient } from '@/lib/supabase/client';
+import { Loader2 } from 'lucide-react';
 
-const ERROR_MESSAGES: Record<string, string> = {
-  invalid_credentials: 'Incorrect email or password.',
-  missing_fields:      'Please enter your email and password.',
-  link_expired:        'That link has expired. Request a new one.',
-};
+export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') || '/rainfall';
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string; error?: string }>;
-}) {
-  const { next = '/rainfall', error } = await searchParams;
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setError('Incorrect email or password.');
+      setLoading(false);
+      return;
+    }
+
+    // Session cookie is now set by the browser client — safe to navigate.
+    router.push(next);
+    router.refresh();
+  }
 
   return (
     <div className="w-full max-w-sm space-y-5">
@@ -25,24 +46,23 @@ export default async function LoginPage({
 
       {error && (
         <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg px-4 py-2.5">
-          {ERROR_MESSAGES[error] ?? 'Something went wrong. Please try again.'}
+          {error}
         </p>
       )}
 
-      <form action={signIn} className="space-y-4">
-        <input type="hidden" name="next" value={next} />
-
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm text-green-200/70 mb-1.5">
             Email
           </label>
           <input
             id="email"
-            name="email"
             type="email"
             required
             autoComplete="email"
             placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#86efac]/50 focus:border-[#86efac]/50 transition"
           />
         </div>
@@ -53,20 +73,23 @@ export default async function LoginPage({
           </label>
           <input
             id="password"
-            name="password"
             type="password"
             required
             autoComplete="current-password"
             placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#86efac]/50 focus:border-[#86efac]/50 transition"
           />
         </div>
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-[#86efac] text-[#1a2e1a] font-semibold py-3 transition hover:bg-[#6ee7a0] active:scale-[0.98]"
+          disabled={loading}
+          className="w-full rounded-xl bg-[#86efac] text-[#1a2e1a] font-semibold py-3 transition hover:bg-[#6ee7a0] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Sign in
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
