@@ -294,6 +294,83 @@ function _rebuild(wipe) {
   Logger.log(`${wipe ? "Wipe+rebuild" : "Rebuild"} complete: ${deduped.length} rows upserted.`);
 }
 
+// ─── Daily backup ─────────────────────────────────────────────────────────────
+/**
+ * Copies the Fleet Data sheet to a separate backup Google Sheet (created once,
+ * ID stored in Script Properties). Each run adds a tab named YYYY-MM-DD.
+ * Tabs older than 30 days are automatically deleted.
+ *
+ * Schedule: run setupBackupTrigger() once to install a daily 2 AM trigger.
+ */
+function backupFleetData() {
+  const config = cfg();
+  const ss     = SpreadsheetApp.getActiveSpreadsheet();
+  const source = ss.getSheetByName(config.sheet);
+  if (!source) throw new Error("Fleet Data sheet not found — cannot back up.");
+
+  // Get or create the backup spreadsheet
+  const props   = PropertiesService.getScriptProperties();
+  let   backupId = props.getProperty("BACKUP_SHEET_ID");
+  let   backupSS;
+
+  if (backupId) {
+    try {
+      backupSS = SpreadsheetApp.openById(backupId);
+    } catch (_) {
+      backupId = null; // file was deleted — recreate
+    }
+  }
+  if (!backupId) {
+    backupSS = SpreadsheetApp.create("Fleet Data — Backups");
+    props.setProperty("BACKUP_SHEET_ID", backupSS.getId());
+    Logger.log("Created backup spreadsheet: " + backupSS.getUrl());
+  }
+
+  // Tab name = today's date
+  const today   = formatDate(new Date());
+  const existing = backupSS.getSheetByName(today);
+  if (existing) {
+    Logger.log("Backup for " + today + " already exists — skipping.");
+    return;
+  }
+
+  // Copy values (not formulas) into a new tab
+  const numRows = source.getLastRow();
+  const numCols = source.getLastColumn();
+  const data    = source.getRange(1, 1, numRows, numCols).getValues();
+  const tab     = backupSS.insertSheet(today);
+  tab.getRange(1, 1, numRows, numCols).setValues(data);
+  Logger.log("Backup complete: " + numRows + " rows saved to tab '" + today + "'.");
+
+  // Delete tabs older than 30 days
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  backupSS.getSheets().forEach(function(s) {
+    const name = s.getName();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(name) && new Date(name) < cutoff) {
+      backupSS.deleteSheet(s);
+      Logger.log("Deleted old backup tab: " + name);
+    }
+  });
+}
+
+/**
+ * Run ONCE to install a daily 2 AM backup trigger.
+ * Re-running is safe — removes any existing backup trigger first.
+ */
+function setupBackupTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === "backupFleetData") ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger("backupFleetData")
+    .timeBased()
+    .everyDays(1)
+    .atHour(2)
+    .create();
+  Logger.log("✓ Daily backup trigger installed — runs every day at 2 AM.");
+  Logger.log("Run backupFleetData() now to create the first backup immediately.");
+}
+
 // ─── Debug helpers ────────────────────────────────────────────────────────────
 /** Run this manually to see exactly what headers the script is reading. */
 function debugHeaders() {
