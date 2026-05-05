@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm({ next }: { next: string }) {
-  const router = useRouter();
-
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
@@ -28,9 +25,9 @@ export default function LoginForm({ next }: { next: string }) {
       return;
     }
 
-    // Browser client sets the session cookie directly — safe to navigate.
-    router.push(next);
-    router.refresh();
+    // Hard navigate so the browser sends all cookies in the first request.
+    // router.push() can race with cookie writes; window.location is safe.
+    window.location.href = next;
   }
 
   return (
