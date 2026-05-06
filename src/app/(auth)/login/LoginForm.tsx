@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm({ next }: { next: string }) {
@@ -16,17 +15,20 @@ export default function LoginForm({ next }: { next: string }) {
     setError('');
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (error) {
+    if (!res.ok) {
       setError('Incorrect email or password.');
       setLoading(false);
       return;
     }
 
-    // Hard navigate so the browser sends all cookies in the first request.
-    // router.push() can race with cookie writes; window.location is safe.
+    // Session is now in a proper HTTP Set-Cookie header from the server.
+    // Hard navigate so the browser sends the cookie with the first request.
     window.location.href = next;
   }
 
