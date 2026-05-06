@@ -7,7 +7,7 @@ import {
   PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { AlertTriangle, Download } from "lucide-react";
+import { AlertTriangle, Download, Palette } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import css from "./ho-fuel.module.css";
 
@@ -17,6 +17,26 @@ const supabase = createClient(
 );
 
 const LOW_STOCK_THRESHOLD = 50_000;
+
+/* ─── Theme ───────────────────────────────────────────────────────────────────── */
+type HoThemeConfig = {
+  bg: string; surface: string; card: string; border: string; text: string; muted: string;
+  teal: string; gold: string; red: string; green: string;
+};
+type HoColors = { teal: string; gold: string; red: string; green: string };
+
+const HO_THEME_DEFAULT: HoThemeConfig = {
+  bg:      "#0d1b2a",
+  surface: "#16253a",
+  card:    "#1b2a3d",
+  border:  "#2a3f5a",
+  text:    "#e8edf4",
+  muted:   "#7a90b0",
+  teal:    "#1fc8c8",
+  gold:    "#f5a623",
+  red:     "#e8524a",
+  green:   "#2ecc71",
+};
 const PAGE_SIZE = 50;
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -45,6 +65,30 @@ export default function HoFuelPage() {
   const [rows, setRows] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(true);
   const realtimeRef = useRef(false);
+
+  /* ── Theme ────────────────────────────────────────────────────────────────────── */
+  const [theme, setTheme]                       = useState<HoThemeConfig>({ ...HO_THEME_DEFAULT });
+  const [showPalettePanel, setShowPalettePanel] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("mspc-ho-theme");
+    if (saved) try { setTheme(JSON.parse(saved)); } catch {}
+  }, []);
+
+  const updateTheme = useCallback(<K extends keyof HoThemeConfig>(key: K, val: HoThemeConfig[K]) => {
+    setTheme(prev => {
+      const next = { ...prev, [key]: val };
+      localStorage.setItem("mspc-ho-theme", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const resetTheme = () => {
+    setTheme({ ...HO_THEME_DEFAULT });
+    localStorage.removeItem("mspc-ho-theme");
+  };
+
+  const colors: HoColors = { teal: theme.teal, gold: theme.gold, red: theme.red, green: theme.green };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -97,7 +141,15 @@ export default function HoFuelPage() {
   if (loading) return <div className={css.loading}>Loading HO Fuel data…</div>;
 
   return (
-    <div>
+    <div style={{
+      "--t-bg":      theme.bg,
+      "--t-surface": theme.surface,
+      "--t-card":    theme.card,
+      "--t-border":  theme.border,
+      "--t-text":    theme.text,
+      "--t-muted":   theme.muted,
+      "--t-teal":    theme.teal,
+    } as React.CSSProperties}>
       <div className={css.tabs}>
         {([
           ["overview",  "📊 Overview"],
@@ -113,12 +165,73 @@ export default function HoFuelPage() {
             {label}
           </button>
         ))}
+        <button
+          className={`${css.paletteBtn} ${showPalettePanel ? css.paletteBtnActive : ""}`}
+          onClick={() => setShowPalettePanel(v => !v)}
+          style={{ marginLeft: "auto" }}
+        >
+          <Palette size={13} /> Colours
+        </button>
       </div>
 
-      {tab === "overview"  && <OverviewTab  rows={rows} totals={totals} />}
-      {tab === "consumers" && <ConsumersTab rows={rows} />}
+      {tab === "overview"  && <OverviewTab  rows={rows} totals={totals} colors={colors} />}
+      {tab === "consumers" && <ConsumersTab rows={rows} colors={colors} />}
       {tab === "log"       && <LogTab       rows={rows} />}
       {tab === "entry"     && <EntryTab     rows={rows} onSaved={loadData} />}
+
+      {/* ── Colour Customiser Panel ───────────────────────────────────────────── */}
+      {showPalettePanel && (
+        <div className={css.cpOverlay} onClick={() => setShowPalettePanel(false)} />
+      )}
+      <div className={`${css.cpPanel} ${showPalettePanel ? css.cpPanelOpen : ""}`}>
+        <button className={css.cpTab} onClick={() => setShowPalettePanel(v => !v)} title="Colour Customiser">
+          <Palette size={18} />
+        </button>
+        <div className={css.cpBody}>
+          <div className={css.cpHeader}>
+            <span>🎨</span>
+            <span className={css.cpTitle}>Colour Customiser</span>
+          </div>
+
+          <div className={css.cpSectionTitle}>Theme</div>
+          {([
+            { key: "bg",      label: "Background"       },
+            { key: "surface", label: "Surface / Cards"  },
+            { key: "card",    label: "Inner Cards"       },
+            { key: "border",  label: "Borders"           },
+            { key: "text",    label: "Body Text"         },
+            { key: "muted",   label: "Muted Labels"      },
+          ] as { key: keyof HoThemeConfig; label: string }[]).map(({ key, label }) => (
+            <label key={key} className={css.cpRow}>
+              <span className={css.cpLabel}>{label}</span>
+              <span className={css.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
+                <input type="color" value={theme[key] as string}
+                  onChange={e => updateTheme(key, e.target.value)}
+                  className={css.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <div className={css.cpSectionTitle}>KPI Accents</div>
+          {([
+            { key: "teal",  label: "Teal / Petrol"   },
+            { key: "gold",  label: "Gold / Diesel"   },
+            { key: "red",   label: "Red / Issue"     },
+            { key: "green", label: "Green / Purchase"},
+          ] as { key: keyof HoThemeConfig; label: string }[]).map(({ key, label }) => (
+            <label key={key} className={css.cpRow}>
+              <span className={css.cpLabel}>{label}</span>
+              <span className={css.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
+                <input type="color" value={theme[key] as string}
+                  onChange={e => updateTheme(key, e.target.value)}
+                  className={css.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <button className={css.cpResetBtn} onClick={resetTheme}>↺ Reset to defaults</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -126,11 +239,13 @@ export default function HoFuelPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 // OVERVIEW TAB
 // ─────────────────────────────────────────────────────────────────────────────
-function OverviewTab({ rows, totals }: {
+function OverviewTab({ rows, totals, colors }: {
   rows: TxRow[];
   totals: { dP:number; dI:number; pP:number; pI:number; amt:number;
             dieselStock:number; petrolStock:number; totalPurchased:number; totalIssued:number };
+  colors: HoColors;
 }) {
+  const { teal, gold, red, green } = colors;
   const { dP, dI, pP, pI, amt, dieselStock, petrolStock, totalPurchased, totalIssued } = totals;
 
   const lowDiesel = dieselStock < LOW_STOCK_THRESHOLD;
@@ -174,8 +289,8 @@ function OverviewTab({ rows, totals }: {
 
   // Diesel vs Petrol pie
   const fuelSplitData = [
-    { name: "Diesel", value: Math.round(dI * 10) / 10, color: "#f5a623" },
-    { name: "Petrol", value: Math.round(pI * 10) / 10, color: "#1fc8c8" },
+    { name: "Diesel", value: Math.round(dI * 10) / 10, color: gold },
+    { name: "Petrol", value: Math.round(pI * 10) / 10, color: teal },
   ].filter(d => d.value > 0);
 
   // Monthly summary — oldest first, TOTAL row
@@ -222,7 +337,7 @@ function OverviewTab({ rows, totals }: {
       {/* KPI cards */}
       <div className={css.kpiGrid}>
         {/* Diesel */}
-        <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "#e8524a" : "#f5a623" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": lowDiesel ? red : gold } as React.CSSProperties}>
           <div className={css.kpiLabel}>⛽ Diesel in Store</div>
           <div>
             <span className={`${css.kpiValue} ${lowDiesel ? css.kpiValueLow : ""}`}>{fmt(dieselStock)}</span>
@@ -231,11 +346,11 @@ function OverviewTab({ rows, totals }: {
           <div className={css.kpiSub}>Purchased: {fmt(dP)}L · Issued: {fmt(dI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(dieselStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowDiesel ? "#e8524a" : "#f5a623" }} />
+              style={{ width: `${Math.min(100,(dieselStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowDiesel ? red : gold }} />
           </div>
         </div>
         {/* Petrol */}
-        <div className={css.kpiCard} style={{ "--accent": lowPetrol ? "#e8524a" : "#1fc8c8" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": lowPetrol ? red : teal } as React.CSSProperties}>
           <div className={css.kpiLabel}>🛢️ Petrol in Store</div>
           <div>
             <span className={`${css.kpiValue} ${lowPetrol ? css.kpiValueLow : ""}`}>{fmt(petrolStock)}</span>
@@ -244,11 +359,11 @@ function OverviewTab({ rows, totals }: {
           <div className={css.kpiSub}>Purchased: {fmt(pP)}L · Issued: {fmt(pI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(petrolStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowPetrol ? "#e8524a" : "#1fc8c8" }} />
+              style={{ width: `${Math.min(100,(petrolStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowPetrol ? red : teal }} />
           </div>
         </div>
         {/* Total Purchased */}
-        <div className={css.kpiCard} style={{ "--accent": "#2ecc71" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": green } as React.CSSProperties}>
           <div className={css.kpiLabel}>📥 Total Purchased</div>
           <div>
             <span className={css.kpiValue}>{fmt(totalPurchased)}</span>
@@ -256,11 +371,11 @@ function OverviewTab({ rows, totals }: {
           </div>
           <div className={css.kpiSub}>All time · Diesel + Petrol</div>
           <div className={css.kpiBar}>
-            <div className={css.kpiBarFill} style={{ width: "100%", background: "#2ecc71" }} />
+            <div className={css.kpiBarFill} style={{ width: "100%", background: green }} />
           </div>
         </div>
         {/* Total Issued */}
-        <div className={css.kpiCard} style={{ "--accent": "#e8524a" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": red } as React.CSSProperties}>
           <div className={css.kpiLabel}>📤 Total Issued</div>
           <div>
             <span className={css.kpiValue}>{fmt(totalIssued)}</span>
@@ -269,7 +384,7 @@ function OverviewTab({ rows, totals }: {
           <div className={css.kpiSub}>All time · Diesel + Petrol</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: totalPurchased > 0 ? `${Math.min(100,(totalIssued/totalPurchased)*100)}%` : "0%", background: "#e8524a" }} />
+              style={{ width: totalPurchased > 0 ? `${Math.min(100,(totalIssued/totalPurchased)*100)}%` : "0%", background: red }} />
           </div>
         </div>
       </div>
@@ -279,9 +394,9 @@ function OverviewTab({ rows, totals }: {
       <div className={`${css.chartCard} ${css.chartsFullRow}`}>
         <div className={css.chartSubTitle}>Daily Fuel Flow (Litres) — Purchases into store vs Issues to fleet</div>
         <div className={css.legendRow}>
-          <span className={css.legendDot}><span className={css.dot} style={{ background: "#2ecc71" }} />Purchased (L)</span>
-          <span className={css.legendDot}><span className={css.dot} style={{ background: "#f5a623" }} />Issued (L)</span>
-          <span className={css.legendDot}><span className={css.dot} style={{ background: "#1fc8c8" }} />Running Stock (L)</span>
+          <span className={css.legendDot}><span className={css.dot} style={{ background: green }} />Purchased (L)</span>
+          <span className={css.legendDot}><span className={css.dot} style={{ background: gold  }} />Issued (L)</span>
+          <span className={css.legendDot}><span className={css.dot} style={{ background: teal  }} />Running Stock (L)</span>
         </div>
         {timelineData.length > 0 ? (
           <ResponsiveContainer width="100%" height={240}>
@@ -296,9 +411,9 @@ function OverviewTab({ rows, totals }: {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any, name: any) => [`${fmt(Number(v))} L`, name]}
               />
-              <Line type="monotone" dataKey="purchase" stroke="#2ecc71" strokeWidth={2} dot={false} name="Purchased (L)" />
-              <Line type="monotone" dataKey="issued"   stroke="#f5a623" strokeWidth={2} dot={false} name="Issued (L)" strokeDasharray="4 2" />
-              <Line type="monotone" dataKey="stock"    stroke="#1fc8c8" strokeWidth={2} dot={false} name="Running Stock (L)" />
+              <Line type="monotone" dataKey="purchase" stroke={green} strokeWidth={2} dot={false} name="Purchased (L)" />
+              <Line type="monotone" dataKey="issued"   stroke={gold}  strokeWidth={2} dot={false} name="Issued (L)" strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="stock"    stroke={teal}  strokeWidth={2} dot={false} name="Running Stock (L)" />
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -424,7 +539,8 @@ function OverviewTab({ rows, totals }: {
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSUMERS TAB
 // ─────────────────────────────────────────────────────────────────────────────
-function ConsumersTab({ rows }: { rows: TxRow[] }) {
+function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
+  const { teal, gold } = colors;
   const [filterMonth, setFilterMonth] = useState("ALL");
   const [filterFuel,  setFilterFuel]  = useState("ALL");
   const [filterEstate,setFilterEstate]= useState("ALL");
@@ -530,8 +646,8 @@ function ConsumersTab({ rows }: { rows: TxRow[] }) {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [`${fmt(Number(v))} L`, name]}
                 />
-                <Bar dataKey="diesel" name="Diesel" fill="#f5a623" radius={[0,3,3,0]} stackId="a" />
-                <Bar dataKey="petrol" name="Petrol" fill="#1fc8c8" radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="diesel" name="Diesel" fill={gold} radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="petrol" name="Petrol" fill={teal} radius={[0,3,3,0]} stackId="a" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -559,8 +675,8 @@ function ConsumersTab({ rows }: { rows: TxRow[] }) {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [`${fmt(Number(v))} L`, name]}
                 />
-                <Bar dataKey="diesel" name="Diesel" fill="#f5a623" radius={[0,3,3,0]} stackId="a" />
-                <Bar dataKey="petrol" name="Petrol" fill="#1fc8c8" radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="diesel" name="Diesel" fill={gold} radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="petrol" name="Petrol" fill={teal} radius={[0,3,3,0]} stackId="a" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -591,8 +707,8 @@ function ConsumersTab({ rows }: { rows: TxRow[] }) {
                   <td style={{ color: "#7a90b0" }}>{v.rank}</td>
                   <td>{v.vehicle}</td>
                   <td>{v.estate}</td>
-                  <td className={css.tdNum} style={{ color: "#f5a623" }}>{fmt(v.diesel)}</td>
-                  <td className={css.tdNum} style={{ color: "#1fc8c8" }}>{fmt(v.petrol)}</td>
+                  <td className={css.tdNum} style={{ color: gold }}>{fmt(v.diesel)}</td>
+                  <td className={css.tdNum} style={{ color: teal }}>{fmt(v.petrol)}</td>
                   <td className={css.tdNum}>{fmt(v.total)}</td>
                   <td className={css.tdNum} style={{ color: "#7a90b0" }}>{v.pct}%</td>
                 </tr>
