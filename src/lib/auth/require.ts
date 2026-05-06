@@ -1,4 +1,3 @@
-import 'server-only';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type { Role } from './access';
@@ -7,14 +6,19 @@ import type { Role } from './access';
  * Verify the current session and load the user's profile.
  * Redirects to /login if unauthenticated or profile is missing.
  * Call at the top of every dashboard Server Component.
+ *
+ * Uses getSession() (local cookie read, no network call) so it works
+ * reliably in both Edge and Node runtimes on Vercel.
  */
 export async function requireUser() {
   const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) redirect('/login');
+  if (!session) redirect('/login');
+
+  const user = session.user;
 
   const { data: profile } = await supabase
     .from('profiles')
