@@ -98,8 +98,8 @@ export default function PlaceholderPage({
 
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
-      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#86efac]/10 mb-6">
-        <Icon className="h-10 w-10 text-[#86efac]" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-msp-green-light/10 mb-6">
+        <Icon className="h-10 w-10 text-msp-green-light" />
       </div>
       <h2 className="text-2xl font-bold mb-2">{label}</h2>
       <p className="text-white/50 max-w-md mb-4">{description}</p>

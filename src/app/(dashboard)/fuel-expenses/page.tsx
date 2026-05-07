@@ -50,7 +50,7 @@ function aggRows(rows: Row[]) {
   };
 }
 
-const ttStyle = { backgroundColor:"#16253a", border:"1px solid #2a3f5a", borderRadius:8, fontSize:11, color:"#e8edf4" };
+const ttStyle = { backgroundColor:"var(--msp-navy-mid)", border:"1px solid var(--msp-navy-border)", borderRadius:8, fontSize:11, color:"var(--msp-text)" };
 
 function filterRows(rows: Row[], vehicle: string, year: string, month: string, type?: string) {
   return rows.filter(r => {
@@ -394,8 +394,8 @@ export default function FleetPage() {
                 { emoji:"💰", label:"Vehicle Fuel Cost",         value:fmtC(svAgg.fuelCost),             unit:"",    sub:"Total fuel expenditure (₹)",                          accent:RED    },
                 { emoji:"🔧", label:"Fuel + Maintenance Cost",   value:fmtC(svAgg.totalCost),            unit:"",    sub:"Combined operational cost (₹)",                       accent:PURPLE },
                 { emoji:"📊", label:"Running Cost / KM",         value:fmt(svAgg.costPerKm,2),           unit:"₹/km",sub:"Total vehicle cost per kilometre",                    accent:BLUE   },
-                { emoji:"🚀", label:"Starting KM",               value:fmt(svAgg.startKm,0),             unit:"",    sub:"First odometer reading",                              accent:"#1abc9c"},
-                { emoji:"🏁", label:"Closing KM",                value:fmt(svAgg.closeKm,0),             unit:"",    sub:"Final odometer reading",                              accent:"#e74c3c"},
+                { emoji:"🚀", label:"Starting KM",               value:fmt(svAgg.startKm,0),             unit:"",    sub:"First odometer reading",                              accent:TEAL   },
+                { emoji:"🏁", label:"Closing KM",                value:fmt(svAgg.closeKm,0),             unit:"",    sub:"Final odometer reading",                              accent:RED    },
               ].map(k => (
                 <div key={k.label} className={s.kpiCard} style={{ ["--accent" as string]: k.accent }}>
                   <div className={s.kpiIconBox}>{k.emoji}</div>
@@ -555,9 +555,9 @@ export default function FleetPage() {
                           <stop offset="95%" stopColor={GOLD} stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1b2a3d" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown) => [fmtC(v as number), "Fuel Cost"]}/>
                       <Area type="monotone" dataKey="fuelCost" stroke={GOLD} fill="url(#fg)" strokeWidth={2} dot={false}/>
                     </AreaChart>
@@ -568,9 +568,9 @@ export default function FleetPage() {
                   <div className={s.chartTitle}>Monthly KM Run</div>
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={monthlyTrend} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1b2a3d" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v as number)} width={44}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v as number)} width={44}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown) => [fmt(v as number) + " km", "KM Run"]}/>
                       <Bar dataKey="kmRun" fill={TEAL} fillOpacity={0.85} radius={[3,3,0,0]}/>
                     </BarChart>
@@ -581,9 +581,9 @@ export default function FleetPage() {
                   <div className={s.chartTitle}>Avg Mileage (km/L)</div>
                   <ResponsiveContainer width="100%" height={160}>
                     <LineChart data={monthlyTrend} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1b2a3d" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => (v as number).toFixed(1)} width={36}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => (v as number).toFixed(1)} width={36}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown) => [(v as number).toFixed(2) + " km/L", "Mileage"]}/>
                       <Line type="monotone" dataKey="avgMileage" stroke={GREEN} strokeWidth={2} dot={{ r:3, fill:GREEN }}/>
                     </LineChart>
@@ -594,11 +594,11 @@ export default function FleetPage() {
                   <div className={s.chartTitle}>Fuel vs Maintenance</div>
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={monthlyTrend} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1b2a3d" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"#7a90b0", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown, n: unknown) => [fmtC(v as number), n === "fuelCost" ? "Fuel" : "Maintenance"]}/>
-                      <Legend wrapperStyle={{ fontSize:10, color:"#7a90b0" }}/>
+                      <Legend wrapperStyle={{ fontSize:10, color:"var(--msp-neutral)" }}/>
                       <Bar dataKey="fuelCost"  name="fuelCost"  stackId="a" fill={GOLD} fillOpacity={0.85}/>
                       <Bar dataKey="maintCost" name="maintCost" stackId="a" fill={RED}  fillOpacity={0.85} radius={[3,3,0,0]}/>
                     </BarChart>
@@ -886,7 +886,7 @@ export default function FleetPage() {
             {(() => {
               const logReady = logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo;
               if (!logReady) return (
-                <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"#3a5070", border:"1px dashed #2a3f5a", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
+                <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"var(--msp-charcoal)", border:"1px dashed var(--msp-navy-border)", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
                   Select a vehicle or apply a filter above to view records
                 </div>
               );
@@ -895,7 +895,7 @@ export default function FleetPage() {
 
             {(logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo) && (
               <>
-            <div style={{ fontSize:11, color:"#7a90b0", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
+            <div style={{ fontSize:11, color:"var(--msp-neutral)", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
 
             <div className={s.dailyTableWrapper}>
               <table className={s.dailyTable}>
@@ -928,9 +928,9 @@ export default function FleetPage() {
                       <td className={s.colNumber} style={{ color:GOLD }}>{fmt(r.fuel_cost,0)}</td>
                       <td className={s.colNumber} style={{ color:RED }}>{fmt(r.maint_cost,0)}</td>
                       <td className={s.colNumber} style={{ color:GOLD, fontWeight:700 }}>{fmt(r.total_cost,0)}</td>
-                      <td style={{ color:"#7a90b0", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
+                      <td style={{ color:"var(--msp-neutral)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
                       <td>
-                        <button onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"#3a5070", cursor:"pointer", padding:"2px 4px" }}>
+                        <button onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"var(--msp-charcoal)", cursor:"pointer", padding:"2px 4px" }}>
                           <Pencil size={13}/>
                         </button>
                       </td>
@@ -956,7 +956,7 @@ export default function FleetPage() {
             {logPages > 1 && (
               <div className={s.paginationRow}>
                 <button onClick={() => setLogPage(p => Math.max(1,p-1))} disabled={logPage===1} className={s.pageBtn}><ChevronLeft size={14}/></button>
-                <span style={{ fontSize:11, color:"#7a90b0" }}>Page {logPage} of {logPages}</span>
+                <span style={{ fontSize:11, color:"var(--msp-neutral)" }}>Page {logPage} of {logPages}</span>
                 <button onClick={() => setLogPage(p => Math.min(logPages,p+1))} disabled={logPage===logPages} className={s.pageBtn}><ChevronRight size={14}/></button>
               </div>
             )}

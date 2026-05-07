@@ -95,7 +95,7 @@ export default function DashboardLayout({
   });
 
   return (
-    <div className="flex h-screen bg-[#1a2e3e] text-white overflow-hidden">
+    <div className="flex h-screen bg-msp-navy-mid text-white overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -106,15 +106,15 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 flex flex-col bg-[#14222e] border-r border-white/10 transition-transform duration-200 ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 flex flex-col bg-msp-navy border-r border-white/10 transition-transform duration-200 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-          <Coffee className="h-7 w-7 text-[#86efac]" />
+          <Coffee className="h-7 w-7 text-msp-green-light" />
           <span className="text-lg font-bold tracking-tight">
-            MSP <span className="text-[#86efac]">Coffee</span>
+            MSP <span className="text-msp-green-light">Coffee</span>
           </span>
           <button
             className="ml-auto lg:hidden text-white/60 hover:text-white"
@@ -136,7 +136,7 @@ export default function DashboardLayout({
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active
-                    ? "bg-[#86efac]/15 text-[#86efac]"
+                    ? "bg-msp-green-light/15 text-msp-green-light"
                     : "text-white/70 hover:bg-white/5 hover:text-white"
                 }`}
               >
@@ -150,7 +150,7 @@ export default function DashboardLayout({
         {/* User footer */}
         <div className="border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#86efac]/20 text-[#86efac] font-bold text-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-msp-green-light/20 text-msp-green-light font-bold text-sm">
               {user.name[0]}
             </div>
             <div className="flex-1 min-w-0">
@@ -171,7 +171,7 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="flex items-center gap-4 px-4 lg:px-6 py-4 border-b border-white/10 bg-[#14222e]/50">
+        <header className="flex items-center gap-4 px-4 lg:px-6 py-4 border-b border-white/10 bg-msp-navy/50">
           <button
             className="lg:hidden text-white/70 hover:text-white"
             onClick={() => setSidebarOpen(true)}

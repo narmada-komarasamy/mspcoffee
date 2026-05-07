@@ -222,7 +222,7 @@ function OverviewTab({ rows, totals }: {
       {/* KPI cards */}
       <div className={css.kpiGrid}>
         {/* Diesel */}
-        <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "#e8524a" : "#f5a623" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "var(--msp-danger)" : "var(--msp-gold-light)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>⛽ Diesel in Store</div>
           <div>
             <span className={`${css.kpiValue} ${lowDiesel ? css.kpiValueLow : ""}`}>{fmt(dieselStock)}</span>
@@ -231,11 +231,11 @@ function OverviewTab({ rows, totals }: {
           <div className={css.kpiSub}>Purchased: {fmt(dP)}L · Issued: {fmt(dI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(dieselStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowDiesel ? "#e8524a" : "#f5a623" }} />
+              style={{ width: `${Math.min(100,(dieselStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-gold-light)" }} />
           </div>
         </div>
         {/* Petrol */}
-        <div className={css.kpiCard} style={{ "--accent": lowPetrol ? "#e8524a" : "#1fc8c8" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": lowPetrol ? "var(--msp-danger)" : "var(--msp-teal)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>🛢️ Petrol in Store</div>
           <div>
             <span className={`${css.kpiValue} ${lowPetrol ? css.kpiValueLow : ""}`}>{fmt(petrolStock)}</span>
@@ -244,11 +244,11 @@ function OverviewTab({ rows, totals }: {
           <div className={css.kpiSub}>Purchased: {fmt(pP)}L · Issued: {fmt(pI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(petrolStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowPetrol ? "#e8524a" : "#1fc8c8" }} />
+              style={{ width: `${Math.min(100,(petrolStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowPetrol ? "var(--msp-danger)" : "var(--msp-teal)" }} />
           </div>
         </div>
         {/* Total Purchased */}
-        <div className={css.kpiCard} style={{ "--accent": "#2ecc71" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": "var(--msp-green)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>📥 Total Purchased</div>
           <div>
             <span className={css.kpiValue}>{fmt(totalPurchased)}</span>
@@ -256,11 +256,11 @@ function OverviewTab({ rows, totals }: {
           </div>
           <div className={css.kpiSub}>All time · Diesel + Petrol</div>
           <div className={css.kpiBar}>
-            <div className={css.kpiBarFill} style={{ width: "100%", background: "#2ecc71" }} />
+            <div className={css.kpiBarFill} style={{ width: "100%", background: "var(--msp-green)" }} />
           </div>
         </div>
         {/* Total Issued */}
-        <div className={css.kpiCard} style={{ "--accent": "#e8524a" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": "var(--msp-danger)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>📤 Total Issued</div>
           <div>
             <span className={css.kpiValue}>{fmt(totalIssued)}</span>
@@ -269,7 +269,7 @@ function OverviewTab({ rows, totals }: {
           <div className={css.kpiSub}>All time · Diesel + Petrol</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: totalPurchased > 0 ? `${Math.min(100,(totalIssued/totalPurchased)*100)}%` : "0%", background: "#e8524a" }} />
+              style={{ width: totalPurchased > 0 ? `${Math.min(100,(totalIssued/totalPurchased)*100)}%` : "0%", background: "var(--msp-danger)" }} />
           </div>
         </div>
       </div>
@@ -279,26 +279,26 @@ function OverviewTab({ rows, totals }: {
       <div className={`${css.chartCard} ${css.chartsFullRow}`}>
         <div className={css.chartSubTitle}>Daily Fuel Flow (Litres) — Purchases into store vs Issues to fleet</div>
         <div className={css.legendRow}>
-          <span className={css.legendDot}><span className={css.dot} style={{ background: "#2ecc71" }} />Purchased (L)</span>
-          <span className={css.legendDot}><span className={css.dot} style={{ background: "#f5a623" }} />Issued (L)</span>
-          <span className={css.legendDot}><span className={css.dot} style={{ background: "#1fc8c8" }} />Running Stock (L)</span>
+          <span className={css.legendDot}><span className={css.dot} style={{ background: "var(--msp-green)" }} />Purchased (L)</span>
+          <span className={css.legendDot}><span className={css.dot} style={{ background: "var(--msp-gold-light)" }} />Issued (L)</span>
+          <span className={css.legendDot}><span className={css.dot} style={{ background: "var(--msp-teal)" }} />Running Stock (L)</span>
         </div>
         {timelineData.length > 0 ? (
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={timelineData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="label" tick={{ fill: "#7a90b0", fontSize: 10 }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fill: "#7a90b0", fontSize: 10 }} tickLine={false} axisLine={false}
+              <XAxis dataKey="label" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
                 tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : `${v}`} />
               <Tooltip
-                contentStyle={{ background: "#16253a", border: "1px solid #2a3f5a", borderRadius: 8, fontSize: 12 }}
-                labelStyle={{ color: "#e8edf4", fontWeight: 600 }}
+                contentStyle={{ background: "var(--msp-navy-mid)", border: "1px solid var(--msp-navy-border)", borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: "var(--msp-text)", fontWeight: 600 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any, name: any) => [`${fmt(Number(v))} L`, name]}
               />
-              <Line type="monotone" dataKey="purchase" stroke="#2ecc71" strokeWidth={2} dot={false} name="Purchased (L)" />
-              <Line type="monotone" dataKey="issued"   stroke="#f5a623" strokeWidth={2} dot={false} name="Issued (L)" strokeDasharray="4 2" />
-              <Line type="monotone" dataKey="stock"    stroke="#1fc8c8" strokeWidth={2} dot={false} name="Running Stock (L)" />
+              <Line type="monotone" dataKey="purchase" stroke="var(--msp-green)" strokeWidth={2} dot={false} name="Purchased (L)" />
+              <Line type="monotone" dataKey="issued"   stroke="var(--msp-gold-light)" strokeWidth={2} dot={false} name="Issued (L)" strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="stock"    stroke="var(--msp-teal)" strokeWidth={2} dot={false} name="Running Stock (L)" />
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -349,7 +349,7 @@ function OverviewTab({ rows, totals }: {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "#16253a", border: "1px solid #2a3f5a", borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: "var(--msp-navy-mid)", border: "1px solid var(--msp-navy-border)", borderRadius: 8, fontSize: 12 }}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     formatter={(v: any) => [`${fmt(Number(v))} L`]}
                   />
@@ -521,17 +521,17 @@ function ConsumersTab({ rows }: { rows: TxRow[] }) {
                 margin={{ top: 4, right: 16, bottom: 4, left: 100 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" tick={{ fill: "#7a90b0", fontSize: 10 }} tickLine={false} axisLine={false}
+                <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
                   tickFormatter={(v) => `${v}L`} />
-                <YAxis type="category" dataKey="vehicle" tick={{ fill: "#e8edf4", fontSize: 10 }}
+                <YAxis type="category" dataKey="vehicle" tick={{ fill: "var(--msp-text)", fontSize: 10 }}
                   tickLine={false} axisLine={false} width={98} />
                 <Tooltip
-                  contentStyle={{ background: "#16253a", border: "1px solid #2a3f5a", borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: "var(--msp-navy-mid)", border: "1px solid var(--msp-navy-border)", borderRadius: 8, fontSize: 12 }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [`${fmt(Number(v))} L`, name]}
                 />
-                <Bar dataKey="diesel" name="Diesel" fill="#f5a623" radius={[0,3,3,0]} stackId="a" />
-                <Bar dataKey="petrol" name="Petrol" fill="#1fc8c8" radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="diesel" name="Diesel" fill="var(--msp-gold-light)" radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="petrol" name="Petrol" fill="var(--msp-teal)" radius={[0,3,3,0]} stackId="a" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -550,17 +550,17 @@ function ConsumersTab({ rows }: { rows: TxRow[] }) {
                 margin={{ top: 4, right: 16, bottom: 4, left: 80 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" tick={{ fill: "#7a90b0", fontSize: 10 }} tickLine={false} axisLine={false}
+                <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
                   tickFormatter={(v) => `${v}L`} />
-                <YAxis type="category" dataKey="estate" tick={{ fill: "#e8edf4", fontSize: 10 }}
+                <YAxis type="category" dataKey="estate" tick={{ fill: "var(--msp-text)", fontSize: 10 }}
                   tickLine={false} axisLine={false} width={78} />
                 <Tooltip
-                  contentStyle={{ background: "#16253a", border: "1px solid #2a3f5a", borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: "var(--msp-navy-mid)", border: "1px solid var(--msp-navy-border)", borderRadius: 8, fontSize: 12 }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any, name: any) => [`${fmt(Number(v))} L`, name]}
                 />
-                <Bar dataKey="diesel" name="Diesel" fill="#f5a623" radius={[0,3,3,0]} stackId="a" />
-                <Bar dataKey="petrol" name="Petrol" fill="#1fc8c8" radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="diesel" name="Diesel" fill="var(--msp-gold-light)" radius={[0,3,3,0]} stackId="a" />
+                <Bar dataKey="petrol" name="Petrol" fill="var(--msp-teal)" radius={[0,3,3,0]} stackId="a" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -588,13 +588,13 @@ function ConsumersTab({ rows }: { rows: TxRow[] }) {
             <tbody>
               {vehicleBreakdown.map((v) => (
                 <tr key={v.vehicle}>
-                  <td style={{ color: "#7a90b0" }}>{v.rank}</td>
+                  <td style={{ color: "var(--msp-neutral)" }}>{v.rank}</td>
                   <td>{v.vehicle}</td>
                   <td>{v.estate}</td>
-                  <td className={css.tdNum} style={{ color: "#f5a623" }}>{fmt(v.diesel)}</td>
-                  <td className={css.tdNum} style={{ color: "#1fc8c8" }}>{fmt(v.petrol)}</td>
+                  <td className={css.tdNum} style={{ color: "var(--msp-gold-light)" }}>{fmt(v.diesel)}</td>
+                  <td className={css.tdNum} style={{ color: "var(--msp-teal)" }}>{fmt(v.petrol)}</td>
                   <td className={css.tdNum}>{fmt(v.total)}</td>
-                  <td className={css.tdNum} style={{ color: "#7a90b0" }}>{v.pct}%</td>
+                  <td className={css.tdNum} style={{ color: "var(--msp-neutral)" }}>{v.pct}%</td>
                 </tr>
               ))}
             </tbody>
@@ -722,7 +722,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
         </button>
       </div>
 
-      <div style={{ fontSize: "0.8125rem", color: "#7a90b0", marginBottom: "0.875rem" }}>
+      <div style={{ fontSize: "0.8125rem", color: "var(--msp-neutral)", marginBottom: "0.875rem" }}>
         {filtered.length} transaction{filtered.length !== 1 ? "s" : ""} found
       </div>
 
@@ -739,7 +739,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
-              <tr><td colSpan={10} style={{ textAlign:"center", color:"#7a90b0", padding:"2.5rem" }}>
+              <tr><td colSpan={10} style={{ textAlign:"center", color:"var(--msp-neutral)", padding:"2.5rem" }}>
                 No transactions match the selected filters
               </td></tr>
             ) : pageRows.map((r) => (
@@ -753,7 +753,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
                 <td>{r.vehicle_name}</td>
                 <td className={css.tdNum}>{fmt(r.qty_l)}</td>
                 <td className={css.tdNum}>{r.amount > 0 ? fmtCur(r.amount) : "—"}</td>
-                <td style={{ color:"#7a90b0", fontSize:"0.75rem" }}>{r.remarks}</td>
+                <td style={{ color:"var(--msp-neutral)", fontSize:"0.75rem" }}>{r.remarks}</td>
               </tr>
             ))}
           </tbody>

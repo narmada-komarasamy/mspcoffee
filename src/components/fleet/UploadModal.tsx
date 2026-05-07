@@ -155,11 +155,11 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-[#16253a] border border-[#2a3f5a] shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-msp-navy-mid border border-msp-navy-border shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a3f5a]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-msp-navy-border">
           <div className="flex items-center gap-3">
-            <FileSpreadsheet className="h-5 w-5 text-[#1fc8c8]" />
+            <FileSpreadsheet className="h-5 w-5 text-msp-teal" />
             <h2 className="text-base font-semibold text-white">Upload Fleet Data</h2>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition">
@@ -173,9 +173,9 @@ export function UploadModal({ onClose, onSuccess }: Props) {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => inputRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-[#2a3f5a] rounded-xl py-14 cursor-pointer hover:border-[#1fc8c8]/50 hover:bg-[#1fc8c8]/5 transition"
+              className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-msp-navy-border rounded-xl py-14 cursor-pointer hover:border-msp-teal/50 hover:bg-msp-teal/5 transition"
             >
-              <CloudUpload className="h-12 w-12 text-[#1fc8c8]/50" />
+              <CloudUpload className="h-12 w-12 text-msp-teal/50" />
               <div className="text-center">
                 <p className="text-white font-medium mb-1">Drop your Excel file here</p>
                 <p className="text-white/40 text-sm">or click to browse · .xlsx or .xls</p>
@@ -216,11 +216,11 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                 </div>
               )}
 
-              <div className="rounded-lg border border-[#2a3f5a] overflow-hidden">
+              <div className="rounded-lg border border-msp-navy-border overflow-hidden">
                 <div className="overflow-x-auto max-h-52">
                   <table className="w-full text-xs" style={{ fontFamily: "monospace" }}>
                     <thead>
-                      <tr className="bg-[#0d1b2a] text-white/50 uppercase tracking-wide">
+                      <tr className="bg-msp-bg text-white/50 uppercase tracking-wide">
                         <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
                         <th className="px-3 py-2 text-left whitespace-nowrap">Vehicle</th>
                         <th className="px-3 py-2 text-left whitespace-nowrap">Account</th>
@@ -234,23 +234,23 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                     </thead>
                     <tbody>
                       {rows.slice(0, 50).map((r, i) => (
-                        <tr key={i} className="border-t border-[#1b2a3d] text-white/80">
+                        <tr key={i} className="border-t border-msp-navy-light text-white/80">
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.date}</td>
-                          <td className="px-3 py-1.5 whitespace-nowrap text-[#1fc8c8]">{r.vehicle_id}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap text-msp-teal">{r.vehicle_id}</td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.account}</td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.fuel_type}</td>
                           <td className="px-3 py-1.5 text-right">{r.km_run.toLocaleString()}</td>
                           <td className="px-3 py-1.5 text-right">{r.fuel_filled_l.toLocaleString()}</td>
                           <td className="px-3 py-1.5 text-right">{r.fuel_cost.toLocaleString()}</td>
                           <td className="px-3 py-1.5 text-right">{r.maint_cost.toLocaleString()}</td>
-                          <td className="px-3 py-1.5 text-right text-[#f5a623]">{r.total_cost.toLocaleString()}</td>
+                          <td className="px-3 py-1.5 text-right text-msp-gold-light">{r.total_cost.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {rows.length > 50 && (
-                  <div className="px-3 py-2 text-center text-xs text-white/30 border-t border-[#1b2a3d]">
+                  <div className="px-3 py-2 text-center text-xs text-white/30 border-t border-msp-navy-light">
                     +{(rows.length - 50).toLocaleString()} more rows
                   </div>
                 )}
@@ -259,14 +259,14 @@ export function UploadModal({ onClose, onSuccess }: Props) {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-[#2a3f5a] text-white/60 text-sm hover:bg-white/5 transition"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-msp-navy-border text-white/60 text-sm hover:bg-white/5 transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUpload}
                   disabled={rows.length === 0}
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-[#1fc8c8] text-[#0d1b2a] text-sm font-semibold hover:bg-[#17a8a8] transition disabled:opacity-40"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-msp-teal text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
                 >
                   Upload {rows.length.toLocaleString()} rows
                 </button>
@@ -276,7 +276,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
           {step === "uploading" && (
             <div className="flex flex-col items-center justify-center gap-4 py-16">
-              <Loader2 className="h-10 w-10 text-[#1fc8c8] animate-spin" />
+              <Loader2 className="h-10 w-10 text-msp-teal animate-spin" />
               <p className="text-white font-medium">Uploading…</p>
               <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} / {rows.length.toLocaleString()} rows</p>
             </div>
@@ -284,7 +284,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
           {step === "done" && (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
-              <CheckCircle className="h-10 w-10 text-[#2ecc71]" />
+              <CheckCircle className="h-10 w-10 text-msp-green" />
               <p className="text-white font-medium">Upload complete</p>
               <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} rows saved to Supabase</p>
             </div>

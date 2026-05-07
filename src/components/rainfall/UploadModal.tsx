@@ -111,11 +111,11 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-[#0a1824] border border-white/10 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-msp-card border border-white/10 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <FileSpreadsheet className="h-5 w-5 text-[#38bdf8]" />
+            <FileSpreadsheet className="h-5 w-5 text-msp-teal-light" />
             <h2 className="text-base font-semibold text-white">Upload Rainfall Data</h2>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition">
@@ -129,9 +129,9 @@ export function UploadModal({ onClose, onSuccess }: Props) {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => inputRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-white/20 rounded-xl py-16 cursor-pointer hover:border-[#38bdf8]/50 hover:bg-[#38bdf8]/5 transition"
+              className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-white/20 rounded-xl py-16 cursor-pointer hover:border-msp-teal-light/50 hover:bg-msp-teal-light/5 transition"
             >
-              <CloudUpload className="h-12 w-12 text-[#38bdf8]/60" />
+              <CloudUpload className="h-12 w-12 text-msp-teal-light/60" />
               <div className="text-center">
                 <p className="text-white font-medium mb-1">Drop your Excel file here</p>
                 <p className="text-white/40 text-sm">or click to browse · .xlsx or .xls</p>
@@ -183,7 +183,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                         <tr key={i} className="border-t border-white/5 text-white/80">
                           <td className="px-3 py-1.5">{r.date}</td>
                           <td className="px-3 py-1.5">{r.estate}</td>
-                          <td className="px-3 py-1.5 text-right text-[#38bdf8]">{r.rainfall_mm}</td>
+                          <td className="px-3 py-1.5 text-right text-msp-teal-light">{r.rainfall_mm}</td>
                           <td className="px-3 py-1.5 text-right text-white/50">{r.inches.toFixed(3)}</td>
                         </tr>
                       ))}
@@ -204,7 +204,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                 <button
                   onClick={handleUpload}
                   disabled={rows.length === 0}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#38bdf8] text-[#020508] text-sm font-semibold hover:bg-[#7dd3fc] transition disabled:opacity-40"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-msp-teal-light text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
                 >
                   Upload {rows.length.toLocaleString()} rows
                 </button>
@@ -214,7 +214,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
           {step === "uploading" && (
             <div className="flex flex-col items-center justify-center gap-4 py-16">
-              <Loader2 className="h-10 w-10 text-[#38bdf8] animate-spin" />
+              <Loader2 className="h-10 w-10 text-msp-teal-light animate-spin" />
               <p className="text-white font-medium">Uploading…</p>
               <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} / {rows.length.toLocaleString()} rows</p>
             </div>
@@ -222,7 +222,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
           {step === "done" && (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
-              <CheckCircle className="h-10 w-10 text-[#4ade80]" />
+              <CheckCircle className="h-10 w-10 text-msp-green" />
               <p className="text-white font-medium">Upload complete</p>
               <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} rows saved to Supabase</p>
             </div>

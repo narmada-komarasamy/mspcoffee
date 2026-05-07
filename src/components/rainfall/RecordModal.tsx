@@ -68,7 +68,7 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md rounded-2xl bg-[#0a1824] border border-white/10 shadow-2xl">
+      <div className="relative w-full max-w-md rounded-2xl bg-msp-card border border-white/10 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 className="text-base font-semibold text-white">
@@ -87,7 +87,7 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
               type="date"
               value={form.date}
               onChange={(e) => set("date", e.target.value)}
-              className="w-full bg-[#07111a] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#38bdf8]/50"
+              className="w-full bg-msp-surface border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-msp-teal-light/50"
             />
           </div>
 
@@ -97,7 +97,7 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
             <select
               value={form.estate}
               onChange={(e) => set("estate", e.target.value)}
-              className="w-full bg-[#07111a] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#38bdf8]/50 appearance-none"
+              className="w-full bg-msp-surface border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-msp-teal-light/50 appearance-none"
             >
               {ESTATES.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
@@ -113,7 +113,7 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
                 step="0.1"
                 value={form.rainfall_mm}
                 onChange={(e) => set("rainfall_mm", parseFloat(e.target.value) || 0)}
-                className="w-full bg-[#07111a] border border-white/10 rounded-lg px-3 py-2.5 text-[#38bdf8] text-sm focus:outline-none focus:border-[#38bdf8]/50"
+                className="w-full bg-msp-surface border border-white/10 rounded-lg px-3 py-2.5 text-msp-teal-light text-sm focus:outline-none focus:border-msp-teal-light/50"
               />
             </div>
             <div>
@@ -124,12 +124,12 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
                 step="0.001"
                 value={form.inches}
                 onChange={(e) => set("inches", parseFloat(e.target.value) || 0)}
-                className="w-full bg-[#07111a] border border-white/10 rounded-lg px-3 py-2.5 text-white/70 text-sm focus:outline-none focus:border-[#38bdf8]/50"
+                className="w-full bg-msp-surface border border-white/10 rounded-lg px-3 py-2.5 text-white/70 text-sm focus:outline-none focus:border-msp-teal-light/50"
               />
             </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-msp-danger text-sm">{error}</p>}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
@@ -139,8 +139,8 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
                 disabled={deleting}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${
                   confirmDelete
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "border border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    ? "bg-msp-danger text-white hover:opacity-90"
+                    : "border border-msp-danger/30 text-msp-danger hover:bg-msp-danger/10"
                 }`}
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -153,7 +153,7 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#38bdf8] text-[#020508] text-sm font-semibold hover:bg-[#7dd3fc] transition disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-msp-teal-light text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {isEdit ? "Save changes" : "Add record"}

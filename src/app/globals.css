@@ -46,6 +46,67 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ── MSP Coffee design tokens ────────────────────────────────────────────────
+     These expose msp-* Tailwind utility classes, e.g. bg-msp-navy, text-msp-gold. */
+
+  /* Brand primaries */
+  --color-msp-navy:        #0f2235;
+  --color-msp-navy-mid:    #16253a;
+  --color-msp-navy-light:  #1b2a3d;
+  --color-msp-navy-border: #2a3f5a;
+
+  /* Gold accent */
+  --color-msp-gold:        #e4b84a;
+  --color-msp-gold-light:  #f5a623;
+
+  /* Teal accent */
+  --color-msp-teal:        #1fc8c8;
+  --color-msp-teal-light:  #38bdf8;
+
+  /* Green / estate */
+  --color-msp-green:       #2ecc71;
+  --color-msp-green-light: #86efac;
+
+  /* Semantic */
+  --color-msp-danger:      #e8524a;
+  --color-msp-neutral:     #7a90b0;
+
+  /* Text */
+  --color-msp-text:        #e8edf4;
+  --color-msp-text-dim:    #d1e8f5;
+  --color-msp-charcoal:    #3a5070;
+
+  /* Backgrounds */
+  --color-msp-bg:          #0d1b2a;
+  --color-msp-surface:     #07111a;
+  --color-msp-card:        #0a1824;
+  --color-msp-subtle:      #0f2437;
+
+  /* Typography */
+  --font-msp-sans:  'Exo 2', system-ui, sans-serif;
+  --font-msp-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-msp-mono:  'JetBrains Mono', monospace;
+
+  /* Letter spacing */
+  --tracking-msp-tight:   -0.02em;
+  --tracking-msp-wide:     0.05em;
+  --tracking-msp-wider:    0.1em;
+  --tracking-msp-widest:   0.2em;
+  --tracking-msp-caps:     0.25em;
+
+  /* Border radius */
+  --radius-msp-sm:   4px;
+  --radius-msp-md:   8px;
+  --radius-msp-lg:   12px;
+  --radius-msp-xl:   16px;
+  --radius-msp-pill: 9999px;
+
+  /* Box shadow */
+  --shadow-msp-card:       0 4px 24px rgba(0,0,0,0.4);
+  --shadow-msp-float:      0 8px 32px rgba(0,0,0,0.5);
+  --shadow-msp-glow-teal:  0 0 16px rgba(31,200,200,0.25);
+  --shadow-msp-glow-gold:  0 0 16px rgba(228,184,74,0.25);
 }
 
 :root {
@@ -128,3 +189,95 @@
     @apply font-sans;
   }
 }
+
+/* ── MSP Coffee — CSS custom properties ──────────────────────────────────────
+   Merged from msp-theme-globals.css. Available to CSS modules and inline styles
+   that cannot use Tailwind classes.                                            */
+:root {
+  /* Brand primaries */
+  --msp-navy:        #0f2235;
+  --msp-navy-mid:    #16253a;
+  --msp-navy-light:  #1b2a3d;
+  --msp-navy-border: #2a3f5a;
+
+  /* Gold accent */
+  --msp-gold:        #e4b84a;
+  --msp-gold-light:  #f5a623;
+  --msp-gold-muted:  rgba(228,184,74,0.15);
+
+  /* Teal accent */
+  --msp-teal:        #1fc8c8;
+  --msp-teal-light:  #38bdf8;
+  --msp-teal-muted:  rgba(31,200,200,0.12);
+
+  /* Green / estate */
+  --msp-green:       #2ecc71;
+  --msp-green-light: #86efac;
+  --msp-green-muted: rgba(134,239,172,0.15);
+
+  /* Semantic */
+  --msp-danger:      #e8524a;
+  --msp-warning:     #f5a623;
+  --msp-neutral:     #7a90b0;
+
+  /* Text */
+  --msp-text:        #e8edf4;
+  --msp-text-dim:    #d1e8f5;
+  --msp-charcoal:    #3a5070;
+
+  /* Backgrounds */
+  --msp-bg:          #0d1b2a;
+  --msp-surface:     #07111a;
+  --msp-card:        #0a1824;
+  --msp-subtle:      #0f2437;
+
+  /* Typography */
+  --msp-font-sans:   'Exo 2', system-ui, sans-serif;
+  --msp-font-serif:  'Cormorant Garamond', Georgia, serif;
+  --msp-font-mono:   'JetBrains Mono', monospace;
+
+  /* Shadows */
+  --msp-shadow-card:       0 4px 24px rgba(0,0,0,0.4);
+  --msp-shadow-float:      0 8px 32px rgba(0,0,0,0.5);
+  --msp-shadow-glow-teal:  0 0 16px rgba(31,200,200,0.25);
+  --msp-shadow-glow-gold:  0 0 16px rgba(228,184,74,0.25);
+}
+
+/* Legacy --t-* aliases used in existing CSS modules */
+:root {
+  --t-bg:       var(--msp-bg);
+  --t-surface:  var(--msp-surface);
+  --t-card:     var(--msp-card);
+  --t-text:     var(--msp-text-dim);
+  --t-heading:  #f0f9ff;
+  --t-accent:   var(--msp-teal-light);
+  --t-gold:     var(--msp-gold);
+  --t-green:    var(--msp-green-light);
+  --t-muted:    var(--msp-charcoal);
+  --t-border:   var(--msp-subtle);
+  --t-subtle:   var(--msp-surface);
+}
+
+/* ── MSP utility classes ─────────────────────────────────────────────────────── */
+.msp-text-gold      { color: var(--msp-gold); }
+.msp-text-teal      { color: var(--msp-teal); }
+.msp-text-green     { color: var(--msp-green-light); }
+.msp-text-danger    { color: var(--msp-danger); }
+.msp-text-neutral   { color: var(--msp-neutral); }
+.msp-text-body      { color: var(--msp-text); }
+.msp-text-dim       { color: var(--msp-text-dim); }
+.msp-text-charcoal  { color: var(--msp-charcoal); }
+
+.msp-bg-navy        { background-color: var(--msp-navy); }
+.msp-bg-navy-mid    { background-color: var(--msp-navy-mid); }
+.msp-bg-navy-light  { background-color: var(--msp-navy-light); }
+.msp-bg-surface     { background-color: var(--msp-surface); }
+.msp-bg-card        { background-color: var(--msp-card); }
+.msp-bg-gold-muted  { background-color: var(--msp-gold-muted); }
+.msp-bg-teal-muted  { background-color: var(--msp-teal-muted); }
+.msp-bg-green-muted { background-color: var(--msp-green-muted); }
+
+.msp-border         { border-color: var(--msp-navy-border); }
+.msp-border-gold    { border-color: var(--msp-gold); }
+.msp-border-teal    { border-color: var(--msp-teal); }
+.msp-border-danger  { border-color: var(--msp-danger); }

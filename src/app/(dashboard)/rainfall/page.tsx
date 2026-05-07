@@ -77,10 +77,10 @@ const wmoDesc = (code: number): string => {
 // ─── Weather icon component ───────────────────────────────────────────────────
 function WIcon({ icon, size = 32 }: { icon: string; size?: number }) {
   const cls = "opacity-80";
-  if (icon === "sun")        return <Sun       size={size} className={cls} style={{ color: "#fde68a" }} />;
-  if (icon === "cloud-sun")  return <CloudSun  size={size} className={cls} style={{ color: "#93c5fd" }} />;
-  if (icon === "cloud-rain") return <CloudRain size={size} className={cls} style={{ color: "#38bdf8" }} />;
-  return                            <Cloud     size={size} className={cls} style={{ color: "#93c5fd" }} />;
+  if (icon === "sun")        return <Sun       size={size} className={cls} style={{ color: "var(--msp-gold)" }} />;
+  if (icon === "cloud-sun")  return <CloudSun  size={size} className={cls} style={{ color: "var(--msp-teal-light)" }} />;
+  if (icon === "cloud-rain") return <CloudRain size={size} className={cls} style={{ color: "var(--msp-teal-light)" }} />;
+  return                            <Cloud     size={size} className={cls} style={{ color: "var(--msp-teal-light)" }} />;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -334,12 +334,12 @@ export default function RainfallPage() {
   );
 
   // ─── Tooltip style ─────────────────────────────────────────────────────────
-  const ttStyle = { backgroundColor: "#0a1824", border: "1px solid #162d44", borderRadius: 4, color: "#d1e8f5", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
+  const ttStyle = { backgroundColor: "var(--msp-bg)", border: "1px solid var(--msp-navy-border)", borderRadius: 4, color: "var(--msp-text-dim)", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
 
   if (loading) return (
     <div className={s.page}>
       <div className={s.content} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <span style={{ color: "#38bdf8", fontSize: 13, fontFamily: "var(--font-jetbrains), monospace", letterSpacing: "0.2em" }}>LOADING…</span>
+        <span style={{ color: "var(--msp-teal-light)", fontSize: 13, fontFamily: "var(--font-jetbrains), monospace", letterSpacing: "0.2em" }}>LOADING…</span>
       </div>
     </div>
   );
@@ -372,7 +372,7 @@ export default function RainfallPage() {
               <div className={s.dateDisplay}>{dateStr}</div>
               <div className={s.lastUpdated}>
                 Data last updated: <span>{maxDataDate ? fmtDate(maxDataDate) : "—"}</span>
-                {lastRefreshed && <span style={{ color: "#2a4a62", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
+                {lastRefreshed && <span style={{ color: "var(--msp-charcoal)", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
               </div>
             </div>
           </header>
@@ -400,7 +400,7 @@ export default function RainfallPage() {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ color: "#3a6080", fontSize: 11, marginTop: 8 }}>Loading…</div>
+                    <div style={{ color: "var(--msp-charcoal)", fontSize: 11, marginTop: 8 }}>Loading…</div>
                   )}
                 </div>
               );
@@ -562,7 +562,7 @@ export default function RainfallPage() {
               </div>
             </div>
             {data.length === 0 ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 260, color: "#3a6080", fontSize: 12, letterSpacing: "0.1em" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 260, color: "var(--msp-charcoal)", fontSize: 12, letterSpacing: "0.1em" }}>
                 NO DATA — UPLOAD YOUR EXCEL TO BEGIN
               </div>
             ) : (
@@ -570,8 +570,8 @@ export default function RainfallPage() {
                 {grouping === "monthly" ? (
                   <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.06)" />
-                    <XAxis dataKey="name" stroke="#3a6080" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
-                    <YAxis stroke="#3a6080" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <XAxis dataKey="name" stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <YAxis stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
@@ -581,8 +581,8 @@ export default function RainfallPage() {
                 ) : (
                   <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.06)" />
-                    <XAxis dataKey="name" stroke="#3a6080" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
-                    <YAxis stroke="#3a6080" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <XAxis dataKey="name" stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <YAxis stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
@@ -609,7 +609,7 @@ export default function RainfallPage() {
               </thead>
               <tbody>
                 {topEvents.length === 0 ? (
-                  <tr><td colSpan={5} style={{ textAlign: "center", color: "#3a6080", padding: "32px 0" }}>No data for selected filters</td></tr>
+                  <tr><td colSpan={5} style={{ textAlign: "center", color: "var(--msp-charcoal)", padding: "32px 0" }}>No data for selected filters</td></tr>
                 ) : topEvents.map((r, i) => (
                   <tr key={r.id}>
                     <td>
@@ -617,7 +617,7 @@ export default function RainfallPage() {
                         {i < 3 ? MEDALS[i] : i + 1}
                       </span>
                     </td>
-                    <td style={{ color: "#7a9bb8" }}>{fmtDate(r.date)}</td>
+                    <td style={{ color: "var(--msp-neutral)" }}>{fmtDate(r.date)}</td>
                     <td>
                       <span className={s.estateTag}>
                         <span className={s.tagDot} style={{ backgroundColor: theme.estates[r.estate] }} />
@@ -627,16 +627,16 @@ export default function RainfallPage() {
                     <td style={{ textAlign: "right" }}>
                       <span className={s.rainfallBar}>
                         <span className={s.barFill} style={{ width: `${(r.rainfall_mm / maxMm) * 80}px` }} />
-                        <span style={{ color: "#38bdf8" }}>{unit === "mm" ? r.rainfall_mm : r.inches.toFixed(3)}</span>
-                        <span style={{ color: "#3a6080", fontSize: 10 }}>{unitStr}</span>
+                        <span style={{ color: "var(--msp-teal-light)" }}>{unit === "mm" ? r.rainfall_mm : r.inches.toFixed(3)}</span>
+                        <span style={{ color: "var(--msp-charcoal)", fontSize: 10 }}>{unitStr}</span>
                       </span>
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <button
                         onClick={() => setEditRecord({ id: r.id, date: r.date, estate: r.estate, rainfall_mm: r.rainfall_mm, inches: r.inches })}
-                        style={{ background: "none", border: "none", color: "#3a6080", cursor: "pointer", padding: "2px 4px" }}
-                        onMouseOver={(e) => (e.currentTarget.style.color = "#38bdf8")}
-                        onMouseOut={(e) => (e.currentTarget.style.color = "#3a6080")}
+                        style={{ background: "none", border: "none", color: "var(--msp-charcoal)", cursor: "pointer", padding: "2px 4px" }}
+                        onMouseOver={(e) => (e.currentTarget.style.color = "var(--msp-teal-light)")}
+                        onMouseOut={(e) => (e.currentTarget.style.color = "var(--msp-charcoal)")}
                       >
                         <Pencil size={13} />
                       </button>
@@ -668,9 +668,9 @@ export default function RainfallPage() {
             <button className={s.recordsToggle} onClick={() => setShowRecords((v) => !v)}>
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: 13, fontWeight: 500 }}>All Records</div>
-                <div style={{ fontSize: 10, color: "#3a6080", marginTop: 2 }}>{filtered.length.toLocaleString()} records · click to {showRecords ? "hide" : "expand"}</div>
+                <div style={{ fontSize: 10, color: "var(--msp-charcoal)", marginTop: 2 }}>{filtered.length.toLocaleString()} records · click to {showRecords ? "hide" : "expand"}</div>
               </div>
-              <span style={{ color: "#3a6080", fontSize: 11 }}>{showRecords ? "▲" : "▼"}</span>
+              <span style={{ color: "var(--msp-charcoal)", fontSize: 11 }}>{showRecords ? "▲" : "▼"}</span>
             </button>
             {showRecords && (
               <>
@@ -688,21 +688,21 @@ export default function RainfallPage() {
                     <tbody>
                       {pagedRecords.map((r) => (
                         <tr key={r.id}>
-                          <td style={{ paddingLeft: 24, color: "#7a9bb8" }}>{fmtDate(r.date)}</td>
+                          <td style={{ paddingLeft: 24, color: "var(--msp-neutral)" }}>{fmtDate(r.date)}</td>
                           <td>
                             <span className={s.estateTag}>
                               <span className={s.tagDot} style={{ backgroundColor: theme.estates[r.estate] }} />
                               <span style={{ color: theme.estates[r.estate] }}>{r.estate}</span>
                             </span>
                           </td>
-                          <td style={{ textAlign: "right", color: "#38bdf8" }}>{r.rainfall_mm}</td>
-                          <td style={{ textAlign: "right", color: "#3a6080" }}>{r.inches.toFixed(3)}</td>
+                          <td style={{ textAlign: "right", color: "var(--msp-teal-light)" }}>{r.rainfall_mm}</td>
+                          <td style={{ textAlign: "right", color: "var(--msp-charcoal)" }}>{r.inches.toFixed(3)}</td>
                           <td style={{ textAlign: "right", paddingRight: 24 }}>
                             <button
                               onClick={() => setEditRecord({ id: r.id, date: r.date, estate: r.estate, rainfall_mm: r.rainfall_mm, inches: r.inches })}
-                              style={{ background: "none", border: "none", color: "#3a6080", cursor: "pointer" }}
-                              onMouseOver={(e) => (e.currentTarget.style.color = "#38bdf8")}
-                              onMouseOut={(e) => (e.currentTarget.style.color = "#3a6080")}
+                              style={{ background: "none", border: "none", color: "var(--msp-charcoal)", cursor: "pointer" }}
+                              onMouseOver={(e) => (e.currentTarget.style.color = "var(--msp-teal-light)")}
+                              onMouseOut={(e) => (e.currentTarget.style.color = "var(--msp-charcoal)")}
                             >
                               <Pencil size={13} />
                             </button>

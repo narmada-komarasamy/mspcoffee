@@ -112,14 +112,14 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
     onClose();
   };
 
-  const inputCls = "w-full bg-[#0d1b2a] border border-[#2a3f5a] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#1fc8c8]/60 transition";
+  const inputCls = "w-full bg-msp-bg border border-msp-navy-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-msp-teal/60 transition";
   const labelCls = "block text-[10px] text-white/40 uppercase tracking-widest mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-[#16253a] border border-[#2a3f5a] shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-msp-navy-mid border border-msp-navy-border shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a3f5a] sticky top-0 bg-[#16253a] z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-msp-navy-border sticky top-0 bg-msp-navy-mid z-10">
           <h2 className="text-base font-semibold text-white">
             {isEdit ? "Edit Record" : "Add Fleet Record"}
           </h2>
@@ -144,7 +144,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
                 value={form.vehicle_id}
                 onChange={(e) => set("vehicle_id", e.target.value)}
                 placeholder="e.g. TN-01-AB-1234"
-                className={`${inputCls} text-[#1fc8c8]`}
+                className={`${inputCls} text-msp-teal`}
               />
               <datalist id="vehicle-list">
                 {vehicles.map((v) => <option key={v} value={v} />)}
@@ -195,7 +195,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             <div>
               <label className={labelCls}>KM Run (auto)</label>
               <input type="number" readOnly value={form.km_run}
-                className={`${inputCls} text-[#1fc8c8] opacity-70 cursor-not-allowed`} />
+                className={`${inputCls} text-msp-teal opacity-70 cursor-not-allowed`} />
             </div>
           </div>
 
@@ -209,7 +209,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             <div>
               <label className={labelCls}>Fuel Cost (₹)</label>
               <input type="number" min="0" value={form.fuel_cost}
-                onChange={num("fuel_cost")} className={`${inputCls} text-[#f5a623]`} />
+                onChange={num("fuel_cost")} className={`${inputCls} text-msp-gold-light`} />
             </div>
           </div>
 
@@ -218,24 +218,24 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             <div>
               <label className={labelCls}>Maint Cost (₹)</label>
               <input type="number" min="0" value={form.maint_cost}
-                onChange={num("maint_cost")} className={`${inputCls} text-[#e8524a]`} />
+                onChange={num("maint_cost")} className={`${inputCls} text-msp-danger`} />
             </div>
             <div>
               <label className={labelCls}>Total Cost (auto)</label>
               <input type="number" readOnly value={form.total_cost}
-                className={`${inputCls} text-[#f5a623] opacity-70 cursor-not-allowed`} />
+                className={`${inputCls} text-msp-gold-light opacity-70 cursor-not-allowed`} />
             </div>
           </div>
 
           {/* Row 6: Derived metrics (read-only display) */}
-          <div className="grid grid-cols-2 gap-4 bg-[#0d1b2a] rounded-lg p-3">
+          <div className="grid grid-cols-2 gap-4 bg-msp-bg rounded-lg p-3">
             <div>
               <p className={labelCls}>Avg Mileage (km/L)</p>
-              <p className="text-[#2ecc71] text-lg font-semibold">{form.avg_mileage}</p>
+              <p className="text-msp-green text-lg font-semibold">{form.avg_mileage}</p>
             </div>
             <div>
               <p className={labelCls}>Cost per KM (₹)</p>
-              <p className="text-[#1fc8c8] text-lg font-semibold">{form.cost_per_km}</p>
+              <p className="text-msp-teal text-lg font-semibold">{form.cost_per_km}</p>
             </div>
           </div>
 
@@ -257,7 +257,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
               className={inputCls} />
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-msp-danger text-sm">{error}</p>}
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
@@ -267,8 +267,8 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
                 disabled={deleting}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                   confirmDelete
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "border border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    ? "bg-msp-danger text-white hover:opacity-90"
+                    : "border border-msp-danger/30 text-msp-danger hover:bg-msp-danger/10"
                 }`}
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -277,14 +277,14 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             )}
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-[#2a3f5a] text-white/60 text-sm hover:bg-white/5 transition"
+              className="flex-1 px-4 py-2.5 rounded-lg border border-msp-navy-border text-white/60 text-sm hover:bg-white/5 transition"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#1fc8c8] text-[#0d1b2a] text-sm font-semibold hover:bg-[#17a8a8] transition disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-msp-teal text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {isEdit ? "Save changes" : "Add record"}
