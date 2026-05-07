@@ -64,15 +64,19 @@ function resolveColumns(headers) {
     vehicle_id:            find(["vehicle id", "vehicle"]),
     vehicle_type:          find(["vehicle type", "type"]),
     account:               find(["account"]),
-    fuel_type:             find(["fuel type", "fuel"]),
+    fuel_type:             find(["fuel type", "fuel category", "fuel"]),
     starting_km:           find(["starting km", "start km", "opening km"]),
     closing_km:            find(["closing km", "close km", "ending km"]),
     fuel_filled_l:         find(["fuel filled (l)", "fuel filled", "litres", "liters"]),
-    fuel_cost:             find(["fuel cost", "fuel expense", "fuel cost (₹)", "fuel cost (rs)", "fuel amt", "fuel amount"]),
-    maint_cost:            find(["maint cost", "maintenance cost", "maintenance", "maint cost (₹)", "maint cost (rs)", "maint amt", "maint amount", "maintenance expense"]),
+    fuel_cost:             find(["fuel cost (₹)", "fuel cost(₹)", "fuel cost", "fuel expense", "fuel amount", "fuel amt", "fuel charges", "fuel (₹)", "fuel(₹)", "cost of fuel", "petrol cost", "diesel cost", "petrol/diesel cost"]),
+    maint_cost:            find(["maint cost (₹)", "maint cost(₹)", "maint cost", "maintenance cost (₹)", "maintenance cost(₹)", "maintenance cost", "maintenance", "maint", "maintenance charges", "maintenance amt", "maintenance amount", "repair cost", "service cost", "maint charges", "maint amt", "maintenance expense"]),
     maintenance_performed: find(["maintenance performed", "maint performed", "work done"]),
     remarks:               find(["remarks", "notes"]),
   };
+
+  // ── Warn on undetected cost columns ───────────────────────────────────────
+  if (col.fuel_cost === -1)  Logger.log("⚠️  WARNING: 'Fuel Cost' column not found. Headers detected: " + headers.join(" | "));
+  if (col.maint_cost === -1) Logger.log("⚠️  WARNING: 'Maint Cost' column not found. Headers detected: " + headers.join(" | "));
 
   // Required — throw loudly so execution turns red in Apps Script UI
   const missing = ["date", "vehicle_id"].filter(k => col[k] === -1);

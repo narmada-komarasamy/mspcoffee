@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil, Palette } from "lucide-react";
 import { UploadModal } from "@/components/fleet/UploadModal";
 import { RecordModal, FleetRecord } from "@/components/fleet/RecordModal";
 import s from "./fleet.module.css";
@@ -16,32 +16,50 @@ import s from "./fleet.module.css";
 type Row = FleetRecord & { id: number };
 
 /* ─── Constants ──────────────────────────────────────────────────────────────── */
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","June","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_NAMES   = ["Jan","Feb","Mar","Apr","May","June","Jul","Aug","Sep","Oct","Nov","Dec"];
 const LOG_PAGE_SIZE = 20;
-const TEAL   = "#1fc8c8";
-const GOLD   = "#f5a623";
-const RED    = "#e8524a";
-const GREEN  = "#2ecc71";
-const PURPLE = "#9b59b6";
-const BLUE   = "#3498db";
 
-const VEHICLE_PALETTE = [
-  TEAL, GOLD, RED, GREEN, PURPLE, BLUE,
-  "#fb923c","#f472b6","#a3e635","#34d399","#818cf8","#fbbf24","#60a5fa","#e879f9",
-];
+/* ─── Theme ──────────────────────────────────────────────────────────────────── */
+type FleetThemeConfig = {
+  bg: string; surface: string; card: string; border: string; text: string; muted: string;
+  teal: string; gold: string; red: string; green: string; purple: string; blue: string;
+  vehicles: string[];
+};
+
+const FLEET_THEME_DEFAULT: FleetThemeConfig = {
+  bg:      "#0d1b2a",
+  surface: "#1b2a3d",
+  card:    "#16253a",
+  border:  "#2a3f5a",
+  text:    "#e8edf4",
+  muted:   "#7a90b0",
+  teal:    "#1fc8c8",
+  gold:    "#f5a623",
+  red:     "#e8524a",
+  green:   "#2ecc71",
+  purple:  "#9b59b6",
+  blue:    "#3498db",
+  vehicles: [
+    "#1fc8c8","#f5a623","#e8524a","#2ecc71","#9b59b6","#3498db",
+    "#fb923c","#f472b6","#a3e635","#34d399","#818cf8","#fbbf24","#60a5fa","#e879f9",
+  ],
+};
 
 /* ─── Helpers ────────────────────────────────────────────────────────────────── */
 const fmt  = (n: number, dec = 0) => n.toLocaleString("en-IN", { maximumFractionDigits: dec, minimumFractionDigits: dec });
 const fmtC = (n: number) => n >= 100000 ? "₹" + (n/100000).toFixed(2) + "L" : n >= 1000 ? "₹" + (n/1000).toFixed(1) + "k" : "₹" + fmt(n);
 
+// Supabase returns numeric PostgreSQL columns as strings — coerce everything to number
+const n = (v: unknown) => Number(v) || 0;
+
 function aggRows(rows: Row[]) {
-  const totalKm     = rows.reduce((a, r) => a + r.km_run, 0);
-  const totalLitres = rows.reduce((a, r) => a + r.fuel_filled_l, 0);
-  const fuelCost    = rows.reduce((a, r) => a + r.fuel_cost, 0);
-  const maintCost   = rows.reduce((a, r) => a + r.maint_cost, 0);
+  const totalKm     = rows.reduce((a, r) => a + n(r.km_run), 0);
+  const totalLitres = rows.reduce((a, r) => a + n(r.fuel_filled_l), 0);
+  const fuelCost    = rows.reduce((a, r) => a + n(r.fuel_cost), 0);
+  const maintCost   = rows.reduce((a, r) => a + n(r.maint_cost), 0);
   const totalCost   = fuelCost + maintCost;
-  const startKm     = rows.length > 0 ? Math.min(...rows.map(r => r.starting_km).filter(v => v > 0)) : 0;
-  const closeKm     = rows.length > 0 ? Math.max(...rows.map(r => r.closing_km)) : 0;
+  const startKm     = rows.length > 0 ? Math.min(...rows.map(r => n(r.starting_km)).filter(v => v > 0)) : 0;
+  const closeKm     = rows.length > 0 ? Math.max(...rows.map(r => n(r.closing_km))) : 0;
   return {
     totalKm, totalLitres, fuelCost, maintCost, totalCost,
     avgMileage: totalLitres > 0 ? totalKm / totalLitres : 0,
@@ -115,6 +133,45 @@ export default function FleetPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [editRecord, setEditRecord] = useState<Row | null | false>(false);
 
+  /* ── Theme ───────────────────────────────────────────────────────────────────── */
+  const [theme, setTheme]                   = useState<FleetThemeConfig>({ ...FLEET_THEME_DEFAULT });
+  const [showPalettePanel, setShowPalettePanel] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("mspc-fleet-theme");
+    if (saved) try { setTheme(JSON.parse(saved)); } catch {}
+  }, []);
+
+  const updateTheme = useCallback(<K extends keyof FleetThemeConfig>(key: K, val: FleetThemeConfig[K]) => {
+    setTheme(prev => {
+      const next = { ...prev, [key]: val };
+      localStorage.setItem("mspc-fleet-theme", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const updateVehicleColor = useCallback((idx: number, val: string) => {
+    setTheme(prev => {
+      const next = { ...prev, vehicles: prev.vehicles.map((c, i) => i === idx ? val : c) };
+      localStorage.setItem("mspc-fleet-theme", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const resetTheme = () => {
+    setTheme({ ...FLEET_THEME_DEFAULT });
+    localStorage.removeItem("mspc-fleet-theme");
+  };
+
+  /* ── Dynamic colour constants (used throughout JSX) ──────────────────────────── */
+  const TEAL           = theme.teal;
+  const GOLD           = theme.gold;
+  const RED            = theme.red;
+  const GREEN          = theme.green;
+  const PURPLE         = theme.purple;
+  const BLUE           = theme.blue;
+  const VEHICLE_PALETTE = theme.vehicles;
+
   /* ─── Clock ──────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleString("en-IN", { weekday:"short", day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false }));
@@ -134,7 +191,8 @@ export default function FleetPage() {
         .from("fleet_daily").select("*")
         .order("date", { ascending: true })
         .range(from, from + BATCH - 1);
-      if (error || !rows || rows.length === 0) break;
+      if (error) { console.error("[fleet] loadData error:", error); break; }
+      if (!rows || rows.length === 0) break;
       all = [...all, ...rows];
       if (rows.length < BATCH) break;
       from += BATCH;
@@ -312,7 +370,15 @@ export default function FleetPage() {
 
   /* ══════════════════════════════════════════════════════════════════════════════ */
   return (
-    <div className={s.page}>
+    <div className={s.page} style={{
+      "--t-bg":      theme.bg,
+      "--t-surface": theme.surface,
+      "--t-card":    theme.card,
+      "--t-border":  theme.border,
+      "--t-text":    theme.text,
+      "--t-muted":   theme.muted,
+      "--t-teal":    theme.teal,
+    } as React.CSSProperties}>
       <div className={s.content}>
 
         {/* ── Top info bar ─────────────────────────────────────────────────────── */}
@@ -336,6 +402,12 @@ export default function FleetPage() {
             </button>
             <button className={s.refreshBtn} onClick={loadData} disabled={loading}>
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            </button>
+            <button
+              className={`${s.paletteBtn} ${showPalettePanel ? s.paletteBtnActive : ""}`}
+              onClick={() => setShowPalettePanel(v => !v)}
+            >
+              <Palette size={13} /> Colours
             </button>
           </div>
         </div>
@@ -386,13 +458,14 @@ export default function FleetPage() {
               </div>
             </div>
 
-            <div className={s.kpiGrid2Col} style={{ marginBottom:28 }}>
+            <div className={s.kpiGrid3Col} style={{ marginBottom:28 }}>
               {[
                 { emoji:"⛽", label:"Total Fuel Filled",        value:fmt(svAgg.totalLitres,0),         unit:"L",    sub:`${svRows.length} fill-ups recorded`,                  accent:TEAL   },
                 { emoji:"🛣️", label:"Total KM Running",         value:fmt(svAgg.totalKm,0),              unit:"km",  sub:`Odometer: ${fmt(svAgg.startKm,0)} → ${fmt(svAgg.closeKm,0)}`, accent:GOLD   },
                 { emoji:"🌿", label:"Vehicle Mileage",           value:fmt(svAgg.avgMileage,2),          unit:"km/L", sub:"Average fuel efficiency",                             accent:GREEN  },
                 { emoji:"💰", label:"Vehicle Fuel Cost",         value:fmtC(svAgg.fuelCost),             unit:"",    sub:"Total fuel expenditure (₹)",                          accent:RED    },
-                { emoji:"🔧", label:"Fuel + Maintenance Cost",   value:fmtC(svAgg.totalCost),            unit:"",    sub:"Combined operational cost (₹)",                       accent:PURPLE },
+                { emoji:"🔧", label:"Maintenance Cost",          value:fmtC(svAgg.maintCost),            unit:"",    sub:"Total maintenance expenditure (₹)",                   accent:PURPLE },
+                { emoji:"💸", label:"Fuel + Maintenance Cost",   value:fmtC(svAgg.totalCost),            unit:"",    sub:"Combined operational cost (₹)",                       accent:"#e67e22"},
                 { emoji:"📊", label:"Running Cost / KM",         value:fmt(svAgg.costPerKm,2),           unit:"₹/km",sub:"Total vehicle cost per kilometre",                    accent:BLUE   },
                 { emoji:"🚀", label:"Starting KM",               value:fmt(svAgg.startKm,0),             unit:"",    sub:"First odometer reading",                              accent:TEAL   },
                 { emoji:"🏁", label:"Closing KM",                value:fmt(svAgg.closeKm,0),             unit:"",    sub:"Final odometer reading",                              accent:RED    },
@@ -449,14 +522,17 @@ export default function FleetPage() {
               <button className={s.resetBtn} onClick={() => { setKpiVehicle("ALL"); setKpiYear("ALL"); setKpiMonth("ALL"); setKpiType("ALL"); }}>Reset</button>
             </div>
 
-            <div className={s.kpiGrid2Col}>
+            <div className={s.kpiGrid3Col}>
               {[
                 { emoji:"⛽", label:"Total Fuel Filled",       value:fmt(kpiAgg.totalLitres,0),   unit:"L",    sub:"Litres of fuel consumed",                    accent:TEAL   },
                 { emoji:"🛣️", label:"Total KM Running",        value:fmt(kpiAgg.totalKm,0),        unit:"km",  sub:"Distance covered",                           accent:GOLD   },
                 { emoji:"🌿", label:"Vehicle Mileage",          value:fmt(kpiAgg.avgMileage,2),    unit:"km/L", sub:"Average fuel efficiency",                    accent:GREEN  },
                 { emoji:"💰", label:"Vehicle Fuel Cost",        value:fmtC(kpiAgg.fuelCost),       unit:"",    sub:"Total fuel expenditure (₹)",                 accent:RED    },
-                { emoji:"🔧", label:"Fuel + Maintenance Cost",  value:fmtC(kpiAgg.totalCost),      unit:"",    sub:"Combined operational cost (₹)",              accent:PURPLE },
+                { emoji:"🔧", label:"Maintenance Cost",         value:fmtC(kpiAgg.maintCost),      unit:"",    sub:"Total maintenance expenditure (₹)",          accent:PURPLE },
+                { emoji:"💸", label:"Fuel + Maintenance Cost",  value:fmtC(kpiAgg.totalCost),      unit:"",    sub:"Combined operational cost (₹)",              accent:"#e67e22"},
                 { emoji:"📊", label:"Running Cost / KM",        value:fmt(kpiAgg.costPerKm,2),     unit:"₹/km",sub:"Total vehicle cost per kilometre",           accent:BLUE   },
+                { emoji:"🚀", label:"Starting KM",              value:fmt(kpiAgg.startKm,0),       unit:"",    sub:"First odometer reading",                     accent:"#1abc9c"},
+                { emoji:"🏁", label:"Closing KM",               value:fmt(kpiAgg.closeKm,0),       unit:"",    sub:"Final odometer reading",                     accent:"#e74c3c"},
               ].map(k => (
                 <div key={k.label} className={s.kpiCard} style={{ ["--accent" as string]: k.accent }}>
                   <div className={s.kpiIconBox}>{k.emoji}</div>
@@ -968,6 +1044,74 @@ export default function FleetPage() {
 
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData}/>}
       {editRecord !== false && <RecordModal record={editRecord} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={loadData}/>}
+
+      {/* ── Colour Customiser Panel ───────────────────────────────────────────── */}
+      {showPalettePanel && (
+        <div className={s.cpOverlay} onClick={() => setShowPalettePanel(false)} />
+      )}
+      <div className={`${s.cpPanel} ${showPalettePanel ? s.cpPanelOpen : ""}`}>
+        <button className={s.cpTab} onClick={() => setShowPalettePanel(v => !v)} title="Colour Customiser">
+          <Palette size={18} />
+        </button>
+        <div className={s.cpBody}>
+          <div className={s.cpHeader}>
+            <span>🎨</span>
+            <span className={s.cpTitle}>Colour Customiser</span>
+          </div>
+
+          <div className={s.cpSectionTitle}>Theme</div>
+          {([
+            { key: "bg",      label: "Background"  },
+            { key: "surface", label: "Surface / Inputs" },
+            { key: "card",    label: "Cards"        },
+            { key: "border",  label: "Borders"      },
+            { key: "text",    label: "Body Text"    },
+            { key: "muted",   label: "Muted Labels" },
+          ] as { key: keyof FleetThemeConfig; label: string }[]).map(({ key, label }) => (
+            <label key={key} className={s.cpRow}>
+              <span className={s.cpLabel}>{label}</span>
+              <span className={s.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
+                <input type="color" value={theme[key] as string}
+                  onChange={e => updateTheme(key, e.target.value)}
+                  className={s.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <div className={s.cpSectionTitle}>KPI Accents</div>
+          {([
+            { key: "teal",   label: "Teal / KM"       },
+            { key: "gold",   label: "Gold / Cost"      },
+            { key: "red",    label: "Red / Maint"      },
+            { key: "green",  label: "Green / Mileage"  },
+            { key: "purple", label: "Purple / Maint 2" },
+            { key: "blue",   label: "Blue / Other"     },
+          ] as { key: keyof FleetThemeConfig; label: string }[]).map(({ key, label }) => (
+            <label key={key} className={s.cpRow}>
+              <span className={s.cpLabel}>{label}</span>
+              <span className={s.cpSwatch} style={{ backgroundColor: theme[key] as string }}>
+                <input type="color" value={theme[key] as string}
+                  onChange={e => updateTheme(key, e.target.value)}
+                  className={s.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <div className={s.cpSectionTitle}>Vehicle Colours</div>
+          {vehicles.map((v, i) => (
+            <label key={v} className={s.cpRow}>
+              <span className={s.cpLabel}>{v}</span>
+              <span className={s.cpSwatch} style={{ backgroundColor: theme.vehicles[i] ?? "#888" }}>
+                <input type="color" value={theme.vehicles[i] ?? "#888888"}
+                  onChange={e => updateVehicleColor(i, e.target.value)}
+                  className={s.cpColorInput} />
+              </span>
+            </label>
+          ))}
+
+          <button className={s.cpResetBtn} onClick={resetTheme}>↺ Reset to defaults</button>
+        </div>
+      </div>
     </div>
   );
 }

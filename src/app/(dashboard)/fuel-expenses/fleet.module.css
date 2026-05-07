@@ -1,9 +1,9 @@
 /* ─── Page ───────────────────────────────────────────────────────────────────── */
 .page {
-  background: #0d1b2a;
+  background: var(--t-bg, #0d1b2a);
   min-height: 100%;
   margin: -1rem;
-  color: #e8edf4;
+  color: var(--t-text, #e8edf4);
   font-family: 'Exo 2', var(--font-jetbrains), monospace;
 }
 @media (min-width: 1024px) { .page { margin: -1.5rem; } }
@@ -144,6 +144,16 @@
 }
 @media (max-width: 900px) { .kpiGrid2Col { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 600px) { .kpiGrid2Col { grid-template-columns: 1fr; } }
+
+/* ─── KPI Grid (3-column) ────────────────────────────────────────────────────── */
+.kpiGrid3Col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 0 28px 24px;
+}
+@media (max-width: 1100px) { .kpiGrid3Col { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 600px)  { .kpiGrid3Col { grid-template-columns: 1fr; } }
 
 .kpiCard {
   background: #16253a;
@@ -398,3 +408,78 @@
 }
 .pageBtn:hover:not(:disabled) { border-color: #1fc8c8; color: #1fc8c8; }
 .pageBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ─── Palette button (top bar) ───────────────────────────────────────────────── */
+.paletteBtn {
+  display: flex; align-items: center; gap: 5px;
+  background: transparent; border: 1px solid #2a3f5a; color: #7a90b0;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+}
+.paletteBtn:hover      { border-color: var(--t-teal, #1fc8c8); color: var(--t-teal, #1fc8c8); }
+.paletteBtnActive      { border-color: var(--t-teal, #1fc8c8) !important; color: var(--t-teal, #1fc8c8) !important; background: rgba(31,200,200,0.08) !important; }
+
+/* ─── Colour customiser panel ────────────────────────────────────────────────── */
+.cpOverlay {
+  position: fixed; inset: 0; z-index: 110;
+  background: transparent;
+}
+.cpPanel {
+  position: fixed; top: 0; right: -280px; height: 100vh; width: 270px; z-index: 120;
+  background: #0b1929; border-left: 1px solid #2a3f5a;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.6);
+  transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.cpPanelOpen { right: 0; }
+.cpTab {
+  position: absolute; left: -38px; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 44px;
+  background: #0b1929; border: 1px solid #2a3f5a; border-right: none;
+  border-radius: 8px 0 0 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t-teal, #1fc8c8); cursor: pointer;
+  transition: background 0.2s;
+}
+.cpTab:hover { background: #16253a; }
+.cpBody {
+  flex: 1; overflow-y: auto; padding: 18px 16px 24px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.cpHeader {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.cpTitle { font-size: 14px; font-weight: 700; color: #e8edf4; letter-spacing: 1px; }
+.cpSectionTitle {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: #3a6080;
+  margin: 12px 0 6px; padding-bottom: 4px;
+  border-bottom: 1px solid #1b2a3d;
+}
+.cpRow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0; cursor: pointer;
+}
+.cpLabel { font-size: 12px; color: #7a90b0; }
+.cpSwatch {
+  width: 30px; height: 22px; border-radius: 5px;
+  border: 1px solid #2a3f5a; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.cpColorInput {
+  width: 200%; height: 200%;
+  border: none; padding: 0; cursor: pointer;
+  transform: translate(-25%, -25%);
+  opacity: 0; position: absolute;
+}
+.cpSwatch { position: relative; }
+.cpResetBtn {
+  margin-top: 16px; width: 100%;
+  background: #1b2a3d; border: 1px solid #2a3f5a; color: #7a90b0;
+  font-size: 12px; font-weight: 600; padding: 8px 0; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s;
+}
+.cpResetBtn:hover { border-color: var(--t-teal, #1fc8c8); color: var(--t-teal, #1fc8c8); }
