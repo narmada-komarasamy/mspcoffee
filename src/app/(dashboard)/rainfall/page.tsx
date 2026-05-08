@@ -32,7 +32,7 @@ type ThemeConfig = {
 const THEME_DEFAULT: ThemeConfig = {
   bg:      "#020508",  surface: "#07111a",  card:    "#0a1824",
   border:  "#162d44",  subtle:  "#0f2437",  heading: "#f0f9ff",
-  text:    "#d1e8f5",  muted:   "#3a6080",
+  text:    "#d1e8f5",  muted:   "#7ab8d8",
   accent:  "#38bdf8",  gold:    "#e4b84a",  coral:   "#f87171",
   green:   "#4ade80",  purple:  "#a78bfa",
   estates: { ...ESTATE_COLORS_DEFAULT },
