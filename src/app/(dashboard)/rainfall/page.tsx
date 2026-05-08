@@ -261,13 +261,18 @@ export default function RainfallPage() {
     const total    = r1(withRain.reduce((s, r) => s + val(r), 0));
     const maxRow   = withRain.reduce<Row | null>((a, b) => (!a || val(b) > val(a) ? b : a), null);
     const curYear  = new Date().getFullYear();
-    const rtd      = r1(data.filter((r) => r.year === curYear && r.rainfall_mm > 0).reduce((s, r) => s + val(r), 0));
+    const rtdYear  = year !== "all" ? Number(year) : curYear;
+    const rtd      = r1(data.filter((r) =>
+      r.year === rtdYear &&
+      r.rainfall_mm > 0 &&
+      (estateFilter === "all" || r.estate === estateFilter)
+    ).reduce((s, r) => s + val(r), 0));
     const rainyDates = new Set(withRain.map((r) => r.date));
     const allRainy = [...new Set(data.filter((r) => r.rainfall_mm > 0).map((r) => r.date))].sort();
     const lastRain = allRainy[allRainy.length - 1];
     const dslr     = lastRain ? daysBetween(lastRain, new Date().toISOString().slice(0, 10)) : null;
-    return { total, maxRow, rtd, curYear, rainyDays: rainyDates.size, dslr, lastRain };
-  }, [filtered, data, unit]);
+    return { total, maxRow, rtd, curYear: rtdYear, rainyDays: rainyDates.size, dslr, lastRain };
+  }, [filtered, data, unit, year, estateFilter]);
 
   // ─── Chart ─────────────────────────────────────────────────────────────────
   const activeEstates = compareEstates.length > 0 ? compareEstates : ESTATES;
