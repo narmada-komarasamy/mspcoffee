@@ -136,7 +136,7 @@ export default function RainfallPage() {
 
   // ─── Load theme from localStorage ────────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("mspc-theme");
+    const saved = localStorage.getItem("mspc-theme-v2");
     if (saved) try { setTheme(JSON.parse(saved)); } catch {}
   }, []);
 
@@ -144,14 +144,14 @@ export default function RainfallPage() {
   const updateTheme = useCallback(<K extends keyof ThemeConfig>(key: K, val: ThemeConfig[K]) => {
     setTheme((prev) => {
       const next = { ...prev, [key]: val };
-      localStorage.setItem("mspc-theme", JSON.stringify(next));
+      localStorage.setItem("mspc-theme-v2", JSON.stringify(next));
       return next;
     });
   }, []);
 
   const resetTheme = () => {
     setTheme({ ...THEME_DEFAULT });
-    localStorage.removeItem("mspc-theme");
+    localStorage.removeItem("mspc-theme-v2");
   };
 
   // ─── Clock ────────────────────────────────────────────────────────────────
