@@ -17,6 +17,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor'] },
   { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor'] },
+  { label: 'Export Operations',   href: '/export-operations', iconName: 'Globe',        roles: ['admin', 'supervisor'] },
   { label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Harvest Yield',       href: '/harvest-yield',   iconName: 'Wheat',        roles: ['admin', 'supervisor'] },
