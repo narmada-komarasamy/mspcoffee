@@ -92,7 +92,7 @@
 
 .dateDisplay {
   font-size: 11px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   letter-spacing: 0.1em;
   text-align: right;
 }
@@ -132,7 +132,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-bottom: 8px;
 }
 
@@ -168,7 +168,7 @@
 .unitBtn {
   background: transparent;
   border: none;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   padding: 4px 14px;
@@ -186,7 +186,7 @@
 .resetBtn {
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   padding: 8px 18px;
@@ -205,7 +205,7 @@
 .actionBtn {
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   padding: 8px 16px;
@@ -258,7 +258,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   display: block;
   margin-bottom: 12px;
 }
@@ -309,7 +309,7 @@
   font-size: 9px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-bottom: 14px;
   display: flex;
   align-items: center;
@@ -374,7 +374,7 @@
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-bottom: 6px;
 }
 
@@ -389,14 +389,14 @@
 .kpiUnit {
   font-size: 14px;
   font-weight: 300;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   margin-left: 3px;
 }
 
 .kpiSub {
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-top: 5px;
   letter-spacing: 0.05em;
 }
@@ -446,7 +446,7 @@
 .estateRank {
   margin-left: auto;
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
 }
 
 .estateMetrics {
@@ -467,7 +467,7 @@
   font-size: 9px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-bottom: 4px;
 }
 
@@ -481,7 +481,7 @@
 
 .metricUnit {
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-left: 2px;
   font-family: var(--font-jetbrains), monospace;
 }
@@ -520,7 +520,7 @@
 
 .chartSub {
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-top: 3px;
   letter-spacing: 0.06em;
 }
@@ -537,7 +537,7 @@
 .chartTab {
   background: transparent;
   border: none;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -577,7 +577,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   padding: 0 0 10px;
   text-align: left;
   font-weight: 400;
@@ -613,7 +613,7 @@
   border-radius: 2px;
   background: var(--t-border, #162d44);
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
 }
 
 .rankBadgeTop {
@@ -684,7 +684,7 @@
 
 .yearTotal {
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-top: 3px;
   font-family: var(--font-jetbrains), monospace;
 }
@@ -723,14 +723,14 @@
   padding: 10px 24px;
   border-top: 1px solid var(--t-subtle, #0f2437);
   font-size: 11px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
 }
 
 .pageBtn {
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 10px;
   padding: 4px 12px;
@@ -804,7 +804,7 @@
 
 .weatherDesc {
   font-size: 10px;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin-top: 2px;
   letter-spacing: 0.06em;
 }
@@ -896,7 +896,7 @@
 .resetColorsBtn {
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 10px;
   padding: 6px 14px;
@@ -990,7 +990,7 @@
   font-size: 9px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   margin: 12px 0 6px;
   font-family: var(--font-jetbrains), monospace;
 }
@@ -1050,7 +1050,7 @@
   margin-top: 20px;
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
-  color: var(--t-muted, #3a6080);
+  color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
