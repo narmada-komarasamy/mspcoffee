@@ -329,22 +329,47 @@ export default function FleetPage() {
   }, [data]);
 
   /* Trip cost calculator */
-  const TRIP_DIST: Record<string, Record<string, number>> = {
-    moganad:     { bangalore:340, pattiveranpatti:45,  greenways_s:55,  chennai:390, eng_club_cbe:165 },
-    stanmore:    { bangalore:310, pattiveranpatti:30,  greenways_s:25,  chennai:360, eng_club_cbe:160 },
-    greenways_s: { bangalore:320, pattiveranpatti:40,  greenways_s:0,   chennai:350, moganad:55, stanmore:25, eng_club_cbe:155 },
-    eng_club_cbe:{ bangalore:365, pattiveranpatti:195, greenways_s:155, chennai:505, moganad:165, stanmore:160, eng_club_cbe:0 },
-  };
   const LOC_LABELS: Record<string, string> = {
     moganad:'Moganad Estate, Managalam', stanmore:'Stanmore Estate, Nagalur',
     greenways_s:'7/95 Greenways Rd, Salem', eng_club_cbe:'English Club Race Course, CBE',
     bangalore:'MG Road, Bangalore', pattiveranpatti:'Pattiveranpatti', chennai:'Adyar, Chennai',
   };
+  const LOC_COORDS: Record<string, { lat: number; lon: number }> = {
+    moganad:      { lat: 11.0961, lon: 77.2664 },
+    stanmore:     { lat: 11.7753, lon: 78.2093 },
+    greenways_s:  { lat: 11.6483, lon: 78.1462 },
+    eng_club_cbe: { lat: 11.0168, lon: 76.9558 },
+    bangalore:    { lat: 12.9747, lon: 77.6095 },
+    pattiveranpatti: { lat: 11.4672, lon: 78.0630 },
+    chennai:      { lat: 13.0012, lon: 80.2570 },
+  };
   const START_KEYS = ['moganad','stanmore','greenways_s','eng_club_cbe'];
   const END_KEYS   = ['bangalore','pattiveranpatti','greenways_s','chennai','eng_club_cbe'];
 
+  const [osrmDist,    setOsrmDist]    = useState<number | null>(null);
+  const [osrmLoading, setOsrmLoading] = useState(false);
+
+  useEffect(() => {
+    const from = LOC_COORDS[tripFrom];
+    const to   = LOC_COORDS[tripTo];
+    if (!from || !to || tripFrom === tripTo) { setOsrmDist(null); return; }
+    setOsrmLoading(true);
+    setOsrmDist(null);
+    fetch(
+      `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`
+    )
+      .then(r => r.json())
+      .then(d => {
+        const metres = d?.routes?.[0]?.distance;
+        if (metres) setOsrmDist(Math.round(metres / 1000));
+      })
+      .catch(() => setOsrmDist(null))
+      .finally(() => setOsrmLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripFrom, tripTo]);
+
   const tripCalc = useMemo(() => {
-    const dist = TRIP_DIST[tripFrom]?.[tripTo] ?? null;
+    const dist = osrmDist;
     const vRows = tripVehicle ? data.filter(r => r.vehicle_id === tripVehicle) : [];
     const latestYear = vRows.length > 0 ? Math.max(...vRows.map(r => r.year ?? new Date(r.date).getFullYear())) : null;
     const latestRows = latestYear ? vRows.filter(r => (r.year ?? new Date(r.date).getFullYear()) === latestYear) : [];
@@ -359,8 +384,7 @@ export default function FleetPage() {
     const cost2      = cost1 ? cost1 * 2 : null;
     const totalCost  = (cost2 && cpk) ? cost2 + cpk * dist * 2 : cost2;
     return { dist, mileage, cpk, fuelNeeded, cost1, cost2, totalCost, latestYear };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, tripFrom, tripTo, tripVehicle, fuelPrice]);
+  }, [data, osrmDist, tripVehicle, fuelPrice]);
 
   const vColor = (v: string) => VEHICLE_PALETTE[vehicles.indexOf(v) % VEHICLE_PALETTE.length];
 
@@ -893,7 +917,7 @@ export default function FleetPage() {
 
             <div className={s.tripResultGrid}>
               {[
-                { label:"DISTANCE",         value: tripCalc.dist ? `${tripCalc.dist} km` : "N/A",                            sub:"km (one way)",                                                                   accent:TEAL   },
+                { label:"DISTANCE",         value: osrmLoading ? "…" : tripCalc.dist ? `${tripCalc.dist} km` : "N/A",       sub: osrmLoading ? "fetching via OSRM" : "km (one way)",                              accent:TEAL   },
                 { label:"FUEL NEEDED",      value: tripCalc.fuelNeeded ? `${tripCalc.fuelNeeded.toFixed(1)} L` : "N/A",      sub:"litres (one way)",                                                               accent:GOLD   },
                 { label:"ONE WAY COST",     value: tripCalc.cost1 ? `₹${fmt(tripCalc.cost1,0)}` : "N/A",                     sub:"₹ fuel cost",                                                                    accent:GREEN  },
                 { label:"RETURN COST",      value: tripCalc.cost2 ? `₹${fmt(tripCalc.cost2,0)}` : "N/A",                     sub:"₹ fuel cost",                                                                    accent:RED    },
