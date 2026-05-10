@@ -292,8 +292,8 @@
 }
 
 .pillInactive {
-  opacity: 0.3;
-  filter: grayscale(0.7);
+  opacity: 0.7;
+  filter: grayscale(0.4);
 }
 
 .pip {

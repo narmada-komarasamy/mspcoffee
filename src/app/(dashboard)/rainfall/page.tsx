@@ -528,8 +528,7 @@ export default function RainfallPage() {
                 <Palette size={13} /> Colours
               </button>
             </div>
-            <div className={s.ctrlGroup}>
-              <label className={s.ctrlLabel}>&nbsp;</label>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end" }}>
               <button className={s.fullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
                 {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
@@ -548,7 +547,7 @@ export default function RainfallPage() {
                     key={estate}
                     onClick={() => toggleCompare(estate)}
                     className={`${s.pill} ${active ? s.pillActive : s.pillInactive}`}
-                    style={{ borderColor: active ? color : "transparent", color: active ? color : "#d1e8f5" }}
+                    style={{ borderColor: active ? color : "transparent", color: active ? color : theme.text }}
                   >
                     <span className={s.pip} style={{ backgroundColor: color }} />
                     {estate}
