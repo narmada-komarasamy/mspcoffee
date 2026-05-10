@@ -134,6 +134,7 @@ export default function FleetPage() {
   const [editRecord, setEditRecord] = useState<Row | null | false>(false);
 
   /* ── Fullscreen ──────────────────────────────────────────────────────────────── */
+  const pageRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -142,7 +143,7 @@ export default function FleetPage() {
   }, []);
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      pageRef.current?.requestFullscreen().catch(() => {});
     } else {
       document.exitFullscreen().catch(() => {});
     }
@@ -385,7 +386,7 @@ export default function FleetPage() {
 
   /* ══════════════════════════════════════════════════════════════════════════════ */
   return (
-    <div className={s.page} style={{
+    <div ref={pageRef} className={s.page} style={{
       "--t-bg":      theme.bg,
       "--t-surface": theme.surface,
       "--t-card":    theme.card,

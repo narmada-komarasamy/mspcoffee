@@ -7,6 +7,11 @@
   font-family: 'Exo 2', var(--font-jetbrains), monospace;
 }
 @media (min-width: 1024px) { .page { margin: -1.5rem; } }
+.page:fullscreen {
+  background: var(--t-bg, #fdf8ee);
+  overflow-y: auto;
+  margin: 0;
+}
 .content { position: relative; }
 
 /* ─── Top info bar ───────────────────────────────────────────────────────────── */
