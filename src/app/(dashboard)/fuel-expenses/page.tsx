@@ -124,8 +124,12 @@ export default function FleetPage() {
   const [logDateTo,   setLogDateTo]   = useState("");
 
   /* ── Trip calculator ─────────────────────────────────────────────────────────── */
-  const [tripFrom,    setTripFrom]    = useState("moganad");
-  const [tripTo,      setTripTo]      = useState("bangalore");
+  const [tripFromText, setTripFromText] = useState("Moganad Estate, Managalam");
+  const [tripToText,   setTripToText]   = useState("MG Road, Bangalore");
+  const [tripFromCoord, setTripFromCoord] = useState<{lat:number;lon:number}|null>({ lat:11.0961, lon:77.2664 });
+  const [tripToCoord,   setTripToCoord]   = useState<{lat:number;lon:number}|null>({ lat:12.9747, lon:77.6095 });
+  const [geocodingFrom, setGeocodingFrom] = useState(false);
+  const [geocodingTo,   setGeocodingTo]   = useState(false);
   const [tripVehicle, setTripVehicle] = useState("");
   const [fuelPrice,   setFuelPrice]   = useState(93);
 
@@ -349,24 +353,63 @@ export default function FleetPage() {
   const [osrmDist,    setOsrmDist]    = useState<number | null>(null);
   const [osrmLoading, setOsrmLoading] = useState(false);
 
+  /* Geocode a free-text address → coords (presets bypass Nominatim) */
+  const geocodeAddress = useCallback(async (text: string): Promise<{lat:number;lon:number}|null> => {
+    const key = Object.keys(LOC_LABELS).find(k => LOC_LABELS[k].toLowerCase() === text.trim().toLowerCase());
+    if (key && LOC_COORDS[key]) return LOC_COORDS[key];
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&limit=1&countrycodes=in`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const json = await res.json();
+      if (json[0]) return { lat: parseFloat(json[0].lat), lon: parseFloat(json[0].lon) };
+    } catch {}
+    return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Debounced geocoding for From field */
   useEffect(() => {
-    const from = LOC_COORDS[tripFrom];
-    const to   = LOC_COORDS[tripTo];
-    if (!from || !to || tripFrom === tripTo) { setOsrmDist(null); return; }
+    if (!tripFromText.trim()) { setTripFromCoord(null); return; }
+    const t = setTimeout(async () => {
+      setGeocodingFrom(true);
+      const coord = await geocodeAddress(tripFromText);
+      setTripFromCoord(coord);
+      setGeocodingFrom(false);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [tripFromText, geocodeAddress]);
+
+  /* Debounced geocoding for To field */
+  useEffect(() => {
+    if (!tripToText.trim()) { setTripToCoord(null); return; }
+    const t = setTimeout(async () => {
+      setGeocodingTo(true);
+      const coord = await geocodeAddress(tripToText);
+      setTripToCoord(coord);
+      setGeocodingTo(false);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [tripToText, geocodeAddress]);
+
+  /* OSRM routing when both coords are ready */
+  useEffect(() => {
+    if (!tripFromCoord || !tripToCoord) { setOsrmDist(null); return; }
     setOsrmLoading(true);
     setOsrmDist(null);
     fetch(
-      `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`
+      `https://router.project-osrm.org/route/v1/driving/${tripFromCoord.lon},${tripFromCoord.lat};${tripToCoord.lon},${tripToCoord.lat}?overview=false`
     )
       .then(r => r.json())
       .then(d => {
         const metres = d?.routes?.[0]?.distance;
         if (metres) setOsrmDist(Math.round(metres / 1000));
+        else setOsrmDist(null);
       })
       .catch(() => setOsrmDist(null))
       .finally(() => setOsrmLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripFrom, tripTo]);
+  }, [tripFromCoord, tripToCoord]);
 
   const tripCalc = useMemo(() => {
     const dist = osrmDist;
@@ -384,6 +427,7 @@ export default function FleetPage() {
     const cost2      = cost1 ? cost1 * 2 : null;
     const totalCost  = (cost2 && cpk) ? cost2 + cpk * dist * 2 : cost2;
     return { dist, mileage, cpk, fuelNeeded, cost1, cost2, totalCost, latestYear };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, osrmDist, tripVehicle, fuelPrice]);
 
   const vColor = (v: string) => VEHICLE_PALETTE[vehicles.indexOf(v) % VEHICLE_PALETTE.length];
@@ -887,18 +931,41 @@ export default function FleetPage() {
             ════════════════════════════════════════════════════════════════════ */}
             <div className={s.sectionHeader}><span className={s.diamond}>◆</span> TRIP COST CALCULATOR</div>
 
+            {/* Preset suggestions datalist */}
+            <datalist id="trip-locations">
+              {Object.values(LOC_LABELS).map(l => <option key={l} value={l} />)}
+            </datalist>
+
             <div className={s.filterBar} style={{ marginBottom:16 }}>
-              <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>From</span>
-                <select className={s.ctrlSelect} value={tripFrom} onChange={e => setTripFrom(e.target.value)}>
-                  {START_KEYS.map(k => <option key={k} value={k}>{LOC_LABELS[k]}</option>)}
-                </select>
+              <div className={s.ctrlGroup} style={{ minWidth:220 }}>
+                <span className={s.ctrlLabel}>
+                  From {geocodingFrom && <span style={{ color: TEAL, fontSize:10 }}>locating…</span>}
+                  {!geocodingFrom && tripFromCoord && <span style={{ color: GREEN, fontSize:10 }}>✓</span>}
+                  {!geocodingFrom && tripFromText && !tripFromCoord && <span style={{ color: RED, fontSize:10 }}>not found</span>}
+                </span>
+                <input
+                  list="trip-locations"
+                  className={s.ctrlSelect}
+                  value={tripFromText}
+                  onChange={e => setTripFromText(e.target.value)}
+                  placeholder="Type or select a location…"
+                  style={{ minWidth:220 }}
+                />
               </div>
-              <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>To</span>
-                <select className={s.ctrlSelect} value={tripTo} onChange={e => setTripTo(e.target.value)}>
-                  {END_KEYS.map(k => <option key={k} value={k}>{LOC_LABELS[k]}</option>)}
-                </select>
+              <div className={s.ctrlGroup} style={{ minWidth:220 }}>
+                <span className={s.ctrlLabel}>
+                  To {geocodingTo && <span style={{ color: TEAL, fontSize:10 }}>locating…</span>}
+                  {!geocodingTo && tripToCoord && <span style={{ color: GREEN, fontSize:10 }}>✓</span>}
+                  {!geocodingTo && tripToText && !tripToCoord && <span style={{ color: RED, fontSize:10 }}>not found</span>}
+                </span>
+                <input
+                  list="trip-locations"
+                  className={s.ctrlSelect}
+                  value={tripToText}
+                  onChange={e => setTripToText(e.target.value)}
+                  placeholder="Type or select a location…"
+                  style={{ minWidth:220 }}
+                />
               </div>
               <div className={s.ctrlGroup}>
                 <span className={s.ctrlLabel}>Vehicle (for mileage)</span>
@@ -932,34 +999,6 @@ export default function FleetPage() {
               ))}
             </div>
 
-            {/* Distance matrix */}
-            <div className={s.dailyTableWrapper} style={{ marginBottom:24 }}>
-              <table className={s.dailyTable}>
-                <thead>
-                  <tr>
-                    <th>From \ To</th>
-                    {END_KEYS.map(k => <th key={k} style={{ textAlign:"right" }}>{LOC_LABELS[k]}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {START_KEYS.map(from => (
-                    <tr key={from}>
-                      <td className={s.colVehicle} style={{ color:TEAL }}>{LOC_LABELS[from]}</td>
-                      {END_KEYS.map(to => {
-                        const d = TRIP_DIST[from]?.[to];
-                        const active = tripFrom === from && tripTo === to;
-                        return (
-                          <td key={to} className={s.colNumber}
-                            style={{ color: active ? GOLD : d ? "#e8edf4" : "#3a5070", fontWeight: active ? 700 : undefined }}>
-                            {d ? `${d} km` : "—"}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
 
             {/* ════════════════════════════════════════════════════════════════════
                 ◆ DAILY LOG
