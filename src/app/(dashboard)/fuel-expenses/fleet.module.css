@@ -50,6 +50,12 @@
 }
 .refreshBtn:hover { border-color: #4a9e4a; color: #4a9e4a; }
 .refreshBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.fullscreenBtn {
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid #d4c9a8; color: #6b7280;
+  width: 30px; height: 30px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+}
+.fullscreenBtn:hover { border-color: #4a9e4a; color: #2d6e2d; }
 
 /* ─── Header ─────────────────────────────────────────────────────────────────── */
 .header {

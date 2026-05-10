@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil, Palette } from "lucide-react";
+import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil, Palette, Maximize2, Minimize2 } from "lucide-react";
 import { UploadModal } from "@/components/fleet/UploadModal";
 import { RecordModal, FleetRecord } from "@/components/fleet/RecordModal";
 import s from "./fleet.module.css";
@@ -132,6 +132,21 @@ export default function FleetPage() {
   /* ── Modals ──────────────────────────────────────────────────────────────────── */
   const [showUpload, setShowUpload] = useState(false);
   const [editRecord, setEditRecord] = useState<Row | null | false>(false);
+
+  /* ── Fullscreen ──────────────────────────────────────────────────────────────── */
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
 
   /* ── Theme ───────────────────────────────────────────────────────────────────── */
   const [theme, setTheme]                   = useState<FleetThemeConfig>({ ...FLEET_THEME_DEFAULT });
@@ -402,6 +417,9 @@ export default function FleetPage() {
             </button>
             <button className={s.refreshBtn} onClick={loadData} disabled={loading}>
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            </button>
+            <button className={s.fullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
+              {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
             </button>
             <button
               className={`${s.paletteBtn} ${showPalettePanel ? s.paletteBtnActive : ""}`}
