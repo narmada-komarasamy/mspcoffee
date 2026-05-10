@@ -414,17 +414,40 @@ export default function FleetPage() {
 
   /* Auto-fill fuel price from vehicle's most recent fill-up */
   useEffect(() => {
-    if (!tripVehicle) { setFuelPriceAutoSrc(""); return; }
-    const vRows = data
+    if (!tripVehicle || data.length === 0) { setFuelPriceAutoSrc(""); return; }
+
+    // Tier 1 — this vehicle, has both cost and litres
+    const tier1 = data
       .filter(r => r.vehicle_id === tripVehicle && n(r.fuel_cost) > 0 && n(r.fuel_filled_l) > 0)
       .sort((a, b) => b.date.localeCompare(a.date));
-    if (vRows.length === 0) { setFuelPriceAutoSrc(""); return; }
-    const last = vRows[0];
-    const rate = Math.round((n(last.fuel_cost) / n(last.fuel_filled_l)) * 10) / 10;
-    if (rate > 0) {
-      setFuelPrice(rate);
-      setFuelPriceAutoSrc(`last fill ${last.date}`);
+    if (tier1.length > 0) {
+      const last = tier1[0];
+      const rate = Math.round((n(last.fuel_cost) / n(last.fuel_filled_l)) * 10) / 10;
+      if (rate > 0 && isFinite(rate)) {
+        setFuelPrice(rate);
+        setFuelPriceAutoSrc(`last fill ${last.date}`);
+        return;
+      }
     }
+
+    // Tier 2 — same fuel_type across all vehicles, has both cost and litres
+    const vFuelType = data.find(r => r.vehicle_id === tripVehicle)?.fuel_type;
+    if (vFuelType) {
+      const tier2 = data
+        .filter(r => r.fuel_type === vFuelType && n(r.fuel_cost) > 0 && n(r.fuel_filled_l) > 0)
+        .sort((a, b) => b.date.localeCompare(a.date));
+      if (tier2.length > 0) {
+        const last = tier2[0];
+        const rate = Math.round((n(last.fuel_cost) / n(last.fuel_filled_l)) * 10) / 10;
+        if (rate > 0 && isFinite(rate)) {
+          setFuelPrice(rate);
+          setFuelPriceAutoSrc(`fleet avg · ${vFuelType} · ${last.date}`);
+          return;
+        }
+      }
+    }
+
+    setFuelPriceAutoSrc("⚠ no fill data — enter manually");
   }, [tripVehicle, data]);
 
   const tripCalc = useMemo(() => {
@@ -993,7 +1016,11 @@ export default function FleetPage() {
               <div className={s.ctrlGroup}>
                 <span className={s.ctrlLabel}>
                   Fuel Price (₹/L)
-                  {fuelPriceAutoSrc && <span style={{ color: GREEN, fontSize:10, marginLeft:6 }}>auto · {fuelPriceAutoSrc}</span>}
+                  {fuelPriceAutoSrc && (
+                    <span style={{ color: fuelPriceAutoSrc.startsWith("⚠") ? GOLD : GREEN, fontSize:10, marginLeft:6 }}>
+                      {fuelPriceAutoSrc.startsWith("⚠") ? fuelPriceAutoSrc : `auto · ${fuelPriceAutoSrc}`}
+                    </span>
+                  )}
                 </span>
                 <input type="number" className={s.dateInput} value={fuelPrice} min={50} max={200}
                   onChange={e => { setFuelPrice(parseFloat(e.target.value) || 93); setFuelPriceAutoSrc(""); }}
