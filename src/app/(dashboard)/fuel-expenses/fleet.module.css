@@ -20,14 +20,13 @@
   border-bottom: 1px solid #e5dfc8;
   padding: 7px 28px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   font-size: 12px;
 }
-.topBarLeft  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.topBarRight { display: flex; align-items: center; gap: 8px; }
+.topBarLeft  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.topBarRight { display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .topBarLabel { color: #6b7280; letter-spacing: 1px; text-transform: uppercase; font-size: 11px; }
 .topBarClock { color: #4a9e4a; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
 .topBarDate  { color: #f5a623; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
