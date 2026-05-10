@@ -1,11 +1,11 @@
 /* ─── Page wrapper ──────────────────────────────────────────────────────────── */
 .page {
-  background: var(--t-bg, #020508);
+  background: var(--t-bg, #fdf8ee);
   min-height: 100%;
   margin: -1rem;
   padding: 1.5rem 1.5rem 5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
   position: relative;
 }
 
@@ -22,9 +22,9 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(14,165,233,0.06) 0%, transparent 60%),
-    linear-gradient(rgba(56,189,248,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56,189,248,0.018) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(27,74,27,0.04) 0%, transparent 60%),
+    linear-gradient(rgba(27,74,27,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27,74,27,0.025) 1px, transparent 1px);
   background-size: 100% 100%, 48px 48px, 48px 48px;
   pointer-events: none;
   z-index: 0;
@@ -51,7 +51,7 @@
   font-size: 10px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #4a9e4a);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -62,7 +62,7 @@
   content: '';
   width: 20px;
   height: 1px;
-  background: var(--t-accent, #38bdf8);
+  background: var(--t-accent, #4a9e4a);
 }
 
 .title {
@@ -70,20 +70,20 @@
   font-size: clamp(32px, 5vw, 60px);
   font-weight: 300;
   letter-spacing: -0.02em;
-  color: var(--t-heading, #f0f9ff);
+  color: var(--t-heading, #1b4a1b);
   line-height: 1;
 }
 
 .titleStrong {
   font-weight: 700;
-  color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #4a9e4a);
 }
 
 .clockDisplay {
   font-family: var(--font-jetbrains), monospace;
   font-size: 26px;
   font-weight: 300;
-  color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #4a9e4a);
   letter-spacing: 0.05em;
   line-height: 1;
   margin-bottom: 4px;
@@ -111,7 +111,7 @@
 
 /* ─── Controls ──────────────────────────────────────────────────────────────── */
 .controlsPanel {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   padding: 20px 24px;
@@ -137,9 +137,9 @@
 }
 
 .ctrlSelect {
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
   border: 1px solid var(--t-border, #162d44);
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
   font-family: var(--font-jetbrains), monospace;
   font-size: 12px;
   padding: 8px 12px;
@@ -151,13 +151,13 @@
 }
 
 .ctrlSelect:hover, .ctrlSelect:focus {
-  border-color: var(--t-accent, #38bdf8);
+  border-color: var(--t-accent, #4a9e4a);
 }
 
 .unitToggle {
   display: flex;
   gap: 2px;
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   padding: 2px;
@@ -178,7 +178,7 @@
 }
 
 .unitBtnActive {
-  background: var(--t-accent, #38bdf8);
+  background: var(--t-accent, #4a9e4a);
   color: #000;
   font-weight: 600;
 }
@@ -220,14 +220,14 @@
 }
 
 .actionBtn:hover {
-  border-color: var(--t-accent, #38bdf8);
-  color: var(--t-accent, #38bdf8);
+  border-color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, #4a9e4a);
 }
 
 .uploadBtn {
-  background: var(--t-accent, #38bdf8);
+  background: var(--t-accent, #4a9e4a);
   border: none;
-  color: var(--t-bg, #020508);
+  color: var(--t-bg, #fdf8ee);
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   font-weight: 600;
@@ -247,7 +247,7 @@
 
 /* ─── Estate selector ───────────────────────────────────────────────────────── */
 .estateSelector {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   padding: 18px 24px;
@@ -280,7 +280,7 @@
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
   transition: all 0.18s;
   user-select: none;
 }
@@ -320,7 +320,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--t-subtle, #0f2437);
+  background: var(--t-subtle, #f5eedc);
 }
 
 /* ─── KPI Grid ──────────────────────────────────────────────────────────────── */
@@ -339,7 +339,7 @@
 }
 
 .kpiCard {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   padding: 18px 20px;
@@ -383,7 +383,7 @@
   font-size: 32px;
   font-weight: 700;
   line-height: 1;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
 }
 
 .kpiUnit {
@@ -414,7 +414,7 @@
 }
 
 .estateCard {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   overflow: hidden;
@@ -426,7 +426,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--t-subtle, #0f2437);
+  border-bottom: 1px solid var(--t-subtle, #f5eedc);
 }
 
 .estateDot {
@@ -458,9 +458,9 @@
 
 .metricItem {
   padding: 10px 12px;
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
   border-radius: 3px;
-  border: 1px solid var(--t-subtle, #0f2437);
+  border: 1px solid var(--t-subtle, #f5eedc);
 }
 
 .metricLabel {
@@ -475,7 +475,7 @@
   font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
   font-size: 22px;
   font-weight: 700;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
   line-height: 1;
 }
 
@@ -495,7 +495,7 @@
 
 /* ─── Chart section ─────────────────────────────────────────────────────────── */
 .chartSection {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   padding: 24px 28px;
@@ -515,7 +515,7 @@
   font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
   font-size: 22px;
   font-weight: 600;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
 }
 
 .chartSub {
@@ -528,7 +528,7 @@
 .chartTabs {
   display: flex;
   gap: 2px;
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   padding: 2px;
@@ -549,14 +549,14 @@
 }
 
 .chartTabActive {
-  background: var(--t-accent, #38bdf8);
+  background: var(--t-accent, #4a9e4a);
   color: #000;
   font-weight: 600;
 }
 
 /* ─── Table section ─────────────────────────────────────────────────────────── */
 .tableSection {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   padding: 24px 28px;
@@ -591,8 +591,8 @@
 .tableEl td {
   font-size: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid var(--t-subtle, #0f2437);
-  color: var(--t-text, #d1e8f5);
+  border-bottom: 1px solid var(--t-subtle, #f5eedc);
+  color: var(--t-text, #333333);
   font-family: var(--font-jetbrains), monospace;
 }
 
@@ -642,7 +642,7 @@
 
 .barFill {
   height: 4px;
-  background: var(--t-accent, #38bdf8);
+  background: var(--t-accent, #4a9e4a);
   border-radius: 2px;
   min-width: 3px;
 }
@@ -656,7 +656,7 @@
 }
 
 .yearCard {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   padding: 12px 14px;
@@ -665,12 +665,12 @@
 }
 
 .yearCard:hover {
-  border-color: var(--t-accent, #38bdf8);
+  border-color: var(--t-accent, #4a9e4a);
   background: rgba(56,189,248,0.08);
 }
 
 .yearCardSelected {
-  border-color: var(--t-accent, #38bdf8);
+  border-color: var(--t-accent, #4a9e4a);
   background: rgba(56,189,248,0.12);
 }
 
@@ -678,7 +678,7 @@
   font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
   font-size: 24px;
   font-weight: 700;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
   line-height: 1;
 }
 
@@ -691,7 +691,7 @@
 
 /* ─── Records section ───────────────────────────────────────────────────────── */
 .recordsSection {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   overflow: hidden;
@@ -708,7 +708,7 @@
   border: none;
   cursor: pointer;
   transition: background 0.15s;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
   border-bottom: 1px solid var(--t-border, #162d44);
 }
 
@@ -721,7 +721,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 24px;
-  border-top: 1px solid var(--t-subtle, #0f2437);
+  border-top: 1px solid var(--t-subtle, #f5eedc);
   font-size: 11px;
   color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
@@ -740,8 +740,8 @@
 }
 
 .pageBtn:hover:not(:disabled) {
-  border-color: var(--t-accent, #38bdf8);
-  color: var(--t-accent, #38bdf8);
+  border-color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, #4a9e4a);
 }
 
 .pageBtn:disabled {
@@ -762,7 +762,7 @@
 }
 
 .weatherCard {
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 4px;
   padding: 14px 18px;
@@ -777,7 +777,7 @@
   font-size: 9px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #4a9e4a);
   margin-bottom: 10px;
 }
 
@@ -798,7 +798,7 @@
   font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
   font-size: 26px;
   font-weight: 600;
-  color: var(--t-heading, #f0f9ff);
+  color: var(--t-heading, #1b4a1b);
   line-height: 1;
 }
 
@@ -828,15 +828,15 @@
 
 /* ─── Colour palette ────────────────────────────────────────────────────────── */
 .actionBtnActive {
-  border-color: var(--t-accent, #38bdf8) !important;
-  color: var(--t-accent, #38bdf8) !important;
+  border-color: var(--t-accent, #4a9e4a) !important;
+  color: var(--t-accent, #4a9e4a) !important;
   background: rgba(56,189,248,0.08) !important;
 }
 
 .palettePanel {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid var(--t-subtle, #0f2437);
+  border-top: 1px solid var(--t-subtle, #f5eedc);
 }
 
 .paletteRow {
@@ -851,7 +851,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   cursor: pointer;
@@ -938,11 +938,11 @@
 .cpTab {
   width: 48px;
   flex-shrink: 0;
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border: 1px solid var(--t-border, #162d44);
   border-right: none;
   border-radius: 8px 0 0 8px;
-  color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #4a9e4a);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -954,12 +954,12 @@
 }
 
 .cpTab:hover {
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
 }
 
 .cpBody {
   flex: 1;
-  background: var(--t-card, #0a1824);
+  background: var(--t-card, #ffffff);
   border-left: 1px solid var(--t-border, #162d44);
   overflow-y: auto;
   padding: 24px 20px 32px;
@@ -974,7 +974,7 @@
   gap: 10px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--t-subtle, #0f2437);
+  border-bottom: 1px solid var(--t-subtle, #f5eedc);
 }
 
 .cpTitle {
@@ -982,7 +982,7 @@
   font-size: 11px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
   font-weight: 600;
 }
 
@@ -997,7 +997,7 @@
 
 .cpDivider {
   height: 1px;
-  background: var(--t-subtle, #0f2437);
+  background: var(--t-subtle, #f5eedc);
   margin: 14px 0 4px;
 }
 
@@ -1012,7 +1012,7 @@
 }
 
 .cpRow:hover {
-  background: var(--t-surface, #07111a);
+  background: var(--t-surface, #f0ead4);
 }
 
 .cpLabel {
@@ -1020,7 +1020,7 @@
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--t-text, #d1e8f5);
+  color: var(--t-text, #333333);
 }
 
 .cpSwatch {

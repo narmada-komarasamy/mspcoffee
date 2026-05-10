@@ -243,19 +243,28 @@
   --msp-shadow-glow-gold:  0 0 16px rgba(228,184,74,0.25);
 }
 
-/* Legacy --t-* aliases used in existing CSS modules */
+/* ── MSP Coffee Green/Cream theme tokens ──────────────────────────────────── */
 :root {
-  --t-bg:       var(--msp-bg);
-  --t-surface:  var(--msp-surface);
-  --t-card:     var(--msp-card);
-  --t-text:     var(--msp-text-dim);
-  --t-heading:  #f0f9ff;
-  --t-accent:   var(--msp-teal-light);
-  --t-gold:     var(--msp-gold);
-  --t-green:    var(--msp-green-light);
-  --t-muted:    var(--msp-charcoal);
-  --t-border:   var(--msp-subtle);
-  --t-subtle:   var(--msp-surface);
+  /* Green palette */
+  --msp-green-dark:   #1b4a1b;
+  --msp-green-mid:    #2d6e2d;
+  --msp-green-light:  #4a9e4a;
+  --msp-cream:        #fdf8ee;
+  --msp-cream-dark:   #f0ead4;
+  --msp-cream-border: #e5dfc8;
+
+  /* Theme palette overrides — CSS modules use these via var() */
+  --t-bg:       #fdf8ee;   /* page bg */
+  --t-surface:  #f0ead4;   /* panel / topbar bg */
+  --t-card:     #ffffff;   /* card bg */
+  --t-text:     #1a1a1a;   /* primary text */
+  --t-heading:  #1b4a1b;   /* headings & section labels */
+  --t-accent:   #4a9e4a;   /* green-light (replaces teal) */
+  --t-gold:     #e8c84a;   /* gold CTA */
+  --t-green:    #2d6e2d;   /* green-mid */
+  --t-muted:    #6b7280;   /* muted text */
+  --t-border:   #e5dfc8;   /* borders */
+  --t-subtle:   #f5eedc;   /* subtle surface */
 }
 
 /* ── MSP utility classes ─────────────────────────────────────────────────────── */
