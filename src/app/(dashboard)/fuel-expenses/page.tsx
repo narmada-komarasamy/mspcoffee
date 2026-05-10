@@ -130,8 +130,9 @@ export default function FleetPage() {
   const [tripToCoord,   setTripToCoord]   = useState<{lat:number;lon:number}|null>({ lat:12.9747, lon:77.6095 });
   const [geocodingFrom, setGeocodingFrom] = useState(false);
   const [geocodingTo,   setGeocodingTo]   = useState(false);
-  const [tripVehicle, setTripVehicle] = useState("");
-  const [fuelPrice,   setFuelPrice]   = useState(93);
+  const [tripVehicle,       setTripVehicle]       = useState("");
+  const [fuelPrice,         setFuelPrice]         = useState(93);
+  const [fuelPriceAutoSrc,  setFuelPriceAutoSrc]  = useState<string>("");
 
   /* ── Modals ──────────────────────────────────────────────────────────────────── */
   const [showUpload, setShowUpload] = useState(false);
@@ -410,6 +411,21 @@ export default function FleetPage() {
       .catch(() => setOsrmDist(null))
       .finally(() => setOsrmLoading(false));
   }, [tripFromCoord, tripToCoord]);
+
+  /* Auto-fill fuel price from vehicle's most recent fill-up */
+  useEffect(() => {
+    if (!tripVehicle) { setFuelPriceAutoSrc(""); return; }
+    const vRows = data
+      .filter(r => r.vehicle_id === tripVehicle && n(r.fuel_cost) > 0 && n(r.fuel_filled_l) > 0)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (vRows.length === 0) { setFuelPriceAutoSrc(""); return; }
+    const last = vRows[0];
+    const rate = Math.round((n(last.fuel_cost) / n(last.fuel_filled_l)) * 10) / 10;
+    if (rate > 0) {
+      setFuelPrice(rate);
+      setFuelPriceAutoSrc(`last fill ${last.date}`);
+    }
+  }, [tripVehicle, data]);
 
   const tripCalc = useMemo(() => {
     const dist = osrmDist;
@@ -975,10 +991,13 @@ export default function FleetPage() {
                 </select>
               </div>
               <div className={s.ctrlGroup}>
-                <span className={s.ctrlLabel}>Fuel Price (₹/L)</span>
+                <span className={s.ctrlLabel}>
+                  Fuel Price (₹/L)
+                  {fuelPriceAutoSrc && <span style={{ color: GREEN, fontSize:10, marginLeft:6 }}>auto · {fuelPriceAutoSrc}</span>}
+                </span>
                 <input type="number" className={s.dateInput} value={fuelPrice} min={50} max={200}
-                  onChange={e => setFuelPrice(parseFloat(e.target.value) || 93)}
-                  style={{ width:100 }}/>
+                  onChange={e => { setFuelPrice(parseFloat(e.target.value) || 93); setFuelPriceAutoSrc(""); }}
+                  style={{ width:110 }}/>
               </div>
             </div>
 
