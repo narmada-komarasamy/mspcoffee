@@ -1,11 +1,11 @@
 /* ─── Page wrapper ──────────────────────────────────────────────────────────── */
 .page {
-  background: var(--t-bg, #fdf8ee);
+  background: var(--t-bg, #f0f4f8);
   min-height: 100%;
   margin: -1rem;
   padding: 1.5rem 1.5rem 5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  color: var(--t-text, #333333);
+  color: var(--t-text, #1a2a4a);
   position: relative;
 }
 
@@ -16,15 +16,21 @@
   }
 }
 
+.page:fullscreen {
+  background: var(--t-bg, #f0f4f8);
+  overflow-y: auto;
+  margin: 0;
+}
+
 /* Grid background overlay */
 .page::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(27,74,27,0.04) 0%, transparent 60%),
-    linear-gradient(rgba(27,74,27,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(27,74,27,0.025) 1px, transparent 1px);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(26,42,74,0.04) 0%, transparent 60%),
+    linear-gradient(rgba(26,42,74,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,42,74,0.025) 1px, transparent 1px);
   background-size: 100% 100%, 48px 48px, 48px 48px;
   pointer-events: none;
   z-index: 0;
@@ -100,7 +106,7 @@
 .lastUpdated {
   margin-top: 6px;
   font-size: 10px;
-  color: #2a4a62;
+  color: var(--t-muted, #6b7fa0);
   letter-spacing: 0.1em;
   text-align: right;
 }
@@ -299,7 +305,7 @@
 
 .compareHint {
   font-size: 10px;
-  color: #2a4a62;
+  color: var(--t-muted, #6b7fa0);
   margin-top: 10px;
   letter-spacing: 0.08em;
 }
@@ -350,7 +356,7 @@
 }
 
 .kpiCard:hover {
-  border-color: #0ea5e9;
+  border-color: var(--t-accent, #38bdf8);
 }
 
 .kpiCard::after {
@@ -488,7 +494,7 @@
 
 .metricSub {
   font-size: 9px;
-  color: #2a4a62;
+  color: var(--t-muted, #6b7fa0);
   margin-top: 3px;
   letter-spacing: 0.05em;
 }
@@ -770,7 +776,7 @@
 }
 
 .weatherCard:hover {
-  border-color: #1e4060;
+  border-color: var(--t-accent, #38bdf8);
 }
 
 .weatherLoc {
@@ -821,7 +827,7 @@
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: #4a7a9a;
+  color: var(--t-muted, #6b7fa0);
   font-family: var(--font-jetbrains), monospace;
   letter-spacing: 0.04em;
 }
@@ -860,7 +866,7 @@
 }
 
 .paletteItem:hover {
-  border-color: #2a5070;
+  border-color: var(--t-border, #d0dae8);
 }
 
 .paletteSwatch {
@@ -1064,4 +1070,63 @@
 .cpResetBtn:hover {
   border-color: #f87171;
   color: #f87171;
+}
+
+/* ─── Preset theme row ──────────────────────────────────────────────────────── */
+.presetRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 0 8px;
+}
+
+.presetBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--t-surface, #e8edf5);
+  border: 1px solid var(--t-border, #d0dae8);
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 1;
+  min-width: 48px;
+}
+
+.presetBtn:hover {
+  border-color: var(--t-accent, #38bdf8);
+  background: var(--t-card, #ffffff);
+}
+
+.presetSwatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.presetLabel {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t-text, #1a2a4a);
+}
+
+/* ─── Fullscreen button ─────────────────────────────────────────────────────── */
+.fullscreenBtn {
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid var(--t-border, #d0dae8);
+  color: var(--t-muted, #6b7fa0);
+  width: 36px; height: 36px; border-radius: 3px;
+  cursor: pointer; transition: all 0.2s;
+  flex-shrink: 0;
+}
+.fullscreenBtn:hover {
+  border-color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #38bdf8);
 }

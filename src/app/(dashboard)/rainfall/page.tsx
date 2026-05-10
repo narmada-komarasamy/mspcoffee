@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, RefreshCw, Palette } from "lucide-react";
+import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, RefreshCw, Palette, Maximize2, Minimize2 } from "lucide-react";
 import { UploadModal } from "@/components/rainfall/UploadModal";
 import { RecordModal, type RainfallRecord } from "@/components/rainfall/RecordModal";
 import s from "./rainfall.module.css";
@@ -30,13 +30,27 @@ type ThemeConfig = {
 };
 
 const THEME_DEFAULT: ThemeConfig = {
-  bg:      "#020508",  surface: "#07111a",  card:    "#0a1824",
-  border:  "#162d44",  subtle:  "#0f2437",  heading: "#f0f9ff",
-  text:    "#d1e8f5",  muted:   "#7ab8d8",
+  bg:      "#f0f4f8",  surface: "#e8edf5",  card:    "#ffffff",
+  border:  "#d0dae8",  subtle:  "#e8edf5",  heading: "#0f2235",
+  text:    "#1a2a4a",  muted:   "#6b7fa0",
   accent:  "#38bdf8",  gold:    "#e4b84a",  coral:   "#f87171",
   green:   "#4ade80",  purple:  "#a78bfa",
   estates: { ...ESTATE_COLORS_DEFAULT },
 };
+
+type PresetTheme = { name: string; swatch: string; theme: Partial<ThemeConfig> };
+const PRESET_THEMES: PresetTheme[] = [
+  { name: "Navy",     swatch: "#1a2a4a",
+    theme: { bg: "#f0f4f8", surface: "#e8edf5", card: "#ffffff", border: "#d0dae8", subtle: "#e8edf5", heading: "#0f2235", text: "#1a2a4a", muted: "#6b7fa0", accent: "#38bdf8" } },
+  { name: "Forest",   swatch: "#1b4a1b",
+    theme: { bg: "#fdf8ee", surface: "#f0ead4", card: "#ffffff", border: "#e5dfc8", subtle: "#f5eedc", heading: "#1b4a1b", text: "#1a1a1a", muted: "#6b7280", accent: "#4a9e4a" } },
+  { name: "Coffee",   swatch: "#3e2010",
+    theme: { bg: "#fdf6ee", surface: "#f0e8d8", card: "#ffffff", border: "#e0d0b8", subtle: "#f5eedc", heading: "#3e2010", text: "#1a1a1a", muted: "#7a6050", accent: "#c0874a" } },
+  { name: "Burgundy", swatch: "#4a1020",
+    theme: { bg: "#fdf0f2", surface: "#f0dfe2", card: "#ffffff", border: "#e0c8cc", subtle: "#f5e8ea", heading: "#4a1020", text: "#1a1a1a", muted: "#7a5060", accent: "#c04a6a" } },
+  { name: "Slate",    swatch: "#2a3540",
+    theme: { bg: "#f0f4f5", surface: "#e4ecef", card: "#ffffff", border: "#ccd8dd", subtle: "#e8eff2", heading: "#1a2a30", text: "#1a2a30", muted: "#6a7f8a", accent: "#4ab0c0" } },
+];
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -134,6 +148,22 @@ export default function RainfallPage() {
   const [maxDataDate, setMaxDataDate]   = useState<string>("");
   const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
+  // Fullscreen
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      pageRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
   // ─── Load theme from localStorage ────────────────────────────────────────
   useEffect(() => {
     const saved = localStorage.getItem("mspc-theme-v2");
@@ -152,6 +182,14 @@ export default function RainfallPage() {
   const resetTheme = () => {
     setTheme({ ...THEME_DEFAULT });
     localStorage.removeItem("mspc-theme-v2");
+  };
+
+  const applyPreset = (preset: PresetTheme) => {
+    setTheme((prev) => {
+      const next = { ...prev, ...preset.theme };
+      localStorage.setItem("mspc-theme-v2", JSON.stringify(next));
+      return next;
+    });
   };
 
   // ─── Clock ────────────────────────────────────────────────────────────────
@@ -371,7 +409,7 @@ export default function RainfallPage() {
 
   return (
     <>
-      <div className={s.page} style={{
+      <div ref={pageRef} className={s.page} style={{
         "--t-bg":      theme.bg,
         "--t-surface": theme.surface,
         "--t-card":    theme.card,
@@ -488,6 +526,12 @@ export default function RainfallPage() {
                 onClick={() => setShowPalettePanel((v) => !v)}
               >
                 <Palette size={13} /> Colours
+              </button>
+            </div>
+            <div className={s.ctrlGroup}>
+              <label className={s.ctrlLabel}>&nbsp;</label>
+              <button className={s.fullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
+                {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
             </div>
           </div>
@@ -780,6 +824,19 @@ export default function RainfallPage() {
             <span>🎨</span>
             <span className={s.cpTitle}>Colour Customiser</span>
           </div>
+
+          {/* Preset themes */}
+          <div className={s.cpSectionTitle}>Presets</div>
+          <div className={s.presetRow}>
+            {PRESET_THEMES.map((p) => (
+              <button key={p.name} className={s.presetBtn} onClick={() => applyPreset(p)} title={p.name}>
+                <span className={s.presetSwatch} style={{ background: p.swatch }} />
+                <span className={s.presetLabel}>{p.name}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className={s.cpDivider} />
 
           {/* Theme colours */}
           <div className={s.cpSectionTitle}>Theme</div>
