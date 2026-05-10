@@ -430,13 +430,16 @@ export default function RainfallPage() {
               <div className={s.eyebrow}>Meteorological Station Portal</div>
               <h1 className={s.title}>MSP <strong className={s.titleStrong}>Rain Gauge</strong></h1>
             </div>
-            <div>
+            <div className={s.headerRight}>
               <div className={s.clockDisplay}>{clock}</div>
               <div className={s.dateDisplay}>{dateStr}</div>
               <div className={s.lastUpdated}>
                 Data last updated: <span>{maxDataDate ? fmtDate(maxDataDate) : "—"}</span>
                 {lastRefreshed && <span style={{ color: "var(--msp-charcoal)", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
               </div>
+              <button className={s.headerFullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
+                {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
             </div>
           </header>
 
@@ -526,11 +529,6 @@ export default function RainfallPage() {
                 onClick={() => setShowPalettePanel((v) => !v)}
               >
                 <Palette size={13} /> Colours
-              </button>
-            </div>
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end" }}>
-              <button className={s.fullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
-                {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
             </div>
           </div>

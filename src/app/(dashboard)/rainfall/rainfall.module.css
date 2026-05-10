@@ -115,6 +115,29 @@
   color: var(--t-green, #4ade80);
 }
 
+.headerRight {
+  position: relative;
+  text-align: right;
+}
+
+.headerFullscreenBtn {
+  position: absolute;
+  top: 0;
+  right: -8px;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: var(--t-card, #ffffff);
+  border: 1px solid var(--t-border, #d0dae8);
+  border-radius: 6px;
+  color: var(--t-muted, #6b7fa0);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.headerFullscreenBtn:hover {
+  border-color: var(--t-accent, #38bdf8);
+  color: var(--t-accent, #38bdf8);
+}
+
 /* ─── Controls ──────────────────────────────────────────────────────────────── */
 .controlsPanel {
   background: var(--t-card, #ffffff);
