@@ -1,0 +1,729 @@
+/* ── Labour Cost Optimizer — CSS Module ──────────────────────────────────── */
+
+/* Coffee/Cream palette variables used throughout */
+:root {
+  --lc-coffee: #3B1F0E;
+  --lc-cream:  #F5EDE0;
+  --lc-gold:   #C49A3C;
+  --lc-green:  #2D6A4F;
+  --lc-blue:   #1B4F8A;
+  --lc-red:    #9B2335;
+  --lc-thumb:  #6B3A22;
+}
+
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+.page {
+  background: #F0E4D2;
+  min-height: 100%;
+  margin: -1rem;
+  padding: 1.5rem 1.5rem 4rem;
+  font-family: inherit;
+  color: #3B1F0E;
+}
+
+.page:fullscreen {
+  margin: 0;
+  overflow-y: auto;
+  background: #F0E4D2;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+.pageHeader {
+  margin-bottom: 1.25rem;
+}
+.pageEyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8B6545;
+  margin-bottom: 4px;
+}
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3B1F0E;
+  line-height: 1.2;
+}
+.pageTitle span {
+  color: #C49A3C;
+}
+
+/* ── Tab nav ──────────────────────────────────────────────────────────────── */
+.tabNav {
+  display: flex;
+  gap: 4px;
+  background: rgba(59,31,14,0.08);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  width: fit-content;
+}
+.tabBtn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #8B6545;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tabBtn:hover {
+  background: rgba(59,31,14,0.06);
+  color: #3B1F0E;
+}
+.tabBtnActive {
+  background: #3B1F0E;
+  color: #F5EDE0;
+}
+.tabBtnActive:hover {
+  background: #3B1F0E;
+  color: #F5EDE0;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: #FFFAF4;
+  border: 0.5px solid rgba(107,58,34,0.15);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 12px rgba(59,31,14,0.08);
+  margin-bottom: 1rem;
+}
+
+.cardTitle {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8B6545;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+.cardTitle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(107,58,34,0.12);
+}
+
+/* ── Rate groups grid ─────────────────────────────────────────────────────── */
+.rateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.rateGroup {
+  background: rgba(59,31,14,0.03);
+  border: 0.5px solid rgba(107,58,34,0.12);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+.rateGroupFixed {
+  border-color: #C49A3C;
+  background: rgba(196,154,60,0.04);
+  grid-column: span 2;
+}
+.rateGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.6rem;
+}
+.rateGroupLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3B1F0E;
+}
+.badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.badgeGrey {
+  background: rgba(59,31,14,0.1);
+  color: #6B3A22;
+}
+.badgeBlue {
+  background: rgba(27,79,138,0.12);
+  color: #1B4F8A;
+}
+.badgeGold {
+  background: rgba(196,154,60,0.15);
+  color: #8B6400;
+}
+.rateInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.rateInputRow label {
+  font-size: 11px;
+  color: #8B6545;
+  width: 72px;
+  flex-shrink: 0;
+}
+.numInput {
+  width: 90px;
+  padding: 4px 8px;
+  border: 1px solid rgba(107,58,34,0.2);
+  border-radius: 6px;
+  background: #FFF;
+  color: #3B1F0E;
+  font-size: 12px;
+  font-weight: 500;
+}
+.numInput:focus {
+  outline: none;
+  border-color: #C49A3C;
+  box-shadow: 0 0 0 2px rgba(196,154,60,0.15);
+}
+.rupeePrefix {
+  font-size: 11px;
+  color: #8B6545;
+  margin-left: -4px;
+}
+
+/* ── Headcount sliders ────────────────────────────────────────────────────── */
+.sliderGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1.5rem;
+}
+.sliderRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sliderLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sliderLabelText {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3B1F0E;
+}
+.sliderValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3B1F0E;
+  background: rgba(59,31,14,0.07);
+  padding: 1px 8px;
+  border-radius: 5px;
+  min-width: 28px;
+  text-align: center;
+}
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(59,31,14,0.15);
+  outline: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6B3A22;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(59,31,14,0.3);
+}
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6B3A22;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(59,31,14,0.3);
+}
+
+/* ── Days & Target row ────────────────────────────────────────────────────── */
+.twoColGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0.6rem;
+}
+.dayPill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(107,58,34,0.2);
+  background: transparent;
+  font-size: 12px;
+  color: #6B3A22;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-weight: 500;
+}
+.dayPill:hover {
+  background: rgba(59,31,14,0.05);
+}
+.dayPillActive {
+  background: #3B1F0E;
+  color: #F5EDE0;
+  border-color: #3B1F0E;
+}
+.targetStatus {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 7px;
+}
+.targetUnder {
+  background: rgba(45,106,79,0.1);
+  color: #2D6A4F;
+}
+.targetOver {
+  background: rgba(155,35,53,0.1);
+  color: #9B2335;
+}
+
+/* ── Metric KPI cards ─────────────────────────────────────────────────────── */
+.metricRow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.metricCard {
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.metricPrimary {
+  background: #3B1F0E;
+  color: #F5EDE0;
+}
+.metricPrimary .metricLabel { color: rgba(245,237,224,0.65); }
+.metricDefault {
+  background: #FFFAF4;
+  border: 0.5px solid rgba(107,58,34,0.15);
+  color: #3B1F0E;
+  box-shadow: 0 1px 6px rgba(59,31,14,0.06);
+}
+.metricDefault .metricLabel { color: #8B6545; }
+.metricGold {
+  background: #fef3c7;
+  color: #92400e;
+}
+.metricGold .metricLabel { color: #a16207; }
+.metricGreen {
+  background: #D8F3DC;
+  color: #1B4332;
+}
+.metricGreen .metricLabel { color: #2D6A4F; }
+.metricBlue {
+  background: #E3EEFF;
+  color: #1B4F8A;
+}
+.metricBlue .metricLabel { color: #2563EB; }
+.metricLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.metricValue {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.metricSub {
+  font-size: 10px;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+
+/* ── Breakdown table ──────────────────────────────────────────────────────── */
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+}
+.breakdownTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.breakdownTable th {
+  background: rgba(59,31,14,0.06);
+  color: #8B6545;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(107,58,34,0.12);
+}
+.breakdownTable th:last-child,
+.breakdownTable td:last-child {
+  text-align: right;
+}
+.breakdownTable td {
+  padding: 9px 12px;
+  border-bottom: 0.5px solid rgba(107,58,34,0.08);
+  color: #3B1F0E;
+  vertical-align: middle;
+}
+.breakdownTable tr:last-child td {
+  border-bottom: none;
+}
+.totalsRow td {
+  font-weight: 700;
+  background: rgba(59,31,14,0.04);
+  border-top: 1px solid rgba(107,58,34,0.15) !important;
+}
+.shareBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.shareBarTrack {
+  flex: 1;
+  height: 6px;
+  background: rgba(59,31,14,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 60px;
+}
+.shareBarFill {
+  height: 100%;
+  border-radius: 3px;
+  background: #C49A3C;
+  transition: width 0.3s ease;
+}
+.shareBarText {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B3A22;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── Scenarios ────────────────────────────────────────────────────────────── */
+.scenarioGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+.scenarioCard {
+  background: #FFFAF4;
+  border: 0.5px solid rgba(107,58,34,0.15);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 1px 6px rgba(59,31,14,0.06);
+}
+.scenarioTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3B1F0E;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.scenarioCost {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #3B1F0E;
+  margin-bottom: 4px;
+}
+.scenarioSaves {
+  font-size: 12px;
+  font-weight: 600;
+}
+.scenarioSavesGreen { color: #2D6A4F; }
+.scenarioSavesRed   { color: #9B2335; }
+.scenarioMeta {
+  font-size: 10px;
+  color: #8B6545;
+  margin-top: 4px;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TAB 2 — Month-on-Month
+════════════════════════════════════════════════════════════════════════════ */
+.momLayout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+.momForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.formLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8B6545;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.formInput {
+  padding: 7px 10px;
+  border: 1px solid rgba(107,58,34,0.2);
+  border-radius: 8px;
+  background: #FFFEF9;
+  color: #3B1F0E;
+  font-size: 13px;
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+}
+.formInput:focus {
+  outline: none;
+  border-color: #C49A3C;
+  box-shadow: 0 0 0 2px rgba(196,154,60,0.15);
+}
+.momRateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.fillBtn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(107,58,34,0.25);
+  background: transparent;
+  color: #6B3A22;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: all 0.12s;
+}
+.fillBtn:hover {
+  background: rgba(59,31,14,0.05);
+}
+.saveBtn {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #3B1F0E;
+  color: #F5EDE0;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.12s;
+}
+.saveBtn:hover {
+  opacity: 0.88;
+}
+
+/* Right panel */
+.momRight {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.filterRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.filterRow .formGroup {
+  flex: 1;
+  min-width: 130px;
+}
+.quickRangeRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.rangeBtn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(107,58,34,0.2);
+  background: transparent;
+  font-size: 11px;
+  color: #6B3A22;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.12s;
+}
+.rangeBtn:hover {
+  background: rgba(59,31,14,0.05);
+}
+.rangeBtnActive {
+  background: #3B1F0E;
+  color: #F5EDE0;
+  border-color: #3B1F0E;
+}
+
+/* Summary stat cards */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+}
+.statCard {
+  background: #FFFAF4;
+  border: 0.5px solid rgba(107,58,34,0.15);
+  border-radius: 11px;
+  padding: 0.75rem 0.9rem;
+  box-shadow: 0 1px 6px rgba(59,31,14,0.06);
+}
+.statLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8B6545;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 3px;
+}
+.statValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3B1F0E;
+}
+.statSub {
+  font-size: 10px;
+  color: #8B6545;
+  margin-top: 2px;
+}
+
+/* Chart */
+.chartBox {
+  background: #FFFAF4;
+  border: 0.5px solid rgba(107,58,34,0.15);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 12px rgba(59,31,14,0.06);
+}
+.chartTitle {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8B6545;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+/* MoM table */
+.momTableWrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+}
+.momTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.momTable th {
+  background: rgba(59,31,14,0.06);
+  color: #8B6545;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(107,58,34,0.12);
+  white-space: nowrap;
+}
+.momTable td {
+  padding: 8px 10px;
+  border-bottom: 0.5px solid rgba(107,58,34,0.07);
+  color: #3B1F0E;
+  white-space: nowrap;
+}
+.momTable tr:last-child td {
+  border-bottom: none;
+}
+.momTable tfoot td {
+  font-weight: 700;
+  background: rgba(59,31,14,0.04);
+  border-top: 1px solid rgba(107,58,34,0.12);
+}
+.deleteBtn {
+  background: none;
+  border: none;
+  color: #9B2335;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.1s;
+}
+.deleteBtn:hover {
+  opacity: 1;
+  background: rgba(155,35,53,0.08);
+}
+.emptyState {
+  text-align: center;
+  padding: 40px 0;
+  font-size: 14px;
+  color: #8B6545;
+}
+.tagGreen { color: #2D6A4F; font-weight: 600; }
+.tagRed   { color: #9B2335; font-weight: 600; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .momLayout {
+    grid-template-columns: 1fr;
+  }
+  .momForm {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .rateGrid {
+    grid-template-columns: 1fr;
+  }
+  .rateGroupFixed {
+    grid-column: span 1;
+  }
+  .metricRow {
+    grid-template-columns: 1fr 1fr;
+  }
+  .scenarioGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .twoColGrid {
+    grid-template-columns: 1fr;
+  }
+  .sliderGrid {
+    grid-template-columns: 1fr;
+  }
+  .summaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
