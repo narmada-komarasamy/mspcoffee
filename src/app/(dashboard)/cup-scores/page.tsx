@@ -457,7 +457,7 @@ export default function CupScoresPage() {
               <BarChart data={estateChartData} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                 <YAxis domain={[82, "auto"]} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => [v.toFixed(2), "Avg Score"]} />
+                <Tooltip formatter={(v) => [typeof v === "number" ? v.toFixed(2) : v, "Avg Score"]} />
                 <Bar dataKey="avg" radius={[4, 4, 0, 0]}>
                   {estateChartData.map((e, i) => <Cell key={i} fill={e.fill} />)}
                 </Bar>
@@ -486,7 +486,7 @@ export default function CupScoresPage() {
               <BarChart data={distChartData} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
                 <XAxis dataKey="range" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Tooltip formatter={(v: number) => [v, "Lots"]} />
+                <Tooltip formatter={(v) => [v, "Lots"]} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {distChartData.map((e, i) => <Cell key={i} fill={e.fill} />)}
                 </Bar>
