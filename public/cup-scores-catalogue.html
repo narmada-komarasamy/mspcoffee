@@ -368,6 +368,7 @@ input.fsearch{width:220px;}
   <input class="fsearch" id="f-search" placeholder="🔍 Search taste notes, estate, process..." oninput="applyFilters()">
   <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
   <span class="results-count" id="results-count"></span>
+  <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border:1.5px solid var(--border);border-radius:20px;background:white;font-size:0.75rem;font-weight:600;color:var(--green-dark);">⚖️ Total Available: <strong id="weight-value">—</strong></span>
 </div>
 
 <div class="sort-row">
@@ -376,7 +377,6 @@ input.fsearch{width:220px;}
   <button class="sort-btn" onclick="setSort('lot')" id="sort-lot">Lot No</button>
   <button class="sort-btn" onclick="setSort('estate')" id="sort-estate">Estate</button>
   <button class="sort-btn" onclick="setSort('price')" id="sort-price">Price</button>
-  <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border:1.5px solid var(--border);border-radius:20px;background:white;font-size:0.75rem;font-weight:600;color:var(--green-dark);">⚖️ Total Available: <strong id="weight-value">—</strong></span>
 </div>
 
 <div class="grid" id="card-grid"></div>
