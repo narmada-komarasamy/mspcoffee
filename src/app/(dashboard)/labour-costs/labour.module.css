@@ -2,29 +2,29 @@
 
 /* Coffee/Cream palette variables used throughout */
 :root {
-  --lc-coffee: #3B1F0E;
-  --lc-cream:  #F5EDE0;
-  --lc-gold:   #C49A3C;
-  --lc-green:  #2D6A4F;
+  --lc-coffee: #1b4a1b;
+  --lc-cream:  #fdf8ee;
+  --lc-gold:   #e8c84a;
+  --lc-green:  #2d6e2d;
   --lc-blue:   #1B4F8A;
   --lc-red:    #9B2335;
-  --lc-thumb:  #6B3A22;
+  --lc-thumb:  #1b4a1b;
 }
 
 /* ── Page wrapper ─────────────────────────────────────────────────────────── */
 .page {
-  background: #F0E4D2;
+  background: #fdf8ee;
   min-height: 100%;
   margin: -1rem;
   padding: 1.5rem 1.5rem 4rem;
   font-family: inherit;
-  color: #3B1F0E;
+  color: #1a1a1a;
 }
 
 .page:fullscreen {
   margin: 0;
   overflow-y: auto;
-  background: #F0E4D2;
+  background: #fdf8ee;
 }
 
 /* ── Page header ──────────────────────────────────────────────────────────── */
@@ -36,24 +36,24 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8B6545;
+  color: #6b7280;
   margin-bottom: 4px;
 }
 .pageTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #3B1F0E;
+  color: #1a1a1a;
   line-height: 1.2;
 }
 .pageTitle span {
-  color: #C49A3C;
+  color: #e8c84a;
 }
 
 /* ── Tab nav ──────────────────────────────────────────────────────────────── */
 .tabNav {
   display: flex;
   gap: 4px;
-  background: rgba(59,31,14,0.08);
+  background: rgba(27,74,27,0.08);
   border-radius: 8px;
   padding: 4px;
   margin-bottom: 1.5rem;
@@ -64,39 +64,39 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: #8B6545;
+  color: #6b7280;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
 }
 .tabBtn:hover {
-  background: rgba(59,31,14,0.06);
-  color: #3B1F0E;
+  background: rgba(27,74,27,0.06);
+  color: #1a1a1a;
 }
 .tabBtnActive {
-  background: #3B1F0E;
-  color: #F5EDE0;
+  background: #1b4a1b;
+  color: #ffffff;
 }
 .tabBtnActive:hover {
-  background: #3B1F0E;
-  color: #F5EDE0;
+  background: #1b4a1b;
+  color: #ffffff;
 }
 
 /* ── Card ─────────────────────────────────────────────────────────────────── */
 .card {
-  background: #FFFAF4;
-  border: 0.5px solid rgba(107,58,34,0.15);
+  background: #ffffff;
+  border: 0.5px solid rgba(27,74,27,0.15);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
-  box-shadow: 0 2px 12px rgba(59,31,14,0.08);
+  box-shadow: 0 2px 12px rgba(27,74,27,0.08);
   margin-bottom: 1rem;
 }
 
 .cardTitle {
   font-size: 10px;
   font-weight: 600;
-  color: #8B6545;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   display: flex;
@@ -108,7 +108,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: rgba(107,58,34,0.12);
+  background: rgba(27,74,27,0.12);
 }
 
 /* ── Rate groups grid ─────────────────────────────────────────────────────── */
@@ -118,14 +118,14 @@
   gap: 0.75rem;
 }
 .rateGroup {
-  background: rgba(59,31,14,0.03);
-  border: 0.5px solid rgba(107,58,34,0.12);
+  background: rgba(27,74,27,0.03);
+  border: 0.5px solid rgba(27,74,27,0.12);
   border-radius: 10px;
   padding: 0.75rem 1rem;
 }
 .rateGroupFixed {
-  border-color: #C49A3C;
-  background: rgba(196,154,60,0.04);
+  border-color: #e8c84a;
+  background: rgba(27,74,27,0.04);
   grid-column: span 2;
 }
 .rateGroupHeader {
@@ -137,7 +137,7 @@
 .rateGroupLabel {
   font-size: 12px;
   font-weight: 600;
-  color: #3B1F0E;
+  color: #1a1a1a;
 }
 .badge {
   font-size: 9px;
@@ -148,15 +148,15 @@
   text-transform: uppercase;
 }
 .badgeGrey {
-  background: rgba(59,31,14,0.1);
-  color: #6B3A22;
+  background: rgba(27,74,27,0.10);
+  color: #4a9e4a;
 }
 .badgeBlue {
   background: rgba(27,79,138,0.12);
   color: #1B4F8A;
 }
 .badgeGold {
-  background: rgba(196,154,60,0.15);
+  background: rgba(74,158,74,0.15);
   color: #8B6400;
 }
 .rateInputRow {
@@ -167,28 +167,28 @@
 }
 .rateInputRow label {
   font-size: 11px;
-  color: #8B6545;
+  color: #6b7280;
   width: 72px;
   flex-shrink: 0;
 }
 .numInput {
   width: 90px;
   padding: 4px 8px;
-  border: 1px solid rgba(107,58,34,0.2);
+  border: 1px solid rgba(27,74,27,0.20);
   border-radius: 6px;
   background: #FFF;
-  color: #3B1F0E;
+  color: #1a1a1a;
   font-size: 12px;
   font-weight: 500;
 }
 .numInput:focus {
   outline: none;
-  border-color: #C49A3C;
-  box-shadow: 0 0 0 2px rgba(196,154,60,0.15);
+  border-color: #e8c84a;
+  box-shadow: 0 0 0 2px rgba(74,158,74,0.15);
 }
 .rupeePrefix {
   font-size: 11px;
-  color: #8B6545;
+  color: #6b7280;
   margin-left: -4px;
 }
 
@@ -211,13 +211,13 @@
 .sliderLabelText {
   font-size: 12px;
   font-weight: 500;
-  color: #3B1F0E;
+  color: #1a1a1a;
 }
 .sliderValue {
   font-size: 13px;
   font-weight: 700;
-  color: #3B1F0E;
-  background: rgba(59,31,14,0.07);
+  color: #1a1a1a;
+  background: rgba(27,74,27,0.07);
   padding: 1px 8px;
   border-radius: 5px;
   min-width: 28px;
@@ -229,7 +229,7 @@
   width: 100%;
   height: 5px;
   border-radius: 3px;
-  background: rgba(59,31,14,0.15);
+  background: rgba(27,74,27,0.15);
   outline: none;
   cursor: pointer;
 }
@@ -239,18 +239,18 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #6B3A22;
+  background: #1b4a1b;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(59,31,14,0.3);
+  box-shadow: 0 1px 4px rgba(27,74,27,0.30);
 }
 .slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #6B3A22;
+  background: #1b4a1b;
   cursor: pointer;
   border: none;
-  box-shadow: 0 1px 4px rgba(59,31,14,0.3);
+  box-shadow: 0 1px 4px rgba(27,74,27,0.30);
 }
 
 /* ── Days & Target row ────────────────────────────────────────────────────── */
@@ -269,21 +269,21 @@
 .dayPill {
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid rgba(107,58,34,0.2);
+  border: 1px solid rgba(27,74,27,0.20);
   background: transparent;
   font-size: 12px;
-  color: #6B3A22;
+  color: #4a9e4a;
   cursor: pointer;
   transition: all 0.12s;
   font-weight: 500;
 }
 .dayPill:hover {
-  background: rgba(59,31,14,0.05);
+  background: rgba(27,74,27,0.05);
 }
 .dayPillActive {
-  background: #3B1F0E;
-  color: #F5EDE0;
-  border-color: #3B1F0E;
+  background: #1b4a1b;
+  color: #ffffff;
+  border-color: #1a1a1a;
 }
 .targetStatus {
   margin-top: 8px;
@@ -294,7 +294,7 @@
 }
 .targetUnder {
   background: rgba(45,106,79,0.1);
-  color: #2D6A4F;
+  color: #2d6e2d;
 }
 .targetOver {
   background: rgba(155,35,53,0.1);
@@ -316,27 +316,27 @@
   gap: 2px;
 }
 .metricPrimary {
-  background: #3B1F0E;
-  color: #F5EDE0;
+  background: #1b4a1b;
+  color: #ffffff;
 }
 .metricPrimary .metricLabel { color: rgba(245,237,224,0.65); }
 .metricDefault {
-  background: #FFFAF4;
-  border: 0.5px solid rgba(107,58,34,0.15);
-  color: #3B1F0E;
-  box-shadow: 0 1px 6px rgba(59,31,14,0.06);
+  background: #ffffff;
+  border: 0.5px solid rgba(27,74,27,0.15);
+  color: #1a1a1a;
+  box-shadow: 0 1px 6px rgba(27,74,27,0.06);
 }
-.metricDefault .metricLabel { color: #8B6545; }
+.metricDefault .metricLabel { color: #6b7280; }
 .metricGold {
   background: #fef3c7;
   color: #92400e;
 }
 .metricGold .metricLabel { color: #a16207; }
 .metricGreen {
-  background: #D8F3DC;
-  color: #1B4332;
+  background: #eef7ee;
+  color: #1b4a1b;
 }
-.metricGreen .metricLabel { color: #2D6A4F; }
+.metricGreen .metricLabel { color: #2d6e2d; }
 .metricBlue {
   background: #E3EEFF;
   color: #1B4F8A;
@@ -370,15 +370,15 @@
   font-size: 12px;
 }
 .breakdownTable th {
-  background: rgba(59,31,14,0.06);
-  color: #8B6545;
+  background: rgba(27,74,27,0.06);
+  color: #6b7280;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid rgba(107,58,34,0.12);
+  border-bottom: 1px solid rgba(27,74,27,0.12);
 }
 .breakdownTable th:last-child,
 .breakdownTable td:last-child {
@@ -386,8 +386,8 @@
 }
 .breakdownTable td {
   padding: 9px 12px;
-  border-bottom: 0.5px solid rgba(107,58,34,0.08);
-  color: #3B1F0E;
+  border-bottom: 0.5px solid rgba(27,74,27,0.08);
+  color: #1a1a1a;
   vertical-align: middle;
 }
 .breakdownTable tr:last-child td {
@@ -395,8 +395,8 @@
 }
 .totalsRow td {
   font-weight: 700;
-  background: rgba(59,31,14,0.04);
-  border-top: 1px solid rgba(107,58,34,0.15) !important;
+  background: rgba(27,74,27,0.04);
+  border-top: 1px solid rgba(27,74,27,0.15) !important;
 }
 .shareBar {
   display: flex;
@@ -406,7 +406,7 @@
 .shareBarTrack {
   flex: 1;
   height: 6px;
-  background: rgba(59,31,14,0.1);
+  background: rgba(27,74,27,0.10);
   border-radius: 3px;
   overflow: hidden;
   min-width: 60px;
@@ -414,13 +414,13 @@
 .shareBarFill {
   height: 100%;
   border-radius: 3px;
-  background: #C49A3C;
+  background: #e8c84a;
   transition: width 0.3s ease;
 }
 .shareBarText {
   font-size: 11px;
   font-weight: 600;
-  color: #6B3A22;
+  color: #4a9e4a;
   min-width: 36px;
   text-align: right;
 }
@@ -432,16 +432,16 @@
   gap: 0.75rem;
 }
 .scenarioCard {
-  background: #FFFAF4;
-  border: 0.5px solid rgba(107,58,34,0.15);
+  background: #ffffff;
+  border: 0.5px solid rgba(27,74,27,0.15);
   border-radius: 12px;
   padding: 0.9rem 1rem;
-  box-shadow: 0 1px 6px rgba(59,31,14,0.06);
+  box-shadow: 0 1px 6px rgba(27,74,27,0.06);
 }
 .scenarioTitle {
   font-size: 11px;
   font-weight: 700;
-  color: #3B1F0E;
+  color: #1a1a1a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
@@ -449,18 +449,18 @@
 .scenarioCost {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #3B1F0E;
+  color: #1a1a1a;
   margin-bottom: 4px;
 }
 .scenarioSaves {
   font-size: 12px;
   font-weight: 600;
 }
-.scenarioSavesGreen { color: #2D6A4F; }
+.scenarioSavesGreen { color: #2d6e2d; }
 .scenarioSavesRed   { color: #9B2335; }
 .scenarioMeta {
   font-size: 10px;
-  color: #8B6545;
+  color: #6b7280;
   margin-top: 4px;
 }
 
@@ -486,16 +486,16 @@
 .formLabel {
   font-size: 11px;
   font-weight: 600;
-  color: #8B6545;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .formInput {
   padding: 7px 10px;
-  border: 1px solid rgba(107,58,34,0.2);
+  border: 1px solid rgba(27,74,27,0.20);
   border-radius: 8px;
-  background: #FFFEF9;
-  color: #3B1F0E;
+  background: #ffffff;
+  color: #1a1a1a;
   font-size: 13px;
   font-weight: 500;
   width: 100%;
@@ -503,8 +503,8 @@
 }
 .formInput:focus {
   outline: none;
-  border-color: #C49A3C;
-  box-shadow: 0 0 0 2px rgba(196,154,60,0.15);
+  border-color: #e8c84a;
+  box-shadow: 0 0 0 2px rgba(74,158,74,0.15);
 }
 .momRateGrid {
   display: grid;
@@ -514,9 +514,9 @@
 .fillBtn {
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1.5px solid rgba(107,58,34,0.25);
+  border: 1.5px solid rgba(27,74,27,0.25);
   background: transparent;
-  color: #6B3A22;
+  color: #4a9e4a;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -525,14 +525,14 @@
   transition: all 0.12s;
 }
 .fillBtn:hover {
-  background: rgba(59,31,14,0.05);
+  background: rgba(27,74,27,0.05);
 }
 .saveBtn {
   padding: 10px 12px;
   border-radius: 8px;
   border: none;
-  background: #3B1F0E;
-  color: #F5EDE0;
+  background: #1b4a1b;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -568,21 +568,21 @@
 .rangeBtn {
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid rgba(107,58,34,0.2);
+  border: 1px solid rgba(27,74,27,0.20);
   background: transparent;
   font-size: 11px;
-  color: #6B3A22;
+  color: #4a9e4a;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.12s;
 }
 .rangeBtn:hover {
-  background: rgba(59,31,14,0.05);
+  background: rgba(27,74,27,0.05);
 }
 .rangeBtnActive {
-  background: #3B1F0E;
-  color: #F5EDE0;
-  border-color: #3B1F0E;
+  background: #1b4a1b;
+  color: #ffffff;
+  border-color: #1a1a1a;
 }
 
 /* Summary stat cards */
@@ -592,16 +592,16 @@
   gap: 0.65rem;
 }
 .statCard {
-  background: #FFFAF4;
-  border: 0.5px solid rgba(107,58,34,0.15);
+  background: #ffffff;
+  border: 0.5px solid rgba(27,74,27,0.15);
   border-radius: 11px;
   padding: 0.75rem 0.9rem;
-  box-shadow: 0 1px 6px rgba(59,31,14,0.06);
+  box-shadow: 0 1px 6px rgba(27,74,27,0.06);
 }
 .statLabel {
   font-size: 10px;
   font-weight: 600;
-  color: #8B6545;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 3px;
@@ -609,26 +609,26 @@
 .statValue {
   font-size: 1rem;
   font-weight: 700;
-  color: #3B1F0E;
+  color: #1a1a1a;
 }
 .statSub {
   font-size: 10px;
-  color: #8B6545;
+  color: #6b7280;
   margin-top: 2px;
 }
 
 /* Chart */
 .chartBox {
-  background: #FFFAF4;
-  border: 0.5px solid rgba(107,58,34,0.15);
+  background: #ffffff;
+  border: 0.5px solid rgba(27,74,27,0.15);
   border-radius: 14px;
   padding: 1rem 1.25rem;
-  box-shadow: 0 2px 12px rgba(59,31,14,0.06);
+  box-shadow: 0 2px 12px rgba(27,74,27,0.06);
 }
 .chartTitle {
   font-size: 10px;
   font-weight: 600;
-  color: #8B6545;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0.75rem;
@@ -645,21 +645,21 @@
   font-size: 11.5px;
 }
 .momTable th {
-  background: rgba(59,31,14,0.06);
-  color: #8B6545;
+  background: rgba(27,74,27,0.06);
+  color: #6b7280;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 7px 10px;
   text-align: left;
-  border-bottom: 1px solid rgba(107,58,34,0.12);
+  border-bottom: 1px solid rgba(27,74,27,0.12);
   white-space: nowrap;
 }
 .momTable td {
   padding: 8px 10px;
-  border-bottom: 0.5px solid rgba(107,58,34,0.07);
-  color: #3B1F0E;
+  border-bottom: 0.5px solid rgba(27,74,27,0.07);
+  color: #1a1a1a;
   white-space: nowrap;
 }
 .momTable tr:last-child td {
@@ -667,8 +667,8 @@
 }
 .momTable tfoot td {
   font-weight: 700;
-  background: rgba(59,31,14,0.04);
-  border-top: 1px solid rgba(107,58,34,0.12);
+  background: rgba(27,74,27,0.04);
+  border-top: 1px solid rgba(27,74,27,0.12);
 }
 .deleteBtn {
   background: none;
@@ -689,9 +689,9 @@
   text-align: center;
   padding: 40px 0;
   font-size: 14px;
-  color: #8B6545;
+  color: #6b7280;
 }
-.tagGreen { color: #2D6A4F; font-weight: 600; }
+.tagGreen { color: #2d6e2d; font-weight: 600; }
 .tagRed   { color: #9B2335; font-weight: 600; }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
