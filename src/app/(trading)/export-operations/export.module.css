@@ -64,15 +64,15 @@
 @media (min-width: 600px) and (max-width: 899px) { .kpiGrid { grid-template-columns: repeat(3, 1fr); } }
 
 .kpiCard {
-  background: #2d6e2d;
-  border: 1px solid #d4c9a8;
+  background: #ffffff;
+  border: 1px solid #e5dfc8;
   border-radius: 0.75rem;
   padding: 1.25rem;
   position: relative;
   overflow: hidden;
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.kpiCard:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(27,74,27,0.12); }
+.kpiCard:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(27,74,27,0.10); }
 .kpiCard::before {
   content: '';
   position: absolute;
@@ -95,7 +95,7 @@
   font-family: 'Rajdhani', sans-serif;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #fff;
+  color: #1b4a1b;
   line-height: 1;
 }
 .kpiUnit {
@@ -111,7 +111,7 @@
   margin-top: 0.25rem;
   margin-bottom: 0.625rem;
 }
-.kpiBar { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.625rem; }
+.kpiBar { height: 5px; border-radius: 3px; background: rgba(27,74,27,0.10); overflow: hidden; margin-top: 0.625rem; }
 .kpiBarFill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
 
 /* ── Charts ────────────────────────────────────────────────────────────────── */
@@ -126,8 +126,8 @@
 .charts1col { margin-bottom: 1.5rem; }
 
 .chartCard {
-  background: #2d6e2d;
-  border: 1px solid #d4c9a8;
+  background: #ffffff;
+  border: 1px solid #e5dfc8;
   border-radius: 0.75rem;
   padding: 1.125rem;
 }
@@ -152,8 +152,8 @@
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .tableCard {
-  background: #2d6e2d;
-  border: 1px solid #d4c9a8;
+  background: #ffffff;
+  border: 1px solid #e5dfc8;
   border-radius: 0.75rem;
   padding: 1.125rem;
   margin-bottom: 1.5rem;
@@ -185,7 +185,7 @@
   white-space: nowrap;
 }
 .table tr:last-child td { border-bottom: none; }
-.table tbody tr:hover td { background: rgba(255,255,255,0.03); }
+.table tbody tr:hover td { background: #fdf8ee; }
 
 .tdNum { text-align: right; font-weight: 600; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
 .tdRight { text-align: right; }
@@ -385,8 +385,8 @@
   overflow-y: auto;
 }
 .modal {
-  background: #1b4a1b;
-  border: 1px solid #d4c9a8;
+  background: #ffffff;
+  border: 1px solid #e5dfc8;
   border-radius: 1rem;
   width: 100%;
   max-width: 860px;
@@ -485,7 +485,7 @@
 }
 .formInput:focus { border-color: #4a9e4a; }
 .formInput::placeholder { color: #6b7280; }
-.formInput:read-only { opacity: 0.6; cursor: default; background: #0a1520; }
+.formInput:read-only { opacity: 0.7; cursor: default; background: #f0ead8; }
 
 .priceWrap { display: flex; gap: 0.5rem; }
 .priceWrap .formInput:first-child { flex: 1; }
