@@ -27,22 +27,30 @@ type FleetThemeConfig = {
 };
 
 const FLEET_THEME_DEFAULT: FleetThemeConfig = {
-  bg:      "#0d1b2a",
-  surface: "#1b2a3d",
-  card:    "#16253a",
-  border:  "#2a3f5a",
-  text:    "#e8edf4",
-  muted:   "#7a90b0",
-  teal:    "#1fc8c8",
-  gold:    "#f5a623",
+  bg:      "#fdf8ee",
+  surface: "#f0ead4",
+  card:    "#ffffff",
+  border:  "#e5dfc8",
+  text:    "#1a1a1a",
+  muted:   "#6b7280",
+  teal:    "#4a9e4a",
+  gold:    "#e8c84a",
   red:     "#e8524a",
-  green:   "#2ecc71",
+  green:   "#2d6e2d",
   purple:  "#9b59b6",
   blue:    "#3498db",
   vehicles: [
     "#1fc8c8","#f5a623","#e8524a","#2ecc71","#9b59b6","#3498db",
     "#fb923c","#f472b6","#a3e635","#34d399","#818cf8","#fbbf24","#60a5fa","#e879f9",
   ],
+};
+
+const FLEET_THEME_MAP: Record<string, Partial<FleetThemeConfig>> = {
+  forest:   { bg: "#fdf8ee", surface: "#f0ead4", card: "#ffffff", border: "#e5dfc8", text: "#1a1a1a", muted: "#6b7280", teal: "#4a9e4a", green: "#2d6e2d" },
+  coffee:   { bg: "#fdf6ee", surface: "#f0e8d8", card: "#ffffff", border: "#e0d0b8", text: "#1a1a1a", muted: "#7a6050", teal: "#c0874a", green: "#8b5e3c" },
+  navy:     { bg: "#f0f4f8", surface: "#e8edf5", card: "#ffffff", border: "#d0dae8", text: "#1a2a4a", muted: "#6b7fa0", teal: "#1fc8c8", green: "#2ecc71" },
+  burgundy: { bg: "#fdf0f2", surface: "#f0dfe2", card: "#ffffff", border: "#e0c8cc", text: "#1a1a1a", muted: "#7a5060", teal: "#c04a6a", green: "#4a9e4a" },
+  slate:    { bg: "#f0f4f5", surface: "#e4ecef", card: "#ffffff", border: "#ccd8dd", text: "#1a2a30", muted: "#6a7f8a", teal: "#4ab0c0", green: "#4a9e4a" },
 };
 
 /* ─── Helpers ────────────────────────────────────────────────────────────────── */
@@ -159,8 +167,17 @@ export default function FleetPage() {
   const [showPalettePanel, setShowPalettePanel] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("mspc-fleet-theme");
-    if (saved) try { setTheme(JSON.parse(saved)); } catch {}
+    const applyGlobalTheme = () => {
+      const globalKey = localStorage.getItem("msp_theme");
+      const preset = globalKey && FLEET_THEME_MAP[globalKey];
+      if (preset) { setTheme(prev => ({ ...prev, ...preset })); return; }
+      const saved = localStorage.getItem("mspc-fleet-theme");
+      if (saved) try { setTheme(JSON.parse(saved)); } catch {}
+    };
+    applyGlobalTheme();
+    const handler = (e: StorageEvent) => { if (e.key === "msp_theme") applyGlobalTheme(); };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
   }, []);
 
   const updateTheme = useCallback(<K extends keyof FleetThemeConfig>(key: K, val: FleetThemeConfig[K]) => {

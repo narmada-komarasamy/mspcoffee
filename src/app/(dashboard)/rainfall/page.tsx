@@ -30,12 +30,21 @@ type ThemeConfig = {
 };
 
 const THEME_DEFAULT: ThemeConfig = {
-  bg:      "#f0f4f8",  surface: "#e8edf5",  card:    "#ffffff",
-  border:  "#d0dae8",  subtle:  "#e8edf5",  heading: "#0f2235",
-  text:    "#1a2a4a",  muted:   "#6b7fa0",
-  accent:  "#38bdf8",  gold:    "#e4b84a",  coral:   "#f87171",
+  bg:      "#fdf8ee",  surface: "#f0ead4",  card:    "#ffffff",
+  border:  "#e5dfc8",  subtle:  "#f5eedc",  heading: "#1b4a1b",
+  text:    "#1a1a1a",  muted:   "#6b7280",
+  accent:  "#4a9e4a",  gold:    "#e8c84a",  coral:   "#f87171",
   green:   "#4ade80",  purple:  "#a78bfa",
   estates: { ...ESTATE_COLORS_DEFAULT },
+};
+
+// Map global msp_theme key → rainfall preset
+const MSP_THEME_MAP: Record<string, Partial<ThemeConfig>> = {
+  forest:   { bg: "#fdf8ee", surface: "#f0ead4", card: "#ffffff", border: "#e5dfc8", subtle: "#f5eedc", heading: "#1b4a1b", text: "#1a1a1a", muted: "#6b7280", accent: "#4a9e4a" },
+  coffee:   { bg: "#fdf6ee", surface: "#f0e8d8", card: "#ffffff", border: "#e0d0b8", subtle: "#f5eedc", heading: "#3e2010", text: "#1a1a1a", muted: "#7a6050", accent: "#c0874a" },
+  navy:     { bg: "#f0f4f8", surface: "#e8edf5", card: "#ffffff", border: "#d0dae8", subtle: "#e8edf5", heading: "#0f2235", text: "#1a2a4a", muted: "#6b7fa0", accent: "#38bdf8" },
+  burgundy: { bg: "#fdf0f2", surface: "#f0dfe2", card: "#ffffff", border: "#e0c8cc", subtle: "#f5e8ea", heading: "#4a1020", text: "#1a1a1a", muted: "#7a5060", accent: "#c04a6a" },
+  slate:    { bg: "#f0f4f5", surface: "#e4ecef", card: "#ffffff", border: "#ccd8dd", subtle: "#e8eff2", heading: "#1a2a30", text: "#1a2a30", muted: "#6a7f8a", accent: "#4ab0c0" },
 };
 
 type PresetTheme = { name: string; swatch: string; theme: Partial<ThemeConfig> };
@@ -164,10 +173,24 @@ export default function RainfallPage() {
     }
   };
 
-  // ─── Load theme from localStorage ────────────────────────────────────────
+  // ─── Load theme from localStorage (syncs with global msp_theme) ──────────
   useEffect(() => {
-    const saved = localStorage.getItem("mspc-theme-v2");
-    if (saved) try { setTheme(JSON.parse(saved)); } catch {}
+    const applyGlobalTheme = () => {
+      const globalKey = localStorage.getItem("msp_theme") as string | null;
+      const preset = globalKey && MSP_THEME_MAP[globalKey];
+      if (preset) {
+        setTheme((prev) => ({ ...prev, ...preset }));
+        return;
+      }
+      const saved = localStorage.getItem("mspc-theme-v2");
+      if (saved) try { setTheme(JSON.parse(saved)); } catch {}
+    };
+    applyGlobalTheme();
+    const handler = (e: StorageEvent) => {
+      if (e.key === "msp_theme") applyGlobalTheme();
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
   }, []);
 
   // ─── Theme helpers ────────────────────────────────────────────────────────
