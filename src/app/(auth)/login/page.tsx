@@ -36,7 +36,7 @@ export default function LoginPage() {
     if (pin.length === 4 && selectedUser) {
       if (pin === selectedUser.pin) {
         localStorage.setItem('msp_user', JSON.stringify(selectedUser));
-        router.push('/rainfall');
+        router.push('/home');
       } else {
         setError('Incorrect PIN');
         setTimeout(() => {
