@@ -654,5 +654,20 @@ applyTheme(activeTheme);
 document.getElementById('last-upd-val').textContent=getUpd();
 renderAll();
 </script>
+
+<script id="msp-font-sync">
+(function() {
+  var sizes = { sm: '13px', md: '15px', lg: '17px' };
+  function applyFont() {
+    var f = localStorage.getItem('msp_font');
+    if (f && sizes[f]) document.documentElement.style.fontSize = sizes[f];
+  }
+  applyFont();
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'msp_font') applyFont();
+  });
+})();
+</script>
+
 </body>
 </html>

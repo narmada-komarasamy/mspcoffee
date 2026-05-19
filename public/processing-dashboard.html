@@ -106,6 +106,82 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0f111
 .scroll-card::-webkit-scrollbar-track{background:#1a1208}
 .scroll-card::-webkit-scrollbar-thumb{background:#4a3520;border-radius:2px}
 </style>
+
+<style id="msp-light-theme">
+/* ====================================================
+   MSP LIGHT THEME OVERRIDE — Cup Score Colour Palette
+   ==================================================== */
+body { background: #fdf8ee !important; color: #1a1a1a !important; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #1b4a1b 0%, #2d6e2d 100%) !important; border-bottom: 1px solid rgba(255,255,255,0.12) !important; }
+.header-text h1 { color: #ffffff !important; }
+.header-text p  { color: rgba(255,255,255,0.7) !important; }
+.season-badge   { background: rgba(255,255,255,0.15) !important; border: 1px solid rgba(255,255,255,0.3) !important; color: #e8c84a !important; }
+
+/* KPI cards */
+.kpi          { background: #ffffff !important; border: 1px solid #e5dfc8 !important; box-shadow: 0 2px 14px rgba(27,74,27,0.10) !important; }
+.kpi-label    { color: #6b7280 !important; }
+.kpi-value    { color: #1b4a1b !important; }
+.kpi-unit     { color: #6b7280 !important; }
+
+/* Filter panel */
+.filter-panel  { background: #ffffff !important; border: 1px solid #e5dfc8 !important; box-shadow: 0 2px 14px rgba(27,74,27,0.08) !important; }
+.filter-label  { color: #6b7280 !important; }
+.filter-btn    { background: #f5f0e8 !important; border: 1px solid #e5dfc8 !important; color: #4a5568 !important; }
+.filter-btn:hover { border-color: #2d6e2d !important; color: #1b4a1b !important; background: #eef7ee !important; }
+.filter-btn.active        { background: #1b4a1b !important; border-color: #1b4a1b !important; color: #e8c84a !important; }
+.filter-btn.active.blue   { background: #1a2a4a !important; border-color: #253d6e !important; color: #90d0f0 !important; }
+.filter-btn.active.honey  { background: #7a5530 !important; border-color: #c47c2b !important; color: #fde68a !important; }
+.filter-btn.active.grey   { background: #4b5563 !important; border-color: #6b7280 !important; color: #e5e7eb !important; }
+.filter-btn.active.purple { background: #4c1d95 !important; border-color: #7c3aed !important; color: #ddd6fe !important; }
+.filter-btn.active.green  { background: #166534 !important; border-color: #16a34a !important; color: #bbf7d0 !important; }
+.search-box            { background: #f5f0e8 !important; border: 1px solid #e5dfc8 !important; color: #1a1a1a !important; }
+.search-box:focus      { border-color: #2d6e2d !important; box-shadow: 0 0 0 2px rgba(45,110,45,0.15) !important; }
+.search-box::placeholder { color: #9ca3af !important; }
+.filter-summary        { color: #6b7280 !important; }
+
+/* Cards / Charts */
+.card        { background: #ffffff !important; border: 1px solid #e5dfc8 !important; box-shadow: 0 2px 14px rgba(27,74,27,0.08) !important; }
+.card-title  { color: #6b7280 !important; }
+.chart-card  { background: #ffffff !important; border: 1px solid #e5dfc8 !important; box-shadow: 0 2px 14px rgba(27,74,27,0.08) !important; }
+.chart-title { color: #1b4a1b !important; }
+.section-header       { color: #6b7280 !important; }
+.section-header::after { background: #e5dfc8 !important; }
+
+/* Scrollbars */
+.batch-table-wrap::-webkit-scrollbar-track { background: #fdf8ee !important; }
+.batch-table-wrap::-webkit-scrollbar-thumb { background: #c5b99a !important; }
+.scroll-card::-webkit-scrollbar-track      { background: #fdf8ee !important; }
+.scroll-card::-webkit-scrollbar-thumb      { background: #c5b99a !important; }
+
+/* Table */
+.batch-table thead th         { background: #f5f0e8 !important; color: #6b7280 !important; border-bottom: 1px solid #e5dfc8 !important; }
+.batch-table thead th:hover   { color: #1b4a1b !important; }
+.batch-table thead th.sorted .sort-icon { color: #e8c84a !important; }
+.batch-table tbody tr         { border-bottom: 1px solid #f0ead4 !important; }
+.batch-table tbody tr:hover   { background: #f5f0e8 !important; }
+.batch-table tbody td         { color: #374151 !important; }
+.batch-table tfoot td         { background: #f5f0e8 !important; color: #1b4a1b !important; border-top: 1px solid #e5dfc8 !important; }
+
+/* Badges */
+.badge-Special   { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #f59e0b !important; }
+.badge-Regular   { background: #f3f4f6 !important; color: #4b5563 !important; border: 1px solid #d1d5db !important; }
+.badge-Stripping { background: #eff6ff !important; color: #1d4ed8 !important; border: 1px solid #93c5fd !important; }
+.badge-90Project { background: #f5f3ff !important; color: #6d28d9 !important; border: 1px solid #c4b5fd !important; }
+.badge-Gleanings { background: #f0fdf4 !important; color: #166534 !important; border: 1px solid #86efac !important; }
+
+/* Experiment chips & misc */
+.exp-chip   { background: #fdf8ee !important; border: 1px solid #e5dfc8 !important; color: #4b5563 !important; }
+.donut-label { color: #374151 !important; }
+.donut-val   { color: #1b4a1b !important; }
+.donut-pct   { color: #6b7280 !important; }
+.no-results  { color: #6b7280 !important; }
+
+/* Bar mini backgrounds */
+.bar-mini + div, div[style*="background:#2a1e10"] { background: #e5dfc8 !important; }
+</style>
+
 </head>
 <body>
 
@@ -4723,6 +4799,21 @@ Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
 
 // ── Init ──
 render();
+</script>
+
+
+<script id="msp-font-sync">
+(function() {
+  var sizes = { sm: '13px', md: '15px', lg: '17px' };
+  function applyFont() {
+    var f = localStorage.getItem('msp_font');
+    if (f && sizes[f]) document.documentElement.style.fontSize = sizes[f];
+  }
+  applyFont();
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'msp_font') applyFont();
+  });
+})();
 </script>
 
 </body></html>
