@@ -61,7 +61,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   });
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#3e2010', color: 'white' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#fdf8ee', color: '#1a1a1a' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -76,7 +76,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{
-          background: 'linear-gradient(180deg, #3e2010 0%, #6b3a1f 100%)',
+          background: 'linear-gradient(180deg, #1b4a1b 0%, #2d6e2d 100%)',
           borderRight: '1px solid rgba(255,255,255,0.12)',
         }}
       >
@@ -84,12 +84,12 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
         <div className="flex items-center gap-2.5 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
           <div
             className="flex h-9 w-9 items-center justify-center rounded-full font-black text-base shrink-0"
-            style={{ background: '#e8c84a', color: '#3e2010' }}
+            style={{ background: '#e8c84a', color: '#1b4a1b' }}
           >
             M
           </div>
           <div>
-            <div className="text-base font-bold tracking-tight text-white">MSP (P) Ltd</div>
+            <div className="text-base font-bold tracking-tight text-white">MSP Coffee</div>
             <div className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Trading Management</div>
           </div>
           <button
@@ -173,7 +173,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
         <header
           className="flex items-center gap-3 px-4 lg:px-6 py-3 shrink-0"
           style={{
-            background: 'linear-gradient(135deg, #3e2010 0%, #6b3a1f 100%)',
+            background: 'linear-gradient(135deg, #1b4a1b 0%, #2d6e2d 100%)',
             borderBottom: '1px solid rgba(255,255,255,0.12)',
             boxShadow: '0 3px 16px rgba(0,0,0,0.25)',
           }}
@@ -190,7 +190,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ background: '#fdf8ee' }}>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ background: '#fdf8ee', color: '#1a1a1a' }}>
           {children}
         </main>
       </div>
