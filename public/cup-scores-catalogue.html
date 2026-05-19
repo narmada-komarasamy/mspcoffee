@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSP Coffee — Cup Score Catalogue</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --green-dark: #1b4a1b;
+  --green-mid: #2d6e2d;
+  --green-light: #4a9e4a;
+  --gold: #e8c84a;
+  --gold-dark: #b5950a;
+  --cream: #fdf8ee;
+  --border: #e5dfc8;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --white: #ffffff;
+  --shadow: 0 2px 14px rgba(27,74,27,0.10);
+  --score-vgood: #3b82f6;
+  --score-excel: #059669;
+  --score-out: #d97706;
+  --score-excep: #dc2626;
+  --score-good: #7c6d5a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--green-dark) 0%,var(--green-mid) 100%);color:white;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 16px rgba(0,0,0,0.25);}
+.header-left{display:flex;align-items:center;gap:14px;}
+.logo{width:48px;height:48px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:var(--green-dark);}
+.header-title{font-size:1.35rem;font-weight:700;letter-spacing:0.5px;}
+.header-sub{font-size:0.8rem;color:rgba(255,255,255,0.75);margin-top:2px;}
+.year-badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);padding:5px 14px;border-radius:20px;font-size:0.85rem;font-weight:600;}
+.btn-add-score{background:var(--gold);color:var(--green-dark);border:none;padding:9px 18px;border-radius:8px;font-size:0.88rem;font-weight:700;cursor:pointer;transition:background 0.2s;}
+.btn-add-score:hover{background:#d4b030;}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:16px;width:100%;max-width:780px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;}
+.modal-hdr{background:linear-gradient(135deg,var(--green-dark),var(--green-mid));color:white;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;}
+.modal-hdr-title{font-size:1rem;font-weight:700;}
+.modal-close{background:rgba(255,255,255,0.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:rgba(255,255,255,0.35);}
+.modal-body{padding:22px;}
+.form-sect-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--green-mid);margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--cream);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-size:0.74rem;font-weight:600;color:var(--muted);}
+.form-group input,.form-group select,.form-group textarea{padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;color:var(--text);background:white;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--green-mid);}
+.form-group textarea{resize:vertical;min-height:58px;}
+.modal-footer{padding:14px 22px;background:var(--cream);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.btn-modal{padding:9px 20px;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;border:none;}
+.btn-save{background:var(--green-dark);color:white;}
+.btn-save:hover{background:var(--green-mid);}
+.btn-cancel{background:white;color:var(--muted);border:1.5px solid var(--border);}
+.btn-cancel:hover{background:var(--cream);}
+/* year pill on card */
+.year-pill{font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(27,74,27,0.1);color:var(--green-dark);}
+/* user-added card highlight */
+.card.user-added{border-color:#a0c4ff;}
+.card.user-added .card-top{border-top:3px solid #3b82f6;}
+.del-btn{font-size:0.7rem;padding:3px 8px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;cursor:pointer;margin-left:auto;}
+.del-btn:hover{background:#fee2e2;}
+
+/* SCORE LEGEND */
+.legend-bar{background:var(--green-dark);padding:6px 32px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:0.75rem;color:rgba(255,255,255,0.85);}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* SUMMARY CARDS */
+.summary{padding:20px 32px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;}
+.scard{background:white;border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative;overflow:hidden;}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--green-mid);}
+.scard.gold::before{background:var(--gold);}
+.scard.blue::before{background:var(--score-vgood);}
+.scard.amber::before{background:var(--score-out);}
+.scard-icon{font-size:1.5rem;margin-bottom:8px;}
+.scard-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:600;}
+.scard-value{font-size:1.6rem;font-weight:800;color:var(--green-dark);margin-top:3px;line-height:1;}
+.scard-sub{font-size:0.72rem;color:var(--muted);margin-top:4px;}
+
+/* CHARTS */
+.charts-row{padding:18px 32px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.chart-card{background:white;border-radius:12px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);}
+.chart-title{font-size:0.82rem;font-weight:700;color:var(--green-dark);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;}
+.chart-wrap{height:170px;position:relative;}
+
+/* FILTERS */
+.filters{padding:18px 32px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.filter-group{display:flex;align-items:center;gap:6px;}
+.filter-label{font-size:0.75rem;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.5px;}
+select.fsel,input.fsearch{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;background:white;color:var(--text);}
+select.fsel:focus,input.fsearch:focus{outline:none;border-color:var(--green-mid);}
+input.fsearch{width:220px;}
+.results-count{font-size:0.8rem;color:var(--muted);margin-left:auto;}
+.btn-clear{padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;background:white;font-size:0.8rem;cursor:pointer;color:var(--muted);}
+.btn-clear:hover{background:var(--cream);}
+
+/* SORT ROW */
+.sort-row{padding:10px 32px 0;display:flex;align-items:center;gap:8px;}
+.sort-btn{padding:5px 12px;border:1.5px solid var(--border);border-radius:20px;background:white;font-size:0.75rem;cursor:pointer;color:var(--muted);font-weight:600;transition:all 0.15s;}
+.sort-btn.active{background:var(--green-dark);color:white;border-color:var(--green-dark);}
+.sort-label{font-size:0.75rem;color:var(--muted);font-weight:600;margin-right:4px;}
+
+/* GRID */
+.grid{padding:18px 32px 32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px;}
+
+/* COFFEE CARD */
+.card{background:white;border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;cursor:default;}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(27,74,27,0.14);}
+.card-top{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.card-meta{flex:1;}
+.lot-line{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.lot-num{font-size:0.7rem;font-weight:700;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;}
+.series-badge{font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:0.3px;}
+.badge-gold{background:#fff8e1;color:#92650a;}
+.badge-small{background:#e8f5e9;color:#2e7d32;}
+.badge-nano{background:#e3f2fd;color:#1565c0;}
+.badge-limited{background:#f3e5f5;color:#6a1b9a;}
+.card-name{font-size:1.0rem;font-weight:700;color:var(--green-dark);line-height:1.25;}
+.card-estate{font-size:0.75rem;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px;}
+.estate-dot{width:6px;height:6px;border-radius:50%;background:var(--green-mid);}
+.score-circle{width:62px;height:62px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:3px solid;}
+.score-num{font-size:1.25rem;font-weight:900;line-height:1;}
+.score-label{font-size:0.55rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-top:1px;}
+
+/* score tiers */
+.tier-good .score-circle{border-color:var(--score-good);color:var(--score-good);}
+.tier-vgood .score-circle{border-color:var(--score-vgood);color:var(--score-vgood);}
+.tier-excel .score-circle{border-color:var(--score-excel);color:var(--score-excel);}
+.tier-out .score-circle{border-color:var(--score-out);color:var(--score-out);}
+.tier-excep .score-circle{border-color:var(--score-excep);color:var(--score-excep);}
+
+.card-divider{height:1px;background:var(--border);margin:0 16px;}
+.card-process{padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.process-tag{font-size:0.68rem;font-weight:600;padding:3px 9px;border-radius:8px;background:var(--cream);color:var(--green-dark);border:1px solid var(--border);}
+.card-price{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.price-inr{font-size:0.78rem;font-weight:700;color:var(--green-dark);}
+.price-usd{font-size:0.7rem;color:var(--muted);}
+
+.card-notes{padding:0 16px 10px;}
+.notes-section{margin-bottom:6px;}
+.notes-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin-bottom:2px;}
+.notes-value{font-size:0.78rem;color:var(--text);line-height:1.45;}
+.taste-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.taste-tag{font-size:0.65rem;padding:2px 8px;border-radius:10px;background:#fef9e7;color:#7d5a00;border:1px solid #f0d080;}
+
+.card-bottom{padding:8px 16px 12px;background:var(--cream);border-top:1px solid var(--border);display:flex;gap:12px;}
+.meta-item{display:flex;flex-direction:column;gap:1px;}
+.meta-lbl{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);font-weight:600;}
+.meta-val{font-size:0.75rem;font-weight:600;color:var(--green-dark);}
+
+.no-results{grid-column:1/-1;text-align:center;padding:60px;color:var(--muted);font-size:0.9rem;}
+
+/* ── HEADER CLOCK ── */
+.header-clock{
+  text-align:right;padding:4px 12px;border-right:1px solid rgba(255,255,255,0.2);
+  margin-right:4px;
+}
+.hclock-time{font-size:1.1rem;font-weight:800;letter-spacing:1px;color:white;line-height:1.1;}
+.hclock-date{font-size:0.68rem;color:rgba(255,255,255,0.8);margin-top:1px;}
+.hclock-updated{font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+/* palette toggle btn */
+.palette-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:1rem;transition:background 0.2s;
+}
+.palette-btn:hover{background:rgba(255,255,255,0.25);}
+/* palette picker — drops down from header */
+.palette-picker{
+  position:absolute;top:calc(100% + 10px);right:160px;
+  background:white;border-radius:14px;padding:14px 16px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.22);border:1px solid var(--border);
+  display:none;flex-direction:column;gap:8px;min-width:180px;z-index:900;
+}
+.palette-picker.open{display:flex;}
+.palette-picker-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin-bottom:2px;}
+.theme-row{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background 0.15s;}
+.theme-row:hover{background:var(--cream);}
+.theme-row.active{background:var(--cream);outline:2px solid var(--green-mid);}
+.theme-swatch{width:26px;height:26px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,0.1);}
+.theme-name{font-size:0.78rem;font-weight:600;color:var(--text);}
+
+@media(max-width:900px){
+  .main{padding:12px;}
+  .header,.filters,.summary,.charts-row,.grid,.sort-row,.legend-bar{padding-left:16px;padding-right:16px;}
+  .charts-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">M</div>
+    <div>
+      <div class="header-title">MSP Coffee P Ltd</div>
+      <div class="header-sub">Multi-Year Cup Score Catalogue</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;position:relative;">
+    <!-- Inline clock -->
+    <div class="header-clock">
+      <div class="hclock-time" id="live-time">--:--:--</div>
+      <div class="hclock-date" id="live-date">--- -- ----</div>
+      <div class="hclock-updated">↻ <span id="last-updated-val">—</span></div>
+    </div>
+    <!-- Palette button -->
+    <button class="palette-btn" id="palette-toggle-btn" onclick="togglePalette()" title="Change colour theme">🎨</button>
+    <!-- Palette picker (opens upward/downward from here) -->
+    <div class="palette-picker" id="palette-picker">
+      <div class="palette-picker-title">🎨 Colour Theme</div>
+      <div class="theme-row" data-theme="forest"   onclick="applyTheme('forest')">  <div class="theme-swatch" style="background:#1b4a1b"></div><span class="theme-name">Forest Green</span></div>
+      <div class="theme-row" data-theme="coffee"   onclick="applyTheme('coffee')">  <div class="theme-swatch" style="background:#3e2010"></div><span class="theme-name">Deep Coffee</span></div>
+      <div class="theme-row" data-theme="navy"     onclick="applyTheme('navy')">    <div class="theme-swatch" style="background:#1a2a4a"></div><span class="theme-name">Navy Blue</span></div>
+      <div class="theme-row" data-theme="burgundy" onclick="applyTheme('burgundy')"><div class="theme-swatch" style="background:#4a1020"></div><span class="theme-name">Burgundy</span></div>
+      <div class="theme-row" data-theme="slate"    onclick="applyTheme('slate')">   <div class="theme-swatch" style="background:#2a3540"></div><span class="theme-name">Slate</span></div>
+    </div>
+    <div class="year-badge" id="active-year-badge">☕ All Years</div>
+    <button class="btn-add-score" onclick="openAddModal()">＋ Add Score</button>
+  </div>
+</div>
+
+<div class="legend-bar">
+  <span style="font-size:0.72rem;color:rgba(255,255,255,0.6);font-weight:600;margin-right:4px;">SCORE KEY:</span>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--score-good)"></div>80–82.99 Good</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--score-vgood)"></div>83–84.99 Very Good</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--score-excel)"></div>85–86.99 Excellent</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--score-out)"></div>87–88.99 Outstanding</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--score-excep)"></div>89+ Exceptional</div>
+</div>
+
+<div class="summary" id="summary-cards"></div>
+
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">☕ Avg Score by Estate</div>
+    <div class="chart-wrap"><canvas id="chartEstate"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">📦 Lots by Process</div>
+    <div class="chart-wrap"><canvas id="chartProcess"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">📊 Score Distribution</div>
+    <div class="chart-wrap"><canvas id="chartDist"></canvas></div>
+  </div>
+</div>
+
+<!-- ADD SCORE MODAL -->
+<div class="modal-overlay" id="add-modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-hdr-title" id="modal-mode-title">➕ Add New Cup Score</div>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-sect-title">📅 Year & Lot</div>
+      <div class="form-grid-3">
+        <div class="form-group"><label>Year *</label><input type="number" id="m-year" placeholder="e.g. 2026" min="2020" max="2035" required></div>
+        <div class="form-group"><label>Lot No *</label><input type="text" id="m-lot" placeholder="e.g. 215" required></div>
+        <div class="form-group"><label>Series *</label>
+          <select id="m-series">
+            <option>Gold Series</option><option>Small Batch</option><option>Nano Lot</option><option>Limited Edition</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-sect-title">🌿 Coffee Details</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Lot Name *</label><input type="text" id="m-name" placeholder="e.g. GOLD SERIES NATURALS" required></div>
+        <div class="form-group"><label>Coffee Type</label><input type="text" id="m-type" placeholder="e.g. Arabica Natural"></div>
+        <div class="form-group"><label>Estate *</label>
+          <select id="m-estate">
+            <option>Stanmore Estate</option><option>Moganad Estate</option><option>Orchardale Estate</option><option>Bison Valley Estate</option><option>Hidden Falls Estate</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Process</label>
+          <select id="m-process">
+            <option>Natural</option><option>Washed</option><option>Black Honey / PSD</option><option>Robusta</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Process Detail</label><input type="text" id="m-process-detail" placeholder="e.g. 48 Hrs Yeast Washed"></div>
+        <div class="form-group"><label>Field / Block</label><input type="text" id="m-field" placeholder="e.g. Meelish"></div>
+      </div>
+      <div class="form-sect-title">🏆 Score & Pricing</div>
+      <div class="form-grid-3">
+        <div class="form-group"><label>Cup Score *</label><input type="number" id="m-score" placeholder="e.g. 86.75" min="70" max="100" step="0.25" required></div>
+        <div class="form-group"><label>Price (INR)</label><input type="text" id="m-price-inr" placeholder="e.g. ₹1,400"></div>
+        <div class="form-group"><label>Price (USD FOB)</label><input type="text" id="m-price-usd" placeholder="e.g. $16.50"></div>
+      </div>
+      <div class="form-sect-title">☕ Cup Profile</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Acidity</label><input type="text" id="m-acidity" placeholder="e.g. Bright & Juicy"></div>
+        <div class="form-group"><label>Body</label><input type="text" id="m-body" placeholder="e.g. Silky, Medium+"></div>
+        <div class="form-group"><label>Taste Notes</label><textarea id="m-notes" placeholder="e.g. Blackberry, blueberry, oolong tea, honey"></textarea></div>
+        <div class="form-group"><label>Date Cupped</label><input type="text" id="m-date" placeholder="e.g. 15 Mar 26"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Quantity (kg)</label><input type="text" id="m-qty" placeholder="e.g. 500 kg"></div>
+      </div>
+      <input type="hidden" id="m-edit-id" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-modal btn-save" onclick="saveScore()">💾 Save Score</button>
+    </div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <span class="filter-label">Year</span>
+    <select class="fsel" id="f-year" onchange="applyFilters()">
+      <option value="">All Years</option>
+      <option value="2025">2025</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Estate</span>
+    <select class="fsel" id="f-estate" onchange="applyFilters()">
+      <option value="">All Estates</option>
+      <option>Stanmore Estate</option>
+      <option>Moganad Estate</option>
+      <option>Orchardale Estate</option>
+      <option>Bison Valley Estate</option>
+      <option>Hidden Falls Estate</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Process</span>
+    <select class="fsel" id="f-process" onchange="applyFilters()">
+      <option value="">All Processes</option>
+      <option>Natural</option>
+      <option>Washed</option>
+      <option>Black Honey / PSD</option>
+      <option>Robusta</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Series</span>
+    <select class="fsel" id="f-series" onchange="applyFilters()">
+      <option value="">All Series</option>
+      <option>Gold Series</option>
+      <option>Small Batch</option>
+      <option>Nano Lot</option>
+      <option>Limited Edition</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Score</span>
+    <select class="fsel" id="f-score" onchange="applyFilters()">
+      <option value="">All Scores</option>
+      <option value="85">85+</option>
+      <option value="86">86+</option>
+      <option value="87">87+</option>
+      <option value="88">88+</option>
+    </select>
+  </div>
+  <input class="fsearch" id="f-search" placeholder="🔍 Search taste notes, estate, process..." oninput="applyFilters()">
+  <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
+  <span class="results-count" id="results-count"></span>
+</div>
+
+<div class="sort-row">
+  <span class="sort-label">SORT:</span>
+  <button class="sort-btn active" onclick="setSort('score')" id="sort-score">Score ↓</button>
+  <button class="sort-btn" onclick="setSort('lot')" id="sort-lot">Lot No</button>
+  <button class="sort-btn" onclick="setSort('estate')" id="sort-estate">Estate</button>
+  <button class="sort-btn" onclick="setSort('price')" id="sort-price">Price</button>
+</div>
+
+<div class="grid" id="card-grid"></div>
+
+
+<script>
+const COFFEES = [
+  {lot:'31',series:'Nano Lot',name:'NANO LOT NATURALS',type:'Arabica Natural',estate:'Moganad Estate',process:'Natural',processDetail:'Multi-Fermentation 384 Hours',score:85,priceINR:'₹1,250',priceUSD:'$14.20',date:'22 Dec 24',field:'10¾ Acre',acidity:'Medium',body:'Medium+',notes:'Peach, passion fruit, candied walnut, cacao nib',qty:'890 kg'},
+  {lot:'48',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Orchardale Estate',process:'Washed',processDetail:'Sugarcane 48 Hrs',score:83.5,priceINR:'₹900',priceUSD:'$10.80',date:'07 Feb 25',field:'Line Keel Thundu',acidity:'Medium to Medium+',body:'Medium+',notes:'Baking chocolate, walnut, citrus, orange zest, dates, cacao nib',qty:'483 kg'},
+  {lot:'49',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Orchardale Estate',process:'Washed',processDetail:'Mandarin (Kamala Orange) 48 Hrs',score:82.75,priceINR:'₹900',priceUSD:'$10.80',date:'08 Feb 25',field:'Kamalkadu',acidity:'Medium',body:'Medium',notes:'Roasted almond, cacao nib, citrus zest',qty:'550 kg'},
+  {lot:'50',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Hidden Falls Estate',process:'Washed',processDetail:'Yeast Inoculation',score:85,priceINR:'₹900',priceUSD:'$10.80',date:'—',field:'—',acidity:'Brisk',body:'Syrupy',notes:'Fig, baking chocolate, goji berry, brown sugar, undertones of goji berry and dark chocolate',qty:'485 kg'},
+  {lot:'54',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Hidden Falls Estate',process:'Washed',processDetail:'Natural Yeast 48 Hrs',score:83.75,priceINR:'₹900',priceUSD:'$10.80',date:'23 Jan 25',field:'Ramarao Field',acidity:'Medium',body:'Medium+',notes:'Intense aromatics, black grapes, grapefruit peel, cacao nib, orange zest',qty:'300 kg'},
+  {lot:'56',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Extended Multi-Fermentation 650+ Hours',score:86,priceINR:'₹1,400',priceUSD:'$16.50',date:'29 Dec 24',field:'Meelish',acidity:'Sweet tart',body:'Velvety',notes:'Vibrant fruit driven, berries, tamarind, huckleberry, honeysuckle, lemon verbena',qty:'1,886 kg'},
+  {lot:'67',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Stanmore Estate',process:'Washed',processDetail:'Yeast 48 Hrs',score:83,priceINR:'₹900',priceUSD:'$10.80',date:'29 Dec 24',field:'Nagalur Field',acidity:'Dry / Medium',body:'Medium',notes:'Almond, sweetlime, citrus, bakers chocolate',qty:'536 kg'},
+  {lot:'95',series:'Small Batch',name:'SMALL BATCH BLACK HONEY',type:'Arabica PSD',estate:'Bison Valley Estate',process:'Black Honey / PSD',processDetail:'Black Honey 48 Hrs Double Fermentation',score:82.25,priceINR:'₹1,000',priceUSD:'$12.00',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'682 kg'},
+  {lot:'96',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Stanmore Estate',process:'Washed',processDetail:'Watermelon Process 48 Hrs',score:83.75,priceINR:'₹900',priceUSD:'$10.80',date:'12 Feb 25',field:'Yeriputhukkadu',acidity:'Bright, Juicy',body:'Silky smooth',notes:'Watermelon candy, almond brittle, lemon verbena',qty:'—'},
+  {lot:'106',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Moganad Estate',process:'Natural',processDetail:'Multi-Fermentation 960 Hours',score:86.25,priceINR:'₹1,400',priceUSD:'$16.50',date:'21 Dec 24',field:'Line Field',acidity:'Bright & Complex',body:'Medium+, Syrupy',notes:'Ripe plums, cherry, grapefruit zest, honeysuckle, cacao nib',qty:'650 kg'},
+  {lot:'109',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Alternate Multi-Fermentation 72 Hours',score:87.75,priceINR:'₹1,500',priceUSD:'$16.50',date:'02 Feb 25',field:'Yeriputhukkadu',acidity:'Sweet acidity',body:'Medium, silky mouthfeel',notes:'Fruity, gentle spice, blackberry, dark fruits, red wine',qty:'937 kg'},
+  {lot:'111',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Extended Multi-Fermentation 900+ Hours',score:88.5,priceINR:'₹1,500',priceUSD:'$16.50',date:'—',field:'—',acidity:'Bright',body:'Medium+',notes:'Exotic red fruits, candied fennel, black cherry, sangria',qty:'905 kg'},
+  {lot:'135',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Orchardale Estate',process:'Natural',processDetail:'Triple Fermentation + ICE Blast',score:86,priceINR:'₹1,400',priceUSD:'$16.50',date:'06 Feb 25',field:'Kali Kovil',acidity:'Complex (citric, malic, acetic)',body:'Medium+, Syrupy',notes:'Black cherry, raisin, blueberry compote, candied kumquat, dark grapes, wine',qty:'756 kg'},
+  {lot:'136',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Orchardale Estate',process:'Natural',processDetail:'Extended Multi-Fermentation 650+ Hours',score:87.5,priceINR:'₹1,500',priceUSD:'$16.50',date:'26 Jan 25',field:'Kamala Kadu',acidity:'Bright & Juicy',body:'Silky',notes:'Blackberry, blueberry compote, oolong tea, honey, berry and dark plum sweetness',qty:'1,175 kg'},
+  {lot:'137',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Bison Valley Estate',process:'Natural',processDetail:'Alternate Multi-Fermentation 240+ Hours',score:86.5,priceINR:'₹1,400',priceUSD:'$16.50',date:'08 Feb 25',field:'Nadu Level',acidity:'Bright acidity',body:'Medium to Medium+, juicy',notes:'Citrus blossom, pear, mandarin, floral',qty:'564 kg'},
+  {lot:'139',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Bison Valley Estate',process:'Natural',processDetail:'Extended Multi-Fermentation 650+ Hours',score:87.5,priceINR:'₹1,500',priceUSD:'$16.50',date:'28 Jan 25',field:'Pammandicholai',acidity:'Complex',body:'Medium+',notes:'Caramel toffee, figs, goji berry, aged wine, prunes, complex fruits',qty:'550 kg'},
+  {lot:'144',series:'Gold Series',name:'GOLD SERIES BLACK HONEY',type:'Arabica PSD',estate:'Moganad Estate',process:'Black Honey / PSD',processDetail:'48 Hrs Arabica Black Honey',score:86.25,priceINR:'₹1,200',priceUSD:'$14.20',date:'30 Dec 24',field:'Nodichikkal',acidity:'Bright vibrant',body:'Medium+',notes:'Floral, tea, jasmine, peach, pink grapefruit',qty:'575 kg'},
+  {lot:'148',series:'Small Batch',name:'SMALL BATCH BLACK HONEY',type:'Arabica PSD',estate:'Orchardale Estate',process:'Black Honey / PSD',processDetail:'48 Hrs Black Honey',score:83.25,priceINR:'₹1,000',priceUSD:'$12.00',date:'03 Jan 25',field:'Line Mel Thundu',acidity:'Medium+',body:'Medium',notes:'Sweet aromatic, raisin, mild toffee, sweetlime zest',qty:'378 kg'},
+  {lot:'152',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Bison Valley Estate',process:'Washed',processDetail:'Double Fermentation, Extended Slow Dry',score:84.5,priceINR:'₹900',priceUSD:'$10.80',date:'04 Jan 25',field:'Nadu Level',acidity:'Refreshing, bright',body:'Well rounded, smooth',notes:'Golden kiwi, white chocolate, mandarin orange, sweet',qty:'2,508 kg'},
+  {lot:'153',series:'Gold Series',name:'GOLD SERIES WASHED',type:'Arabica Washed',estate:'Stanmore Estate',process:'Washed',processDetail:'Triple Fermentation + ICE Blast',score:86.75,priceINR:'₹1,000',priceUSD:'$12.00',date:'03 Dec 24',field:'Meelish',acidity:'Bright, sweet',body:'Medium',notes:'Complex fruits, jaggery, dates, dark fruits, black currant',qty:'1,532 kg'},
+  {lot:'155',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Hidden Falls Estate',process:'Washed',processDetail:'Double Fermentation, Extended Slow Dry',score:84.5,priceINR:'₹900',priceUSD:'$10.80',date:'18 Dec 24',field:'Puthur Pallam',acidity:'Sweet, effervescent',body:'Syrupy, medium+',notes:'Wine toned, muscat grapes, hibiscus, dark chocolate, almond, cocoa',qty:'1,878 kg'},
+  {lot:'156',series:'Small Batch',name:'SMALL BATCH BLACK HONEY',type:'Arabica PSD',estate:'Orchardale Estate',process:'Black Honey / PSD',processDetail:'Watermelon Black Honey 48 Hrs',score:84.25,priceINR:'₹1,100',priceUSD:'$13.00',date:'24 Feb 25',field:'Aathukkadu',acidity:'Bright',body:'Medium',notes:'Bright, mild floral, dark grape sweetness, black currant, pomegranate with plum undertones',qty:'518 kg'},
+  {lot:'157',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Orchardale Estate',process:'Washed',processDetail:'Watermelon Process 48 Hrs',score:84.75,priceINR:'₹900',priceUSD:'$10.80',date:'21 Feb 25',field:'Vandimudakkam',acidity:'Sweet/tart',body:'Light but silky',notes:'Floral, bright, fruit forward, red currant, mandarin orange, honeysuckle',qty:'1,238 kg'},
+  {lot:'160',series:'Gold Series',name:'GOLD SERIES WASHED',type:'Arabica Washed',estate:'Bison Valley Estate',process:'Washed',processDetail:'Brown Sugar Process',score:86.25,priceINR:'₹1,000',priceUSD:'$12.00',date:'19 Feb 25',field:'Pommidi Quarters',acidity:'Medium+, Intense',body:'Medium',notes:'Complex, brown sugar, berries, nuts',qty:'2,548 kg'},
+  {lot:'163',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Robusta Natural',estate:'Moganad Estate',process:'Robusta',processDetail:'Robusta Natural',score:86.5,priceINR:'₹800',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'Vanilla, chocolate aromatics. Cocoa butter, brown sugar, hint of maple syrup',qty:'1,614 kg'},
+  {lot:'166',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Moganad Estate',process:'Washed',processDetail:'Watermelon Process 48 Hrs',score:84.25,priceINR:'₹900',priceUSD:'$10.80',date:'21 Feb 25',field:'Marriamman Kovil',acidity:'Bright, Sweet',body:'Medium',notes:'Mandarin, milk chocolate, raisin',qty:'1,819 kg'},
+  {lot:'167',series:'Gold Series',name:'GOLD SERIES WASHED',type:'Arabica Washed',estate:'Moganad Estate',process:'Washed',processDetail:'Triple Fermentation + ICE Blast',score:86.75,priceINR:'₹1,000',priceUSD:'$12.00',date:'20 Dec 24',field:'Vyapurikuttai Div',acidity:'Complex',body:'Medium, well rounded',notes:'Mulberry, peach, palm sugar, dried fig, elderflower, sweet wine',qty:'4,014 kg'},
+  {lot:'170',series:'Small Batch',name:'SMALL BATCH BLACK HONEY',type:'Robusta PSD',estate:'Moganad Estate',process:'Robusta',processDetail:'Robusta Black Honey',score:85.75,priceINR:'₹750',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'Good body, nice complexity. Almond butter, cocoa, nutmeg hints. Soft and smooth',qty:'892 kg'},
+  {lot:'173',series:'Gold Series',name:'GOLD SERIES BLACK HONEY',type:'Robusta PSD',estate:'Moganad Estate',process:'Robusta',processDetail:'Robusta Black Honey',score:86.25,priceINR:'₹800',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'Balanced characters. Milk chocolate, roasted walnut, raisin, dried dates. Balanced finish',qty:'1,676 kg'},
+  {lot:'177',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Stanmore Estate',process:'Washed',processDetail:'Watermelon Process 48 Hrs',score:84,priceINR:'₹900',priceUSD:'$10.80',date:'—',field:'—',acidity:'Sweet / medium',body:'Velvety / smooth',notes:'Sweet, chocolatey, lavender, rose hip, baking chocolate',qty:'723 kg'},
+  {lot:'180',series:'Gold Series',name:'GOLD SERIES BLACK HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'48 Hrs Black Honey',score:87,priceINR:'₹1,200',priceUSD:'$14.20',date:'09 Feb 25',field:'Meelish',acidity:'Sweet, medium',body:'Medium, dense mouthfeel',notes:'Jamun, red plum, sapota, molasses, stone fruit',qty:'633 kg'},
+  {lot:'187a',series:'Gold Series',name:'GOLD SERIES BLACK HONEY',type:'Arabica PSD',estate:'Bison Valley Estate',process:'Black Honey / PSD',processDetail:'Mandarin (Kamala Orange) Black Honey',score:86.25,priceINR:'₹1,200',priceUSD:'$13.00',date:'01 Mar 25',field:'BBTC Puthukkadu',acidity:'Bright acidity',body:'Juicy, silky mouthfeel',notes:'Tangerine, peaches, mandarin, kiwi, floral',qty:'664 kg'},
+  {lot:'187b',series:'Small Batch',name:'SMALL BATCH NATURALS',type:'Robusta Natural',estate:'Moganad Estate',process:'Robusta',processDetail:'Robusta Natural',score:84.5,priceINR:'₹700',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'Sweet-toned. Milk chocolate, nut-driven. Cashew, hazelnut brittle, maple. Baker\'s chocolate finish',qty:'1,461 kg'},
+  {lot:'189',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Robusta Natural',estate:'Moganad Estate',process:'Robusta',processDetail:'Robusta Natural',score:86.25,priceINR:'₹800',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'Intense flavour. Hazelnut, butterscotch. Sweetness balances coffee and flavours',qty:'1,812 kg'},
+  {lot:'200',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Alternate Multi-Fermentation 72 Hours',score:87.75,priceINR:'₹1,500',priceUSD:'$16.50',date:'—',field:'—',acidity:'Sweet',body:'Syrupy',notes:'Mulberry, black cherry, palm sugar, rum-like syrupy dark cherry',qty:'12,892 kg'},
+  {lot:'201',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Orchardale Estate',process:'Natural',processDetail:'Alternate Multi-Fermentation 240+ Hours',score:86,priceINR:'₹1,300',priceUSD:'$15.30',date:'—',field:'—',acidity:'Sweet, balanced',body:'Syrupy, balanced',notes:'Deep toned and berry forward, wild honey, mixed berry',qty:'11,066 kg'},
+  {lot:'202',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Moganad Estate',process:'Natural',processDetail:'Alternate Multi-Fermentation 240+ Hours',score:86.25,priceINR:'₹1,300',priceUSD:'$15.30',date:'—',field:'—',acidity:'Bright',body:'Medium+',notes:'Dark plum, acai berry, dark plum, black raisin',qty:'4,985 kg'},
+  {lot:'203',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Bison Valley Estate',process:'Natural',processDetail:'Extended Multi-Fermentation 900+ Hours',score:87.75,priceINR:'₹1,500',priceUSD:'$16.50',date:'—',field:'—',acidity:'Sweet',body:'Syrupy / silky',notes:'Mixed cherries, dark plums, dark berries, stone fruit, jaggery',qty:'1,028 kg'},
+  {lot:'204',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Arabica Natural',estate:'Hidden Falls Estate',process:'Natural',processDetail:'Alternate Multi-Fermentation 240+ Hours',score:88,priceINR:'₹1,500',priceUSD:'$16.50',date:'—',field:'—',acidity:'Juicy bright',body:'Medium+, Syrupy',notes:'Raspberry coulis, wine barrel, dark chocolate, wine',qty:'855 kg'},
+  {lot:'205',series:'Small Batch',name:'SMALL BATCH BLACK HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Black Honey 48 Hrs',score:82.25,priceINR:'₹1,000',priceUSD:'$12.00',date:'—',field:'—',acidity:'Light / medium',body:'Medium',notes:'Orange zest, roasted almond, nuts, brown sugar, walnut',qty:'1,547 kg'},
+  {lot:'206',series:'Gold Series',name:'GOLD SERIES BLACK HONEY',type:'Arabica PSD',estate:'Moganad Estate',process:'Black Honey / PSD',processDetail:'Black Honey Espresso',score:87.25,priceINR:'₹1,200',priceUSD:'$14.20',date:'—',field:'—',acidity:'Bright',body:'Medium+',notes:'Complex, agave syrup, yellow plum, rum, toffee, hazelnut',qty:'2,220 kg'},
+  {lot:'207',series:'Gold Series',name:'GOLD SERIES BLACK HONEY',type:'Arabica PSD',estate:'Bison Valley Estate',process:'Black Honey / PSD',processDetail:'Competition Batch Black Honey Espresso',score:87.5,priceINR:'₹1,200',priceUSD:'$14.20',date:'—',field:'—',acidity:'Bright',body:'Medium, vibrant syrupy',notes:'Dark fruits, black cherry, rum & chocolate fudge, chocolaty finish with hazelnut and rum, whiskey barrel',qty:'201 kg'},
+  {lot:'208',series:'Small Batch',name:'SMALL BATCH BLACK HONEY',type:'Arabica PSD',estate:'Orchardale Estate',process:'Black Honey / PSD',processDetail:'Watermelon Black Honey',score:84,priceINR:'₹1,100',priceUSD:'$13.00',date:'—',field:'—',acidity:'Intense, well rounded',body:'Medium+, Viscous',notes:'Multi-layered, black cherry, red plum, roasted walnut, sweetlime, cocoa nib',qty:'782 kg'},
+  {lot:'209',series:'Small Batch',name:'SMALL BATCH WASHED',type:'Arabica Washed',estate:'Orchardale Estate',process:'Washed',processDetail:'Watermelon Process 48 Hrs',score:83.75,priceINR:'₹900',priceUSD:'$10.80',date:'—',field:'—',acidity:'Bright / sweet',body:'Medium+',notes:'Hazelnut, milk chocolate, honey, cocoa, lime zest',qty:'985 kg'},
+  {lot:'210',series:'Nano Lot',name:'NANO LOT NATURALS',type:'Arabica Natural',estate:'Bison Valley Estate',process:'Natural',processDetail:'Papaya Process',score:85.25,priceINR:'₹1,250',priceUSD:'$14.20',date:'—',field:'—',acidity:'Vibrant',body:'Smooth',notes:'Red fruit, papaya, sapota (chikku), complex',qty:'254 kg'},
+  {lot:'211',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Robusta Natural',estate:'Moganad Estate',process:'Robusta',processDetail:'Robusta Natural (Bulk)',score:86.75,priceINR:'₹800',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'Chocolate, caramel, nut notes. Smooth and round. Hint of bitter edge in aftertaste',qty:'3,678 kg'},
+  {lot:'212',series:'Gold Series',name:'GOLD SERIES NATURALS',type:'Robusta Natural',estate:'Hidden Falls Estate',process:'Robusta',processDetail:'Robusta Natural Watermelon',score:86,priceINR:'₹800',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'1,637 kg'},
+  {lot:'213',series:'Gold Series',name:"GOLD SERIES NATURALS — GAUR'S DEN",type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Micro Lot – Gaur\'s Den Organic',score:86,priceINR:'₹1,600',priceUSD:'$16.50',date:'—',field:'—',acidity:'Bright, zesty',body:'Silky / smooth',notes:'Cane sugar, mandarin, plum, raisin, hazelnut',qty:'102 kg'},
+  // Project MSP 90+ Naturals
+  {lot:'A1',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Sampangi Flower Infusion',score:84.5,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A2',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Marikkozhunthu (Marjoram)',score:85.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A3',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Gundumalli (Arabian Jasmine)',score:86.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A4',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Banana Infusion',score:87.75,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A5',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Seethapalam (Custard Apple)',score:87.5,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A6',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Pepper + Mango',score:84.75,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A7',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Clove + Mango',score:84.75,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A8',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Orange Peel',score:88,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Bright (medium to Medium+)',body:'Well layered, light to medium',notes:'Pomegranate, melon and grapefruit. Nice layered coffee, medium dry finish',qty:'Micro'},
+  {lot:'A9',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Raja Flower',score:84.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A10',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Grape Infusion',score:84.5,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A11',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Grapefruit (Bomblimas)',score:84.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  {lot:'A12',series:'Limited Edition',name:'PROJECT MSP 90+ NATURAL',type:'Arabica Natural',estate:'Stanmore Estate',process:'Natural',processDetail:'Pudina (Coriander)',score:87.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'—',body:'—',notes:'—',qty:'Micro'},
+  // Project MSP 90+ Honey
+  {lot:'B01',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Sampangi Flower / Magnolia Champaca',score:86.75,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Bright',body:'Creamy mouthfeel',notes:'Very elegant. Butterscotch, honeysuckle, coconut, muscat grape, bergamot',qty:'Micro'},
+  {lot:'B02',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Marikkozhunthu (Marjoram)',score:84.75,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Delicate but bright',body:'Medium',notes:'Grapes, kiwi & green apple with almond and caramel sweetness. Better as it cools',qty:'Micro'},
+  {lot:'B03',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Gundumalli (Arabian Jasmine / Jasminum sambac)',score:86,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Clean and bright',body:'Medium',notes:'Floral, tangerine, orange blossom and caramel sweetness',qty:'Micro'},
+  {lot:'B04',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Banana Honey',score:85.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Medium+',body:'Medium',notes:'Citrus nuances. Orange zest, hint of stone fruits, brown sugar aftertaste',qty:'Micro'},
+  {lot:'B05',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Seethapalam (Custard Apple)',score:85.5,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Sweet & bright',body:'Creamy',notes:'Raspberry, sweet cocoa, magnolia, cashew butter, orange zest',qty:'Micro'},
+  {lot:'B06',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Pepper + Mango Honey',score:84,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Pleasant balanced',body:'Medium+',notes:'Raisin, honey, grapefruit, Dutch cocoa, milk chocolate',qty:'Micro'},
+  {lot:'B07',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Clove + Mango Honey',score:85.5,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Well rounded',body:'Medium+, satin mouthfeel',notes:'Cinnamon, dates, nutmeg, hint of orange zest',qty:'Micro'},
+  {lot:'B08',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Orange Peel Honey',score:84.75,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Rounded bright',body:'Medium+',notes:'Meyer lemon, Concord grape, star fruit brightness. Turns to white grape juiciness as it cools, mild brown sugar',qty:'Micro'},
+  {lot:'B09',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Rose Flower Honey',score:85,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Assertive brightness',body:'Medium',notes:'Sweet lime, caramel, raisins and citrus blossom. Extremely well balanced cup',qty:'Micro'},
+  {lot:'B10',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Grape Honey',score:87.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Bright',body:'Medium+',notes:'Hazelnut, hints of cardamom, nutmeg, lilac and plums, sandalwood undertones',qty:'Micro'},
+  {lot:'B11',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Pink Grapefruit (Bomblimas)',score:86.5,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Gentle, round',body:'Satin, creamy',notes:'Sweet, lime zest, dried apricot, chocolate fudge, agave syrup, deep cherry finish',qty:'Micro'},
+  {lot:'B12',series:'Limited Edition',name:'PROJECT MSP 90+ HONEY',type:'Arabica PSD',estate:'Stanmore Estate',process:'Black Honey / PSD',processDetail:'Pudina / Spearmint (Mentha spicata)',score:86.25,priceINR:'—',priceUSD:'—',date:'—',field:'—',acidity:'Crisp',body:'Smooth, medium',notes:'Red apple, raisin and dragon fruit forefront. Milk chocolate, custard apple and white chocolate finish',qty:'Micro'},
+];
+
+// ── tag all built-in records as 2025 ──
+COFFEES.forEach(c => c.year = 2025);
+
+// ── localStorage for user-added scores ──
+function loadExtra(){ try{ return JSON.parse(localStorage.getItem('msp_extra_scores')||'[]'); }catch(e){return[];} }
+function saveExtra(d){ localStorage.setItem('msp_extra_scores', JSON.stringify(d)); }
+function getAllCoffees(){ return [...COFFEES, ...loadExtra()]; }
+function getAvailableYears(){
+  return [...new Set(getAllCoffees().map(c=>c.year))].sort((a,b)=>b-a);
+}
+function updateYearFilter(){
+  const sel = document.getElementById('f-year');
+  const cur = sel.value;
+  const years = getAvailableYears();
+  sel.innerHTML = '<option value="">All Years</option>' + years.map(y=>`<option value="${y}" ${String(y)===cur?'selected':''}>${y}</option>`).join('');
+}
+
+// ── modal ──
+function openAddModal(editId=null){
+  document.getElementById('add-modal').classList.add('open');
+  const form = document.getElementById('add-modal');
+  if(editId){
+    const rec = loadExtra().find(r=>r._id===editId);
+    if(!rec) return;
+    document.getElementById('modal-mode-title').textContent = '✏️ Edit Cup Score';
+    document.getElementById('m-edit-id').value = editId;
+    document.getElementById('m-year').value = rec.year||'';
+    document.getElementById('m-lot').value = rec.lot||'';
+    document.getElementById('m-series').value = rec.series||'Gold Series';
+    document.getElementById('m-name').value = rec.name||'';
+    document.getElementById('m-type').value = rec.type||'';
+    document.getElementById('m-estate').value = rec.estate||'Stanmore Estate';
+    document.getElementById('m-process').value = rec.process||'Natural';
+    document.getElementById('m-process-detail').value = rec.processDetail||'';
+    document.getElementById('m-field').value = rec.field||'';
+    document.getElementById('m-score').value = rec.score||'';
+    document.getElementById('m-price-inr').value = rec.priceINR||'';
+    document.getElementById('m-price-usd').value = rec.priceUSD||'';
+    document.getElementById('m-acidity').value = rec.acidity||'';
+    document.getElementById('m-body').value = rec.body||'';
+    document.getElementById('m-notes').value = rec.notes||'';
+    document.getElementById('m-date').value = rec.date||'';
+    document.getElementById('m-qty').value = rec.qty||'';
+  } else {
+    document.getElementById('modal-mode-title').textContent = '➕ Add New Cup Score';
+    document.getElementById('m-edit-id').value = '';
+    document.getElementById('m-year').value = new Date().getFullYear();
+    ['m-lot','m-name','m-type','m-process-detail','m-field','m-score','m-price-inr','m-price-usd','m-acidity','m-body','m-notes','m-date','m-qty'].forEach(id=>{ document.getElementById(id).value=''; });
+  }
+}
+function closeAddModal(){ document.getElementById('add-modal').classList.remove('open'); }
+function closeModalOutside(e){ if(e.target===document.getElementById('add-modal')) closeAddModal(); }
+
+function saveScore(){
+  const year = parseInt(document.getElementById('m-year').value);
+  const lot  = document.getElementById('m-lot').value.trim();
+  const name = document.getElementById('m-name').value.trim();
+  const score= parseFloat(document.getElementById('m-score').value);
+  if(!year||!lot||!name||isNaN(score)){ alert('Please fill in Year, Lot No, Name and Cup Score.'); return; }
+  const editId = document.getElementById('m-edit-id').value;
+  const rec = {
+    _id: editId || Date.now().toString(),
+    _userAdded: true,
+    year, lot, name, score,
+    series:       document.getElementById('m-series').value,
+    type:         document.getElementById('m-type').value||'Arabica',
+    estate:       document.getElementById('m-estate').value,
+    process:      document.getElementById('m-process').value,
+    processDetail:document.getElementById('m-process-detail').value||'—',
+    field:        document.getElementById('m-field').value||'—',
+    priceINR:     document.getElementById('m-price-inr').value||'—',
+    priceUSD:     document.getElementById('m-price-usd').value||'—',
+    acidity:      document.getElementById('m-acidity').value||'—',
+    body:         document.getElementById('m-body').value||'—',
+    notes:        document.getElementById('m-notes').value||'—',
+    date:         document.getElementById('m-date').value||'—',
+    qty:          document.getElementById('m-qty').value||'—',
+  };
+  let extras = loadExtra();
+  if(editId){ extras = extras.map(r=>r._id===editId?rec:r); }
+  else { extras.push(rec); }
+  saveExtra(extras);
+  closeAddModal();
+  updateYearFilter();
+  renderSummary();
+  renderCharts();
+  applyFilters();
+}
+function deleteScore(id){
+  if(!confirm('Delete this score entry?')) return;
+  saveExtra(loadExtra().filter(r=>r._id!==id));
+  updateYearFilter();
+  renderSummary();
+  renderCharts();
+  applyFilters();
+}
+
+// ── helpers ──
+function getTier(s){
+  if(s>=89) return {cls:'tier-excep',label:'Exceptional',color:'#dc2626'};
+  if(s>=87) return {cls:'tier-out',  label:'Outstanding',color:'#d97706'};
+  if(s>=85) return {cls:'tier-excel',label:'Excellent',  color:'#059669'};
+  if(s>=83) return {cls:'tier-vgood',label:'Very Good',  color:'#3b82f6'};
+  return        {cls:'tier-good', label:'Good',       color:'#7c6d5a'};
+}
+function seriesBadge(s){
+  const m={
+    'Gold Series':   ['badge-gold','Gold Series'],
+    'Small Batch':   ['badge-small','Small Batch'],
+    'Nano Lot':      ['badge-nano','Nano Lot'],
+    'Limited Edition':['badge-limited','Ltd Edition'],
+  };
+  const [cls,lbl]=m[s]||['badge-small',s];
+  return `<span class="series-badge ${cls}">${lbl}</span>`;
+}
+function parseTasteNotes(n){
+  if(!n||n==='—') return '';
+  return n.split(/,|\./).map(t=>t.trim()).filter(t=>t.length>1&&t.length<30)
+    .slice(0,5).map(t=>`<span class="taste-tag">${t}</span>`).join('');
+}
+function estateShort(e){
+  return e.replace(' Estate','');
+}
+function estateColor(e){
+  const m={'Stanmore Estate':'#1b5e20','Moganad Estate':'#1a237e','Orchardale Estate':'#4a148c','Bison Valley Estate':'#e65100','Hidden Falls Estate':'#006064'};
+  return m[e]||'#1b4a1b';
+}
+
+// ── render card ──
+function makeCard(c){
+  const tier=getTier(c.score);
+  const tasteHTML=parseTasteNotes(c.notes);
+  const estColor=estateColor(c.estate);
+  const userClass = c._userAdded ? 'user-added' : '';
+  return `<div class="card ${tier.cls} ${userClass}">
+    <div class="card-top">
+      <div class="card-meta">
+        <div class="lot-line">
+          <span class="lot-num">LOT ${c.lot}</span>
+          ${seriesBadge(c.series)}
+          <span class="year-pill">${c.year}</span>
+          ${c._userAdded ? `<button class="del-btn" onclick="deleteScore('${c._id}')">✕ Delete</button>` : ''}
+        </div>
+        <div class="card-name">${c.name}</div>
+        <div class="card-estate">
+          <div class="estate-dot" style="background:${estColor}"></div>
+          <span style="color:${estColor};font-weight:600">${c.estate}</span>
+        </div>
+      </div>
+      <div class="score-circle">
+        <div class="score-num">${c.score}</div>
+        <div class="score-label">${tier.label}</div>
+      </div>
+    </div>
+    <div class="card-divider"></div>
+    <div class="card-process">
+      <span class="process-tag">${c.type}</span>
+      <span class="process-tag">${c.processDetail}</span>
+      <div class="card-price">
+        <span class="price-inr">${c.priceINR}</span>
+        ${c.priceUSD!=='—'?`<span class="price-usd">${c.priceUSD}</span>`:''}
+      </div>
+    </div>
+    ${c.acidity!=='—'?`<div class="card-notes">
+      ${c.acidity!=='—'?`<div class="notes-section"><span class="notes-label">Acidity</span><div class="notes-value">${c.acidity}</div></div>`:''}
+      ${c.body!=='—'?`<div class="notes-section"><span class="notes-label">Body</span><div class="notes-value">${c.body}</div></div>`:''}
+      ${c.notes!=='—'?`<div class="notes-section"><span class="notes-label">Taste Notes</span><div class="taste-tags">${tasteHTML}</div></div>`:''}
+    </div>`:''}
+    <div class="card-bottom">
+      <div class="meta-item"><div class="meta-lbl">Date</div><div class="meta-val">${c.date}</div></div>
+      ${c.field!=='—'?`<div class="meta-item"><div class="meta-lbl">Field</div><div class="meta-val">${c.field}</div></div>`:''}
+      <div class="meta-item"><div class="meta-lbl">Qty</div><div class="meta-val">${c.qty}</div></div>
+    </div>
+  </div>`;
+}
+
+// ── state ──
+let currentSort='score';
+let filteredData=[...COFFEES];
+
+function setSort(s){
+  currentSort=s;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sort-'+s).classList.add('active');
+  applyFilters();
+}
+
+function applyFilters(){
+  const yearF=document.getElementById('f-year').value;
+  const estate=document.getElementById('f-estate').value;
+  const proc=document.getElementById('f-process').value;
+  const series=document.getElementById('f-series').value;
+  const scoreMin=parseFloat(document.getElementById('f-score').value)||0;
+  const search=(document.getElementById('f-search').value||'').toLowerCase();
+
+  // update header badge
+  const badge=document.getElementById('active-year-badge');
+  badge.textContent = yearF ? `☕ ${yearF}` : '☕ All Years';
+
+  filteredData=getAllCoffees().filter(c=>{
+    if(yearF && String(c.year)!==yearF) return false;
+    if(estate && c.estate!==estate) return false;
+    if(proc && c.process!==proc) return false;
+    if(series && c.series!==series) return false;
+    if(scoreMin && c.score<scoreMin) return false;
+    if(search){
+      const hay=(c.name+c.estate+c.process+c.processDetail+c.notes+c.type+c.lot).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // sort
+  filteredData.sort((a,b)=>{
+    if(currentSort==='score') return b.score-a.score;
+    if(currentSort==='lot'){
+      const al=isNaN(a.lot)?a.lot:parseFloat(a.lot);
+      const bl=isNaN(b.lot)?b.lot:parseFloat(b.lot);
+      return al<bl?-1:al>bl?1:0;
+    }
+    if(currentSort==='estate') return a.estate.localeCompare(b.estate);
+    if(currentSort==='price'){
+      const ap=parseFloat((a.priceINR||'0').replace(/[₹,]/g,''))||0;
+      const bp=parseFloat((b.priceINR||'0').replace(/[₹,]/g,''))||0;
+      return bp-ap;
+    }
+    return 0;
+  });
+
+  const grid=document.getElementById('card-grid');
+  if(!filteredData.length){
+    grid.innerHTML='<div class="no-results">No coffees match your filters.</div>';
+  } else {
+    grid.innerHTML=filteredData.map(makeCard).join('');
+  }
+  document.getElementById('results-count').textContent=`${filteredData.length} of ${COFFEES.length} lots`;
+}
+
+function clearFilters(){
+  document.getElementById('f-estate').value='';
+  document.getElementById('f-process').value='';
+  document.getElementById('f-series').value='';
+  document.getElementById('f-score').value='';
+  document.getElementById('f-search').value='';
+  applyFilters();
+}
+
+// ── summary cards ──
+function renderSummary(){
+  const all=getAllCoffees();
+  const yearF=document.getElementById('f-year')?.value||'';
+  const data = yearF ? all.filter(c=>String(c.year)===yearF) : all;
+  const total=data.length;
+  const avg=total?(data.reduce((s,c)=>s+c.score,0)/total).toFixed(2):'—';
+  const top=total?Math.max(...data.map(c=>c.score)):0;
+  const outstanding=data.filter(c=>c.score>=87).length;
+  const estates=[...new Set(data.map(c=>c.estate))].length;
+  const years=[...new Set(all.map(c=>c.year))].sort();
+  document.getElementById('summary-cards').innerHTML=`
+    <div class="scard gold">
+      <div class="scard-icon">☕</div>
+      <div class="scard-label">Total Lots Cupped</div>
+      <div class="scard-value">${total}</div>
+      <div class="scard-sub">2025 Season</div>
+    </div>
+    <div class="scard blue">
+      <div class="scard-icon">📊</div>
+      <div class="scard-label">Average Cup Score</div>
+      <div class="scard-value">${avg}</div>
+      <div class="scard-sub">All lots</div>
+    </div>
+    <div class="scard amber">
+      <div class="scard-icon">🏆</div>
+      <div class="scard-label">Highest Score</div>
+      <div class="scard-value">${top}</div>
+      <div class="scard-sub">${COFFEES.filter(c=>c.score===top).map(c=>'Lot '+c.lot).join(', ')}</div>
+    </div>
+    <div class="scard">
+      <div class="scard-icon">⭐</div>
+      <div class="scard-label">Outstanding+ (87+)</div>
+      <div class="scard-value">${outstanding}</div>
+      <div class="scard-sub">${total?((outstanding/total)*100).toFixed(0):0}% of all lots</div>
+    </div>
+    <div class="scard">
+      <div class="scard-icon">🌿</div>
+      <div class="scard-label">Estates</div>
+      <div class="scard-value">${estates}</div>
+      <div class="scard-sub">Yercaud, Tamil Nadu</div>
+    </div>
+    <div class="scard gold">
+      <div class="scard-icon">📅</div>
+      <div class="scard-label">Years on Record</div>
+      <div class="scard-value">${years.length}</div>
+      <div class="scard-sub">${years.join(' · ')}</div>
+    </div>
+  `;
+}
+
+// ── charts ──
+let charts={};
+function renderCharts(){
+  const yearF=document.getElementById('f-year')?.value||'';
+  const data=yearF?getAllCoffees().filter(c=>String(c.year)===yearF):getAllCoffees();
+  // Chart 1: Avg score by estate
+  const estateNames=['Stanmore Estate','Moganad Estate','Orchardale Estate','Bison Valley Estate','Hidden Falls Estate'];
+  const estateAvg=estateNames.map(e=>{
+    const lots=data.filter(c=>c.estate===e);
+    return lots.length?(lots.reduce((s,c)=>s+c.score,0)/lots.length).toFixed(2):0;
+  });
+  const estateColors=['#1b5e20','#1a237e','#4a148c','#e65100','#006064'];
+  if(charts.estate) charts.estate.destroy();
+  charts.estate=new Chart(document.getElementById('chartEstate'),{
+    type:'bar',
+    data:{labels:estateNames.map(e=>e.replace(' Estate','')),datasets:[{data:estateAvg,backgroundColor:estateColors,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:82,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}
+  });
+
+  // Chart 2: Lots by process
+  const procs=['Natural','Washed','Black Honey / PSD','Robusta'];
+  const procCounts=procs.map(p=>data.filter(c=>c.process===p).length);
+  if(charts.proc) charts.proc.destroy();
+  charts.proc=new Chart(document.getElementById('chartProcess'),{
+    type:'doughnut',
+    data:{labels:procs,datasets:[{data:procCounts,backgroundColor:['#2e7d32','#1565c0','#b5770a','#5d4037'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10}}}}
+  });
+
+  // Chart 3: Score distribution
+  const bins=['80–82','83–84','85–86','87–88','89+'];
+  const binCounts=[
+    data.filter(c=>c.score>=80&&c.score<83).length,
+    data.filter(c=>c.score>=83&&c.score<85).length,
+    data.filter(c=>c.score>=85&&c.score<87).length,
+    data.filter(c=>c.score>=87&&c.score<89).length,
+    data.filter(c=>c.score>=89).length,
+  ];
+  if(charts.dist) charts.dist.destroy();
+  charts.dist=new Chart(document.getElementById('chartDist'),{
+    type:'bar',
+    data:{labels:bins,datasets:[{
+      data:binCounts,
+      backgroundColor:['#7c6d5a','#3b82f6','#059669','#d97706','#dc2626'],
+      borderRadius:6,
+      borderSkipped:false,
+      barPercentage:0.6,
+      categoryPercentage:0.8
+    }]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.raw} lots`}},
+        datalabels:{display:false}
+      },
+      scales:{
+        y:{
+          beginAtZero:true,
+          ticks:{stepSize:5,font:{size:10}},
+          grid:{color:'rgba(0,0,0,0.06)'}
+        },
+        x:{
+          ticks:{font:{size:10}},
+          grid:{display:false},
+          offset:true
+        }
+      },
+      layout:{padding:{top:8}}
+    }
+  });
+}
+
+// ── THEMES ──
+const THEMES = {
+  forest: {
+    label:'Forest Green', swatch:'#1b4a1b',
+    '--green-dark':'#1b4a1b','--green-mid':'#2d6e2d','--green-light':'#4a9e4a',
+    '--gold':'#e8c84a','--cream':'#fdf8ee','--border':'#e5dfc8'
+  },
+  coffee: {
+    label:'Deep Coffee', swatch:'#3e2010',
+    '--green-dark':'#3e2010','--green-mid':'#6b3a1f','--green-light':'#9c5a32',
+    '--gold':'#e8c84a','--cream':'#fdf5ee','--border':'#e8d8c4'
+  },
+  navy: {
+    label:'Navy Blue', swatch:'#1a2a4a',
+    '--green-dark':'#1a2a4a','--green-mid':'#253d6e','--green-light':'#3a5fa0',
+    '--gold':'#e8c84a','--cream':'#f0f4ff','--border':'#d0d8f0'
+  },
+  burgundy: {
+    label:'Burgundy', swatch:'#4a1020',
+    '--green-dark':'#4a1020','--green-mid':'#7a1f35','--green-light':'#a83050',
+    '--gold':'#e8c84a','--cream':'#fff0f3','--border':'#f0d0d8'
+  },
+  slate: {
+    label:'Slate', swatch:'#2a3540',
+    '--green-dark':'#2a3540','--green-mid':'#3d5060','--green-light':'#5a7080',
+    '--gold':'#e8c84a','--cream':'#f2f5f7','--border':'#d4dde3'
+  },
+};
+let activeTheme = localStorage.getItem('msp_theme') || 'forest';
+
+function applyTheme(key){
+  activeTheme = key;
+  localStorage.setItem('msp_theme', key);
+  const t = THEMES[key];
+  const root = document.documentElement;
+  Object.entries(t).forEach(([k,v])=>{ if(k.startsWith('--')) root.style.setProperty(k,v); });
+  document.querySelectorAll('.theme-row').forEach(r=>r.classList.toggle('active', r.dataset.theme===key));
+}
+
+function togglePalette(){
+  document.getElementById('palette-picker').classList.toggle('open');
+}
+document.addEventListener('click', e=>{
+  const panel = document.getElementById('palette-picker');
+  const btn   = document.getElementById('palette-toggle-btn');
+  if(panel && !panel.contains(e.target) && btn && !btn.contains(e.target)){
+    panel.classList.remove('open');
+  }
+});
+
+// ── CLOCK ──
+function updateClock(){
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const date = now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  const el = document.getElementById('live-time');
+  const de = document.getElementById('live-date');
+  if(el) el.textContent = time;
+  if(de) de.textContent = date;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── LAST UPDATED ──
+function getLastUpdated(){
+  return localStorage.getItem('msp_last_updated') || 'No entries added yet';
+}
+function setLastUpdated(){
+  const now = new Date();
+  const str = now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  localStorage.setItem('msp_last_updated', str);
+  const el = document.getElementById('last-updated-val');
+  if(el) el.textContent = str;
+}
+// patch saveScore to also set last updated
+const _origSaveScore = saveScore;
+window.saveScore = function(){
+  _origSaveScore();
+  setLastUpdated();
+  const el = document.getElementById('last-updated-val');
+  if(el) el.textContent = getLastUpdated();
+};
+
+// ── init ──
+updateYearFilter();
+renderSummary();
+renderCharts();
+applyFilters();
+applyTheme(activeTheme);
+document.getElementById('last-updated-val').textContent = getLastUpdated();
+</script>
+</body>
+</html>
