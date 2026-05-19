@@ -12,7 +12,7 @@ const CARDS = [
     topLine: 'MSP Coffee',
     badge: true,
     hasMSP: true,
-    photo: '/home/card1-estate.jpg',
+    photo: '/msp-logo.png',
     label: 'COFFEE',
     sub: 'Estate Management',
     href: '/rainfall',
@@ -23,7 +23,7 @@ const CARDS = [
     topLine: 'MSP (P) Ltd',
     badge: true,
     hasMSP: true,
-    photo: '/home/card2-sacks.jpg',
+    photo: '/msp-sacks.png',
     label: 'COFFEE',
     sub: 'Trading Management',
     href: null,
@@ -35,7 +35,7 @@ const CARDS = [
     badge: false,
     hasMSP: false,
     hillTiller: true,
-    photo: '/home/card3-pkgs.jpg',
+    photo: '/hill-packages.png',
     label: 'COFFEE',
     sub: 'Sales Management',
     href: null,
@@ -92,7 +92,7 @@ function MSPLogo() {
 function HTLogo() {
   return (
     <div className="flex flex-col items-center gap-1 py-2">
-      <Image src="/home/hill-logo.png" alt="Hill Tiller" width={160} height={128}
+      <Image src="/hill-logo.png" alt="Hill Tiller" width={160} height={128}
              className="object-contain" style={{ filter: 'brightness(1.1)' }}/>
       <p style={{
         fontFamily: "'Arial Black','Impact',sans-serif",
@@ -212,7 +212,7 @@ export default function HomePage() {
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        <Image src="/home/msp-bg.jpg" alt="background" fill
+        <Image src="/bg.png" alt="background" fill
                className="object-cover" style={{ filter: 'blur(8px) brightness(0.55)', transform: 'scale(1.08)' }}/>
         <div className="absolute inset-0"
              style={{ background: 'linear-gradient(150deg,rgba(70,38,12,0.5) 0%,rgba(90,55,18,0.38) 100%)' }}/>
