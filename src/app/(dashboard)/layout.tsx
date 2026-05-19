@@ -44,7 +44,6 @@ const navItems: NavItem[] = [
   { label: 'Rain Gauge',           href: '/rainfall',       icon: CloudRain,    roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',  icon: Fuel,         roles: ['admin', 'supervisor'] },
   { label: 'HO Fuel',              href: '/ho-fuel',        icon: Droplets,     roles: ['admin', 'supervisor'] },
-  { label: 'Export Operations',    href: '/export-operations', icon: Globe,     roles: ['admin', 'supervisor'] },
   { label: 'Daily Report',         href: '/daily-report',   icon: FileText,     roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Muster Roll',          href: '/muster-roll',    icon: Users,        roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Harvest Yield',        href: '/harvest-yield',  icon: Wheat,        roles: ['admin', 'supervisor'] },
