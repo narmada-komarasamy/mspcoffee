@@ -22,8 +22,8 @@ const CARDS = [
     abbr: 'MSP',
     photo: '/home/card2-sacks-crop.jpg',
     sub: 'Trading Management',
-    href: null,
-    active: false,
+    href: '/export-operations',
+    active: true,
   },
   {
     id: 'sales',
