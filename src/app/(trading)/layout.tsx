@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Globe,
-  BarChart2,
   Menu,
   X,
   LogOut,
@@ -28,8 +27,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: 'Export Operations',      href: '/export-operations',      icon: Globe,      roles: ['admin', 'supervisor'] },
-  { label: 'Processing Dashboard',   href: '/processing-dashboard',   icon: BarChart2,  roles: ['admin', 'supervisor'] },
+  { label: 'Export Operations', href: '/export-operations', icon: Globe, roles: ['admin', 'supervisor'] },
 ];
 
 export default function TradingLayout({ children }: { children: React.ReactNode }) {
