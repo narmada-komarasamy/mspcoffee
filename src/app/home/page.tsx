@@ -75,10 +75,12 @@ function EnterBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-function PhotoBox({ src, alt }: { src: string; alt: string }) {
+function PhotoBox({ src, alt, contain }: { src: string; alt: string; contain?: boolean }) {
   return (
-    <div className="relative mx-3 rounded-xl overflow-hidden" style={{ height: S.photoHeight, flexShrink: 0 }}>
-      <Image src={src} alt={alt} fill className="object-cover object-center" style={{ filter: 'brightness(0.94) saturate(1.05)' }}/>
+    <div className="relative mx-3 rounded-xl overflow-hidden" style={{ height: S.photoHeight, flexShrink: 0, background: contain ? '#1a1008' : undefined }}>
+      <Image src={src} alt={alt} fill
+        className={contain ? 'object-contain' : 'object-cover object-center'}
+        style={{ filter: 'brightness(0.94) saturate(1.05)' }}/>
     </div>
   );
 }
@@ -101,7 +103,7 @@ function Card1({ onEnter }: { onEnter: () => void }) {
         <p style={S.estdFont}>ESTD <Cherry /> 1920</p>
       </div>
       <MSPBig />
-      <PhotoBox src="/home/card1-beans.jpg" alt="Estate" />
+      <PhotoBox src="/home/card1-logo.jpg" alt="Estate" contain />
       <CoffeeSub sub="Estate Management" />
       <EnterBtn onClick={onEnter} />
     </Card>
