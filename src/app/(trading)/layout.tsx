@@ -45,7 +45,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
     const t = localStorage.getItem('msp_theme') as ThemeKey | null;
     const f = localStorage.getItem('msp_font') as FontKey | null;
     if (t && THEMES[t]) setThemeKey(t);
-    if (f && FONT_SIZES[f]) setFontKey(f);
+    if (f && FONT_SIZES[f]) { setFontKey(f); document.documentElement.style.fontSize = FONT_SIZES[f]; }
   }, [router]);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   }, []);
 
   const applyTheme = (k: ThemeKey) => { setThemeKey(k); localStorage.setItem('msp_theme', k); setPaletteOpen(false); };
-  const applyFont  = (k: FontKey)  => { setFontKey(k);  localStorage.setItem('msp_font', k); };
+  const applyFont  = (k: FontKey)  => { setFontKey(k);  localStorage.setItem('msp_font', k); document.documentElement.style.fontSize = FONT_SIZES[k]; };
   const handleLogout = () => { localStorage.removeItem('msp_user'); router.push('/login'); };
 
   if (!user) return null;

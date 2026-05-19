@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const t = localStorage.getItem('msp_theme') as ThemeKey | null;
     const f = localStorage.getItem('msp_font') as FontKey | null;
     if (t && THEMES[t]) setThemeKey(t);
-    if (f && FONT_SIZES[f]) setFontKey(f);
+    if (f && FONT_SIZES[f]) { setFontKey(f); document.documentElement.style.fontSize = FONT_SIZES[f]; }
   }, [router]);
 
   useEffect(() => {
@@ -110,6 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const applyFont = (k: FontKey) => {
     setFontKey(k);
     localStorage.setItem('msp_font', k);
+    document.documentElement.style.fontSize = FONT_SIZES[k];
   };
 
   const handleLogout = () => {
