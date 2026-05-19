@@ -97,6 +97,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--cream);color:var(-
 select.fsel,input.fsearch{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;background:white;color:var(--text);}
 select.fsel:focus,input.fsearch:focus{outline:none;border-color:var(--green-mid);}
 input.fsearch{width:220px;}
+
+.weight-summary{display:inline-flex;align-items:center;gap:6px;background:rgba(27,74,27,0.08);border:1px solid rgba(27,74,27,0.2);border-radius:20px;padding:4px 12px;font-size:0.78rem;font-weight:700;color:var(--green-dark);margin-left:10px;}
+.weight-summary span{color:var(--muted);font-weight:500;}
+
 .results-count{font-size:0.8rem;color:var(--muted);margin-left:auto;}
 .btn-clear{padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;background:white;font-size:0.8rem;cursor:pointer;color:var(--muted);}
 .btn-clear:hover{background:var(--cream);}
@@ -365,7 +369,7 @@ input.fsearch{width:220px;}
   </div>
   <input class="fsearch" id="f-search" placeholder="🔍 Search taste notes, estate, process..." oninput="applyFilters()">
   <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
-  <span class="results-count" id="results-count"></span>
+  <span class="results-count" id="results-count"></span><span class="weight-summary" id="weight-summary"><span>Total Available:</span> <span id="weight-value">—</span></span>
 </div>
 
 <div class="sort-row">
@@ -693,6 +697,15 @@ function applyFilters(){
     grid.innerHTML=filteredData.map(makeCard).join('');
   }
   document.getElementById('results-count').textContent=`${filteredData.length} of ${COFFEES.length} lots`;
+  // Total weight of filtered lots
+  let totalKg = 0, hasQty = false;
+  filteredData.forEach(c => {
+    const n = parseFloat((c.qty||'').replace(/[^0-9.]/g,''));
+    if (!isNaN(n) && n > 0) { totalKg += n; hasQty = true; }
+  });
+  document.getElementById('weight-value').textContent = hasQty
+    ? totalKg.toLocaleString('en-IN') + ' kg'
+    : '—';
 }
 
 function clearFilters(){
