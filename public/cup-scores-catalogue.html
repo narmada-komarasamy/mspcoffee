@@ -91,7 +91,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--cream);color:var(-
 .chart-wrap{height:170px;position:relative;}
 
 /* FILTERS */
-.filters{padding:18px 32px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.filters{padding:18px 32px 0;display:flex;flex-direction:column;gap:8px;}.filter-top-row{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;}.filter-bottom-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .filter-group{display:flex;align-items:center;gap:6px;}
 .filter-label{font-size:0.75rem;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.5px;}
 select.fsel,input.fsearch{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.83rem;background:white;color:var(--text);}
@@ -317,58 +317,62 @@ input.fsearch{width:220px;}
 </div>
 
 <div class="filters">
-  <div class="filter-group">
-    <span class="filter-label">Year</span>
-    <select class="fsel" id="f-year" onchange="applyFilters()">
-      <option value="">All Years</option>
-      <option value="2025">2025</option>
-    </select>
+  <div class="filter-top-row">
+    <div class="filter-group">
+      <span class="filter-label">Year</span>
+      <select class="fsel" id="f-year" onchange="applyFilters()">
+        <option value="">All Years</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Estate</span>
+      <select class="fsel" id="f-estate" onchange="applyFilters()">
+        <option value="">All Estates</option>
+        <option>Stanmore Estate</option>
+        <option>Moganad Estate</option>
+        <option>Orchardale Estate</option>
+        <option>Bison Valley Estate</option>
+        <option>Hidden Falls Estate</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Process</span>
+      <select class="fsel" id="f-process" onchange="applyFilters()">
+        <option value="">All Processes</option>
+        <option>Natural</option>
+        <option>Washed</option>
+        <option>Black Honey / PSD</option>
+        <option>Robusta</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Series</span>
+      <select class="fsel" id="f-series" onchange="applyFilters()">
+        <option value="">All Series</option>
+        <option>Gold Series</option>
+        <option>Small Batch</option>
+        <option>Nano Lot</option>
+        <option>Limited Edition</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Score</span>
+      <select class="fsel" id="f-score" onchange="applyFilters()">
+        <option value="">All Scores</option>
+        <option value="85">85+</option>
+        <option value="86">86+</option>
+        <option value="87">87+</option>
+        <option value="88">88+</option>
+      </select>
+    </div>
+    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border:1.5px solid var(--border);border-radius:20px;background:white;font-size:0.75rem;font-weight:600;color:var(--green-dark);">⚖️ Total Available: <strong id="weight-value">—</strong></span>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Estate</span>
-    <select class="fsel" id="f-estate" onchange="applyFilters()">
-      <option value="">All Estates</option>
-      <option>Stanmore Estate</option>
-      <option>Moganad Estate</option>
-      <option>Orchardale Estate</option>
-      <option>Bison Valley Estate</option>
-      <option>Hidden Falls Estate</option>
-    </select>
+  <div class="filter-bottom-row">
+    <input class="fsearch" id="f-search" placeholder="🔍 Search taste notes, estate, process..." oninput="applyFilters()">
+    <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
+    <span class="results-count" id="results-count"></span>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Process</span>
-    <select class="fsel" id="f-process" onchange="applyFilters()">
-      <option value="">All Processes</option>
-      <option>Natural</option>
-      <option>Washed</option>
-      <option>Black Honey / PSD</option>
-      <option>Robusta</option>
-    </select>
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">Series</span>
-    <select class="fsel" id="f-series" onchange="applyFilters()">
-      <option value="">All Series</option>
-      <option>Gold Series</option>
-      <option>Small Batch</option>
-      <option>Nano Lot</option>
-      <option>Limited Edition</option>
-    </select>
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">Score</span>
-    <select class="fsel" id="f-score" onchange="applyFilters()">
-      <option value="">All Scores</option>
-      <option value="85">85+</option>
-      <option value="86">86+</option>
-      <option value="87">87+</option>
-      <option value="88">88+</option>
-    </select>
-  </div>
-  <input class="fsearch" id="f-search" placeholder="🔍 Search taste notes, estate, process..." oninput="applyFilters()">
-  <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
-  <span class="results-count" id="results-count"></span>
-  <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border:1.5px solid var(--border);border-radius:20px;background:white;font-size:0.75rem;font-weight:600;color:var(--green-dark);">⚖️ Total Available: <strong id="weight-value">—</strong></span>
 </div>
 
 <div class="sort-row">
