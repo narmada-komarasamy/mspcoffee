@@ -53,21 +53,21 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: 'Rain Gauge',           href: '/rainfall',       icon: CloudRain,    roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',  icon: Fuel,         roles: ['admin', 'supervisor'] },
-  { label: 'HO Fuel',              href: '/ho-fuel',        icon: Droplets,     roles: ['admin', 'supervisor'] },
-  { label: 'Daily Report',         href: '/daily-report',   icon: FileText,     roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Muster Roll',          href: '/muster-roll',    icon: Users,        roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Harvest Yield',        href: '/harvest-yield',  icon: Wheat,        roles: ['admin', 'supervisor'] },
-  { label: 'Labour Costs',         href: '/labour-costs',   icon: DollarSign,   roles: ['admin'] },
-  { label: 'Nursery',              href: '/nursery',        icon: Sprout,       roles: ['admin', 'supervisor'] },
-  { label: 'Spraying Log',         href: '/spraying-log',   icon: SprayCan,     roles: ['admin', 'supervisor'] },
-  { label: 'Vehicle Log',          href: '/vehicle-log',    icon: Truck,        roles: ['admin', 'supervisor'] },
-  { label: 'Store Inventory',      href: '/store-inventory',icon: Package,      roles: ['admin'] },
-  { label: 'Shopify Orders',       href: '/shopify-orders', icon: ShoppingCart, roles: ['admin'] },
-  { label: 'Weather',              href: '/weather',        icon: CloudSun,     roles: ['admin', 'worker'] },
-  { label: 'AI Insights',          href: '/ai-insights',    icon: Brain,        roles: ['admin'] },
-  { label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor'] },
+  { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker'] },
+  { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor'] },
+  { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor'] },
+  { label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2,    roles: ['admin', 'supervisor'] },
+  { label: 'Daily Report',         href: '/daily-report',         icon: FileText,     roles: ['admin', 'supervisor', 'worker'] },
+  { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker'] },
+  { label: 'Harvest Yield',        href: '/harvest-yield',        icon: Wheat,        roles: ['admin', 'supervisor'] },
+  { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
+  { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor'] },
+  { label: 'Spraying Log',         href: '/spraying-log',         icon: SprayCan,     roles: ['admin', 'supervisor'] },
+  { label: 'Vehicle Log',          href: '/vehicle-log',          icon: Truck,        roles: ['admin', 'supervisor'] },
+  { label: 'Store Inventory',      href: '/store-inventory',      icon: Package,      roles: ['admin'] },
+  { label: 'Shopify Orders',       href: '/shopify-orders',       icon: ShoppingCart, roles: ['admin'] },
+  { label: 'Weather',              href: '/weather',              icon: CloudSun,     roles: ['admin', 'worker'] },
+  { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
