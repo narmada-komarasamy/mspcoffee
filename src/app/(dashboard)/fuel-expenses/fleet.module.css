@@ -166,7 +166,7 @@
 @media (max-width: 600px)  { .kpiGrid3Col { grid-template-columns: 1fr; } }
 
 .kpiCard {
-  background: #2d6e2d;
+  background: #ffffff;
   border: 1px solid #d4c9a8;
   border-radius: 12px;
   padding: 18px 20px;
@@ -188,12 +188,12 @@
   width: 50px; height: 50px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 22px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(27,74,27,0.08);
   flex-shrink: 0;
 }
 .kpiInfo  { flex: 1; }
 .kpiLabel { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 4px; }
-.kpiValue { font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
+.kpiValue { font-size: 26px; font-weight: 700; color: #1b4a1b; line-height: 1; }
 .kpiUnit  { font-size: 13px; color: #6b7280; margin-left: 4px; }
 .kpiSub   { font-size: 12px; color: #6b7280; margin-top: 3px; }
 
@@ -209,7 +209,7 @@
 
 .comparisonGrid { display: flex; flex-direction: column; gap: 12px; }
 
-.compCard { background: #2d6e2d; border: 1px solid #d4c9a8; border-radius: 10px; overflow: hidden; }
+.compCard { background: #ffffff; border: 1px solid #d4c9a8; border-radius: 10px; overflow: hidden; }
 .compCardHeader {
   padding: 8px 12px;
   display: flex; align-items: center; gap: 8px;
@@ -218,12 +218,12 @@
 .compCardBody { padding: 8px 12px; }
 .compRow {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 5px 0; border-bottom: 1px solid rgba(27,74,27,0.10);
   font-size: 12px;
 }
 .compRow:last-child { border-bottom: none; }
 .compKey { color: #6b7280; }
-.compVal { font-size: 13px; font-weight: 600; color: #fff; }
+.compVal { font-size: 13px; font-weight: 600; color: #1b4a1b; }
 
 /* ─── Charts 2×2 ─────────────────────────────────────────────────────────────── */
 .chartsQuad {
@@ -234,7 +234,7 @@
 }
 @media (max-width: 700px) { .chartsQuad { grid-template-columns: 1fr; } }
 .chartCard {
-  background: #2d6e2d;
+  background: #ffffff;
   border: 1px solid #d4c9a8;
   border-radius: 10px;
   padding: 12px 14px;
@@ -278,7 +278,7 @@
 
 /* Net Result card */
 .netResultCard {
-  background: #2d6e2d;
+  background: #ffffff;
   border: 2px solid #e8524a;
   border-radius: 14px;
   padding: 20px 22px;
@@ -309,21 +309,21 @@
 .netResultVal { font-size: 13px; font-weight: 700; }
 .periodTable {
   width: 100%; border-collapse: collapse;
-  background: #2d6e2d; border: 1px solid #d4c9a8;
+  background: #ffffff; border: 1px solid #d4c9a8;
   border-radius: 12px; overflow: hidden;
 }
 .periodTable th {
   padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
   border-bottom: 2px solid #d4c9a8; text-align: left; background: #f5eedc;
 }
-.periodTable td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+.periodTable td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid rgba(27,74,27,0.10); vertical-align: middle; }
 .periodTable tr:last-child td { border-bottom: none; }
 .periodTable tr:hover td { background: rgba(255,255,255,0.02); }
 .colMetric { color: #6b7280 !important; font-size: 12px !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
 .colA { color: #4a9e4a !important; border-bottom-color: #4a9e4a !important; }
 .colB { color: #f5a623 !important; border-bottom-color: #f5a623 !important; }
 .colDiff { color: #6b7280 !important; text-align: center !important; }
-.colVal { font-size: 15px; font-weight: 600; color: #fff; }
+.colVal { font-size: 15px; font-weight: 600; color: #1b4a1b; }
 .diffBadge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px; border-radius: 20px;
@@ -337,7 +337,7 @@
 .dailyTableWrapper { overflow-x: auto; margin: 0 28px 8px; }
 .dailyTable {
   width: 100%; border-collapse: collapse;
-  background: #2d6e2d; border: 1px solid #d4c9a8;
+  background: #ffffff; border: 1px solid #d4c9a8;
   border-radius: 12px; overflow: hidden; font-size: 13px;
 }
 .dailyTable th {
@@ -345,7 +345,7 @@
   text-transform: uppercase; border-bottom: 2px solid #d4c9a8;
   text-align: left; background: #f5eedc; color: #4a9e4a; white-space: nowrap;
 }
-.dailyTable td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+.dailyTable td { padding: 9px 14px; border-bottom: 1px solid rgba(27,74,27,0.10); vertical-align: middle; }
 .dailyTable tr:hover td { background: rgba(255,255,255,0.03); }
 .dailyTable tr:last-child td { border-bottom: none; }
 .colDate    { color: #1a1a1a; font-weight: 600; white-space: nowrap; }
@@ -376,7 +376,7 @@
 @media (max-width: 700px)  { .tripResultGrid { grid-template-columns: repeat(2, 1fr); } }
 
 .tripCard {
-  background: #2d6e2d;
+  background: #ffffff;
   border: 1px solid #d4c9a8;
   border-radius: 10px;
   padding: 16px 16px 16px 20px;
@@ -393,7 +393,7 @@
   background: var(--accent, #4a9e4a);
 }
 .tripLabel  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #6b7280; margin-bottom: 10px; }
-.tripValue  { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.1; margin-bottom: 5px; }
+.tripValue  { font-size: 22px; font-weight: 700; color: #1b4a1b; line-height: 1.1; margin-bottom: 5px; }
 .tripSub    { font-size: 11px; color: #6b7280; }
 
 /* ─── Log action buttons ─────────────────────────────────────────────────────── */
