@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Globe, Award, Menu, X, LogOut, Coffee } from 'lucide-react';
+import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee } from 'lucide-react';
 
 const THEMES = {
   forest:   { label: 'Forest Green', swatch: '#1b4a1b', dark: '#1b4a1b', mid: '#2d6e2d' },
@@ -21,8 +21,9 @@ type AppUser = { id: string; name: string; pin: string; role: string; estate: st
 type NavItem = { label: string; href: string; icon: React.ElementType; roles: string[] };
 
 const navItems: NavItem[] = [
-  { label: 'Export Operations',   href: '/export-operations',    icon: Globe,  roles: ['admin', 'supervisor'] },
-  { label: 'Cup Score Catalogue', href: '/cup-scores-catalogue', icon: Award,  roles: ['admin', 'supervisor'] },
+  { label: 'Export Operations',   href: '/export-operations',    icon: Globe,      roles: ['admin', 'supervisor'] },
+  { label: 'Cup Score Catalogue', href: '/cup-scores-catalogue', icon: Award,      roles: ['admin', 'supervisor'] },
+  { label: 'B2B Trading Hub',     href: '/trading-dashboard',    icon: BarChart2,  roles: ['admin', 'supervisor'] },
 ];
 
 export default function TradingLayout({ children }: { children: React.ReactNode }) {
