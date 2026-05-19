@@ -98,8 +98,6 @@ select.fsel,input.fsearch{padding:8px 12px;border:1.5px solid var(--border);bord
 select.fsel:focus,input.fsearch:focus{outline:none;border-color:var(--green-mid);}
 input.fsearch{width:220px;}
 
-.weight-summary{display:inline-flex;align-items:center;gap:6px;background:rgba(27,74,27,0.08);border:1px solid rgba(27,74,27,0.2);border-radius:20px;padding:4px 12px;font-size:0.78rem;font-weight:700;color:var(--green-dark);margin-left:10px;}
-.weight-summary span{color:var(--muted);font-weight:500;}
 
 .results-count{font-size:0.8rem;color:var(--muted);margin-left:auto;}
 .btn-clear{padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;background:white;font-size:0.8rem;cursor:pointer;color:var(--muted);}
@@ -369,7 +367,7 @@ input.fsearch{width:220px;}
   </div>
   <input class="fsearch" id="f-search" placeholder="🔍 Search taste notes, estate, process..." oninput="applyFilters()">
   <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
-  <span class="results-count" id="results-count"></span><span class="weight-summary" id="weight-summary"><span>Total Available:</span> <span id="weight-value">—</span></span>
+  <span class="results-count" id="results-count"></span>
 </div>
 
 <div class="sort-row">
@@ -378,6 +376,7 @@ input.fsearch{width:220px;}
   <button class="sort-btn" onclick="setSort('lot')" id="sort-lot">Lot No</button>
   <button class="sort-btn" onclick="setSort('estate')" id="sort-estate">Estate</button>
   <button class="sort-btn" onclick="setSort('price')" id="sort-price">Price</button>
+  <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border:1.5px solid var(--border);border-radius:20px;background:white;font-size:0.75rem;font-weight:600;color:var(--green-dark);">⚖️ Total Available: <strong id="weight-value">—</strong></span>
 </div>
 
 <div class="grid" id="card-grid"></div>
