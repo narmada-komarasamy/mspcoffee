@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee } from 'lucide-react';
+import { useActivityTracker } from '@/lib/useActivityTracker';
 
 const THEMES = {
   forest:   { label: 'Forest Green', swatch: '#1b4a1b', dark: '#1b4a1b', mid: '#2d6e2d' },
@@ -60,6 +61,9 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   const applyTheme = (k: ThemeKey) => { setThemeKey(k); localStorage.setItem('msp_theme', k); setPaletteOpen(false); };
   const applyFont  = (k: FontKey)  => { setFontKey(k);  localStorage.setItem('msp_font', k); document.documentElement.style.fontSize = FONT_SIZES[k]; };
   const handleLogout = () => { localStorage.removeItem('msp_user'); router.push('/login'); };
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useActivityTracker(navItems.find(i => i.href === pathname)?.label);
 
   if (!user) return null;
 

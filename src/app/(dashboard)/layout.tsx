@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useActivityTracker } from '@/lib/useActivityTracker';
 import {
   CloudRain,
   Fuel,
@@ -19,6 +20,7 @@ import {
   CloudSun,
   Brain,
   BarChart2,
+  Activity,
   Menu,
   X,
   LogOut,
@@ -68,6 +70,7 @@ const navItems: NavItem[] = [
   { label: 'Shopify Orders',       href: '/shopify-orders',       icon: ShoppingCart, roles: ['admin'] },
   { label: 'Weather',              href: '/weather',              icon: CloudSun,     roles: ['admin', 'worker'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin'] },
+  { label: 'Activity Log',         href: '/activity-log',         icon: Activity,     roles: ['admin'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -117,6 +120,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     localStorage.removeItem('msp_user');
     router.push('/login');
   };
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useActivityTracker(navItems.find(i => i.href === pathname)?.label);
 
   if (!user) return null;
 
