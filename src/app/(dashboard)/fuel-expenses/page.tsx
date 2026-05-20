@@ -146,6 +146,13 @@ export default function FleetPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [editRecord, setEditRecord] = useState<Row | null | false>(false);
 
+  /* ── MIS Report ──────────────────────────────────────────────────────────────── */
+  const [showReport,       setShowReport]       = useState(false);
+  const [reportFromMonth,  setReportFromMonth]  = useState("Jan");
+  const [reportFromYear,   setReportFromYear]   = useState(String(new Date().getFullYear()));
+  const [reportToMonth,    setReportToMonth]    = useState(MONTH_NAMES[new Date().getMonth()]);
+  const [reportToYear,     setReportToYear]     = useState(String(new Date().getFullYear()));
+
   /* ── Fullscreen ──────────────────────────────────────────────────────────────── */
   const pageRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -572,6 +579,24 @@ export default function FleetPage() {
 
         {!loading && (
           <>
+            {/* ════════════════════════════════════════════════════════════════════
+                ◆ MIS REPORT BUTTON
+            ════════════════════════════════════════════════════════════════════ */}
+            <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:"12px" }}>
+              <button
+                onClick={() => setShowReport(true)}
+                style={{
+                  display:"flex", alignItems:"center", gap:"8px",
+                  padding:"10px 20px", borderRadius:"10px",
+                  background:"#1b4a1b", color:"white", border:"none",
+                  fontWeight:700, fontSize:"13px", cursor:"pointer",
+                  boxShadow:"0 2px 8px rgba(27,74,27,0.25)",
+                  letterSpacing:"0.03em",
+                }}>
+                <span style={{ fontSize:"16px" }}>📊</span> MIS Report
+              </button>
+            </div>
+
             {/* ════════════════════════════════════════════════════════════════════
                 ◆ SINGLE VEHICLE SPOTLIGHT
             ════════════════════════════════════════════════════════════════════ */}
@@ -1189,6 +1214,305 @@ export default function FleetPage() {
 
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData}/>}
       {editRecord !== false && <RecordModal record={editRecord} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={loadData}/>}
+
+      {/* ════════════════════════════════════════════════════════════════════════
+          ◆ MIS REPORT MODAL
+      ════════════════════════════════════════════════════════════════════════ */}
+      {showReport && (() => {
+        // ── filter rows for the selected date range ──────────────────────────
+        const fromMIdx = MONTH_NAMES.indexOf(reportFromMonth) + 1; // 1-12
+        const toMIdx   = MONTH_NAMES.indexOf(reportToMonth)   + 1;
+        const fromY    = parseInt(reportFromYear, 10);
+        const toY      = parseInt(reportToYear,   10);
+
+        const reportRows = data.filter(r => {
+          const ry = r.year  ?? new Date(r.date).getFullYear();
+          const rm = r.month ?? new Date(r.date).getMonth() + 1;
+          const stamp = ry * 100 + rm;
+          return stamp >= fromY * 100 + fromMIdx && stamp <= toY * 100 + toMIdx;
+        });
+
+        // ── aggregate per vehicle ─────────────────────────────────────────────
+        const byVehicle: Record<string, { account:string; rows:Row[] }> = {};
+        reportRows.forEach(r => {
+          if (!byVehicle[r.vehicle_id]) byVehicle[r.vehicle_id] = { account: r.account, rows: [] };
+          byVehicle[r.vehicle_id].rows.push(r);
+        });
+
+        type VehicleSummary = {
+          vehicle_id: string; account: string; firstDate: string;
+          startKm: number; closeKm: number; kmRun: number;
+          fuelFilled: number; fuelCost: number; maintCost: number; totalCost: number;
+        };
+
+        const summaryRows: VehicleSummary[] = Object.entries(byVehicle)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([vid, { account, rows: vrows }]) => {
+            const agg = aggRows(vrows);
+            const firstDate = vrows.slice().sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]?.date ?? "";
+            return {
+              vehicle_id: vid, account,
+              firstDate: firstDate ? new Date(firstDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—",
+              startKm: agg.startKm, closeKm: agg.closeKm, kmRun: agg.totalKm,
+              fuelFilled: agg.totalLitres, fuelCost: agg.fuelCost,
+              maintCost: agg.maintCost, totalCost: agg.totalCost,
+            };
+          });
+
+        // ── grand totals ──────────────────────────────────────────────────────
+        const grand = summaryRows.reduce((acc, r) => ({
+          kmRun:      acc.kmRun      + r.kmRun,
+          fuelFilled: acc.fuelFilled + r.fuelFilled,
+          fuelCost:   acc.fuelCost   + r.fuelCost,
+          maintCost:  acc.maintCost  + r.maintCost,
+          totalCost:  acc.totalCost  + r.totalCost,
+        }), { kmRun:0, fuelFilled:0, fuelCost:0, maintCost:0, totalCost:0 });
+
+        const periodLabel = `${reportFromMonth} ${reportFromYear} to ${reportToMonth} ${reportToYear}`;
+
+        // ── CSV download ──────────────────────────────────────────────────────
+        const downloadCSV = () => {
+          const hdr = ["Date","Vehicle ID","Account","Starting KM","Closing KM","KM Run","Fuel Filled (L)","Fuel Cost (Rs)","Maint Cost (Rs)","Total Cost (Rs)"].join(",");
+          const body = summaryRows.map(r =>
+            [r.firstDate, r.vehicle_id, r.account, r.startKm, r.closeKm, r.kmRun,
+             r.fuelFilled.toFixed(2), r.fuelCost.toFixed(2), r.maintCost.toFixed(2), r.totalCost.toFixed(2)].join(",")
+          );
+          const totRow = ["TOTAL","","","","",grand.kmRun, grand.fuelFilled.toFixed(2),
+            grand.fuelCost.toFixed(2), grand.maintCost.toFixed(2), grand.totalCost.toFixed(2)].join(",");
+          const csv = ["MSP COFFEE P LTD", `${periodLabel} - ALL VEHICLES FUEL EXPENSE DETAILS (MIS REPORT)`, hdr, ...body, totRow].join("\n");
+          const blob = new Blob([csv], { type:"text/csv" });
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement("a");
+          a.href = url; a.download = `MSP_Fleet_MIS_${periodLabel.replace(/ /g,"_")}.csv`; a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        // ── print ─────────────────────────────────────────────────────────────
+        const printReport = () => {
+          const printWin = window.open("", "_blank", "width=1100,height=800");
+          if (!printWin) return;
+          const rows_html = summaryRows.map(r => `
+            <tr>
+              <td>${r.firstDate}</td><td><b>${r.vehicle_id}</b></td><td>${r.account}</td>
+              <td style="text-align:right">${fmt(r.startKm,0)}</td>
+              <td style="text-align:right">${fmt(r.closeKm,0)}</td>
+              <td style="text-align:right">${fmt(r.kmRun,0)}</td>
+              <td style="text-align:right">${r.fuelFilled.toFixed(2)}</td>
+              <td style="text-align:right">₹${fmt(r.fuelCost,0)}</td>
+              <td style="text-align:right">₹${fmt(r.maintCost,0)}</td>
+              <td style="text-align:right"><b>₹${fmt(r.totalCost,0)}</b></td>
+            </tr>`).join("");
+          printWin.document.write(`<!DOCTYPE html><html><head><title>MSP Fleet MIS Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; font-size: 12px; padding: 24px; }
+              h2 { color: #1b4a1b; margin:0; } h4 { margin:4px 0 16px; color:#555; }
+              table { width:100%; border-collapse:collapse; margin-top:16px; }
+              th { background:#1b4a1b; color:white; padding:7px 10px; text-align:left; font-size:11px; }
+              th.num { text-align:right; }
+              td { padding:6px 10px; border-bottom:1px solid #e5dfc8; }
+              tr:nth-child(even) td { background:#fdf8ee; }
+              .tot td { background:#1b4a1b!important; color:white; font-weight:bold; }
+              .note { margin-top:20px; padding:12px; background:#f9f6ed; border-left:4px solid #1b4a1b; border-radius:4px; }
+              .note-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:8px; }
+              .note-item { font-size:11px; } .note-item b { display:block; font-size:13px; color:#1b4a1b; }
+              @media print { button { display:none; } }
+            </style></head><body>
+            <h2>MSP COFFEE P LTD</h2>
+            <h4>${periodLabel} — ALL VEHICLES FUEL EXPENSE DETAILS (MIS REPORT)</h4>
+            <table>
+              <thead><tr>
+                <th>Date</th><th>Vehicle ID</th><th>Account</th>
+                <th class="num">Start KM</th><th class="num">Close KM</th><th class="num">KM Run</th>
+                <th class="num">Fuel (L)</th><th class="num">Fuel Cost</th>
+                <th class="num">Maint Cost</th><th class="num">Total Cost</th>
+              </tr></thead>
+              <tbody>${rows_html}</tbody>
+              <tfoot><tr class="tot">
+                <td colspan="5"><b>GRAND TOTAL</b></td>
+                <td style="text-align:right">${fmt(grand.kmRun,0)}</td>
+                <td style="text-align:right">${grand.fuelFilled.toFixed(2)}</td>
+                <td style="text-align:right">₹${fmt(grand.fuelCost,0)}</td>
+                <td style="text-align:right">₹${fmt(grand.maintCost,0)}</td>
+                <td style="text-align:right">₹${fmt(grand.totalCost,0)}</td>
+              </tr></tfoot>
+            </table>
+            <div class="note">
+              <b style="color:#1b4a1b">Period Summary</b>
+              <div class="note-grid">
+                <div class="note-item">Fuel Purchase<b>₹${fmt(grand.fuelCost,0)}</b></div>
+                <div class="note-item">Maintenance Cost<b>₹${fmt(grand.maintCost,0)}</b></div>
+                <div class="note-item">Total Expense<b>₹${fmt(grand.totalCost,0)}</b></div>
+                <div class="note-item">Total KM Run<b>${fmt(grand.kmRun,0)} km</b></div>
+                <div class="note-item">Total Fuel Filled<b>${grand.fuelFilled.toFixed(0)} L</b></div>
+                <div class="note-item">Vehicles Covered<b>${summaryRows.length}</b></div>
+              </div>
+            </div>
+            <script>window.print();<\/script></body></html>`);
+          printWin.document.close();
+        };
+
+        // ── styles ────────────────────────────────────────────────────────────
+        const overlay: React.CSSProperties = {
+          position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", zIndex:1000,
+          display:"flex", alignItems:"center", justifyContent:"center", padding:"16px",
+        };
+        const modal: React.CSSProperties = {
+          background:"#fdf8ee", borderRadius:"16px", width:"100%", maxWidth:"1100px",
+          maxHeight:"90vh", display:"flex", flexDirection:"column",
+          boxShadow:"0 24px 80px rgba(0,0,0,0.35)", overflow:"hidden",
+        };
+        const th: React.CSSProperties = {
+          padding:"9px 12px", background:"#1b4a1b", color:"white",
+          fontSize:"11px", fontWeight:700, textTransform:"uppercase",
+          letterSpacing:"0.05em", textAlign:"left", whiteSpace:"nowrap",
+        };
+        const thR: React.CSSProperties = { ...th, textAlign:"right" };
+        const td: React.CSSProperties = {
+          padding:"8px 12px", fontSize:"12px", color:"#1a1a1a",
+          borderBottom:"1px solid #f0ead4", verticalAlign:"middle",
+        };
+        const tdR: React.CSSProperties = { ...td, textAlign:"right" };
+
+        return (
+          <div style={overlay} onClick={e => { if (e.target === e.currentTarget) setShowReport(false); }}>
+            <div style={modal}>
+              {/* Header */}
+              <div style={{ padding:"16px 20px", borderBottom:"1px solid #e5dfc8", display:"flex", alignItems:"center", gap:"12px", background:"#1b4a1b" }}>
+                <span style={{ fontSize:"20px" }}>📊</span>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:"15px", color:"white", letterSpacing:"0.04em" }}>MIS REPORT — FLEET FUEL EXPENSES</div>
+                  <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.65)", marginTop:"2px" }}>MSP COFFEE P LTD · All Vehicles</div>
+                </div>
+                <button onClick={() => setShowReport(false)}
+                  style={{ marginLeft:"auto", background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"8px", color:"white", cursor:"pointer", padding:"6px 10px", fontSize:"14px" }}>✕</button>
+              </div>
+
+              {/* Date Range Controls */}
+              <div style={{ padding:"14px 20px", background:"#f0ead4", borderBottom:"1px solid #e5dfc8", display:"flex", flexWrap:"wrap", alignItems:"center", gap:"14px" }}>
+                <span style={{ fontWeight:700, fontSize:"12px", color:"#1b4a1b", letterSpacing:"0.05em" }}>PERIOD:</span>
+                {/* From */}
+                <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                  <span style={{ fontSize:"12px", color:"#6b7280" }}>From</span>
+                  <select value={reportFromMonth} onChange={e => setReportFromMonth(e.target.value)}
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <select value={reportFromYear} onChange={e => setReportFromYear(e.target.value)}
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <span style={{ color:"#9ca3af" }}>→</span>
+                {/* To */}
+                <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                  <span style={{ fontSize:"12px", color:"#6b7280" }}>To</span>
+                  <select value={reportToMonth} onChange={e => setReportToMonth(e.target.value)}
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <select value={reportToYear} onChange={e => setReportToYear(e.target.value)}
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+
+                <div style={{ marginLeft:"auto", display:"flex", gap:"8px" }}>
+                  <button onClick={downloadCSV}
+                    style={{ display:"flex", alignItems:"center", gap:"6px", padding:"7px 14px", borderRadius:"8px", background:"#2d6e2d", color:"white", border:"none", fontWeight:700, fontSize:"12px", cursor:"pointer" }}>
+                    ⬇ Download CSV
+                  </button>
+                  <button onClick={printReport}
+                    style={{ display:"flex", alignItems:"center", gap:"6px", padding:"7px 14px", borderRadius:"8px", background:"#3b82f6", color:"white", border:"none", fontWeight:700, fontSize:"12px", cursor:"pointer" }}>
+                    🖨 Print
+                  </button>
+                </div>
+              </div>
+
+              {/* Report title strip */}
+              <div style={{ padding:"10px 20px", background:"#e8f0e8", borderBottom:"1px solid #d0e0d0" }}>
+                <span style={{ fontWeight:700, fontSize:"13px", color:"#1b4a1b" }}>
+                  {periodLabel.toUpperCase()} — ALL VEHICLES FUEL EXPENSE DETAILS
+                </span>
+                <span style={{ marginLeft:"12px", fontSize:"12px", color:"#6b7280" }}>
+                  {summaryRows.length} vehicle{summaryRows.length !== 1 ? "s" : ""} · {reportRows.length} entries
+                </span>
+              </div>
+
+              {/* Table */}
+              <div style={{ flex:1, overflowY:"auto", overflowX:"auto" }}>
+                {summaryRows.length === 0 ? (
+                  <div style={{ padding:"48px", textAlign:"center", color:"#9ca3af", fontSize:"14px" }}>
+                    No data found for the selected period. Try adjusting the date range.
+                  </div>
+                ) : (
+                  <table style={{ width:"100%", borderCollapse:"collapse", minWidth:"820px" }}>
+                    <thead>
+                      <tr>
+                        <th style={th}>Date</th>
+                        <th style={th}>Vehicle ID</th>
+                        <th style={th}>Account</th>
+                        <th style={thR}>Start KM</th>
+                        <th style={thR}>Close KM</th>
+                        <th style={thR}>KM Run</th>
+                        <th style={thR}>Fuel (L)</th>
+                        <th style={thR}>Fuel Cost</th>
+                        <th style={thR}>Maint Cost</th>
+                        <th style={thR}>Total Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {summaryRows.map((r, i) => (
+                        <tr key={r.vehicle_id} style={{ background: i % 2 === 0 ? "#ffffff" : "#fdf8ee" }}>
+                          <td style={{ ...td, fontSize:"11px", color:"#6b7280" }}>{r.firstDate}</td>
+                          <td style={{ ...td, fontWeight:700, color:"#1b4a1b" }}>{r.vehicle_id}</td>
+                          <td style={td}><span style={{ background:"#e8f0e8", color:"#1b4a1b", borderRadius:"6px", padding:"2px 7px", fontSize:"11px", fontWeight:700 }}>{r.account}</span></td>
+                          <td style={{ ...tdR, color:"#6b7280" }}>{fmt(r.startKm,0)}</td>
+                          <td style={{ ...tdR, color:"#6b7280" }}>{fmt(r.closeKm,0)}</td>
+                          <td style={{ ...tdR, fontWeight:600 }}>{fmt(r.kmRun,0)}</td>
+                          <td style={{ ...tdR, color:"#2d6e2d", fontWeight:600 }}>{r.fuelFilled.toFixed(1)}</td>
+                          <td style={{ ...tdR, color:"#e8524a" }}>₹{fmt(r.fuelCost,0)}</td>
+                          <td style={{ ...tdR, color:"#9b59b6" }}>₹{fmt(r.maintCost,0)}</td>
+                          <td style={{ ...tdR, fontWeight:800, color:"#1b4a1b", fontSize:"13px" }}>₹{fmt(r.totalCost,0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background:"#1b4a1b" }}>
+                        <td colSpan={3} style={{ ...td, color:"white", fontWeight:800, fontSize:"13px", letterSpacing:"0.04em" }}>GRAND TOTAL</td>
+                        <td style={{ ...tdR, color:"white" }}>—</td>
+                        <td style={{ ...tdR, color:"white" }}>—</td>
+                        <td style={{ ...tdR, color:"#e8c84a", fontWeight:800 }}>{fmt(grand.kmRun,0)}</td>
+                        <td style={{ ...tdR, color:"#e8c84a", fontWeight:800 }}>{grand.fuelFilled.toFixed(1)}</td>
+                        <td style={{ ...tdR, color:"#fca5a5", fontWeight:800 }}>₹{fmt(grand.fuelCost,0)}</td>
+                        <td style={{ ...tdR, color:"#d8b4fe", fontWeight:800 }}>₹{fmt(grand.maintCost,0)}</td>
+                        <td style={{ ...tdR, color:"#e8c84a", fontWeight:800, fontSize:"14px" }}>₹{fmt(grand.totalCost,0)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                )}
+              </div>
+
+              {/* Summary strip */}
+              {summaryRows.length > 0 && (
+                <div style={{ padding:"14px 20px", borderTop:"1px solid #e5dfc8", background:"#f0ead4", display:"flex", flexWrap:"wrap", gap:"24px" }}>
+                  {[
+                    { label:"Fuel Purchase",      value:"₹" + fmt(grand.fuelCost,0),   clr:"#e8524a" },
+                    { label:"Maintenance Cost",   value:"₹" + fmt(grand.maintCost,0),  clr:"#9b59b6" },
+                    { label:"Total Expense",      value:"₹" + fmt(grand.totalCost,0),  clr:"#1b4a1b" },
+                    { label:"Total KM Run",       value:fmt(grand.kmRun,0) + " km",    clr:"#2d6e2d" },
+                    { label:"Total Fuel Filled",  value:grand.fuelFilled.toFixed(0) + " L", clr:"#3498db" },
+                  ].map(k => (
+                    <div key={k.label} style={{ textAlign:"center" }}>
+                      <div style={{ fontSize:"11px", color:"#6b7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em" }}>{k.label}</div>
+                      <div style={{ fontSize:"16px", fontWeight:800, color:k.clr, marginTop:"2px" }}>{k.value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Colour Customiser Panel ───────────────────────────────────────────── */}
       {showPalettePanel && (
