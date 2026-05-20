@@ -580,15 +580,14 @@ export default function FleetPage() {
         {!loading && (
           <>
             {/* ════════════════════════════════════════════════════════════════════
-                ◆ SINGLE VEHICLE SPOTLIGHT
+                ◆ MIS REPORT BUTTON
             ════════════════════════════════════════════════════════════════════ */}
-            <div className={s.sectionHeader} style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <span><span className={s.diamond}>◆</span> SINGLE VEHICLE SPOTLIGHT</span>
+            <div style={{ marginBottom:"10px" }}>
               <button
                 onClick={() => setShowReport(true)}
                 style={{
                   display:"flex", alignItems:"center", gap:"7px",
-                  padding:"7px 16px", borderRadius:"8px",
+                  padding:"8px 18px", borderRadius:"8px",
                   background:"#1b4a1b", color:"white", border:"none",
                   fontWeight:700, fontSize:"12px", cursor:"pointer",
                   boxShadow:"0 2px 8px rgba(27,74,27,0.22)",
@@ -597,6 +596,11 @@ export default function FleetPage() {
                 <span style={{ fontSize:"14px" }}>📊</span> MIS Report
               </button>
             </div>
+
+            {/* ════════════════════════════════════════════════════════════════════
+                ◆ SINGLE VEHICLE SPOTLIGHT
+            ════════════════════════════════════════════════════════════════════ */}
+            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> SINGLE VEHICLE SPOTLIGHT</div>
 
             <div className={s.spotlightControls}>
               <div className={s.ctrlGroup}>
