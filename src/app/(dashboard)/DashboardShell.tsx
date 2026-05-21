@@ -86,13 +86,27 @@ export default function DashboardShell({
   const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     NAV_ITEMS.forEach(item => {
-      if (item.children && pathname.startsWith(item.href)) init[item.href] = true;
+      if (item.children && pathname.startsWith(item.href)) {
+        init[item.href] = true;
+        // Also auto-expand season sub-groups
+        item.children.forEach(child => {
+          if ('children' in child && child.children.some(gc => gc.href === pathname)) {
+            init[`${item.href}__${child.label}`] = true;
+          }
+        });
+      }
     });
     return init;
   });
 
+  const allNavLeaves = [
+    ...NAV_ITEMS.flatMap(i => i.children ?? []).flatMap(c =>
+      'children' in c ? c.children : [c]
+    ),
+    ...NAV_ITEMS.flatMap(i => i.children ?? []).filter(c => 'href' in c),
+  ];
   const currentTitle =
-    NAV_ITEMS.flatMap(i => i.children ?? []).find(c => c.href === pathname)?.label ??
+    allNavLeaves.find(c => c.href === pathname)?.label ??
     NAV_ITEMS.find(item => item.href === pathname)?.label ??
     'Dashboard';
 
@@ -147,7 +161,10 @@ export default function DashboardShell({
             const active    = pathname === item.href;
             const hasChildren = !!(item.children && item.children.length > 0);
             const isExpanded  = expandedNav[item.href] ?? false;
-            const childActive = hasChildren && item.children!.some(c => pathname === c.href);
+            const childActive = hasChildren && item.children!.some(c =>
+              ('href' in c && pathname === c.href) ||
+              ('children' in c && c.children.some(gc => pathname === gc.href))
+            );
 
             if (hasChildren) {
               return (
@@ -174,6 +191,50 @@ export default function DashboardShell({
                   {isExpanded && (
                     <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
                       {item.children!.map(child => {
+                        // ── Season group (e.g. "2025–2026") ──────────────────
+                        if ('children' in child) {
+                          const groupKey    = `${item.href}__${child.label}`;
+                          const groupExp    = expandedNav[groupKey] ?? false;
+                          const groupActive = child.children.some(gc => pathname === gc.href);
+                          return (
+                            <div key={child.label}>
+                              <button
+                                onClick={() => setExpandedNav(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-bold tracking-widest uppercase transition w-full text-left"
+                                style={{ color: groupActive ? theme.accent : 'rgba(255,255,255,0.5)', letterSpacing: '0.1em' }}
+                              >
+                                <span className="flex-1">{child.label}</span>
+                                <ChevronDown
+                                  className="h-3 w-3 shrink-0 transition-transform duration-200"
+                                  style={{ transform: groupExp ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.5 }}
+                                />
+                              </button>
+                              {groupExp && (
+                                <div className="ml-2 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                                  {child.children.map(gc => {
+                                    const gcActive = pathname === gc.href;
+                                    return (
+                                      <Link
+                                        key={gc.href}
+                                        href={gc.href}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition"
+                                        style={gcActive
+                                          ? { background: 'rgba(255,255,255,0.15)', color: theme.accent }
+                                          : { color: 'rgba(255,255,255,0.65)' }
+                                        }
+                                      >
+                                        <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: gcActive ? theme.accent : 'rgba(255,255,255,0.4)' }} />
+                                        {gc.label}
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        // ── Plain link child ──────────────────────────────────
                         const childIsActive = pathname === child.href;
                         return (
                           <Link
