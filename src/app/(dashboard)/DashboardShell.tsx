@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   CloudRain, Fuel, Droplets, FileText, Users, Wheat, DollarSign,
   Sprout, SprayCan, Truck, Package, ShoppingCart, CloudSun, Brain,
-  UserCog, Menu, X, LogOut, Coffee, Globe, Award,
+  UserCog, Menu, X, LogOut, Coffee, Globe, Award, BarChart2, ChevronDown,
 } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/auth/access';
 import type { Role } from '@/lib/auth/access';
@@ -14,7 +14,7 @@ import { signOut } from './actions';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   CloudRain, Fuel, Droplets, FileText, Users, Wheat, DollarSign,
-  Sprout, SprayCan, Truck, Package, ShoppingCart, CloudSun, Brain, UserCog, Globe, Award,
+  Sprout, SprayCan, Truck, Package, ShoppingCart, CloudSun, Brain, UserCog, Globe, Award, BarChart2,
 };
 
 type Profile = { name: string; role: string; estate: string | null };
@@ -81,7 +81,20 @@ export default function DashboardShell({
   };
 
   const filteredNav  = NAV_ITEMS.filter(item => item.roles.includes(profile.role as Role));
-  const currentTitle = NAV_ITEMS.find(item => item.href === pathname)?.label ?? 'Dashboard';
+
+  // Track which parent nav items are expanded (open by default if current path is under them)
+  const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    NAV_ITEMS.forEach(item => {
+      if (item.children && pathname.startsWith(item.href)) init[item.href] = true;
+    });
+    return init;
+  });
+
+  const currentTitle =
+    NAV_ITEMS.flatMap(i => i.children ?? []).find(c => c.href === pathname)?.label ??
+    NAV_ITEMS.find(item => item.href === pathname)?.label ??
+    'Dashboard';
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#fdf8ee', color: '#1a1a1a' }}>
@@ -130,8 +143,60 @@ export default function DashboardShell({
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
           {filteredNav.map(item => {
-            const Icon   = ICON_MAP[item.iconName] ?? FileText;
-            const active = pathname === item.href;
+            const Icon      = ICON_MAP[item.iconName] ?? FileText;
+            const active    = pathname === item.href;
+            const hasChildren = !!(item.children && item.children.length > 0);
+            const isExpanded  = expandedNav[item.href] ?? false;
+            const childActive = hasChildren && item.children!.some(c => pathname === c.href);
+
+            if (hasChildren) {
+              return (
+                <div key={item.href}>
+                  {/* Parent — toggles sub-menu */}
+                  <button
+                    onClick={() => {
+                      setExpandedNav(prev => ({ ...prev, [item.href]: !prev[item.href] }));
+                    }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition w-full text-left"
+                    style={childActive
+                      ? { background: 'rgba(255,255,255,0.18)', color: theme.accent }
+                      : { color: 'rgba(255,255,255,0.75)' }
+                    }
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                    <ChevronDown
+                      className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
+                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.6 }}
+                    />
+                  </button>
+                  {/* Children */}
+                  {isExpanded && (
+                    <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
+                      {item.children!.map(child => {
+                        const childIsActive = pathname === child.href;
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className="flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition"
+                            style={childIsActive
+                              ? { background: 'rgba(255,255,255,0.15)', color: theme.accent }
+                              : { color: 'rgba(255,255,255,0.65)' }
+                            }
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: childIsActive ? theme.accent : 'rgba(255,255,255,0.4)' }} />
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}

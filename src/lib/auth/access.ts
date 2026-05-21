@@ -11,12 +11,20 @@ export type NavItemDef = {
   href: string;
   iconName: string; // lucide icon name as string — resolved to component in layout
   roles: Role[];
+  children?: { label: string; href: string }[];
 };
 
 export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor'] },
   { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor'] },
+  {
+    label: 'Processing Data', href: '/processing-dashboard', iconName: 'BarChart2', roles: ['admin', 'supervisor'],
+    children: [
+      { label: 'Stanmore Estate', href: '/processing-dashboard/stanmore-estate' },
+      { label: 'Bommidi Valley Estate', href: '/processing-dashboard/bve' },
+    ],
+  },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
   { label: 'Cup Score Catalogue', href: '/cup-scores',      iconName: 'Award',        roles: ['admin', 'supervisor'] },
   { label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker'] },
