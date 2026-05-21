@@ -66,6 +66,7 @@ const navItems: NavItem[] = [
       { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
       { label: 'Bommidi Valley Estate', href: '/processing-dashboard/bve' },
       { label: 'Bison Valley Estate',   href: '/processing-dashboard/bison-valley' },
+      { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
     ],
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
