@@ -64,8 +64,8 @@ const navItems: NavItem[] = [
     label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor'],
     children: [
       { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
-      { label: 'Bommidi Valley Estate', href: '/processing-dashboard/bve' },
-      { label: 'Bison Valley Estate',   href: '/processing-dashboard/bison-valley' },
+      { label: 'Bison Valley Estate',   href: '/processing-dashboard/bve' },
+      { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
       { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
     ],
   },
