@@ -1153,3 +1153,129 @@
   border-color: var(--t-accent, #38bdf8);
   color: var(--t-accent, #38bdf8);
 }
+
+/* ─── Year-over-Year toggle button ─────────────────────────────────────────── */
+.yoyBtn {
+  background: transparent;
+  border: 1px solid var(--t-border, #162d44);
+  color: var(--t-muted, #7ab8d8);
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.yoyBtn:hover {
+  border-color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, #4a9e4a);
+}
+
+.yoyBtnActive {
+  background: rgba(74,158,74,0.12);
+  border-color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, #4a9e4a);
+  font-weight: 600;
+}
+
+/* ─── Year-over-Year delta grid ─────────────────────────────────────────────── */
+.yoyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 900px) {
+  .yoyGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .yoyGrid { grid-template-columns: 1fr; }
+}
+
+.yoyCard {
+  background: var(--t-card, #ffffff);
+  border: 1px solid var(--t-border, #162d44);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.yoyCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.yoyEstate {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.yoyMetrics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.yoyMetric {
+  flex: 1;
+  min-width: 56px;
+}
+
+.yoyMetricLabel {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--t-muted, #7ab8d8);
+  margin-bottom: 3px;
+  font-family: var(--font-jetbrains), monospace;
+}
+
+.yoyMetricVal {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--t-text, #333333);
+  line-height: 1;
+}
+
+.yoyMetricUnit {
+  font-size: 9px;
+  color: var(--t-muted, #7ab8d8);
+  font-family: var(--font-jetbrains), monospace;
+  margin-left: 2px;
+}
+
+.yoyArrow {
+  color: var(--t-muted, #7ab8d8);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.yoyDelta {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.yoyPct {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.8;
+}

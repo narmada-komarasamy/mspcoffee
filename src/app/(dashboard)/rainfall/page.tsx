@@ -137,6 +137,9 @@ export default function RainfallPage() {
   // Chart grouping
   const [grouping, setGrouping] = useState<Grouping>("monthly");
 
+  // Year-over-year overlay
+  const [showYoY, setShowYoY]   = useState(false);
+
   // Modals
   const [showUpload, setShowUpload]   = useState(false);
   const [editRecord, setEditRecord]   = useState<RainfallRecord | null | undefined>(undefined);
@@ -335,6 +338,15 @@ export default function RainfallPage() {
     return { total, maxRow, rtd, curYear: rtdYear, rainyDays: rainyDates.size, dslr, lastRain };
   }, [filtered, data, unit, year, estateFilter]);
 
+  // ─── Year-over-Year helpers ────────────────────────────────────────────────
+  const priorYearNum = year !== "all" ? Number(year) - 1 : null;
+  const yoyEnabled   = showYoY && year !== "all" && grouping === "monthly" && priorYearNum !== null;
+
+  const priorYearData = useMemo(
+    () => (priorYearNum !== null ? data.filter((r) => r.year === priorYearNum) : []),
+    [data, priorYearNum]
+  );
+
   // ─── Chart ─────────────────────────────────────────────────────────────────
   const activeEstates = compareEstates.length > 0 ? compareEstates : ESTATES;
 
@@ -356,8 +368,25 @@ export default function RainfallPage() {
         if (!map[k]) map[k] = {};
         map[k][r.estate] = (map[k][r.estate] ?? 0) + val(r);
       });
+      // Prior-year overlay keyed by month number
+      const prevByMonth: Record<number, Record<string, number>> = {};
+      if (yoyEnabled) {
+        priorYearData.filter((r) => activeEstates.includes(r.estate)).forEach((r) => {
+          if (!prevByMonth[r.month]) prevByMonth[r.month] = {};
+          prevByMonth[r.month][r.estate] = (prevByMonth[r.month][r.estate] ?? 0) + val(r);
+        });
+      }
       return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([k, v]) => ({ name: MONTH_SHORT[Number(k.split("-")[1]) - 1], ...v }));
+        .map(([k, v]) => {
+          const monthNum = Number(k.split("-")[1]);
+          const extras: Record<string, number | null> = {};
+          if (yoyEnabled) {
+            activeEstates.forEach((e) => {
+              extras[`${e}_prev`] = prevByMonth[monthNum]?.[e] ?? null;
+            });
+          }
+          return { name: MONTH_SHORT[monthNum - 1], ...v, ...extras };
+        });
     }
     // yearly
     const map: Record<number, Record<string, number>> = {};
@@ -367,7 +396,7 @@ export default function RainfallPage() {
     });
     return Object.entries(map).sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([yr, v]) => ({ name: yr, ...v }));
-  }, [filteredNoEstate, data, compareEstates, grouping, unit]);
+  }, [filteredNoEstate, data, compareEstates, grouping, unit, showYoY, year, priorYearData]);
 
   // ─── Top 10 events ─────────────────────────────────────────────────────────
   const topEvents = useMemo(() =>
@@ -399,6 +428,18 @@ export default function RainfallPage() {
       return { estate, total, maxEvent, rainyDays, avg, dslr, lastRain, rtdE, rank };
     });
   }, [compareEstates, filteredNoEstate, data, unit]);
+
+  // ─── YoY delta summary ─────────────────────────────────────────────────────
+  const yoyDelta = useMemo(() => {
+    if (!yoyEnabled || priorYearNum === null) return null;
+    return activeEstates.map((e) => {
+      const current = r1(data.filter((r) => r.year === Number(year) && r.estate === e && r.rainfall_mm > 0).reduce((s, r) => s + val(r), 0));
+      const prior   = r1(priorYearData.filter((r) => r.estate === e && r.rainfall_mm > 0).reduce((s, r) => s + val(r), 0));
+      const delta   = r1(current - prior);
+      const pct     = prior > 0 ? r1(((current - prior) / prior) * 100) : null;
+      return { estate: e, current, prior, delta, pct };
+    });
+  }, [yoyEnabled, priorYearNum, data, priorYearData, year, unit, compareEstates]);
 
   // ─── Toggle compare ────────────────────────────────────────────────────────
   const toggleCompare = (estate: string) => {
@@ -653,10 +694,21 @@ export default function RainfallPage() {
                 <div className={s.chartTitle}>Rainfall Trend</div>
                 <div className={s.chartSub}>{grouping.charAt(0).toUpperCase() + grouping.slice(1)} totals · {activeEstates.join(", ")}</div>
               </div>
-              <div className={s.chartTabs}>
-                {(["daily","monthly","yearly"] as Grouping[]).map((g) => (
-                  <button key={g} className={`${s.chartTab} ${grouping === g ? s.chartTabActive : ""}`} onClick={() => setGrouping(g)}>{g}</button>
-                ))}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className={s.chartTabs}>
+                  {(["daily","monthly","yearly"] as Grouping[]).map((g) => (
+                    <button key={g} className={`${s.chartTab} ${grouping === g ? s.chartTabActive : ""}`} onClick={() => setGrouping(g)}>{g}</button>
+                  ))}
+                </div>
+                {grouping === "monthly" && year !== "all" && (
+                  <button
+                    className={`${s.yoyBtn} ${showYoY ? s.yoyBtnActive : ""}`}
+                    onClick={() => setShowYoY((v) => !v)}
+                    title={`Overlay ${priorYearNum} vs ${year}`}
+                  >
+                    ⟳ YoY {priorYearNum}
+                  </button>
+                )}
               </div>
             </div>
             {data.length === 0 ? (
@@ -675,6 +727,12 @@ export default function RainfallPage() {
                     {activeEstates.map((e) => (
                       <Line key={e} type="monotone" dataKey={e} stroke={theme.estates[e]} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls />
                     ))}
+                    {yoyEnabled && activeEstates.map((e) => (
+                      <Line key={`${e}_prev`} type="monotone" dataKey={`${e}_prev`}
+                        stroke={theme.estates[e]} strokeWidth={1.5} strokeDasharray="5 4"
+                        dot={{ r: 1.5 }} activeDot={{ r: 3 }} connectNulls opacity={0.5}
+                        name={`${e} (${priorYearNum})`} />
+                    ))}
                   </LineChart>
                 ) : (
                   <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -691,6 +749,42 @@ export default function RainfallPage() {
               </ResponsiveContainer>
             )}
           </div>
+
+          {/* ─── YoY Delta Summary ──────────────────────────────────────── */}
+          {yoyDelta && (
+            <>
+              <div className={s.sectionLabel}>Year-over-Year — {priorYearNum} → {year}</div>
+              <div className={s.yoyGrid}>
+                {yoyDelta.map(({ estate, current, prior, delta, pct }) => {
+                  const color = theme.estates[estate];
+                  const up    = delta >= 0;
+                  return (
+                    <div key={estate} className={s.yoyCard}>
+                      <div className={s.yoyCardHeader}>
+                        <span className={s.estateDot} style={{ backgroundColor: color }} />
+                        <span className={s.yoyEstate} style={{ color }}>{estate}</span>
+                      </div>
+                      <div className={s.yoyMetrics}>
+                        <div className={s.yoyMetric}>
+                          <div className={s.yoyMetricLabel}>{year}</div>
+                          <div className={s.yoyMetricVal}>{current}<span className={s.yoyMetricUnit}>{unitStr}</span></div>
+                        </div>
+                        <div className={s.yoyArrow}>→</div>
+                        <div className={s.yoyMetric}>
+                          <div className={s.yoyMetricLabel}>{priorYearNum}</div>
+                          <div className={s.yoyMetricVal}>{prior}<span className={s.yoyMetricUnit}>{unitStr}</span></div>
+                        </div>
+                        <div className={s.yoyDelta} style={{ color: up ? "#4ade80" : "#f87171" }}>
+                          {up ? "▲" : "▼"} {Math.abs(delta)}{unitStr}
+                          {pct !== null && <span className={s.yoyPct}>{up ? "+" : ""}{pct}%</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {/* ─── Top 10 Events ──────────────────────────────────────────── */}
           <div className={s.tableSection}>
