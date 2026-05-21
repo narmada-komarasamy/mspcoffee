@@ -130,6 +130,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/login');
   };
 
+  // Auto-expand parent nav when on a child route — must be before early return
+  useEffect(() => {
+    navItems.forEach(item => {
+      if (item.children?.some(c => c.href === pathname)) {
+        setExpandedNav(prev => ({ ...prev, [item.href]: true }));
+      }
+    });
+  }, [pathname]);
+
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useActivityTracker(navItems.find(i => i.href === pathname)?.label);
 
@@ -140,15 +149,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     navItems.flatMap(i => i.children ?? []).find(c => c.href === pathname)?.label ??
     navItems.find((item) => item.href === pathname)?.label ??
     'Dashboard';
-
-  // Auto-expand parent when on a child route
-  useEffect(() => {
-    navItems.forEach(item => {
-      if (item.children?.some(c => c.href === pathname)) {
-        setExpandedNav(prev => ({ ...prev, [item.href]: true }));
-      }
-    });
-  }, [pathname]);
   const today        = new Date().toLocaleDateString('en-IN', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   });
