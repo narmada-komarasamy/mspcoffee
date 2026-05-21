@@ -218,10 +218,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         const childIsActive = pathname === child.href;
                         return (
                           <Link key={child.href} href={child.href} onClick={() => setSidebarOpen(false)}
-                            className="flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition"
-                            style={childIsActive ? { background: 'rgba(255,255,255,0.15)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.65)' }}>
+                            className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition"
+                            style={childIsActive ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
                             <span className="h-1.5 w-1.5 rounded-full shrink-0"
-                              style={{ background: childIsActive ? '#e8c84a' : 'rgba(255,255,255,0.4)' }} />
+                              style={{ background: childIsActive ? '#e8c84a' : 'rgba(255,255,255,0.6)' }} />
                             {child.label}
                           </Link>
                         );
