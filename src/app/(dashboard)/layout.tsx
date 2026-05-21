@@ -25,6 +25,7 @@ import {
   X,
   LogOut,
   Coffee,
+  ChevronDown,
 } from 'lucide-react';
 
 const THEMES = {
@@ -52,13 +53,20 @@ type NavItem = {
   href: string;
   icon: React.ElementType;
   roles: string[];
+  children?: { label: string; href: string }[];
 };
 
 const navItems: NavItem[] = [
   { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor'] },
   { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor'] },
-  { label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2,    roles: ['admin', 'supervisor'] },
+  {
+    label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor'],
+    children: [
+      { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
+      { label: 'Bommidi Valley Estate', href: '/processing-dashboard/bve' },
+    ],
+  },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
   { label: 'Daily Report',         href: '/daily-report',         icon: FileText,     roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker'] },
@@ -81,6 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [themeKey, setThemeKey]       = useState<ThemeKey>('forest');
   const [fontKey, setFontKey]         = useState<FontKey>('md');
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>({});
   const paletteRef = useRef<HTMLDivElement>(null);
 
   const theme = THEMES[themeKey];
@@ -127,7 +136,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   const filteredNav  = navItems.filter((item) => item.roles.includes(user.role));
-  const currentTitle = navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard';
+  const currentTitle =
+    navItems.flatMap(i => i.children ?? []).find(c => c.href === pathname)?.label ??
+    navItems.find((item) => item.href === pathname)?.label ??
+    'Dashboard';
+
+  // Auto-expand parent when on a child route
+  useEffect(() => {
+    navItems.forEach(item => {
+      if (item.children?.some(c => c.href === pathname)) {
+        setExpandedNav(prev => ({ ...prev, [item.href]: true }));
+      }
+    });
+  }, [pathname]);
   const today        = new Date().toLocaleDateString('en-IN', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   });
@@ -173,8 +194,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
           {filteredNav.map((item) => {
-            const Icon   = item.icon;
-            const active = pathname === item.href;
+            const Icon        = item.icon;
+            const active      = pathname === item.href;
+            const hasChildren = !!(item.children && item.children.length > 0);
+            const isExpanded  = expandedNav[item.href] ?? false;
+            const childActive = hasChildren && item.children!.some(c => pathname === c.href);
+
+            if (hasChildren) {
+              return (
+                <div key={item.href}>
+                  <button
+                    onClick={() => setExpandedNav(prev => ({ ...prev, [item.href]: !prev[item.href] }))}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition w-full text-left"
+                    style={childActive ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1">{item.label}</span>
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
+                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.6 }} />
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
+                      {item.children!.map(child => {
+                        const childIsActive = pathname === child.href;
+                        return (
+                          <Link key={child.href} href={child.href} onClick={() => setSidebarOpen(false)}
+                            className="flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition"
+                            style={childIsActive ? { background: 'rgba(255,255,255,0.15)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.65)' }}>
+                            <span className="h-1.5 w-1.5 rounded-full shrink-0"
+                              style={{ background: childIsActive ? '#e8c84a' : 'rgba(255,255,255,0.4)' }} />
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
