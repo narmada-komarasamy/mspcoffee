@@ -48,12 +48,16 @@ type AppUser = {
   estate: string | null;
 };
 
+type NavLeaf  = { label: string; href: string };
+type NavGroup = { label: string; href?: never; children: NavLeaf[] };
+type NavChild = NavLeaf | NavGroup;
+
 type NavItem = {
   label: string;
   href: string;
   icon: React.ElementType;
   roles: string[];
-  children?: { label: string; href: string }[];
+  children?: NavChild[];
 };
 
 const navItems: NavItem[] = [
@@ -63,11 +67,16 @@ const navItems: NavItem[] = [
   {
     label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor'],
     children: [
-      { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
-      { label: 'Bison Valley Estate',   href: '/processing-dashboard/bve' },
-      { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
-      { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
-      { label: 'Hidden Falls Estate',   href: '/processing-dashboard/hidden-falls-estate' },
+      {
+        label: '2025–2026',
+        children: [
+          { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
+          { label: 'Bison Valley Estate',   href: '/processing-dashboard/bve' },
+          { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
+          { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
+          { label: 'Hidden Falls Estate',   href: '/processing-dashboard/hidden-falls-estate' },
+        ],
+      },
     ],
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
@@ -133,12 +142,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/login');
   };
 
-  // Auto-expand parent nav when on a child route — must be before early return
+  // Auto-expand parent nav and sub-groups when on a child/grandchild route
   useEffect(() => {
     navItems.forEach(item => {
-      if (item.children?.some(c => c.href === pathname)) {
+      const matchesChild = item.children?.some(c => {
+        if ('href' in c && c.href === pathname) return true;
+        if ('children' in c) return c.children.some(gc => gc.href === pathname);
+        return false;
+      });
+      if (matchesChild) {
         setExpandedNav(prev => ({ ...prev, [item.href]: true }));
       }
+      // Also auto-expand the season group if a grandchild matches
+      item.children?.forEach(child => {
+        if ('children' in child && child.children.some(gc => gc.href === pathname)) {
+          const groupKey = `${item.href}__${child.label}`;
+          setExpandedNav(prev => ({ ...prev, [groupKey]: true }));
+        }
+      });
     });
   }, [pathname]);
 
@@ -148,8 +169,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   const filteredNav  = navItems.filter((item) => item.roles.includes(user.role));
+  const allLeaves = [
+    ...navItems.flatMap(i => i.children ?? []).flatMap(c =>
+      'children' in c ? c.children : [c]
+    ),
+    ...navItems.flatMap(i => i.children ?? []).filter(c => 'href' in c),
+  ];
   const currentTitle =
-    navItems.flatMap(i => i.children ?? []).find(c => c.href === pathname)?.label ??
+    allLeaves.find(c => c.href === pathname)?.label ??
     navItems.find((item) => item.href === pathname)?.label ??
     'Dashboard';
   const today        = new Date().toLocaleDateString('en-IN', {
@@ -201,7 +228,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const active      = pathname === item.href;
             const hasChildren = !!(item.children && item.children.length > 0);
             const isExpanded  = expandedNav[item.href] ?? false;
-            const childActive = hasChildren && item.children!.some(c => pathname === c.href);
+            const childActive = hasChildren && item.children!.some(c =>
+              ('href' in c && pathname === c.href) ||
+              ('children' in c && c.children.some(gc => pathname === gc.href))
+            );
 
             if (hasChildren) {
               return (
@@ -218,6 +248,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {isExpanded && (
                     <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
                       {item.children!.map(child => {
+                        // ── Season group (e.g. "2025–2026") ──────────────────
+                        if ('children' in child) {
+                          const groupKey     = `${item.href}__${child.label}`;
+                          const groupExp     = expandedNav[groupKey] ?? false;
+                          const groupActive  = child.children.some(gc => pathname === gc.href);
+                          return (
+                            <div key={child.label}>
+                              <button
+                                onClick={() => setExpandedNav(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-bold tracking-widest uppercase transition w-full text-left"
+                                style={{ color: groupActive ? '#e8c84a' : 'rgba(255,255,255,0.5)', letterSpacing: '0.1em' }}>
+                                <span className="flex-1">{child.label}</span>
+                                <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200"
+                                  style={{ transform: groupExp ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.5 }} />
+                              </button>
+                              {groupExp && (
+                                <div className="ml-2 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                                  {child.children.map(gc => {
+                                    const gcActive = pathname === gc.href;
+                                    return (
+                                      <Link key={gc.href} href={gc.href} onClick={() => setSidebarOpen(false)}
+                                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition"
+                                        style={gcActive ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.85)' }}>
+                                        <span className="h-1.5 w-1.5 rounded-full shrink-0"
+                                          style={{ background: gcActive ? '#e8c84a' : 'rgba(255,255,255,0.7)' }} />
+                                        {gc.label}
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        // ── Plain link child ──────────────────────────────────
                         const childIsActive = pathname === child.href;
                         return (
                           <Link key={child.href} href={child.href} onClick={() => setSidebarOpen(false)}
