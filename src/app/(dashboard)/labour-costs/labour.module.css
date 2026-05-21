@@ -1,7 +1,9 @@
 /* ── Labour Cost Optimizer — CSS Module ──────────────────────────────────── */
 
-/* Coffee/Cream palette variables used throughout */
-:root {
+/* Coffee/Cream palette variables — scoped to .page to avoid global pollution */
+
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+.page {
   --lc-coffee: #1b4a1b;
   --lc-cream:  #fdf8ee;
   --lc-gold:   #e8c84a;
@@ -9,16 +11,12 @@
   --lc-blue:   #1B4F8A;
   --lc-red:    #9B2335;
   --lc-thumb:  #1b4a1b;
-}
-
-/* ── Page wrapper ─────────────────────────────────────────────────────────── */
-.page {
-  background: #fdf8ee;
+  background: var(--t-bg, #fdf8ee);
   min-height: 100%;
   margin: -1rem;
   padding: 1.5rem 1.5rem 4rem;
-  font-family: inherit;
-  color: #1a1a1a;
+  font-family: var(--t-font, 'Exo 2', system-ui, sans-serif);
+  color: var(--t-text, #1a1a1a);
 }
 
 .page:fullscreen {
@@ -36,7 +34,7 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--t-label, #374151);
   margin-bottom: 4px;
 }
 .pageTitle {
@@ -96,7 +94,7 @@
 .cardTitle {
   font-size: 10px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--t-label, #374151);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   display: flex;
@@ -326,7 +324,7 @@
   color: #1a1a1a;
   box-shadow: 0 1px 6px rgba(27,74,27,0.06);
 }
-.metricDefault .metricLabel { color: #6b7280; }
+.metricDefault .metricLabel { color: var(--t-label, #374151); }
 .metricGold {
   background: #fef3c7;
   color: #92400e;

@@ -113,7 +113,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: #6b7280;
+  color: var(--t-label, #374151);
   margin-bottom: 0.375rem;
 }
 

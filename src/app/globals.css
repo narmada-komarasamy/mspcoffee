@@ -262,9 +262,11 @@
   --t-accent:   #4a9e4a;   /* green-light (replaces teal) */
   --t-gold:     #e8c84a;   /* gold CTA */
   --t-green:    #2d6e2d;   /* green-mid */
-  --t-muted:    #6b7280;   /* muted text */
+  --t-muted:    #6b7280;   /* muted / helper text */
+  --t-label:    #374151;   /* KPI card labels — uppercase, small, needs high contrast */
   --t-border:   #e5dfc8;   /* borders */
   --t-subtle:   #f5eedc;   /* subtle surface */
+  --t-font:     'Exo 2', system-ui, sans-serif; /* standard dashboard font */
 }
 
 /* ── MSP utility classes ─────────────────────────────────────────────────────── */
@@ -290,3 +292,123 @@
 .msp-border-gold    { border-color: var(--msp-gold); }
 .msp-border-teal    { border-color: var(--msp-teal); }
 .msp-border-danger  { border-color: var(--msp-danger); }
+
+/* ── Dashboard shared component system (.ds-*) ───────────────────────────────
+   Use these global classes across all dashboards for uniform style.
+   Page-specific layout rules stay in each dashboard's CSS module.            */
+
+/* Page wrapper */
+.ds-page {
+  background: var(--t-bg);
+  min-height: 100%;
+  margin: -1rem;
+  font-family: var(--t-font);
+  color: var(--t-text);
+}
+@media (min-width: 1024px) {
+  .ds-page { margin: -1.5rem; }
+}
+
+/* KPI stat card */
+.ds-kpi-card {
+  background: var(--t-card);
+  border: 1px solid var(--t-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.ds-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(27,74,27,0.12);
+}
+.ds-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: var(--t-accent);
+}
+
+/* KPI label — uppercase small text needs dark color for readability */
+.ds-kpi-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t-label);
+  margin-bottom: 4px;
+}
+
+/* KPI value (the large number) */
+.ds-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--t-heading);
+  line-height: 1;
+}
+
+/* KPI sub-text */
+.ds-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--t-muted);
+  margin-top: 4px;
+}
+
+/* Chart / panel card */
+.ds-chart-card {
+  background: var(--t-card);
+  border: 1px solid var(--t-border);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 14px rgba(27,74,27,0.08);
+}
+
+/* Chart / card section title */
+.ds-chart-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--t-heading);
+  margin-bottom: 12px;
+}
+
+/* Section header (e.g. "◆ FLEET OVERVIEW") */
+.ds-section-hdr {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--t-accent);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--t-border);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Filter/control bar */
+.ds-filter-bar {
+  background: var(--t-subtle);
+  border: 1px solid var(--t-border);
+  border-radius: 10px;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+/* Filter label above a select/input */
+.ds-filter-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t-label);
+  margin-bottom: 4px;
+  display: block;
+}

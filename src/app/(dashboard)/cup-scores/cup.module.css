@@ -18,7 +18,7 @@
   --score-good: #7c6d5a;
   background: var(--cream);
   color: var(--text);
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: var(--t-font, 'Exo 2', system-ui, sans-serif);
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -126,7 +126,7 @@
 .scardBlue::before { background: var(--score-vgood); }
 .scardAmber::before { background: var(--score-out); }
 .scardIcon { font-size: 1.5rem; margin-bottom: 8px; }
-.scardLabel { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-weight: 600; }
+.scardLabel { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--t-label, #374151); font-weight: 600; }
 .scardValue { font-size: 1.6rem; font-weight: 800; color: var(--green-dark); margin-top: 3px; line-height: 1; }
 .scardSub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
 
