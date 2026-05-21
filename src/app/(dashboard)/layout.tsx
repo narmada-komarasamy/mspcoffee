@@ -67,6 +67,7 @@ const navItems: NavItem[] = [
       { label: 'Bison Valley Estate',   href: '/processing-dashboard/bve' },
       { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
       { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
+      { label: 'Hidden Falls Estate',   href: '/processing-dashboard/hidden-falls-estate' },
     ],
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },

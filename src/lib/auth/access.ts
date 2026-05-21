@@ -25,6 +25,7 @@ export const NAV_ITEMS: NavItemDef[] = [
       { label: 'Bison Valley Estate',   href: '/processing-dashboard/bve' },
       { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
       { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
+      { label: 'Hidden Falls Estate',   href: '/processing-dashboard/hidden-falls-estate' },
     ],
   },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
