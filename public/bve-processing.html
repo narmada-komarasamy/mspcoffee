@@ -162,52 +162,52 @@ body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;c
 
     <div class="card">
       <div class="card-title"><span>⚗️</span> Dry Parchment by Method</div>
-      <canvas id="methodChart" height="300"></canvas>
+      <div style="position:relative;height:260px"><canvas id="methodChart"></canvas></div>
     </div>
 
     <div class="card">
       <div class="card-title"><span>🏷️</span> Batch Sizes — Dry Parchment (kg)</div>
-      <canvas id="batchSizeChart" height="300"></canvas>
+      <div style="position:relative;height:260px"><canvas id="batchSizeChart"></canvas></div>
     </div>
 
     <div class="card">
       <div class="card-title"><span>🧪</span> Experiments</div>
       <div class="scroll-card" id="exp-summary-list"><div style="margin-bottom:9px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#c8b080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Bag Natural">Bag Natural</span>
-        <span style="font-size:.68rem;color:#f5d090;font-weight:700;margin-left:6px">2,548 kg</span>
+        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Bag Natural">Bag Natural</span>
+        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">2,548 kg</span>
       </div>
-      <div style="background:#2a1e10;height:5px;border-radius:3px;overflow:hidden">
+      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
         <div style="width:100.0%;height:100%;background:#e09030;border-radius:3px"></div>
       </div>
-      <div style="font-size:.6rem;color:#605040;margin-top:2px">16 batches</div>
+      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">16 batches</div>
     </div><div style="margin-bottom:9px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#c8b080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Regular Washed">Regular Washed</span>
-        <span style="font-size:.68rem;color:#f5d090;font-weight:700;margin-left:6px">2,328 kg</span>
+        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Regular Washed">Regular Washed</span>
+        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">2,328 kg</span>
       </div>
-      <div style="background:#2a1e10;height:5px;border-radius:3px;overflow:hidden">
+      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
         <div style="width:91.4%;height:100%;background:#3090c0;border-radius:3px"></div>
       </div>
-      <div style="font-size:.6rem;color:#605040;margin-top:2px">16 batches</div>
+      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">16 batches</div>
     </div><div style="margin-bottom:9px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#c8b080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Regular Natural">Regular Natural</span>
-        <span style="font-size:.68rem;color:#f5d090;font-weight:700;margin-left:6px">1,875 kg</span>
+        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Regular Natural">Regular Natural</span>
+        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">1,875 kg</span>
       </div>
-      <div style="background:#2a1e10;height:5px;border-radius:3px;overflow:hidden">
+      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
         <div style="width:73.6%;height:100%;background:#a03060;border-radius:3px"></div>
       </div>
-      <div style="font-size:.6rem;color:#605040;margin-top:2px">49 batches</div>
+      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">49 batches</div>
     </div><div style="margin-bottom:9px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#c8b080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Watermelon Washed">Watermelon Washed</span>
-        <span style="font-size:.68rem;color:#f5d090;font-weight:700;margin-left:6px">485 kg</span>
+        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Watermelon Washed">Watermelon Washed</span>
+        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">485 kg</span>
       </div>
-      <div style="background:#2a1e10;height:5px;border-radius:3px;overflow:hidden">
+      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
         <div style="width:19.0%;height:100%;background:#b04040;border-radius:3px"></div>
       </div>
-      <div style="font-size:.6rem;color:#605040;margin-top:2px">9 batches</div>
+      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">9 batches</div>
     </div></div>
     </div>
 
@@ -1617,25 +1617,26 @@ const ALL_ROWS = Array.from(document.querySelectorAll('#batch-tbody tr'));
 // ── Charts ────────────────────────────────────────────────────────────────────
 const CHART_OPTS = {
   responsive:true, maintainAspectRatio:false,
-  plugins:{ legend:{ labels:{ color:'#c8b080', font:{size:11}, boxWidth:12 } } },
-  scales:{ x:{ ticks:{color:'#706050',font:{size:10}}, grid:{color:'#2a1e10'} }, y:{ ticks:{color:'#706050'}, grid:{color:'#2a1e10'} } }
+  plugins:{ legend:{ labels:{ color:'#374151', font:{family:"'Exo 2',system-ui",size:11}, boxWidth:12, padding:10 } } },
+  scales:{ x:{ ticks:{color:'#374151',font:{size:10}}, grid:{color:'#f0ead4'} }, y:{ ticks:{color:'#6b7280'}, grid:{color:'#f0ead4'} } }
 };
 
 new Chart(document.getElementById('methodChart'), {
   type:'doughnut',
-  data:{ labels:METH_LABELS, datasets:[{ data:METH_VALS, backgroundColor:METH_COLORS, borderColor:'#1a1208', borderWidth:2 }] },
+  data:{ labels:METH_LABELS, datasets:[{ data:METH_VALS, backgroundColor:METH_COLORS, borderColor:'#ffffff', borderWidth:2 }] },
   options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'right', labels:{ color:'#c8b080', font:{size:11}, boxWidth:12 } },
+    cutout:'60%',
+    plugins:{ legend:{ position:'right', labels:{ color:'#374151', font:{family:"'Exo 2',system-ui",size:11}, boxWidth:12, padding:10 } },
       tooltip:{ callbacks:{ label: c => ` ${c.label}: ${c.raw.toLocaleString()} kg` } } }
   }
 });
 
 new Chart(document.getElementById('batchSizeChart'), {
   type:'bar',
-  data:{ labels:BS_LABELS, datasets:[{ data:BS_VALS, backgroundColor:'#c47c2b99', borderColor:'#e09030', borderWidth:1, borderRadius:2 }] },
+  data:{ labels:BS_LABELS, datasets:[{ data:BS_VALS, backgroundColor:'#2d6e2d99', borderColor:'#4a9e4a', borderWidth:1, borderRadius:2 }] },
   options:{ responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => ` ${c.raw} kg` } } },
-    scales:{ x:{ ticks:{display:false}, grid:{color:'#2a1e10'} }, y:{ ticks:{color:'#706050',font:{size:10}}, grid:{color:'#2a1e10'} } }
+    scales:{ x:{ ticks:{display:false}, grid:{color:'#f0ead4'} }, y:{ ticks:{color:'#6b7280',font:{size:10}}, grid:{color:'#f0ead4'} } }
   }
 });
 
