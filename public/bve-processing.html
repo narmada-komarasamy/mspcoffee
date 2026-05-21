@@ -1,86 +1,79 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BVE — Bison Valley Estate · Coffee Processing Dashboard 2025–26</title>
+<title>Bison Valley Estate — Coffee Processing Dashboard 2025–26</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;color:#1a1a1a;min-height:100vh}
 
-.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);border-bottom:2px solid #4a9e4a;padding:22px 36px;display:flex;align-items:center;gap:16px}
-.header-icon{font-size:2rem}
-.header-text h1{font-size:1.4rem;font-weight:700;color:#ffffff}
-.header-text p{font-size:0.78rem;color:rgba(255,255,255,0.75);margin-top:2px}
-.season-badge{margin-left:auto;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:5px 16px;font-size:0.75rem;font-weight:600;color:#ffffff;letter-spacing:.06em;text-transform:uppercase}
-.pdf-btn{background:#e8c84a;border:none;border-radius:20px;padding:6px 16px;font-size:0.75rem;font-weight:700;color:#1b4a1b;cursor:pointer;letter-spacing:.04em;margin-left:10px}
+.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);border-bottom:2px solid #4a9e4a;padding:20px 28px;display:flex;align-items:center;gap:16px}
+.header-icon{font-size:2.2rem}
+.header-text h1{font-size:1.5rem;font-weight:700;color:#ffffff;letter-spacing:.03em}
+.header-text p{font-size:0.85rem;color:rgba(255,255,255,0.75);margin-top:2px}
+.season-badge{margin-left:auto;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;font-size:0.78rem;font-weight:700;color:#ffffff;letter-spacing:.06em}
+.pdf-btn{background:#e8c84a;border:none;border-radius:20px;padding:7px 18px;font-size:0.78rem;font-weight:700;color:#1b4a1b;cursor:pointer;margin-left:10px;letter-spacing:.04em}
 .pdf-btn:hover{background:#d4b030}
 
-.main{padding:22px 36px;max-width:1500px;margin:0 auto}
+.kpi-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:20px 28px;background:#f5eedc;border-bottom:1px solid #e5dfc8}
+.kpi{background:#ffffff;border:1px solid #e5dfc8;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#2d6e2d}
+.kpi-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#374151;margin-bottom:6px}
+.kpi-value{font-size:1.75rem;font-weight:700;color:#1b4a1b;line-height:1}
+.kpi-unit{font-size:.7rem;color:#6b7280;margin-top:4px}
 
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
-.kpi{background:#ffffff;border:1px solid #e5dfc8;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:box-shadow .2s}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,#4a9e4a);border-radius:10px 10px 0 0}
-.kpi-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151;margin-bottom:6px}
-.kpi-value{font-size:1.7rem;font-weight:700;color:#1b4a1b;line-height:1}
-.kpi-unit{font-size:.7rem;color:#6b7280;margin-top:3px}
+.filters{background:#f5eedc;border-bottom:1px solid #e5dfc8;padding:14px 28px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151}
+.filter-group select,.filter-group input{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:6px;color:#1a1a1a;padding:7px 10px;font-size:.82rem;min-width:160px;cursor:pointer}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:#4a9e4a}
+.filter-group input{min-width:200px}
+.filter-group input::placeholder{color:#9ca3af}
+.btn-reset{background:transparent;border:1.5px solid #e5dfc8;border-radius:6px;color:#6b7280;padding:7px 16px;cursor:pointer;font-size:.82rem;align-self:flex-end}
+.btn-reset:hover{border-color:#4a9e4a;color:#2d6e2d}
 
-.filter-panel{background:#f5eedc;border:1px solid #e5dfc8;border-radius:12px;padding:18px 22px;margin-bottom:18px}
-.filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
-.filter-row:last-child{margin-bottom:0}
-.filter-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;min-width:90px}
-.filter-btn{background:#ffffff;border:1px solid #e5dfc8;border-radius:20px;padding:5px 13px;font-size:.72rem;color:#6b7280;cursor:pointer;transition:all .15s;white-space:nowrap}
-.filter-btn:hover{border-color:#4a9e4a;color:#2d6e2d}
-.filter-btn.active{background:#1b4a1b;border-color:#1b4a1b;color:#ffffff;font-weight:600}
-.filter-btn.active.blue{background:#1d4ed8;border-color:#1d4ed8;color:#ffffff}
-.filter-btn.active.grey{background:#374151;border-color:#374151;color:#ffffff}
-.search-box{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:8px;padding:6px 12px;font-size:.75rem;color:#1a1a1a;outline:none;width:220px;transition:border-color .15s}
-.search-box:focus{border-color:#4a9e4a}
-.search-box::placeholder{color:#9ca3af}
-.filter-summary{font-size:.7rem;color:#6b7280;margin-left:auto;white-space:nowrap}
-
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.main{padding:20px 28px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
 .card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:20px 22px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
-.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.section-header{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#4a9e4a;margin:4px 0 14px;display:flex;align-items:center;gap:10px}
-.section-header::after{content:'';flex:1;height:1px;background:#e5dfc8}
+.card-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;margin-bottom:14px}
+.chart-wrap{position:relative;height:260px}
 
-.batch-table-wrap{overflow-x:auto;overflow-y:auto;max-height:440px}
-.batch-table-wrap::-webkit-scrollbar{width:5px;height:5px}
-.batch-table-wrap::-webkit-scrollbar-track{background:#f5eedc}
-.batch-table-wrap::-webkit-scrollbar-thumb{background:#d4c9a8;border-radius:3px}
-.batch-table{width:100%;border-collapse:collapse;font-size:.73rem}
-.batch-table thead th{position:sticky;top:0;background:#f5eedc;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#374151;padding:8px 10px;text-align:left;border-bottom:1px solid #e5dfc8;white-space:nowrap;cursor:pointer;user-select:none}
-.batch-table thead th:hover{color:#1b4a1b}
-.batch-table thead th .sort-icon{margin-left:4px;opacity:.5}
-.batch-table thead th.sorted .sort-icon{opacity:1;color:#4a9e4a}
-.batch-table tbody tr{border-bottom:1px solid #f0ead4;transition:background .1s}
-.batch-table tbody tr:hover{background:#fdf5e6}
-.batch-table tbody tr.hidden{display:none}
-.batch-table tbody td{padding:7px 10px;color:#1a1a1a;vertical-align:middle;white-space:nowrap}
-.batch-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
-.batch-table tfoot td{position:sticky;bottom:0;background:#f5eedc;font-size:.68rem;font-weight:700;color:#1b4a1b;padding:7px 10px;border-top:2px solid #4a9e4a}
-.batch-table tfoot td.num{text-align:right}
+.tbl-card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:16px 18px;margin-bottom:24px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
+.tbl-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tbl-header h2{font-size:.9rem;color:#1b4a1b;font-weight:700}
+.tbl-header .count{background:rgba(27,74,27,0.1);color:#2d6e2d;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700}
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:480px;border:1px solid #e5dfc8;border-radius:8px}
+.tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
+.tbl-wrap::-webkit-scrollbar-track{background:#f5eedc}
+.tbl-wrap::-webkit-scrollbar-thumb{background:#d4c9a8;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:.75rem}
+thead th{position:sticky;top:0;background:#f5eedc;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#374151;padding:9px 10px;text-align:left;border-bottom:1px solid #e5dfc8;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:#1b4a1b}
+thead th.sort-asc::after{content:' ▲';color:#4a9e4a}
+thead th.sort-desc::after{content:' ▼';color:#4a9e4a}
+tbody tr{border-bottom:1px solid #f0ead4;transition:background .1s}
+tbody tr:hover{background:#fdf5e6}
+tbody tr.hidden{display:none}
+tbody td{padding:7px 10px;color:#1a1a1a;vertical-align:middle;white-space:nowrap}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{position:sticky;bottom:0;background:#f5eedc;font-size:.7rem;font-weight:700;color:#1b4a1b;padding:8px 10px;border-top:2px solid #4a9e4a}
+tfoot td.num{text-align:right}
 
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
-.badge-Special{background:#fff8e1;color:#92400e;border:1px solid #f0d080}
-.badge-Regular{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
-.badge-Stripping{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;letter-spacing:.05em;white-space:nowrap}
+.b-Special{background:#fff8e1;color:#92400e;border:1px solid #f0d080}
+.b-Regular{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
+.b-Stripping{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.b-90{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
+.b-Gleanings{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
 .method-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.exp-chip{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.65rem;background:#fef9e7;border:1px solid #f0d080;color:#7d5a00;max-width:180px;overflow:hidden;text-overflow:ellipsis}
-
-.scroll-card{overflow-y:auto;max-height:320px}
-.scroll-card::-webkit-scrollbar{width:4px}
-.scroll-card::-webkit-scrollbar-track{background:#f5eedc}
-.scroll-card::-webkit-scrollbar-thumb{background:#d4c9a8;border-radius:2px}
-
+.exp-chip{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.65rem;background:#fef9e7;border:1px solid #f0d080;color:#7d5a00}
 .no-results{text-align:center;padding:40px;color:#6b7280;font-size:.85rem}
 
 @media print{
   @page{size:A4 landscape;margin:0}
   body{padding:14mm 12mm!important;background:#ffffff!important}
-  .filter-panel,.pdf-btn{display:none!important}
-  .batch-table-wrap{max-height:none!important;overflow:visible!important}
+  .filters,.pdf-btn{display:none!important}
+  .tbl-wrap{max-height:none!important;overflow:visible!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }
 </style>
@@ -97,1644 +90,258 @@ body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;c
   <button class="pdf-btn" onclick="window.print()">⬇ PDF</button>
 </div>
 
+<div class="kpi-bar">
+  <div class="kpi"><div class="kpi-label">Total Batches</div><div class="kpi-value" id="kpi-count">90</div><div class="kpi-unit">of 90 total</div></div>
+  <div class="kpi"><div class="kpi-label">Ripe Cherry</div><div class="kpi-value" id="kpi-ripe">30,749</div><div class="kpi-unit">kg input</div></div>
+  <div class="kpi"><div class="kpi-label">Dry Parchment</div><div class="kpi-value" id="kpi-dry">7,236</div><div class="kpi-unit">kg output</div></div>
+  <div class="kpi"><div class="kpi-label">Special Lots</div><div class="kpi-value" id="kpi-special">5,361</div><div class="kpi-unit">kg dry parch</div></div>
+  <div class="kpi"><div class="kpi-label">Avg Outturn</div><div class="kpi-value" id="kpi-outturn">26.2%</div><div class="kpi-unit">cherry to dry</div></div>
+  <div class="kpi"><div class="kpi-label">Experiments</div><div class="kpi-value" id="kpi-exps">4</div><div class="kpi-unit">process types</div></div>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <label>Lot Type</label>
+    <select id="fLot" onchange="applyFilters()">
+      <option value="">All Lot Types</option><option value="Special">Special</option><option value="Regular">Regular</option><option value="Stripping">Stripping</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Method</label>
+    <select id="fMethod" onchange="applyFilters()">
+      <option value="">All Methods</option><option value="MSP 90 + Special Natural">Natural</option><option value="MSP 90 + Special Washed">Washed</option><option value="Naturals - No Fermentation">No Fermentation</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Experiment</label>
+    <select id="fExp" onchange="applyFilters()">
+      <option value="">All Experiments</option><option value="Bag Natural">Bag Natural</option><option value="Regular Natural">Regular Natural</option><option value="Regular Washed">Regular Washed</option><option value="Watermelon Washed">Watermelon Washed</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Field</label>
+    <select id="fField" onchange="applyFilters()">
+      <option value="">All Fields</option><option value="All Fields">All Fields</option><option value="Bommidi Quarters">Bommidi Quarters</option><option value="Chappakadan Thundu">Chappakadan Thundu</option><option value="Churampulpadi">Churampulpadi</option><option value="Citradora Field (And Sanramon from Churampulpadi Field)">Citradora Field (And Sanramon from Churampulpadi Field)</option><option value="Middle Level">Middle Level</option><option value="Nodichekkal (All)">Nodichekkal (All)</option><option value="Pammandi Cholai">Pammandi Cholai</option><option value="Pudukadu/New Field">Pudukadu/New Field</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Search</label>
+    <input type="text" id="fSearch" placeholder="Lot #, remark…" oninput="applyFilters()">
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">✕ Reset</button>
+</div>
+
 <div class="main">
-
-  <!-- KPI Row -->
-  <div class="kpi-row">
-    <div class="kpi" style="--accent:#c47c2b">
-      <div class="kpi-label">Ripe Cherry In</div>
-      <div class="kpi-value" id="kpi-ripe">30,749</div>
-      <div class="kpi-unit">kg</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Experiment Breakdown (kg)</div>
+      <div class="chart-wrap"><canvas id="chartExp"></canvas></div>
     </div>
-    <div class="kpi" style="--accent:#e09030">
-      <div class="kpi-label">Net Cherry</div>
-      <div class="kpi-value" id="kpi-nett">28,556</div>
-      <div class="kpi-unit">kg after floats</div>
+    <div class="card">
+      <div class="card-title">Lot Type Distribution (kg)</div>
+      <div class="chart-wrap"><canvas id="chartLot"></canvas></div>
     </div>
-    <div class="kpi" style="--accent:#5090c0">
-      <div class="kpi-label">Dry Parchment</div>
-      <div class="kpi-value" id="kpi-dry">7,236</div>
-      <div class="kpi-unit">kg output</div>
-    </div>
-    <div class="kpi" style="--accent:#a060d0">
-      <div class="kpi-label">Avg Out-turn</div>
-      <div class="kpi-value" id="kpi-outturn">26.2%</div>
-      <div class="kpi-unit">ripe → dry %</div>
-    </div>
-    <div class="kpi" style="--accent:#50b060">
-      <div class="kpi-label">Batches Shown</div>
-      <div class="kpi-value" id="kpi-count">90</div>
-      <div class="kpi-unit">of 90 total</div>
+    <div class="card">
+      <div class="card-title">Processing Method (kg)</div>
+      <div class="chart-wrap"><canvas id="chartMethod"></canvas></div>
     </div>
   </div>
 
-  <!-- Filter Panel -->
-  <div class="filter-panel">
-    <div class="filter-row">
-      <span class="filter-label">Lot Type</span>
-      <button class="filter-btn active" data-group="lot" data-val="ALL">All</button>
-      <button class="filter-btn" data-group="lot" data-val="Special">Special</button>
-      <button class="filter-btn" data-group="lot" data-val="Regular">Regular</button>
-      <button class="filter-btn" data-group="lot" data-val="Stripping">Stripping</button>
+  <div class="tbl-card">
+    <div class="tbl-header">
+      <h2>Batch Detail</h2>
+      <span class="count" id="batchCount">90 batches</span>
     </div>
-    <div class="filter-row">
-      <span class="filter-label">Process</span>
-      <button class="filter-btn active" data-group="method" data-val="ALL">All Methods</button>
-      <button class="filter-btn" data-group="method" data-val="MSP 90 + Special Natural">Natural</button>
-      <button class="filter-btn" data-group="method" data-val="MSP 90 + Special Washed" data-active-class="blue">Washed</button>
-      <button class="filter-btn" data-group="method" data-val="Naturals - No Fermentation" data-active-class="grey">No Fermentation</button>
-    </div>
-    <div class="filter-row">
-      <span class="filter-label">Experiment</span>
-      <div id="exp-filter-btns" style="display:flex;flex-wrap:wrap;gap:6px"><button class="filter-btn active" data-group="experiment" data-val="ALL">All</button><button class="filter-btn" data-group="experiment" data-val="Bag Natural">Bag Natural</button><button class="filter-btn" data-group="experiment" data-val="Regular Natural">Regular Natural</button><button class="filter-btn" data-group="experiment" data-val="Regular Washed">Regular Washed</button><button class="filter-btn" data-group="experiment" data-val="Watermelon Washed">Watermelon Washed</button></div>
-    </div>
-    <div class="filter-row" style="margin-top:4px">
-      <span class="filter-label">Search</span>
-      <input class="search-box" id="search-box" placeholder="Field, lot number, remarks…">
-      <span class="filter-summary" id="filter-summary">90 of 90 batches</span>
-      <button class="filter-btn" id="reset-btn" style="margin-left:8px;border-color:#5a3020;color:#c07050">↺ Reset</button>
-    </div>
-  </div>
-
-  <!-- Charts Row -->
-  <div class="section-header">Overview</div>
-  <div class="grid-3" style="margin-bottom:16px">
-
-    <div class="card">
-      <div class="card-title"><span>⚗️</span> Dry Parchment by Method</div>
-      <div style="position:relative;height:260px"><canvas id="methodChart"></canvas></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span>🏷️</span> Batch Sizes — Dry Parchment (kg)</div>
-      <div style="position:relative;height:260px"><canvas id="batchSizeChart"></canvas></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span>🧪</span> Experiments</div>
-      <div class="scroll-card" id="exp-summary-list"><div style="margin-bottom:9px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Bag Natural">Bag Natural</span>
-        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">2,548 kg</span>
-      </div>
-      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
-        <div style="width:100.0%;height:100%;background:#e09030;border-radius:3px"></div>
-      </div>
-      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">16 batches</div>
-    </div><div style="margin-bottom:9px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Regular Washed">Regular Washed</span>
-        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">2,328 kg</span>
-      </div>
-      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
-        <div style="width:91.4%;height:100%;background:#3090c0;border-radius:3px"></div>
-      </div>
-      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">16 batches</div>
-    </div><div style="margin-bottom:9px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Regular Natural">Regular Natural</span>
-        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">1,875 kg</span>
-      </div>
-      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
-        <div style="width:73.6%;height:100%;background:#a03060;border-radius:3px"></div>
-      </div>
-      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">49 batches</div>
-    </div><div style="margin-bottom:9px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-        <span style="font-size:.68rem;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px" title="Watermelon Washed">Watermelon Washed</span>
-        <span style="font-size:.68rem;color:#1b4a1b;font-weight:700;margin-left:6px">485 kg</span>
-      </div>
-      <div style="background:#e5dfc8;height:5px;border-radius:3px;overflow:hidden">
-        <div style="width:19.0%;height:100%;background:#b04040;border-radius:3px"></div>
-      </div>
-      <div style="font-size:.6rem;color:#6b7280;margin-top:2px">9 batches</div>
-    </div></div>
-    </div>
-
-  </div>
-
-  <!-- Batch Detail Table -->
-  <div class="section-header">Batch Detail</div>
-  <div class="card" style="padding:16px 18px;margin-bottom:24px">
-    <div class="card-title" style="margin-bottom:10px"><span>📋</span> All Batches — click column headers to sort</div>
-    <div class="batch-table-wrap">
-      <table class="batch-table" id="batch-table">
+    <div class="tbl-wrap">
+      <table id="batchTable">
         <thead>
           <tr>
-            <th data-col="date">Date <span class="sort-icon">↕</span></th>
-            <th data-col="lot_type" class="sorted sort-asc">Type <span class="sort-icon">↕</span></th>
-            <th data-col="field">Field <span class="sort-icon">↕</span></th>
-            <th data-col="lot_num">Lot # <span class="sort-icon">↕</span></th>
-            <th data-col="experiment">Experiment / Process <span class="sort-icon">↕</span></th>
-            <th data-col="ripe" class="num">Ripe Cherry <span class="sort-icon">↕</span></th>
-            <th data-col="floats" class="num">Floats <span class="sort-icon">↕</span></th>
-            <th data-col="nett" class="num">Nett Cherry <span class="sort-icon">↕</span></th>
-            <th data-col="dry_parch" class="num">Dry Parch <span class="sort-icon">↕</span></th>
-            <th data-col="outturn" class="num">Out-turn % <span class="sort-icon">↕</span></th>
-            <th data-col="brix" class="num">BRIX <span class="sort-icon">↕</span></th>
-            <th data-col="ph" class="num">pH <span class="sort-icon">↕</span></th>
-            <th data-col="moisture" class="num">Moisture% <span class="sort-icon">↕</span></th>
-            <th data-col="remarks">Remarks <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable(this,'date')">Date</th>
+            <th onclick="sortTable(this,'lot_type')">Type</th>
+            <th onclick="sortTable(this,'field')">Field</th>
+            <th onclick="sortTable(this,'lot_num')">Lot #</th>
+            <th onclick="sortTable(this,'experiment')">Experiment</th>
+            <th onclick="sortTable(this,'ripe')" class="num">Ripe Cherry</th>
+            <th onclick="sortTable(this,'floats')" class="num">Floats</th>
+            <th onclick="sortTable(this,'nett')" class="num">Nett Cherry</th>
+            <th onclick="sortTable(this,'dry_parch')" class="num">Dry Parch</th>
+            <th onclick="sortTable(this,'outturn')" class="num">Outturn %</th>
+            <th onclick="sortTable(this,'brix')" class="num">BRIX</th>
+            <th onclick="sortTable(this,'ph')" class="num">pH</th>
+            <th onclick="sortTable(this,'moisture')" class="num">Moisture%</th>
+            <th onclick="sortTable(this,'remarks')">Remarks</th>
           </tr>
         </thead>
-        <tbody id="batch-tbody"><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="All Fields" data-search="bve04oct25mixed2  all fields naturals - no fermentation regular natural 4-oct-2025">
-      <td>4-Oct-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>All Fields</td>
-      <td style="font-size:.65rem;color:#a09070">BVE04Oct25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">142</td>
-      <td class="num">—</td>
-      <td class="num">142</td>
-      <td class="num" style="font-weight:700;color:#f5d090">41</td>
-      <td class="num">28.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Pammandi Cholai" data-search="bve31oct24mixed1  pammandi cholai msp 90 + special natural bag natural 31-oct-2024">
-      <td>31-Oct-2024</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE31Oct24MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">612</td>
-      <td class="num">40</td>
-      <td class="num">572</td>
-      <td class="num" style="font-weight:700;color:#f5d090">222</td>
-      <td class="num">36.3%</td>
-      <td class="num">13.2</td>
-      <td class="num">4</td>
-      <td class="num">12.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve31oct24mixed2  pammandi cholai naturals - no fermentation regular natural 31-oct-2024">
-      <td>31-Oct-2024</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE31Oct24MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">40</td>
-      <td class="num">—</td>
-      <td class="num">40</td>
-      <td class="num" style="font-weight:700;color:#f5d090">12</td>
-      <td class="num">30.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Nodichekkal (All)" data-search="bve01nov25mixed1  nodichekkal (all) msp 90 + special natural bag natural 1-nov-2025">
-      <td>1-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE01Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">1,836</td>
-      <td class="num">148</td>
-      <td class="num">1,688</td>
-      <td class="num" style="font-weight:700;color:#f5d090">579</td>
-      <td class="num">31.5%</td>
-      <td class="num">14.7</td>
-      <td class="num">4</td>
-      <td class="num">12.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve01nov25mixed2  nodichekkal (all) naturals - no fermentation regular natural 1-nov-2025">
-      <td>1-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE01Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">148</td>
-      <td class="num">—</td>
-      <td class="num">148</td>
-      <td class="num" style="font-weight:700;color:#f5d090">43</td>
-      <td class="num">29.1%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Nodichekkal (All)" data-search="bve03nov25mixed1  nodichekkal (all) msp 90 + special natural bag natural 3-nov-2025">
-      <td>3-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">334</td>
-      <td class="num">56</td>
-      <td class="num">278</td>
-      <td class="num" style="font-weight:700;color:#f5d090">90</td>
-      <td class="num">26.9%</td>
-      <td class="num">12.1</td>
-      <td class="num">3.8</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve03nov25mixed2  nodichekkal (all) naturals - no fermentation regular natural 3-nov-2025">
-      <td>3-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">56</td>
-      <td class="num">—</td>
-      <td class="num">56</td>
-      <td class="num" style="font-weight:700;color:#f5d090">16</td>
-      <td class="num">28.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Nodichekkal (All)" data-search="bve04nov25mixed1  nodichekkal (all) msp 90 + special natural bag natural 4-nov-2025">
-      <td>4-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE04Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">384</td>
-      <td class="num">66</td>
-      <td class="num">318</td>
-      <td class="num" style="font-weight:700;color:#f5d090">102</td>
-      <td class="num">26.6%</td>
-      <td class="num">12.8</td>
-      <td class="num">3.8</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve04nov25mixed2  nodichekkal (all) naturals - no fermentation regular natural 4-nov-2025">
-      <td>4-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE04Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">66</td>
-      <td class="num">—</td>
-      <td class="num">66</td>
-      <td class="num" style="font-weight:700;color:#f5d090">19</td>
-      <td class="num">28.8%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Middle Level" data-search="bve19nov25mixed1  middle level msp 90 + special washed regular washed 19-nov-2025">
-      <td>19-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE19Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">733</td>
-      <td class="num">54</td>
-      <td class="num">679</td>
-      <td class="num" style="font-weight:700;color:#f5d090">134</td>
-      <td class="num">18.3%</td>
-      <td class="num">11.1</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve19nov25mixed2  middle level naturals - no fermentation regular natural 19-nov-2025">
-      <td>19-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE19Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">54</td>
-      <td class="num">—</td>
-      <td class="num">54</td>
-      <td class="num" style="font-weight:700;color:#f5d090">16</td>
-      <td class="num">29.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Middle Level" data-search="bve20nov25mixed1  middle level msp 90 + special washed regular washed 20-nov-2025">
-      <td>20-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE20Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">1,500</td>
-      <td class="num">148</td>
-      <td class="num">1,352</td>
-      <td class="num" style="font-weight:700;color:#f5d090">271</td>
-      <td class="num">18.1%</td>
-      <td class="num">11.9</td>
-      <td class="num">—</td>
-      <td class="num">12.1%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve20nov25mixed2  middle level naturals - no fermentation regular natural 20-nov-2025">
-      <td>20-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE20Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">148</td>
-      <td class="num">—</td>
-      <td class="num">148</td>
-      <td class="num" style="font-weight:700;color:#f5d090">43</td>
-      <td class="num">29.1%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Chappakadan Thundu" data-search="bve20nov25mixed1  chappakadan thundu msp 90 + special washed regular washed 20-nov-2025">
-      <td>20-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE20Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">700</td>
-      <td class="num">68</td>
-      <td class="num">632</td>
-      <td class="num" style="font-weight:700;color:#f5d090">126</td>
-      <td class="num">18.0%</td>
-      <td class="num">11.9</td>
-      <td class="num">—</td>
-      <td class="num">12.1%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Chappakadan Thundu" data-search="bve20nov25mixed2  chappakadan thundu naturals - no fermentation regular natural 20-nov-2025">
-      <td>20-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE20Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">68</td>
-      <td class="num">—</td>
-      <td class="num">68</td>
-      <td class="num" style="font-weight:700;color:#f5d090">20</td>
-      <td class="num">29.4%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Churampulpadi" data-search="bve20nov25mixed1  churampulpadi msp 90 + special washed regular washed 20-nov-2025">
-      <td>20-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE20Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">850</td>
-      <td class="num">84</td>
-      <td class="num">766</td>
-      <td class="num" style="font-weight:700;color:#f5d090">155</td>
-      <td class="num">18.2%</td>
-      <td class="num">12.1</td>
-      <td class="num">—</td>
-      <td class="num">12.1%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Churampulpadi" data-search="bve20nov25mixed2  churampulpadi naturals - no fermentation regular natural 20-nov-2025">
-      <td>20-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE20Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">84</td>
-      <td class="num">—</td>
-      <td class="num">84</td>
-      <td class="num" style="font-weight:700;color:#f5d090">24</td>
-      <td class="num">28.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Pammandi Cholai" data-search="bve21nov25mixed1  pammandi cholai msp 90 + special washed regular washed 21-nov-2025">
-      <td>21-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE21Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">1,200</td>
-      <td class="num">108</td>
-      <td class="num">1,092</td>
-      <td class="num" style="font-weight:700;color:#f5d090">218</td>
-      <td class="num">18.2%</td>
-      <td class="num">12.7</td>
-      <td class="num">—</td>
-      <td class="num">12.1%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve21nov25mixed2  pammandi cholai naturals - no fermentation regular natural 21-nov-2025">
-      <td>21-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE21Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">108</td>
-      <td class="num">—</td>
-      <td class="num">108</td>
-      <td class="num" style="font-weight:700;color:#f5d090">31</td>
-      <td class="num">28.7%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Citradora Field (And Sanramon from Churampulpadi Field)" data-search="bve21nov25mixed1  citradora field (and sanramon from churampulpadi field) msp 90 + special washed regular washed 21-nov-2025">
-      <td>21-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Citradora Field (And Sanramon from Churampulpadi Field)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE21Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">1,000</td>
-      <td class="num">92</td>
-      <td class="num">908</td>
-      <td class="num" style="font-weight:700;color:#f5d090">182</td>
-      <td class="num">18.2%</td>
-      <td class="num">12.7</td>
-      <td class="num">—</td>
-      <td class="num">12.1%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Citradora Field (And Sanramon from Churampulpadi Field)" data-search="bve21nov25mixed2  citradora field (and sanramon from churampulpadi field) naturals - no fermentation regular natural 21-nov-2025">
-      <td>21-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Citradora Field (And Sanramon from Churampulpadi Field)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE21Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">92</td>
-      <td class="num">—</td>
-      <td class="num">92</td>
-      <td class="num" style="font-weight:700;color:#f5d090">27</td>
-      <td class="num">29.4%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Chappakadan Thundu" data-search="bve21nov25mixed1  chappakadan thundu msp 90 + special washed regular washed 21-nov-2025">
-      <td>21-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE21Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">1,261</td>
-      <td class="num">115</td>
-      <td class="num">1,146</td>
-      <td class="num" style="font-weight:700;color:#f5d090">230</td>
-      <td class="num">18.2%</td>
-      <td class="num">12.7</td>
-      <td class="num">—</td>
-      <td class="num">12.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Chappakadan Thundu" data-search="bve21nov25mixed2  chappakadan thundu naturals - no fermentation regular natural 21-nov-2025">
-      <td>21-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE21Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">115</td>
-      <td class="num">—</td>
-      <td class="num">115</td>
-      <td class="num" style="font-weight:700;color:#f5d090">30</td>
-      <td class="num">26.1%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Chappakadan Thundu" data-search="bve22nov25mixed1  chappakadan thundu msp 90 + special washed regular washed 22-nov-2025">
-      <td>22-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">600</td>
-      <td class="num">55</td>
-      <td class="num">545</td>
-      <td class="num" style="font-weight:700;color:#f5d090">103</td>
-      <td class="num">17.2%</td>
-      <td class="num">12.7</td>
-      <td class="num">—</td>
-      <td class="num">12.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Chappakadan Thundu" data-search="bve22nov25mixed2  chappakadan thundu naturals - no fermentation regular natural 22-nov-2025">
-      <td>22-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">55</td>
-      <td class="num">—</td>
-      <td class="num">55</td>
-      <td class="num" style="font-weight:700;color:#f5d090">14</td>
-      <td class="num">25.4%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Churampulpadi" data-search="bve22nov25mixed1  churampulpadi msp 90 + special washed regular washed 22-nov-2025">
-      <td>22-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">700</td>
-      <td class="num">64</td>
-      <td class="num">636</td>
-      <td class="num" style="font-weight:700;color:#f5d090">120</td>
-      <td class="num">17.1%</td>
-      <td class="num">12.7</td>
-      <td class="num">—</td>
-      <td class="num">12.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Churampulpadi" data-search="bve22nov25mixed2  churampulpadi naturals - no fermentation regular natural 22-nov-2025">
-      <td>22-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">64</td>
-      <td class="num">—</td>
-      <td class="num">64</td>
-      <td class="num" style="font-weight:700;color:#f5d090">17</td>
-      <td class="num">26.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Nodichekkal (All)" data-search="bve22nov25mixed1  nodichekkal (all) msp 90 + special washed regular washed 22-nov-2025">
-      <td>22-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">1,338</td>
-      <td class="num">123</td>
-      <td class="num">1,215</td>
-      <td class="num" style="font-weight:700;color:#f5d090">228</td>
-      <td class="num">17.0%</td>
-      <td class="num">12.7</td>
-      <td class="num">—</td>
-      <td class="num">12.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve22nov25mixed2  nodichekkal (all) naturals - no fermentation regular natural 22-nov-2025">
-      <td>22-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">123</td>
-      <td class="num">—</td>
-      <td class="num">123</td>
-      <td class="num" style="font-weight:700;color:#f5d090">32</td>
-      <td class="num">26.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Nodichekkal (All)" data-search="bve25nov25mixed1  nodichekkal (all) msp 90 + special washed regular washed 25-nov-2025">
-      <td>25-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE25Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">845</td>
-      <td class="num">80</td>
-      <td class="num">765</td>
-      <td class="num" style="font-weight:700;color:#f5d090">143</td>
-      <td class="num">16.9%</td>
-      <td class="num">8.1</td>
-      <td class="num">—</td>
-      <td class="num">12.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve25nov25mixed2  nodichekkal (all) naturals - no fermentation regular natural 25-nov-2025">
-      <td>25-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE25Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">80</td>
-      <td class="num">—</td>
-      <td class="num">80</td>
-      <td class="num" style="font-weight:700;color:#f5d090">21</td>
-      <td class="num">26.2%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Nodichekkal (All)" data-search="bve26nov25mixed1  nodichekkal (all) msp 90 + special washed regular washed 26-nov-2025">
-      <td>26-Nov-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE26Nov25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">582</td>
-      <td class="num">58</td>
-      <td class="num">524</td>
-      <td class="num" style="font-weight:700;color:#f5d090">98</td>
-      <td class="num">16.8%</td>
-      <td class="num">9.4</td>
-      <td class="num">—</td>
-      <td class="num">12.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve26nov25mixed2  nodichekkal (all) naturals - no fermentation regular natural 26-nov-2025">
-      <td>26-Nov-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE26Nov25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">58</td>
-      <td class="num">—</td>
-      <td class="num">58</td>
-      <td class="num" style="font-weight:700;color:#f5d090">16</td>
-      <td class="num">27.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Nodichekkal (All)" data-search="bve11dec25mixed1 watermelon pine apple washed nodichekkal (all) msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">200</td>
-      <td class="num">19</td>
-      <td class="num">181</td>
-      <td class="num" style="font-weight:700;color:#f5d090">40</td>
-      <td class="num">20.0%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve11dec25mixed2  nodichekkal (all) naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">19</td>
-      <td class="num">—</td>
-      <td class="num">19</td>
-      <td class="num" style="font-weight:700;color:#f5d090">5</td>
-      <td class="num">26.3%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Citradora Field (And Sanramon from Churampulpadi Field)" data-search="bve11dec25mixed1 watermelon pine apple washed citradora field (and sanramon from churampulpadi field) msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Citradora Field (And Sanramon from Churampulpadi Field)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">250</td>
-      <td class="num">25</td>
-      <td class="num">225</td>
-      <td class="num" style="font-weight:700;color:#f5d090">51</td>
-      <td class="num">20.4%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Citradora Field (And Sanramon from Churampulpadi Field)" data-search="bve11dec25mixed2  citradora field (and sanramon from churampulpadi field) naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Citradora Field (And Sanramon from Churampulpadi Field)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">25</td>
-      <td class="num">—</td>
-      <td class="num">25</td>
-      <td class="num" style="font-weight:700;color:#f5d090">7</td>
-      <td class="num">28.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Pudukadu/New Field" data-search="bve11dec25mixed1 watermelon pine apple washed pudukadu/new field msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">250</td>
-      <td class="num">25</td>
-      <td class="num">225</td>
-      <td class="num" style="font-weight:700;color:#f5d090">51</td>
-      <td class="num">20.4%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pudukadu/New Field" data-search="bve11dec25mixed2  pudukadu/new field naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">25</td>
-      <td class="num">—</td>
-      <td class="num">25</td>
-      <td class="num" style="font-weight:700;color:#f5d090">7</td>
-      <td class="num">28.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Pammandi Cholai" data-search="bve11dec25mixed1 watermelon pine apple washed pammandi cholai msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">290</td>
-      <td class="num">28</td>
-      <td class="num">262</td>
-      <td class="num" style="font-weight:700;color:#f5d090">59</td>
-      <td class="num">20.3%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve11dec25mixed2  pammandi cholai naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">28</td>
-      <td class="num">8</td>
-      <td class="num">20</td>
-      <td class="num" style="font-weight:700;color:#f5d090">7</td>
-      <td class="num">25.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Bommidi Quarters" data-search="bve11dec25mixed1 watermelon pine apple washed bommidi quarters msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Bommidi Quarters</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">300</td>
-      <td class="num">29</td>
-      <td class="num">271</td>
-      <td class="num" style="font-weight:700;color:#f5d090">61</td>
-      <td class="num">20.3%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Bommidi Quarters" data-search="bve11dec25mixed2  bommidi quarters naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Bommidi Quarters</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">29</td>
-      <td class="num">—</td>
-      <td class="num">29</td>
-      <td class="num" style="font-weight:700;color:#f5d090">8</td>
-      <td class="num">27.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Middle Level" data-search="bve11dec25mixed1 watermelon pine apple washed middle level msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">200</td>
-      <td class="num">19</td>
-      <td class="num">181</td>
-      <td class="num" style="font-weight:700;color:#f5d090">40</td>
-      <td class="num">20.0%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve11dec25mixed2  middle level naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">19</td>
-      <td class="num">—</td>
-      <td class="num">19</td>
-      <td class="num" style="font-weight:700;color:#f5d090">5</td>
-      <td class="num">26.3%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Chappakadan Thundu" data-search="bve11dec25mixed1 watermelon pine apple washed chappakadan thundu msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">391</td>
-      <td class="num">38</td>
-      <td class="num">353</td>
-      <td class="num" style="font-weight:700;color:#f5d090">79</td>
-      <td class="num">20.2%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Chappakadan Thundu" data-search="bve11dec25mixed2  chappakadan thundu naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">38</td>
-      <td class="num">—</td>
-      <td class="num">38</td>
-      <td class="num" style="font-weight:700;color:#f5d090">10</td>
-      <td class="num">26.3%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Churampulpadi" data-search="bve11dec25mixed1 watermelon pine apple washed churampulpadi msp 90 + special washed watermelon washed 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">210</td>
-      <td class="num">21</td>
-      <td class="num">189</td>
-      <td class="num" style="font-weight:700;color:#f5d090">42</td>
-      <td class="num">20.0%</td>
-      <td class="num">14.4</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Churampulpadi" data-search="bve11dec25mixed2  churampulpadi naturals - no fermentation regular natural 11-dec-2025">
-      <td>11-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE11Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">21</td>
-      <td class="num">—</td>
-      <td class="num">21</td>
-      <td class="num" style="font-weight:700;color:#f5d090">6</td>
-      <td class="num">28.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Watermelon Washed" data-field="Nodichekkal (All)" data-search="bve12dec25mixed1 watermelon pine apple washed nodichekkal (all) msp 90 + special washed watermelon washed 12-dec-2025">
-      <td>12-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE12Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Watermelon Washed</span></td>
-      <td class="num">307</td>
-      <td class="num">30</td>
-      <td class="num">277</td>
-      <td class="num" style="font-weight:700;color:#f5d090">62</td>
-      <td class="num">20.2%</td>
-      <td class="num">17.9</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Watermelon Pine apple Washed">Watermelon Pine apple Washed</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve12dec25mixed2  nodichekkal (all) naturals - no fermentation regular natural 12-dec-2025">
-      <td>12-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE12Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">30</td>
-      <td class="num">—</td>
-      <td class="num">30</td>
-      <td class="num" style="font-weight:700;color:#f5d090">8</td>
-      <td class="num">26.7%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Churampulpadi" data-search="bve12dec25mixed1  churampulpadi msp 90 + special washed regular washed 12-dec-2025">
-      <td>12-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE12Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">300</td>
-      <td class="num">29</td>
-      <td class="num">271</td>
-      <td class="num" style="font-weight:700;color:#f5d090">61</td>
-      <td class="num">20.3%</td>
-      <td class="num">17.9</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Churampulpadi" data-search="bve12dec25mixed2  churampulpadi naturals - no fermentation regular natural 12-dec-2025">
-      <td>12-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE12Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">29</td>
-      <td class="num">—</td>
-      <td class="num">29</td>
-      <td class="num" style="font-weight:700;color:#f5d090">8</td>
-      <td class="num">27.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Middle Level" data-search="bve31dec25mixed1 bag natural middle level msp 90 + special natural bag natural 31-dec-2025">
-      <td>31-Dec-2025</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE31Dec25MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">436</td>
-      <td class="num">38</td>
-      <td class="num">398</td>
-      <td class="num" style="font-weight:700;color:#f5d090">115</td>
-      <td class="num">26.4%</td>
-      <td class="num">18.0</td>
-      <td class="num">3.8</td>
-      <td class="num">11.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve31dec25mixed2  middle level naturals - no fermentation regular natural 31-dec-2025">
-      <td>31-Dec-2025</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE31Dec25MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">38</td>
-      <td class="num">—</td>
-      <td class="num">38</td>
-      <td class="num" style="font-weight:700;color:#f5d090">—</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">12.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Chappakadan Thundu" data-search="bve01jan26mixed1  chappakadan thundu msp 90 + special washed regular washed 1-jan-2026">
-      <td>1-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE01Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">471</td>
-      <td class="num">30</td>
-      <td class="num">441</td>
-      <td class="num" style="font-weight:700;color:#f5d090">84</td>
-      <td class="num">17.8%</td>
-      <td class="num">11.9</td>
-      <td class="num">—</td>
-      <td class="num">10.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Chappakadan Thundu" data-search="bve01jan26mixed2  chappakadan thundu naturals - no fermentation regular natural 1-jan-2026">
-      <td>1-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Chappakadan Thundu</td>
-      <td style="font-size:.65rem;color:#a09070">BVE01Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">30</td>
-      <td class="num">—</td>
-      <td class="num">30</td>
-      <td class="num" style="font-weight:700;color:#f5d090">8</td>
-      <td class="num">26.7%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Middle Level" data-search="bve02jan26mixed1  middle level msp 90 + special washed regular washed 2-jan-2026">
-      <td>2-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE02Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">554</td>
-      <td class="num">36</td>
-      <td class="num">518</td>
-      <td class="num" style="font-weight:700;color:#f5d090">100</td>
-      <td class="num">18.1%</td>
-      <td class="num">13.4</td>
-      <td class="num">—</td>
-      <td class="num">10.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve02jan26mixed2  middle level naturals - no fermentation regular natural 2-jan-2026">
-      <td>2-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE02Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">36</td>
-      <td class="num">—</td>
-      <td class="num">36</td>
-      <td class="num" style="font-weight:700;color:#f5d090">10</td>
-      <td class="num">27.8%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">9.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Pudukadu/New Field" data-search="bve03jan26mixed1 bag natural pudukadu/new field msp 90 + special natural bag natural 3-jan-2026">
-      <td>3-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">205</td>
-      <td class="num">18</td>
-      <td class="num">187</td>
-      <td class="num" style="font-weight:700;color:#f5d090">50</td>
-      <td class="num">24.4%</td>
-      <td class="num">14.2</td>
-      <td class="num">3.9</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pudukadu/New Field" data-search="bve03jan26mixed2  pudukadu/new field naturals - no fermentation regular natural 3-jan-2026">
-      <td>3-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">18</td>
-      <td class="num">—</td>
-      <td class="num">18</td>
-      <td class="num" style="font-weight:700;color:#f5d090">5</td>
-      <td class="num">27.8%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">9.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Pudukadu/New Field" data-search="bve03jan26mixed1 bag natural pudukadu/new field msp 90 + special natural bag natural 3-jan-2026">
-      <td>3-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">600</td>
-      <td class="num">52</td>
-      <td class="num">548</td>
-      <td class="num" style="font-weight:700;color:#f5d090">145</td>
-      <td class="num">24.2%</td>
-      <td class="num">16.1</td>
-      <td class="num">3.9</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pudukadu/New Field" data-search="bve03jan26mixed2  pudukadu/new field naturals - no fermentation regular natural 3-jan-2026">
-      <td>3-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">52</td>
-      <td class="num">—</td>
-      <td class="num">52</td>
-      <td class="num" style="font-weight:700;color:#f5d090">15</td>
-      <td class="num">28.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">9.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Pammandi Cholai" data-search="bve03jan26mixed1 bag natural pammandi cholai msp 90 + special natural bag natural 3-jan-2026">
-      <td>3-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">400</td>
-      <td class="num">35</td>
-      <td class="num">365</td>
-      <td class="num" style="font-weight:700;color:#f5d090">97</td>
-      <td class="num">24.2%</td>
-      <td class="num">14.2</td>
-      <td class="num">3.9</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve03jan26mixed2  pammandi cholai naturals - no fermentation regular natural 3-jan-2026">
-      <td>3-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE03Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">35</td>
-      <td class="num">—</td>
-      <td class="num">35</td>
-      <td class="num" style="font-weight:700;color:#f5d090">10</td>
-      <td class="num">28.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">9.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Pammandi Cholai" data-search="bve06jan26mixed1 bag natural pammandi cholai msp 90 + special natural bag natural 6-jan-2026">
-      <td>6-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">954</td>
-      <td class="num">52</td>
-      <td class="num">902</td>
-      <td class="num" style="font-weight:700;color:#f5d090">285</td>
-      <td class="num">29.9%</td>
-      <td class="num">16.8</td>
-      <td class="num">3.9</td>
-      <td class="num">10.5%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve06jan26mixed2  pammandi cholai naturals - no fermentation regular natural 6-jan-2026">
-      <td>6-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">52</td>
-      <td class="num">—</td>
-      <td class="num">52</td>
-      <td class="num" style="font-weight:700;color:#f5d090">15</td>
-      <td class="num">28.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.2%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Churampulpadi" data-search="bve06jan26mixed1 bag natural churampulpadi msp 90 + special natural bag natural 6-jan-2026">
-      <td>6-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">1,888</td>
-      <td class="num">86</td>
-      <td class="num">1,802</td>
-      <td class="num" style="font-weight:700;color:#f5d090">480</td>
-      <td class="num">25.4%</td>
-      <td class="num">18.1</td>
-      <td class="num">3.9</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Churampulpadi" data-search="bve06jan26mixed2  churampulpadi naturals - no fermentation regular natural 6-jan-2026">
-      <td>6-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">86</td>
-      <td class="num">—</td>
-      <td class="num">86</td>
-      <td class="num" style="font-weight:700;color:#f5d090">24</td>
-      <td class="num">27.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Pammandi Cholai" data-search="bve22jan26mixed1 bag natural pammandi cholai msp 90 + special natural bag natural 22-jan-2026">
-      <td>22-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">145</td>
-      <td class="num">20</td>
-      <td class="num">125</td>
-      <td class="num" style="font-weight:700;color:#f5d090">44</td>
-      <td class="num">30.3%</td>
-      <td class="num">14.2</td>
-      <td class="num">3.9</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve22jan26mixed2  pammandi cholai naturals - no fermentation regular natural 22-jan-2026">
-      <td>22-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">20</td>
-      <td class="num">—</td>
-      <td class="num">20</td>
-      <td class="num" style="font-weight:700;color:#f5d090">6</td>
-      <td class="num">30.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Bommidi Quarters" data-search="bve22jan26mixed1 bag natural bommidi quarters msp 90 + special natural bag natural 22-jan-2026">
-      <td>22-Jan-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Bommidi Quarters</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Jan26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">150</td>
-      <td class="num">20</td>
-      <td class="num">130</td>
-      <td class="num" style="font-weight:700;color:#f5d090">45</td>
-      <td class="num">30.0%</td>
-      <td class="num">14.1</td>
-      <td class="num">3.9</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Bommidi Quarters" data-search="bve22jan26mixed2  bommidi quarters naturals - no fermentation regular natural 22-jan-2026">
-      <td>22-Jan-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Bommidi Quarters</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Jan26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">20</td>
-      <td class="num">—</td>
-      <td class="num">20</td>
-      <td class="num" style="font-weight:700;color:#f5d090">6</td>
-      <td class="num">30.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Middle Level" data-search="bve05feb26mixed1 bag natural middle level msp 90 + special natural bag natural 5-feb-2026">
-      <td>5-Feb-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE05Feb26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">340</td>
-      <td class="num">40</td>
-      <td class="num">300</td>
-      <td class="num" style="font-weight:700;color:#f5d090">91</td>
-      <td class="num">26.8%</td>
-      <td class="num">17.4</td>
-      <td class="num">3.8</td>
-      <td class="num">11.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve05feb26mixed2  middle level naturals - no fermentation regular natural 5-feb-2026">
-      <td>5-Feb-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE05Feb26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">40</td>
-      <td class="num">—</td>
-      <td class="num">40</td>
-      <td class="num" style="font-weight:700;color:#f5d090">11</td>
-      <td class="num">27.5%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Middle Level" data-search="bve06feb26mixed1  middle level msp 90 + special natural bag natural 6-feb-2026">
-      <td>6-Feb-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Feb26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">335</td>
-      <td class="num">40</td>
-      <td class="num">295</td>
-      <td class="num" style="font-weight:700;color:#f5d090">86</td>
-      <td class="num">25.7%</td>
-      <td class="num">15.6</td>
-      <td class="num">3.8</td>
-      <td class="num">11.8%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve06feb26mixed2  middle level naturals - no fermentation regular natural 6-feb-2026">
-      <td>6-Feb-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Feb26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">40</td>
-      <td class="num">—</td>
-      <td class="num">40</td>
-      <td class="num" style="font-weight:700;color:#f5d090">11</td>
-      <td class="num">27.5%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Washed" data-experiment="Regular Washed" data-field="Middle Level" data-search="bve07feb26mixed1  middle level msp 90 + special washed regular washed 7-feb-2026">
-      <td>7-Feb-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE07Feb26MIXED1</td>
-      <td><span class="method-dot" style="background:#3090c0"></span><span class="exp-chip">Regular Washed</span></td>
-      <td class="num">448</td>
-      <td class="num">49</td>
-      <td class="num">399</td>
-      <td class="num" style="font-weight:700;color:#f5d090">75</td>
-      <td class="num">16.7%</td>
-      <td class="num">13.1</td>
-      <td class="num">—</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve07feb26mixed2  middle level naturals - no fermentation regular natural 7-feb-2026">
-      <td>7-Feb-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE07Feb26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">49</td>
-      <td class="num">—</td>
-      <td class="num">49</td>
-      <td class="num" style="font-weight:700;color:#f5d090">14</td>
-      <td class="num">28.6%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Nodichekkal (All)" data-search="bve09feb26mixed1 bag natural nodichekkal (all) msp 90 + special natural bag natural 9-feb-2026">
-      <td>9-Feb-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE09Feb26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">282</td>
-      <td class="num">34</td>
-      <td class="num">248</td>
-      <td class="num" style="font-weight:700;color:#f5d090">85</td>
-      <td class="num">30.1%</td>
-      <td class="num">18.4</td>
-      <td class="num">3.9</td>
-      <td class="num">11.4%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve09feb26mixed2  nodichekkal (all) naturals - no fermentation regular natural 9-feb-2026">
-      <td>9-Feb-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE09Feb26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">34</td>
-      <td class="num">—</td>
-      <td class="num">34</td>
-      <td class="num" style="font-weight:700;color:#f5d090">9</td>
-      <td class="num">26.5%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Special" data-method="MSP 90 + Special Natural" data-experiment="Bag Natural" data-field="Nodichekkal (All)" data-search="bve10feb26mixed1 bag natural nodichekkal (all) msp 90 + special natural bag natural 10-feb-2026">
-      <td>10-Feb-2026</td>
-      <td><span class="badge badge-Special">Special</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE10Feb26MIXED1</td>
-      <td><span class="method-dot" style="background:#c47c2b"></span><span class="exp-chip">Bag Natural</span></td>
-      <td class="num">120</td>
-      <td class="num">13</td>
-      <td class="num">107</td>
-      <td class="num" style="font-weight:700;color:#f5d090">32</td>
-      <td class="num">26.7%</td>
-      <td class="num">15.7</td>
-      <td class="num">3.9</td>
-      <td class="num">11.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span title="Bag Natural">Bag Natural</span></td>
-    </tr><tr data-lot="Regular" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve10feb26mixed2  nodichekkal (all) naturals - no fermentation regular natural 10-feb-2026">
-      <td>10-Feb-2026</td>
-      <td><span class="badge badge-Regular">Regular</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE10Feb26MIXED2</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">13</td>
-      <td class="num">—</td>
-      <td class="num">13</td>
-      <td class="num" style="font-weight:700;color:#f5d090">4</td>
-      <td class="num">30.8%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve22jan26mixedstripping  pammandi cholai naturals - no fermentation regular natural 22-jan-2026">
-      <td>22-Jan-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE22Jan26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">716</td>
-      <td class="num">—</td>
-      <td class="num">716</td>
-      <td class="num" style="font-weight:700;color:#f5d090">214</td>
-      <td class="num">29.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Middle Level" data-search="bve05feb26mixedstripping  middle level naturals - no fermentation regular natural 5-feb-2026">
-      <td>5-Feb-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>Middle Level</td>
-      <td style="font-size:.65rem;color:#a09070">BVE05Feb26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">644</td>
-      <td class="num">—</td>
-      <td class="num">644</td>
-      <td class="num" style="font-weight:700;color:#f5d090">190</td>
-      <td class="num">29.5%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Churampulpadi" data-search="bve06feb26mixedstripping  churampulpadi naturals - no fermentation regular natural 6-feb-2026">
-      <td>6-Feb-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>Churampulpadi</td>
-      <td style="font-size:.65rem;color:#a09070">BVE06Feb26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">648</td>
-      <td class="num">—</td>
-      <td class="num">648</td>
-      <td class="num" style="font-weight:700;color:#f5d090">194</td>
-      <td class="num">29.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">10.9%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pudukadu/New Field" data-search="bve07feb26mixedstripping  pudukadu/new field naturals - no fermentation regular natural 7-feb-2026">
-      <td>7-Feb-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>Pudukadu/New Field</td>
-      <td style="font-size:.65rem;color:#a09070">BVE07Feb26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">915</td>
-      <td class="num">—</td>
-      <td class="num">915</td>
-      <td class="num" style="font-weight:700;color:#f5d090">274</td>
-      <td class="num">29.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Pammandi Cholai" data-search="bve09feb26mixedstripping  pammandi cholai naturals - no fermentation regular natural 9-feb-2026">
-      <td>9-Feb-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>Pammandi Cholai</td>
-      <td style="font-size:.65rem;color:#a09070">BVE09Feb26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">521</td>
-      <td class="num">—</td>
-      <td class="num">521</td>
-      <td class="num" style="font-weight:700;color:#f5d090">156</td>
-      <td class="num">29.9%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="Nodichekkal (All)" data-search="bve10feb26mixedstripping  nodichekkal (all) naturals - no fermentation regular natural 10-feb-2026">
-      <td>10-Feb-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>Nodichekkal (All)</td>
-      <td style="font-size:.65rem;color:#a09070">BVE10Feb26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">379</td>
-      <td class="num">—</td>
-      <td class="num">379</td>
-      <td class="num" style="font-weight:700;color:#f5d090">108</td>
-      <td class="num">28.5%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.0%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr><tr data-lot="Stripping" data-method="Naturals - No Fermentation" data-experiment="Regular Natural" data-field="All Fields" data-search="bve17apr26mixedstripping  all fields naturals - no fermentation regular natural 17-apr-2026">
-      <td>17-Apr-2026</td>
-      <td><span class="badge badge-Stripping">Stripping</span></td>
-      <td>All Fields</td>
-      <td style="font-size:.65rem;color:#a09070">BVE17Apr26MIXEDStripping</td>
-      <td><span class="method-dot" style="background:#606060"></span><span class="exp-chip">Regular Natural</span></td>
-      <td class="num">98</td>
-      <td class="num">—</td>
-      <td class="num">98</td>
-      <td class="num" style="font-weight:700;color:#f5d090">98</td>
-      <td class="num">100.0%</td>
-      <td class="num">—</td>
-      <td class="num">—</td>
-      <td class="num">11.6%</td>
-      <td style="font-size:.68rem;color:#a09070;max-width:200px;overflow:hidden;text-overflow:ellipsis"><span style="color:#504030">—</span></td>
-    </tr></tbody>
+        <tbody id="batchBody"></tbody>
         <tfoot>
           <tr>
-            <td colspan="5">TOTALS</td>
-            <td class="num" id="foot-ripe">30,749</td>
+            <td colspan="5" style="color:#a08060">TOTALS</td>
+            <td class="num" id="totRipe">—</td>
             <td class="num">—</td>
-            <td class="num" id="foot-nett">28,556</td>
-            <td class="num" id="foot-dry">7,236</td>
+            <td class="num" id="totNett">—</td>
+            <td class="num" id="totDry">—</td>
             <td colspan="5"></td>
           </tr>
         </tfoot>
       </table>
     </div>
   </div>
-
 </div>
 
 <script>
-// ── Data ──────────────────────────────────────────────────────────────────────
-const METH_LABELS  = ["Washed", "Natural", "No Fermentation"];
-const METH_VALS    = [2813, 2548, 1875];
-const METH_COLORS  = ["#3090c0", "#c47c2b", "#606060"];
-const BS_LABELS    = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89"];
-const BS_VALS      = [579, 480, 285, 274, 271, 230, 228, 222, 218, 214, 194, 190, 182, 156, 155, 145, 143, 134, 126, 120, 115, 108, 103, 102, 100, 98, 98, 97, 91, 90, 86, 85, 84, 79, 75, 62, 61, 61, 59, 51, 51, 50, 45, 44, 43, 43, 42, 41, 40, 40, 32, 32, 31, 30, 27, 24, 24, 21, 20, 19, 17, 16, 16, 16, 15, 15, 14, 14, 12, 11, 11, 10, 10, 10, 9, 8, 8, 8, 8, 7, 7, 7, 6, 6, 6, 5, 5, 5, 4];
-const TOTAL_BATCHES = 90;
-const ALL_ROWS = Array.from(document.querySelectorAll('#batch-tbody tr'));
+const RAW = [{"serial":"1","field":"All Fields","lot_num":"BVE04Oct25MIXED2","lot_type":"Regular","round":"","date":"4-Oct-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":142,"floats":0,"nett":142,"wet_parch":0,"dry_parch":41,"brix":0,"ph":0,"moisture":10.0,"outturn":28.9,"remarks":"","dispatch":"","storage":""},{"serial":"2","field":"Pammandi Cholai","lot_num":"BVE31Oct24MIXED1","lot_type":"Special","round":"","date":"31-Oct-2024","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":612,"floats":40,"nett":572,"wet_parch":0,"dry_parch":222,"brix":13.2,"ph":4,"moisture":12.0,"outturn":36.3,"remarks":"","dispatch":"","storage":""},{"serial":"3","field":"Pammandi Cholai","lot_num":"BVE31Oct24MIXED2","lot_type":"Regular","round":"","date":"31-Oct-2024","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":40,"floats":0,"nett":40,"wet_parch":0,"dry_parch":12,"brix":0,"ph":0,"moisture":11.8,"outturn":30.0,"remarks":"","dispatch":"","storage":""},{"serial":"4","field":"Nodichekkal (All)","lot_num":"BVE01Nov25MIXED1","lot_type":"Special","round":"","date":"1-Nov-2025","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":1836,"floats":148,"nett":1688,"wet_parch":0,"dry_parch":579,"brix":14.7,"ph":4,"moisture":12.2,"outturn":31.5,"remarks":"","dispatch":"","storage":""},{"serial":"5","field":"Nodichekkal (All)","lot_num":"BVE01Nov25MIXED2","lot_type":"Regular","round":"","date":"1-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":148,"floats":0,"nett":148,"wet_parch":0,"dry_parch":43,"brix":0,"ph":0,"moisture":11.8,"outturn":29.1,"remarks":"","dispatch":"","storage":""},{"serial":"6","field":"Nodichekkal (All)","lot_num":"BVE03Nov25MIXED1","lot_type":"Special","round":"","date":"3-Nov-2025","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":334,"floats":56,"nett":278,"wet_parch":0,"dry_parch":90,"brix":12.1,"ph":3.8,"moisture":11.4,"outturn":26.9,"remarks":"","dispatch":"","storage":""},{"serial":"7","field":"Nodichekkal (All)","lot_num":"BVE03Nov25MIXED2","lot_type":"Regular","round":"","date":"3-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":56,"floats":0,"nett":56,"wet_parch":0,"dry_parch":16,"brix":0,"ph":0,"moisture":11.8,"outturn":28.6,"remarks":"","dispatch":"","storage":""},{"serial":"8","field":"Nodichekkal (All)","lot_num":"BVE04Nov25MIXED1","lot_type":"Special","round":"","date":"4-Nov-2025","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":384,"floats":66,"nett":318,"wet_parch":0,"dry_parch":102,"brix":12.8,"ph":3.8,"moisture":11.4,"outturn":26.6,"remarks":"","dispatch":"","storage":""},{"serial":"9","field":"Nodichekkal (All)","lot_num":"BVE04Nov25MIXED2","lot_type":"Regular","round":"","date":"4-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":66,"floats":0,"nett":66,"wet_parch":0,"dry_parch":19,"brix":0,"ph":0,"moisture":11.8,"outturn":28.8,"remarks":"","dispatch":"","storage":""},{"serial":"10","field":"Middle Level","lot_num":"BVE19Nov25MIXED1","lot_type":"Special","round":"","date":"19-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":733,"floats":54,"nett":679,"wet_parch":0,"dry_parch":134,"brix":11.1,"ph":0,"moisture":11.8,"outturn":18.3,"remarks":"","dispatch":"","storage":""},{"serial":"11","field":"Middle Level","lot_num":"BVE19Nov25MIXED2","lot_type":"Regular","round":"","date":"19-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":54,"floats":0,"nett":54,"wet_parch":0,"dry_parch":16,"brix":0,"ph":0,"moisture":11.8,"outturn":29.6,"remarks":"","dispatch":"","storage":""},{"serial":"12","field":"Middle Level","lot_num":"BVE20Nov25MIXED1","lot_type":"Special","round":"","date":"20-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":1500,"floats":148,"nett":1352,"wet_parch":0,"dry_parch":271,"brix":11.9,"ph":0,"moisture":12.1,"outturn":18.1,"remarks":"","dispatch":"","storage":""},{"serial":"13","field":"Middle Level","lot_num":"BVE20Nov25MIXED2","lot_type":"Regular","round":"","date":"20-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":148,"floats":0,"nett":148,"wet_parch":0,"dry_parch":43,"brix":0,"ph":0,"moisture":11.8,"outturn":29.1,"remarks":"","dispatch":"","storage":""},{"serial":"14","field":"Chappakadan Thundu","lot_num":"BVE20Nov25MIXED1","lot_type":"Special","round":"","date":"20-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":700,"floats":68,"nett":632,"wet_parch":0,"dry_parch":126,"brix":11.9,"ph":0,"moisture":12.1,"outturn":18.0,"remarks":"","dispatch":"","storage":""},{"serial":"15","field":"Chappakadan Thundu","lot_num":"BVE20Nov25MIXED2","lot_type":"Regular","round":"","date":"20-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":68,"floats":0,"nett":68,"wet_parch":0,"dry_parch":20,"brix":0,"ph":0,"moisture":11.4,"outturn":29.4,"remarks":"","dispatch":"","storage":""},{"serial":"16","field":"Churampulpadi","lot_num":"BVE20Nov25MIXED1","lot_type":"Special","round":"","date":"20-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":850,"floats":84,"nett":766,"wet_parch":0,"dry_parch":155,"brix":12.1,"ph":0,"moisture":12.1,"outturn":18.2,"remarks":"","dispatch":"","storage":""},{"serial":"17","field":"Churampulpadi","lot_num":"BVE20Nov25MIXED2","lot_type":"Regular","round":"","date":"20-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":84,"floats":0,"nett":84,"wet_parch":0,"dry_parch":24,"brix":0,"ph":0,"moisture":11.0,"outturn":28.6,"remarks":"","dispatch":"","storage":""},{"serial":"18","field":"Pammandi Cholai","lot_num":"BVE21Nov25MIXED1","lot_type":"Special","round":"","date":"21-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":1200,"floats":108,"nett":1092,"wet_parch":0,"dry_parch":218,"brix":12.7,"ph":0,"moisture":12.1,"outturn":18.2,"remarks":"","dispatch":"","storage":""},{"serial":"19","field":"Pammandi Cholai","lot_num":"BVE21Nov25MIXED2","lot_type":"Regular","round":"","date":"21-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":108,"floats":0,"nett":108,"wet_parch":0,"dry_parch":31,"brix":0,"ph":0,"moisture":11.4,"outturn":28.7,"remarks":"","dispatch":"","storage":""},{"serial":"20","field":"Citradora Field (And Sanramon from Churampulpadi Field)","lot_num":"BVE21Nov25MIXED1","lot_type":"Special","round":"","date":"21-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":1000,"floats":92,"nett":908,"wet_parch":0,"dry_parch":182,"brix":12.7,"ph":0,"moisture":12.1,"outturn":18.2,"remarks":"","dispatch":"","storage":""},{"serial":"21","field":"Citradora Field (And Sanramon from Churampulpadi Field)","lot_num":"BVE21Nov25MIXED2","lot_type":"Regular","round":"","date":"21-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":92,"floats":0,"nett":92,"wet_parch":0,"dry_parch":27,"brix":0,"ph":0,"moisture":11.4,"outturn":29.4,"remarks":"","dispatch":"","storage":""},{"serial":"22","field":"Chappakadan Thundu","lot_num":"BVE21Nov25MIXED1","lot_type":"Special","round":"","date":"21-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":1261,"floats":115,"nett":1146,"wet_parch":0,"dry_parch":230,"brix":12.7,"ph":0,"moisture":12.2,"outturn":18.2,"remarks":"","dispatch":"","storage":""},{"serial":"23","field":"Chappakadan Thundu","lot_num":"BVE21Nov25MIXED2","lot_type":"Regular","round":"","date":"21-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":115,"floats":0,"nett":115,"wet_parch":0,"dry_parch":30,"brix":0,"ph":0,"moisture":11.2,"outturn":26.1,"remarks":"","dispatch":"","storage":""},{"serial":"24","field":"Chappakadan Thundu","lot_num":"BVE22Nov25MIXED1","lot_type":"Special","round":"","date":"22-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":600,"floats":55,"nett":545,"wet_parch":0,"dry_parch":103,"brix":12.7,"ph":0,"moisture":12.2,"outturn":17.2,"remarks":"","dispatch":"","storage":""},{"serial":"25","field":"Chappakadan Thundu","lot_num":"BVE22Nov25MIXED2","lot_type":"Regular","round":"","date":"22-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":55,"floats":0,"nett":55,"wet_parch":0,"dry_parch":14,"brix":0,"ph":0,"moisture":11.2,"outturn":25.4,"remarks":"","dispatch":"","storage":""},{"serial":"26","field":"Churampulpadi","lot_num":"BVE22Nov25MIXED1","lot_type":"Special","round":"","date":"22-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":700,"floats":64,"nett":636,"wet_parch":0,"dry_parch":120,"brix":12.7,"ph":0,"moisture":12.2,"outturn":17.1,"remarks":"","dispatch":"","storage":""},{"serial":"27","field":"Churampulpadi","lot_num":"BVE22Nov25MIXED2","lot_type":"Regular","round":"","date":"22-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":64,"floats":0,"nett":64,"wet_parch":0,"dry_parch":17,"brix":0,"ph":0,"moisture":10.6,"outturn":26.6,"remarks":"","dispatch":"","storage":""},{"serial":"28","field":"Nodichekkal (All)","lot_num":"BVE22Nov25MIXED1","lot_type":"Special","round":"","date":"22-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":1338,"floats":123,"nett":1215,"wet_parch":0,"dry_parch":228,"brix":12.7,"ph":0,"moisture":12.2,"outturn":17.0,"remarks":"","dispatch":"","storage":""},{"serial":"29","field":"Nodichekkal (All)","lot_num":"BVE22Nov25MIXED2","lot_type":"Regular","round":"","date":"22-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":123,"floats":0,"nett":123,"wet_parch":0,"dry_parch":32,"brix":0,"ph":0,"moisture":10.6,"outturn":26.0,"remarks":"","dispatch":"","storage":""},{"serial":"30","field":"Nodichekkal (All)","lot_num":"BVE25Nov25MIXED1","lot_type":"Special","round":"","date":"25-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":845,"floats":80,"nett":765,"wet_parch":0,"dry_parch":143,"brix":8.1,"ph":0,"moisture":12.0,"outturn":16.9,"remarks":"","dispatch":"","storage":""},{"serial":"31","field":"Nodichekkal (All)","lot_num":"BVE25Nov25MIXED2","lot_type":"Regular","round":"","date":"25-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":80,"floats":0,"nett":80,"wet_parch":0,"dry_parch":21,"brix":0,"ph":0,"moisture":10.6,"outturn":26.2,"remarks":"","dispatch":"","storage":""},{"serial":"32","field":"Nodichekkal (All)","lot_num":"BVE26Nov25MIXED1","lot_type":"Special","round":"","date":"26-Nov-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":582,"floats":58,"nett":524,"wet_parch":0,"dry_parch":98,"brix":9.4,"ph":0,"moisture":12.0,"outturn":16.8,"remarks":"","dispatch":"","storage":""},{"serial":"33","field":"Nodichekkal (All)","lot_num":"BVE26Nov25MIXED2","lot_type":"Regular","round":"","date":"26-Nov-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":58,"floats":0,"nett":58,"wet_parch":0,"dry_parch":16,"brix":0,"ph":0,"moisture":11.2,"outturn":27.6,"remarks":"","dispatch":"","storage":""},{"serial":"34","field":"Nodichekkal (All)","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":200,"floats":19,"nett":181,"wet_parch":0,"dry_parch":40,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.0,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"35","field":"Nodichekkal (All)","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":19,"floats":0,"nett":19,"wet_parch":0,"dry_parch":5,"brix":0,"ph":0,"moisture":11.2,"outturn":26.3,"remarks":"","dispatch":"","storage":""},{"serial":"36","field":"Citradora Field (And Sanramon from Churampulpadi Field)","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":250,"floats":25,"nett":225,"wet_parch":0,"dry_parch":51,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.4,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"37","field":"Citradora Field (And Sanramon from Churampulpadi Field)","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":25,"floats":0,"nett":25,"wet_parch":0,"dry_parch":7,"brix":0,"ph":0,"moisture":11.2,"outturn":28.0,"remarks":"","dispatch":"","storage":""},{"serial":"38","field":"Pudukadu/New Field","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":250,"floats":25,"nett":225,"wet_parch":0,"dry_parch":51,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.4,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"39","field":"Pudukadu/New Field","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":25,"floats":0,"nett":25,"wet_parch":0,"dry_parch":7,"brix":0,"ph":0,"moisture":11.2,"outturn":28.0,"remarks":"","dispatch":"","storage":""},{"serial":"40","field":"Pammandi Cholai","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":290,"floats":28,"nett":262,"wet_parch":0,"dry_parch":59,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.3,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"41","field":"Pammandi Cholai","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":28,"floats":8,"nett":20,"wet_parch":0,"dry_parch":7,"brix":0,"ph":0,"moisture":11.4,"outturn":25.0,"remarks":"","dispatch":"","storage":""},{"serial":"42","field":"Bommidi Quarters","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":300,"floats":29,"nett":271,"wet_parch":0,"dry_parch":61,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.3,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"43","field":"Bommidi Quarters","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":29,"floats":0,"nett":29,"wet_parch":0,"dry_parch":8,"brix":0,"ph":0,"moisture":11.4,"outturn":27.6,"remarks":"","dispatch":"","storage":""},{"serial":"44","field":"Middle Level","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":200,"floats":19,"nett":181,"wet_parch":0,"dry_parch":40,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.0,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"45","field":"Middle Level","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":19,"floats":0,"nett":19,"wet_parch":0,"dry_parch":5,"brix":0,"ph":0,"moisture":11.4,"outturn":26.3,"remarks":"","dispatch":"","storage":""},{"serial":"46","field":"Chappakadan Thundu","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":391,"floats":38,"nett":353,"wet_parch":0,"dry_parch":79,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.2,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"47","field":"Chappakadan Thundu","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":38,"floats":0,"nett":38,"wet_parch":0,"dry_parch":10,"brix":0,"ph":0,"moisture":11.4,"outturn":26.3,"remarks":"","dispatch":"","storage":""},{"serial":"48","field":"Churampulpadi","lot_num":"BVE11Dec25MIXED1","lot_type":"Special","round":"","date":"11-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":210,"floats":21,"nett":189,"wet_parch":0,"dry_parch":42,"brix":14.4,"ph":0,"moisture":11.4,"outturn":20.0,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"49","field":"Churampulpadi","lot_num":"BVE11Dec25MIXED2","lot_type":"Regular","round":"","date":"11-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":21,"floats":0,"nett":21,"wet_parch":0,"dry_parch":6,"brix":0,"ph":0,"moisture":11.4,"outturn":28.6,"remarks":"","dispatch":"","storage":""},{"serial":"50","field":"Nodichekkal (All)","lot_num":"BVE12Dec25MIXED1","lot_type":"Special","round":"","date":"12-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Watermelon Washed","ripe":307,"floats":30,"nett":277,"wet_parch":0,"dry_parch":62,"brix":17.9,"ph":0,"moisture":11.4,"outturn":20.2,"remarks":"Watermelon Pine apple Washed","dispatch":"","storage":""},{"serial":"51","field":"Nodichekkal (All)","lot_num":"BVE12Dec25MIXED2","lot_type":"Regular","round":"","date":"12-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":30,"floats":0,"nett":30,"wet_parch":0,"dry_parch":8,"brix":0,"ph":0,"moisture":10.2,"outturn":26.7,"remarks":"","dispatch":"","storage":""},{"serial":"52","field":"Churampulpadi","lot_num":"BVE12Dec25MIXED1","lot_type":"Special","round":"","date":"12-Dec-2025","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":300,"floats":29,"nett":271,"wet_parch":0,"dry_parch":61,"brix":17.9,"ph":0,"moisture":11.4,"outturn":20.3,"remarks":"","dispatch":"","storage":""},{"serial":"53","field":"Churampulpadi","lot_num":"BVE12Dec25MIXED2","lot_type":"Regular","round":"","date":"12-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":29,"floats":0,"nett":29,"wet_parch":0,"dry_parch":8,"brix":0,"ph":0,"moisture":10.2,"outturn":27.6,"remarks":"","dispatch":"","storage":""},{"serial":"54","field":"Middle Level","lot_num":"BVE31Dec25MIXED1","lot_type":"Special","round":"","date":"31-Dec-2025","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":436,"floats":38,"nett":398,"wet_parch":0,"dry_parch":115,"brix":18.0,"ph":3.8,"moisture":11.6,"outturn":26.4,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"55","field":"Middle Level","lot_num":"BVE31Dec25MIXED2","lot_type":"Regular","round":"","date":"31-Dec-2025","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":38,"floats":0,"nett":38,"wet_parch":0,"dry_parch":0,"brix":0,"ph":0,"moisture":12.0,"outturn":0,"remarks":"","dispatch":"","storage":""},{"serial":"56","field":"Chappakadan Thundu","lot_num":"BVE01Jan26MIXED1","lot_type":"Special","round":"","date":"1-Jan-2026","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":471,"floats":30,"nett":441,"wet_parch":0,"dry_parch":84,"brix":11.9,"ph":0,"moisture":10.8,"outturn":17.8,"remarks":"","dispatch":"","storage":""},{"serial":"57","field":"Chappakadan Thundu","lot_num":"BVE01Jan26MIXED2","lot_type":"Regular","round":"","date":"1-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":30,"floats":0,"nett":30,"wet_parch":0,"dry_parch":8,"brix":0,"ph":0,"moisture":10.2,"outturn":26.7,"remarks":"","dispatch":"","storage":""},{"serial":"58","field":"Middle Level","lot_num":"BVE02Jan26MIXED1","lot_type":"Special","round":"","date":"2-Jan-2026","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":554,"floats":36,"nett":518,"wet_parch":0,"dry_parch":100,"brix":13.4,"ph":0,"moisture":10.8,"outturn":18.1,"remarks":"","dispatch":"","storage":""},{"serial":"59","field":"Middle Level","lot_num":"BVE02Jan26MIXED2","lot_type":"Regular","round":"","date":"2-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":36,"floats":0,"nett":36,"wet_parch":0,"dry_parch":10,"brix":0,"ph":0,"moisture":9.8,"outturn":27.8,"remarks":"","dispatch":"","storage":""},{"serial":"60","field":"Pudukadu/New Field","lot_num":"BVE03Jan26MIXED1","lot_type":"Special","round":"","date":"3-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":205,"floats":18,"nett":187,"wet_parch":0,"dry_parch":50,"brix":14.2,"ph":3.9,"moisture":10.2,"outturn":24.4,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"61","field":"Pudukadu/New Field","lot_num":"BVE03Jan26MIXED2","lot_type":"Regular","round":"","date":"3-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":18,"floats":0,"nett":18,"wet_parch":0,"dry_parch":5,"brix":0,"ph":0,"moisture":9.8,"outturn":27.8,"remarks":"","dispatch":"","storage":""},{"serial":"62","field":"Pudukadu/New Field","lot_num":"BVE03Jan26MIXED1","lot_type":"Special","round":"","date":"3-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":600,"floats":52,"nett":548,"wet_parch":0,"dry_parch":145,"brix":16.1,"ph":3.9,"moisture":10.2,"outturn":24.2,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"63","field":"Pudukadu/New Field","lot_num":"BVE03Jan26MIXED2","lot_type":"Regular","round":"","date":"3-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":52,"floats":0,"nett":52,"wet_parch":0,"dry_parch":15,"brix":0,"ph":0,"moisture":9.8,"outturn":28.9,"remarks":"","dispatch":"","storage":""},{"serial":"64","field":"Pammandi Cholai","lot_num":"BVE03Jan26MIXED1","lot_type":"Special","round":"","date":"3-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":400,"floats":35,"nett":365,"wet_parch":0,"dry_parch":97,"brix":14.2,"ph":3.9,"moisture":10.2,"outturn":24.2,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"65","field":"Pammandi Cholai","lot_num":"BVE03Jan26MIXED2","lot_type":"Regular","round":"","date":"3-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":35,"floats":0,"nett":35,"wet_parch":0,"dry_parch":10,"brix":0,"ph":0,"moisture":9.8,"outturn":28.6,"remarks":"","dispatch":"","storage":""},{"serial":"66","field":"Pammandi Cholai","lot_num":"BVE06Jan26MIXED1","lot_type":"Special","round":"","date":"6-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":954,"floats":52,"nett":902,"wet_parch":0,"dry_parch":285,"brix":16.8,"ph":3.9,"moisture":10.5,"outturn":29.9,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"67","field":"Pammandi Cholai","lot_num":"BVE06Jan26MIXED2","lot_type":"Regular","round":"","date":"6-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":52,"floats":0,"nett":52,"wet_parch":0,"dry_parch":15,"brix":0,"ph":0,"moisture":10.2,"outturn":28.9,"remarks":"","dispatch":"","storage":""},{"serial":"68","field":"Churampulpadi","lot_num":"BVE06Jan26MIXED1","lot_type":"Special","round":"","date":"6-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":1888,"floats":86,"nett":1802,"wet_parch":0,"dry_parch":480,"brix":18.1,"ph":3.9,"moisture":10.0,"outturn":25.4,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"69","field":"Churampulpadi","lot_num":"BVE06Jan26MIXED2","lot_type":"Regular","round":"","date":"6-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":86,"floats":0,"nett":86,"wet_parch":0,"dry_parch":24,"brix":0,"ph":0,"moisture":10.0,"outturn":27.9,"remarks":"","dispatch":"","storage":""},{"serial":"70","field":"Pammandi Cholai","lot_num":"BVE22Jan26MIXED1","lot_type":"Special","round":"","date":"22-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":145,"floats":20,"nett":125,"wet_parch":0,"dry_parch":44,"brix":14.2,"ph":3.9,"moisture":11.8,"outturn":30.3,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"71","field":"Pammandi Cholai","lot_num":"BVE22Jan26MIXED2","lot_type":"Regular","round":"","date":"22-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":20,"floats":0,"nett":20,"wet_parch":0,"dry_parch":6,"brix":0,"ph":0,"moisture":10.0,"outturn":30.0,"remarks":"","dispatch":"","storage":""},{"serial":"72","field":"Bommidi Quarters","lot_num":"BVE22Jan26MIXED1","lot_type":"Special","round":"","date":"22-Jan-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":150,"floats":20,"nett":130,"wet_parch":0,"dry_parch":45,"brix":14.1,"ph":3.9,"moisture":11.8,"outturn":30.0,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"73","field":"Bommidi Quarters","lot_num":"BVE22Jan26MIXED2","lot_type":"Regular","round":"","date":"22-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":20,"floats":0,"nett":20,"wet_parch":0,"dry_parch":6,"brix":0,"ph":0,"moisture":10.0,"outturn":30.0,"remarks":"","dispatch":"","storage":""},{"serial":"74","field":"Middle Level","lot_num":"BVE05Feb26MIXED1","lot_type":"Special","round":"","date":"5-Feb-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":340,"floats":40,"nett":300,"wet_parch":0,"dry_parch":91,"brix":17.4,"ph":3.8,"moisture":11.6,"outturn":26.8,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"75","field":"Middle Level","lot_num":"BVE05Feb26MIXED2","lot_type":"Regular","round":"","date":"5-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":40,"floats":0,"nett":40,"wet_parch":0,"dry_parch":11,"brix":0,"ph":0,"moisture":10.0,"outturn":27.5,"remarks":"","dispatch":"","storage":""},{"serial":"76","field":"Middle Level","lot_num":"BVE06Feb26MIXED1","lot_type":"Special","round":"","date":"6-Feb-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":335,"floats":40,"nett":295,"wet_parch":0,"dry_parch":86,"brix":15.6,"ph":3.8,"moisture":11.8,"outturn":25.7,"remarks":"","dispatch":"","storage":""},{"serial":"77","field":"Middle Level","lot_num":"BVE06Feb26MIXED2","lot_type":"Regular","round":"","date":"6-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":40,"floats":0,"nett":40,"wet_parch":0,"dry_parch":11,"brix":0,"ph":0,"moisture":10.0,"outturn":27.5,"remarks":"","dispatch":"","storage":""},{"serial":"78","field":"Middle Level","lot_num":"BVE07Feb26MIXED1","lot_type":"Special","round":"","date":"7-Feb-2026","method":"MSP 90 + Special Washed","experiment":"Regular Washed","ripe":448,"floats":49,"nett":399,"wet_parch":0,"dry_parch":75,"brix":13.1,"ph":0,"moisture":11.4,"outturn":16.7,"remarks":"","dispatch":"","storage":""},{"serial":"79","field":"Middle Level","lot_num":"BVE07Feb26MIXED2","lot_type":"Regular","round":"","date":"7-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":49,"floats":0,"nett":49,"wet_parch":0,"dry_parch":14,"brix":0,"ph":0,"moisture":10.0,"outturn":28.6,"remarks":"","dispatch":"","storage":""},{"serial":"80","field":"Nodichekkal (All)","lot_num":"BVE09Feb26MIXED1","lot_type":"Special","round":"","date":"9-Feb-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":282,"floats":34,"nett":248,"wet_parch":0,"dry_parch":85,"brix":18.4,"ph":3.9,"moisture":11.4,"outturn":30.1,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"81","field":"Nodichekkal (All)","lot_num":"BVE09Feb26MIXED2","lot_type":"Regular","round":"","date":"9-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":34,"floats":0,"nett":34,"wet_parch":0,"dry_parch":9,"brix":0,"ph":0,"moisture":10.0,"outturn":26.5,"remarks":"","dispatch":"","storage":""},{"serial":"82","field":"Nodichekkal (All)","lot_num":"BVE10Feb26MIXED1","lot_type":"Special","round":"","date":"10-Feb-2026","method":"MSP 90 + Special Natural","experiment":"Bag Natural","ripe":120,"floats":13,"nett":107,"wet_parch":0,"dry_parch":32,"brix":15.7,"ph":3.9,"moisture":11.6,"outturn":26.7,"remarks":"Bag Natural","dispatch":"","storage":""},{"serial":"83","field":"Nodichekkal (All)","lot_num":"BVE10Feb26MIXED2","lot_type":"Regular","round":"","date":"10-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":13,"floats":0,"nett":13,"wet_parch":0,"dry_parch":4,"brix":0,"ph":0,"moisture":10.0,"outturn":30.8,"remarks":"","dispatch":"","storage":""},{"serial":"84","field":"Pammandi Cholai","lot_num":"BVE22Jan26MIXEDStripping","lot_type":"Stripping","round":"","date":"22-Jan-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":716,"floats":0,"nett":716,"wet_parch":0,"dry_parch":214,"brix":0,"ph":0,"moisture":11.0,"outturn":29.9,"remarks":"","dispatch":"","storage":""},{"serial":"85","field":"Middle Level","lot_num":"BVE05Feb26MIXEDStripping","lot_type":"Stripping","round":"","date":"5-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":644,"floats":0,"nett":644,"wet_parch":0,"dry_parch":190,"brix":0,"ph":0,"moisture":11.0,"outturn":29.5,"remarks":"","dispatch":"","storage":""},{"serial":"86","field":"Churampulpadi","lot_num":"BVE06Feb26MIXEDStripping","lot_type":"Stripping","round":"","date":"6-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":648,"floats":0,"nett":648,"wet_parch":0,"dry_parch":194,"brix":0,"ph":0,"moisture":10.9,"outturn":29.9,"remarks":"","dispatch":"","storage":""},{"serial":"87","field":"Pudukadu/New Field","lot_num":"BVE07Feb26MIXEDStripping","lot_type":"Stripping","round":"","date":"7-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":915,"floats":0,"nett":915,"wet_parch":0,"dry_parch":274,"brix":0,"ph":0,"moisture":11.0,"outturn":29.9,"remarks":"","dispatch":"","storage":""},{"serial":"88","field":"Pammandi Cholai","lot_num":"BVE09Feb26MIXEDStripping","lot_type":"Stripping","round":"","date":"9-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":521,"floats":0,"nett":521,"wet_parch":0,"dry_parch":156,"brix":0,"ph":0,"moisture":11.0,"outturn":29.9,"remarks":"","dispatch":"","storage":""},{"serial":"89","field":"Nodichekkal (All)","lot_num":"BVE10Feb26MIXEDStripping","lot_type":"Stripping","round":"","date":"10-Feb-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":379,"floats":0,"nett":379,"wet_parch":0,"dry_parch":108,"brix":0,"ph":0,"moisture":11.0,"outturn":28.5,"remarks":"","dispatch":"","storage":""},{"serial":"90","field":"All Fields","lot_num":"BVE17Apr26MIXEDStripping","lot_type":"Stripping","round":"","date":"17-Apr-2026","method":"Naturals - No Fermentation","experiment":"Regular Natural","ripe":98,"floats":0,"nett":98,"wet_parch":0,"dry_parch":98,"brix":0,"ph":0,"moisture":11.6,"outturn":100.0,"remarks":"","dispatch":"","storage":""}];
+const TOTAL = RAW.length;
 
-// ── Charts ────────────────────────────────────────────────────────────────────
-const CHART_OPTS = {
-  responsive:true, maintainAspectRatio:false,
-  plugins:{ legend:{ labels:{ color:'#374151', font:{family:"'Exo 2',system-ui",size:11}, boxWidth:12, padding:10 } } },
-  scales:{ x:{ ticks:{color:'#374151',font:{size:10}}, grid:{color:'#f0ead4'} }, y:{ ticks:{color:'#6b7280'}, grid:{color:'#f0ead4'} } }
-};
+const EXP_COLORS = {"Bag Natural":"#e09030","Regular Natural":"#3090c0","Regular Washed":"#a03060","Watermelon Washed":"#b04040"};
+const METH_COLORS = {"MSP 90 + Special Natural":"#c47c2b","MSP 90 + Special Washed":"#3090c0","Naturals - No Fermentation":"#606060"};
+const METH_SHORT  = {"MSP 90 + Special Natural":"Natural","MSP 90 + Special Washed":"Washed","Naturals - No Fermentation":"No Fermentation"};
+const LOT_COLORS  = {"Special":"#e09030","Regular":"#909090","Stripping":"#5090c0"};
 
-new Chart(document.getElementById('methodChart'), {
-  type:'doughnut',
-  data:{ labels:METH_LABELS, datasets:[{ data:METH_VALS, backgroundColor:METH_COLORS, borderColor:'#ffffff', borderWidth:2 }] },
-  options:{ responsive:true, maintainAspectRatio:false,
-    cutout:'60%',
-    plugins:{ legend:{ position:'right', labels:{ color:'#374151', font:{family:"'Exo 2',system-ui",size:11}, boxWidth:12, padding:10 } },
-      tooltip:{ callbacks:{ label: c => ` ${c.label}: ${c.raw.toLocaleString()} kg` } } }
-  }
-});
+let filtered = [...RAW];
+let sortKey = null, sortAsc = true;
+let chartExp, chartLot, chartMethod;
 
-new Chart(document.getElementById('batchSizeChart'), {
-  type:'bar',
-  data:{ labels:BS_LABELS, datasets:[{ data:BS_VALS, backgroundColor:'#2d6e2d99', borderColor:'#4a9e4a', borderWidth:1, borderRadius:2 }] },
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => ` ${c.raw} kg` } } },
-    scales:{ x:{ ticks:{display:false}, grid:{color:'#f0ead4'} }, y:{ ticks:{color:'#6b7280',font:{size:10}}, grid:{color:'#f0ead4'} } }
-  }
-});
-
-// ── Filter State ──────────────────────────────────────────────────────────────
-const state = { lot:'ALL', method:'ALL', experiment:'ALL', search:'' };
-
-// ── Filter Logic ──────────────────────────────────────────────────────────────
-function applyFilters() {
-  let visible = 0, ripe=0, nett=0, dry=0;
-  ALL_ROWS.forEach(tr => {
-    const lot  = tr.dataset.lot;
-    const meth = tr.dataset.method;
-    const exp  = tr.dataset.experiment;
-    const srch = tr.dataset.search;
-    const show = (state.lot  ==='ALL' || state.lot  ===lot)
-              && (state.method==='ALL' || state.method===meth)
-              && (state.experiment==='ALL' || state.experiment===exp)
-              && (!state.search || srch.includes(state.search));
-    tr.classList.toggle('hidden', !show);
-    if (show) {
-      visible++;
-      const tds = tr.querySelectorAll('td');
-      ripe += parseNum(tds[5].textContent);
-      nett += parseNum(tds[7].textContent);
-      dry  += parseNum(tds[8].textContent);
-    }
-  });
-  document.getElementById('kpi-count').textContent    = visible;
-  document.getElementById('kpi-ripe').textContent     = ripe.toLocaleString();
-  document.getElementById('kpi-nett').textContent     = nett.toLocaleString();
-  document.getElementById('kpi-dry').textContent      = dry.toLocaleString();
-  document.getElementById('filter-summary').textContent = visible+' of '+TOTAL_BATCHES+' batches';
-  document.getElementById('foot-ripe').textContent    = ripe.toLocaleString();
-  document.getElementById('foot-nett').textContent    = nett.toLocaleString();
-  document.getElementById('foot-dry').textContent     = dry.toLocaleString();
+function fmtN(v){return (v&&v!==0)?Number(v).toLocaleString():'—'}
+function fmtP(v){return (v&&v>0)?v.toFixed(1)+'%':'—'}
+function fmtF(v){return (v&&v>0)?v.toFixed(2):'—'}
+function badgeCls(lt){
+  if(lt==='Special') return 'b-Special';
+  if(lt==='Regular') return 'b-Regular';
+  if(lt==='Stripping') return 'b-Stripping';
+  if(lt==='90+ Project') return 'b-90';
+  if(lt==='Gleanings') return 'b-Gleanings';
+  return 'b-Regular';
 }
+function methDot(m){return METH_COLORS[m]||'#808080'}
 
-function parseNum(s) { return parseInt((s||'').replace(/[^0-9]/g,'')) || 0; }
-
-// ── Filter Button Clicks ──────────────────────────────────────────────────────
-document.querySelectorAll('.filter-btn[data-group]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const group = btn.dataset.group;
-    const val   = btn.dataset.val;
-    const ac    = btn.dataset.activeClass || '';
-    // deactivate siblings
-    document.querySelectorAll(`.filter-btn[data-group="${group}"]`).forEach(b => {
-      b.classList.remove('active','blue','grey','honey','purple','green');
-    });
-    btn.classList.add('active');
-    if (ac) btn.classList.add(ac);
-    if (group==='lot')        state.lot        = val;
-    else if (group==='method')    state.method     = val;
-    else if (group==='experiment') state.experiment = val;
-    applyFilters();
-  });
-});
-
-// ── Search ────────────────────────────────────────────────────────────────────
-document.getElementById('search-box').addEventListener('input', e => {
-  state.search = e.target.value.toLowerCase().trim();
-  applyFilters();
-});
-
-// ── Reset ─────────────────────────────────────────────────────────────────────
-document.getElementById('reset-btn').addEventListener('click', () => {
-  state.lot='ALL'; state.method='ALL'; state.experiment='ALL'; state.search='';
-  document.getElementById('search-box').value='';
-  document.querySelectorAll('.filter-btn[data-group]').forEach(b => {
-    b.classList.remove('active','blue','grey','honey','purple','green');
-    if (b.dataset.val==='ALL') b.classList.add('active');
-  });
-  applyFilters();
-});
-
-// ── Sort ──────────────────────────────────────────────────────────────────────
-let sortCol=null, sortAsc=true;
-document.querySelectorAll('.batch-table thead th[data-col]').forEach((th,i) => {
-  th.addEventListener('click', () => {
-    const col = th.dataset.col;
-    if (sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; }
-    document.querySelectorAll('.batch-table thead th').forEach(t => {
-      t.classList.remove('sorted','sort-asc','sort-desc');
-    });
-    th.classList.add('sorted', sortAsc?'sort-asc':'sort-desc');
-    const tbody = document.getElementById('batch-tbody');
-    const rows  = Array.from(tbody.querySelectorAll('tr'));
-    const colMap = {date:0,lot_type:1,field:2,lot_num:3,experiment:4,ripe:5,floats:6,nett:7,dry_parch:8,outturn:9,brix:10,ph:11,moisture:12,remarks:13};
-    const ci = colMap[col] ?? 0;
-    rows.sort((a,b) => {
-      let av = a.querySelectorAll('td')[ci]?.textContent.trim() || '';
-      let bv = b.querySelectorAll('td')[ci]?.textContent.trim() || '';
-      const an = parseFloat(av.replace(/[^0-9.]/g,'')), bn = parseFloat(bv.replace(/[^0-9.]/g,''));
-      const cmp = (!isNaN(an)&&!isNaN(bn)) ? an-bn : av.localeCompare(bv);
+function renderTable(){
+  const tbody = document.getElementById('batchBody');
+  let rows = [...filtered];
+  if(sortKey){
+    rows.sort((a,b)=>{
+      let av=a[sortKey]??'', bv=b[sortKey]??'';
+      const cmp=(typeof av==='number'&&typeof bv==='number')?av-bv:String(av).localeCompare(String(bv));
       return sortAsc?cmp:-cmp;
     });
-    rows.forEach(r => tbody.appendChild(r));
+  }
+  tbody.innerHTML = rows.map(b=>{
+    const rem=b.remarks||'';
+    const remShort=rem.length>35?rem.slice(0,35)+'…':rem;
+    const remTd=rem?`<span title="${rem}">${remShort}</span>`:`<span style="color:#504030">—</span>`;
+    return `<tr>
+      <td>${b.date||'—'}</td>
+      <td><span class="badge ${badgeCls(b.lot_type)}">${b.lot_type||'—'}</span></td>
+      <td style="font-size:.7rem;color:#a09070">${b.field||'—'}</td>
+      <td style="font-size:.68rem;color:#a09070;font-family:monospace">${b.lot_num||''}</td>
+      <td><span class="method-dot" style="background:${methDot(b.method)}"></span><span class="exp-chip">${b.experiment||'—'}</span></td>
+      <td class="num">${fmtN(b.ripe)}</td>
+      <td class="num">${fmtN(b.floats)}</td>
+      <td class="num">${fmtN(b.nett)}</td>
+      <td class="num" style="font-weight:700;color:#f0a835">${fmtN(b.dry_parch)}</td>
+      <td class="num">${fmtP(b.outturn)}</td>
+      <td class="num">${fmtF(b.brix)}</td>
+      <td class="num">${fmtF(b.ph)}</td>
+      <td class="num">${fmtP(b.moisture)}</td>
+      <td style="font-size:.7rem;color:#a09070;max-width:200px">${remTd}</td>
+    </tr>`;
+  }).join('');
+
+  const totR=filtered.reduce((s,b)=>s+(b.ripe||0),0);
+  const totN=filtered.reduce((s,b)=>s+(b.nett||0),0);
+  const totD=filtered.reduce((s,b)=>s+(b.dry_parch||0),0);
+  const specD=filtered.filter(b=>b.lot_type==='Special'||b.lot_type==='90+ Project').reduce((s,b)=>s+(b.dry_parch||0),0);
+  const outVals=filtered.filter(b=>b.outturn>0).map(b=>b.outturn);
+  const avgOut=outVals.length?outVals.reduce((a,b)=>a+b,0)/outVals.length:0;
+  const expSet=new Set(filtered.map(b=>b.experiment).filter(Boolean));
+
+  document.getElementById('kpi-count').textContent=filtered.length;
+  document.getElementById('kpi-ripe').textContent=totR.toLocaleString();
+  document.getElementById('kpi-dry').textContent=totD.toLocaleString();
+  document.getElementById('kpi-special').textContent=specD.toLocaleString();
+  document.getElementById('kpi-outturn').textContent=avgOut.toFixed(1)+'%';
+  document.getElementById('kpi-exps').textContent=expSet.size;
+  document.getElementById('batchCount').textContent=filtered.length+' batches';
+  document.getElementById('totRipe').textContent=totR.toLocaleString();
+  document.getElementById('totNett').textContent=totN.toLocaleString();
+  document.getElementById('totDry').textContent=totD.toLocaleString();
+
+  updateCharts(filtered);
+}
+
+function groupBy(arr,key,val){
+  const m={};
+  arr.forEach(b=>{const k=b[key]||'Unknown';m[k]=(m[k]||0)+(b[val]||0);});
+  return m;
+}
+function makeDonut(id,data,colors){
+  const labels=Object.keys(data),vals=Object.values(data);
+  const cols=labels.map(l=>colors[l]||'#808080');
+  return new Chart(document.getElementById(id),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:cols,borderColor:'#ffffff',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      cutout:'58%',
+      plugins:{legend:{position:'right',labels:{color:'#374151',font:{family:"'Exo 2',system-ui",size:11},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()} kg`}}}}
   });
-});
+}
+function makeBar(id,data,colors){
+  const labels=Object.keys(data).map(l=>METH_SHORT[l]||l),vals=Object.values(data);
+  const cols=Object.keys(data).map(m=>METH_COLORS[m]||'#c47c2b');
+  return new Chart(document.getElementById(id),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:cols,borderColor:cols,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toLocaleString()} kg`}}},
+      scales:{
+        x:{ticks:{color:'#374151',font:{family:"'Exo 2',system-ui",size:11}},grid:{color:'#f0ead4'}},
+        y:{ticks:{color:'#6b7280'},grid:{color:'#f0ead4'}}
+      }
+    }
+  });
+}
+function updateCharts(data){
+  if(chartExp)chartExp.destroy();
+  if(chartLot)chartLot.destroy();
+  if(chartMethod)chartMethod.destroy();
+  const expData  = groupBy(data,'experiment','dry_parch');
+  const expSorted= Object.fromEntries(Object.entries(expData).sort((a,b)=>b[1]-a[1]));
+  const lotData  = groupBy(data,'lot_type','dry_parch');
+  const methData = groupBy(data,'method','dry_parch');
+  chartExp    = makeDonut('chartExp',   expSorted,   EXP_COLORS);
+  chartLot    = makeDonut('chartLot',   lotData,     LOT_COLORS);
+  chartMethod = makeBar('chartMethod',  methData,    METH_COLORS);
+}
+
+function applyFilters(){
+  const lt  = document.getElementById('fLot').value;
+  const mth = document.getElementById('fMethod').value;
+  const exp = document.getElementById('fExp').value;
+  const fld = document.getElementById('fField').value;
+  const srch= document.getElementById('fSearch').value.toLowerCase();
+  filtered = RAW.filter(b=>
+    (!lt  || b.lot_type   === lt)  &&
+    (!mth || b.method     === mth) &&
+    (!exp || b.experiment === exp) &&
+    (!fld || b.field      === fld) &&
+    (!srch|| JSON.stringify(b).toLowerCase().includes(srch))
+  );
+  renderTable();
+}
+function resetFilters(){
+  ['fLot','fMethod','fExp','fField'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fSearch').value='';
+  filtered=[...RAW];
+  renderTable();
+}
+
+function sortTable(th,key){
+  document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+  if(sortKey===key){sortAsc=!sortAsc;}else{sortKey=key;sortAsc=true;}
+  th.classList.add(sortAsc?'sort-asc':'sort-desc');
+  renderTable();
+}
+
+renderTable();
 </script>
 </body></html>
