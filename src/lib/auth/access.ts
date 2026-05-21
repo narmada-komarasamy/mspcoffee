@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItemDef[] = [
     children: [
       { label: 'Stanmore Estate', href: '/processing-dashboard/stanmore-estate' },
       { label: 'Bommidi Valley Estate', href: '/processing-dashboard/bve' },
-      { label: 'Moganad Estate', href: '/processing-dashboard/moganad-estate' },
+      { label: 'Bison Valley Estate', href: '/processing-dashboard/bison-valley' },
     ],
   },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
