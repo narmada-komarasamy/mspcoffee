@@ -65,6 +65,7 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
       { label: 'Bommidi Valley Estate', href: '/processing-dashboard/bve' },
+      { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
     ],
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
