@@ -60,6 +60,8 @@ tfoot td.num{text-align:right}
 .b-90{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
 .b-Gleanings{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
 .method-chip{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.65rem;background:#fef9e7;border:1px solid #f0d080;color:#7d5a00}
+.method-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.exp-chip{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.65rem;background:#fef9e7;border:1px solid #f0d080;color:#7d5a00}
 .no-results{text-align:center;padding:40px;color:#6b7280;font-size:.85rem}
 @media print{
   @page{size:A4 landscape;margin:0}
@@ -87,108 +89,91 @@ tfoot td.num{text-align:right}
   <div class="kpi"><div class="kpi-label">Dry Parchment</div><div class="kpi-value" id="kpi-dry">8,715</div><div class="kpi-unit">kg output</div></div>
   <div class="kpi"><div class="kpi-label">Special Lots</div><div class="kpi-value" id="kpi-special">7,820</div><div class="kpi-unit">kg dry parch</div></div>
   <div class="kpi"><div class="kpi-label">Avg Outturn</div><div class="kpi-value" id="kpi-outturn">22.0%</div><div class="kpi-unit">cherry to dry</div></div>
-  <div class="kpi"><div class="kpi-label">Process Types</div><div class="kpi-value" id="kpi-methods">5</div><div class="kpi-unit">methods used</div></div>
+  <div class="kpi"><div class="kpi-label">Experiments</div><div class="kpi-value" id="kpi-exps">5</div><div class="kpi-unit">process types</div></div>
 </div>
 
 <div class="filters">
   <div class="filter-group">
     <label>Lot Type</label>
-    <select id="f-type" onchange="applyFilters()">
-      <option value="">All Lot Types</option>
-      <option>Special</option><option>Regular</option>
+    <select id="fLot" onchange="applyFilters()">
+      <option value="">All Lot Types</option><option value="Special">Special</option><option value="Regular">Regular</option>
     </select>
   </div>
   <div class="filter-group">
     <label>Method</label>
-    <select id="f-method" onchange="applyFilters()">
-      <option value="">All Methods</option>
-      <option>MSP 90 + Special Washed</option>
-      <option>MSP 90 + Special Honey</option>
-      <option>MSP 90 + Special Natural</option>
-      <option>Naturals - 72 Hours Dry Fermentation</option>
-      <option>Naturals - No Fermentation</option>
+    <select id="fMethod" onchange="applyFilters()">
+      <option value="">All Methods</option><option value="MSP 90 + Special Honey">Honey</option><option value="MSP 90 + Special Natural">Natural</option><option value="MSP 90 + Special Washed">Washed</option><option value="Naturals - 72 Hours Dry Fermentation">72Hr Natural</option><option value="Naturals - No Fermentation">No Fermentation</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Experiment</label>
+    <select id="fExp" onchange="applyFilters()">
+      <option value="">All Experiments</option><option value="MSP 90 + Special Honey">MSP 90 + Special Honey</option><option value="MSP 90 + Special Natural">MSP 90 + Special Natural</option><option value="MSP 90 + Special Washed">MSP 90 + Special Washed</option><option value="Naturals - 72 Hours Dry Fermentation">Naturals - 72 Hours Dry Fermentation</option><option value="Naturals - No Fermentation">Naturals - No Fermentation</option>
     </select>
   </div>
   <div class="filter-group">
     <label>Field</label>
-    <select id="f-field" onchange="applyFilters()">
-      <option value="">All Fields</option>
-      <option>Bungalow Field</option>
-      <option>Line Field</option>
-      <option>Puthur Kadu</option>
-      <option>Kondiyuran Kadu</option>
-      <option>Thagaraline Kadu</option>
-      <option>12 Acres Field</option>
-      <option>7 Acre Field</option>
-      <option>Ramarao Kadu</option>
-      <option>All Fields</option>
+    <select id="fField" onchange="applyFilters()">
+      <option value="">All Fields</option><option value="12 Acres Field">12 Acres Field</option><option value="7 Acre Field">7 Acre Field</option><option value="Bungalow Field">Bungalow Field</option><option value="Kondiyuran Kadu">Kondiyuran Kadu</option><option value="Line Field">Line Field</option><option value="Puthur Kadu">Puthur Kadu</option><option value="Ramarao Kadu">Ramarao Kadu</option><option value="Thagaraline Kadu">Thagaraline Kadu</option>
     </select>
   </div>
   <div class="filter-group">
     <label>Search</label>
-    <input id="f-search" type="text" placeholder="Lot #, remark..." oninput="applyFilters()">
+    <input type="text" id="fSearch" placeholder="Lot #, remark…" oninput="applyFilters()">
   </div>
-  <button class="btn-reset" onclick="resetFilters()">× Reset</button>
-  <span id="results-count" style="margin-left:auto;font-size:.8rem;color:#6b7280;align-self:flex-end">118 of 118 lots</span>
+  <button class="btn-reset" onclick="resetFilters()">&#x2715; Reset</button>
 </div>
 
 <div class="main">
   <div class="grid-3">
     <div class="card">
-      <div class="card-title">🌾 Field Distribution (kg dry parch)</div>
-      <div class="chart-wrap"><canvas id="chart-field"></canvas></div>
+      <div class="card-title">Experiment Breakdown (kg)</div>
+      <div class="chart-wrap"><canvas id="chartExp"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">📦 Lot Type Distribution (kg)</div>
-      <div class="chart-wrap"><canvas id="chart-type"></canvas></div>
+      <div class="card-title">Lot Type Distribution (kg)</div>
+      <div class="chart-wrap"><canvas id="chartLot"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">📊 Processing Method (kg ripe)</div>
-      <div class="chart-wrap"><canvas id="chart-method"></canvas></div>
+      <div class="card-title">Processing Method (kg)</div>
+      <div class="chart-wrap"><canvas id="chartMethod"></canvas></div>
     </div>
   </div>
 
   <div class="tbl-card">
     <div class="tbl-header">
       <h2>Batch Detail</h2>
-      <span class="count" id="tbl-count">118 batches</span>
+      <span class="count" id="batchCount">118 batches</span>
     </div>
     <div class="tbl-wrap">
-      <table id="batch-table">
+      <table id="batchTable">
         <thead>
           <tr>
-            <th onclick="sortTable('date')">Date</th>
-            <th onclick="sortTable('type')">Type</th>
-            <th onclick="sortTable('field')">Field</th>
-            <th onclick="sortTable('lot')">Lot #</th>
-            <th onclick="sortTable('method')">Method</th>
-            <th onclick="sortTable('ripe')" class="num">Ripe (kg)</th>
-            <th onclick="sortTable('floats')" class="num">Floats</th>
-            <th onclick="sortTable('nett')" class="num">Nett (kg)</th>
-            <th onclick="sortTable('dry')" class="num">Dry Parch (kg)</th>
-            <th onclick="sortTable('outturn')" class="num">Out-turn %</th>
-            <th onclick="sortTable('brix')" class="num">Brix</th>
-            <th onclick="sortTable('ph')" class="num">pH</th>
-            <th onclick="sortTable('moisture')" class="num">Moisture %</th>
-            <th onclick="sortTable('days')" class="num">Days</th>
-            <th onclick="sortTable('sold')" class="num">Sold</th>
-            <th onclick="sortTable('balance')" class="num">Balance</th>
-            <th>Remark</th>
+            <th onclick="sortTable(this,'date')">Date</th>
+            <th onclick="sortTable(this,'type')">Type</th>
+            <th onclick="sortTable(this,'field')">Field</th>
+            <th onclick="sortTable(this,'lot')">Lot #</th>
+            <th onclick="sortTable(this,'method')">Experiment</th>
+            <th onclick="sortTable(this,'ripe')" class="num">Ripe Cherry</th>
+            <th onclick="sortTable(this,'floats')" class="num">Floats</th>
+            <th onclick="sortTable(this,'nett')" class="num">Nett Cherry</th>
+            <th onclick="sortTable(this,'dry')" class="num">Dry Parch</th>
+            <th onclick="sortTable(this,'outturn')" class="num">Outturn %</th>
+            <th onclick="sortTable(this,'brix')" class="num">BRIX</th>
+            <th onclick="sortTable(this,'ph')" class="num">pH</th>
+            <th onclick="sortTable(this,'moisture')" class="num">Moisture%</th>
+            <th onclick="sortTable(this,'remark')">Remarks</th>
           </tr>
         </thead>
-        <tbody id="tbl-body"></tbody>
+        <tbody id="batchBody"></tbody>
         <tfoot>
           <tr>
-            <td colspan="5">TOTALS</td>
-            <td class="num" id="foot-ripe"></td>
-            <td class="num" id="foot-floats"></td>
-            <td class="num" id="foot-nett"></td>
-            <td class="num" id="foot-dry"></td>
-            <td class="num" id="foot-outturn"></td>
-            <td></td><td></td><td></td><td></td>
-            <td class="num" id="foot-sold"></td>
-            <td class="num" id="foot-balance"></td>
-            <td></td>
+            <td colspan="5" style="color:#a08060">TOTALS</td>
+            <td class="num" id="totRipe">—</td>
+            <td class="num">—</td>
+            <td class="num" id="totNett">—</td>
+            <td class="num" id="totDry">—</td>
+            <td colspan="5"></td>
           </tr>
         </tfoot>
       </table>
@@ -198,119 +183,157 @@ tfoot td.num{text-align:right}
 
 <script>
 const DATA = [{"date":"10-Oct-2025","field":"All Fields","varietal":"MIXED","round":"Fly","quality":"1","lot":"HFE10Oct25MIXED1","type":"Special","ripe":135.0,"floats":15.0,"nett":120.0,"dry":35.0,"outturn":29.17,"brix":12.5,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.8,"dispatch":"3-Nov-2025","days":24,"sold":0.0,"balance":35.0,"remark":"247 Hours long fermentation"},{"date":"10-Oct-2025","field":"All Fields","varietal":"MIXED","round":"Fly","quality":"2","lot":"HFE10Oct25MIXED2","type":"Regular","ripe":15.0,"floats":0.0,"nett":15.0,"dry":4.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.2,"dispatch":"20-Nov-2025","days":41,"sold":0.0,"balance":4.0,"remark":""},{"date":"11-Oct-2025","field":"All Fields","varietal":"MIXED","round":"Fly","quality":"1","lot":"HFE11Oct25MIXED1","type":"Special","ripe":142.0,"floats":15.0,"nett":127.0,"dry":36.0,"outturn":28.35,"brix":12.5,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.8,"dispatch":"3-Nov-2025","days":23,"sold":0.0,"balance":36.0,"remark":"247 Hours long fermentation"},{"date":"11-Oct-2025","field":"All Fields","varietal":"MIXED","round":"Fly","quality":"2","lot":"HFE11Oct25MIXED2","type":"Regular","ripe":15.0,"floats":0.0,"nett":15.0,"dry":4.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.2,"dispatch":"20-Nov-2025","days":40,"sold":0.0,"balance":4.0,"remark":""},{"date":"13-Oct-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE13Oct25MIXED1","type":"Special","ripe":127.0,"floats":10.0,"nett":117.0,"dry":33.0,"outturn":28.21,"brix":14.52,"ph":4.0,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.5,"dispatch":"3-Nov-2025","days":21,"sold":0.0,"balance":33.0,"remark":"179 Hours T Lime"},{"date":"13-Oct-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE13Oct25MIXED2","type":"Regular","ripe":10.0,"floats":0.0,"nett":10.0,"dry":3.0,"outturn":30.0,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.2,"dispatch":"20-Nov-2025","days":38,"sold":0.0,"balance":3.0,"remark":""},{"date":"14-Oct-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE14Oct25MIXED1","type":"Special","ripe":68.0,"floats":6.0,"nett":62.0,"dry":18.0,"outturn":29.03,"brix":14.52,"ph":4.0,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.5,"dispatch":"3-Nov-2025","days":20,"sold":0.0,"balance":18.0,"remark":"179 Hours T Lime"},{"date":"14-Oct-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE14Oct25MIXED2","type":"Regular","ripe":6.0,"floats":0.0,"nett":6.0,"dry":2.0,"outturn":33.33,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.2,"dispatch":"20-Nov-2025","days":37,"sold":0.0,"balance":2.0,"remark":""},{"date":"21-Oct-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE21Oct25MIXED1","type":"Special","ripe":308.0,"floats":28.0,"nett":280.0,"dry":56.0,"outturn":20.0,"brix":11.7,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.0,"dispatch":"5-Nov-2025","days":15,"sold":0.0,"balance":56.0,"remark":"570 hours Kamala orange natural"},{"date":"21-Oct-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE21Oct25MIXED2","type":"Regular","ripe":28.0,"floats":0.0,"nett":28.0,"dry":7.0,"outturn":25.0,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.4,"dispatch":"20-Nov-2025","days":30,"sold":0.0,"balance":7.0,"remark":""},{"date":"23-Oct-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE23Oct25MIXED1","type":"Special","ripe":320.0,"floats":30.0,"nett":290.0,"dry":90.0,"outturn":31.03,"brix":12.6,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.0,"dispatch":"5-Nov-2025","days":13,"sold":0.0,"balance":90.0,"remark":"570 hours Kamala orange natural"},{"date":"23-Oct-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE23Oct25MIXED2","type":"Regular","ripe":30.0,"floats":0.0,"nett":30.0,"dry":8.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.4,"dispatch":"20-Nov-2025","days":28,"sold":0.0,"balance":8.0,"remark":""},{"date":"24-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE24Oct25MIXED1","type":"Special","ripe":281.0,"floats":18.0,"nett":263.0,"dry":82.0,"outturn":31.18,"brix":10.95,"ph":4.0,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.0,"dispatch":"12-Nov-2025","days":19,"sold":0.0,"balance":82.0,"remark":"570 hours Kamala orange natural"},{"date":"24-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE24Oct25MIXED2","type":"Regular","ripe":18.0,"floats":0.0,"nett":18.0,"dry":5.0,"outturn":27.78,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.4,"dispatch":"20-Nov-2025","days":27,"sold":0.0,"balance":5.0,"remark":""},{"date":"25-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE25Oct25MIXED1","type":"Special","ripe":334.0,"floats":22.0,"nett":312.0,"dry":88.0,"outturn":28.21,"brix":10.95,"ph":4.0,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.0,"dispatch":"12-Nov-2025","days":18,"sold":0.0,"balance":88.0,"remark":"570 hours Kamala orange natural"},{"date":"25-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE25Oct25MIXED2","type":"Regular","ripe":22.0,"floats":0.0,"nett":22.0,"dry":6.0,"outturn":27.27,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.4,"dispatch":"20-Nov-2025","days":26,"sold":0.0,"balance":6.0,"remark":""},{"date":"27-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE27Oct25MIXED1","type":"Special","ripe":271.0,"floats":25.0,"nett":246.0,"dry":79.0,"outturn":32.11,"brix":11.52,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.8,"dispatch":"12-Dec-2025","days":46,"sold":0.0,"balance":79.0,"remark":"144 T Lime Natural"},{"date":"27-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE27Oct25MIXED2","type":"Regular","ripe":25.0,"floats":0.0,"nett":25.0,"dry":7.0,"outturn":28.0,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"8-Dec-2025","days":42,"sold":0.0,"balance":7.0,"remark":""},{"date":"28-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE28Oct25MIXED1","type":"Special","ripe":311.0,"floats":20.0,"nett":291.0,"dry":82.0,"outturn":28.18,"brix":13.04,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.8,"dispatch":"12-Dec-2025","days":45,"sold":0.0,"balance":82.0,"remark":"120 T Lime Natural"},{"date":"28-Oct-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE28Oct25MIXED2","type":"Regular","ripe":20.0,"floats":0.0,"nett":20.0,"dry":5.0,"outturn":25.0,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"8-Dec-2025","days":41,"sold":0.0,"balance":5.0,"remark":""},{"date":"29-Oct-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE29Oct25MIXED1","type":"Special","ripe":359.0,"floats":30.0,"nett":329.0,"dry":104.0,"outturn":31.61,"brix":13.17,"ph":4.0,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.6,"dispatch":"12-Dec-2025","days":44,"sold":0.0,"balance":104.0,"remark":"120 T Lime Natural"},{"date":"29-Oct-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE29Oct25MIXED2","type":"Regular","ripe":30.0,"floats":0.0,"nett":30.0,"dry":8.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"8-Dec-2025","days":40,"sold":0.0,"balance":8.0,"remark":""},{"date":"30-Oct-2025","field":"7 Acre Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE30Oct25MIXED1","type":"Special","ripe":179.0,"floats":21.0,"nett":158.0,"dry":46.0,"outturn":29.11,"brix":15.15,"ph":4.0,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.0,"dispatch":"12-Dec-2025","days":43,"sold":0.0,"balance":46.0,"remark":"96 T Lime Natural"},{"date":"30-Oct-2025","field":"7 Acre Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE30Oct25MIXED2","type":"Regular","ripe":21.0,"floats":0.0,"nett":21.0,"dry":6.0,"outturn":28.57,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"8-Dec-2025","days":39,"sold":0.0,"balance":6.0,"remark":""},{"date":"31-Oct-2025","field":"Ramarao Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE31Oct25MIXED1","type":"Special","ripe":225.0,"floats":30.0,"nett":195.0,"dry":56.0,"outturn":28.72,"brix":12.21,"ph":4.1,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.7,"dispatch":"12-Dec-2025","days":42,"sold":0.0,"balance":56.0,"remark":"72 Hours T Lime Naturals"},{"date":"31-Oct-2025","field":"Ramarao Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE31Oct25MIXED2","type":"Regular","ripe":30.0,"floats":0.0,"nett":30.0,"dry":8.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"8-Dec-2025","days":38,"sold":0.0,"balance":8.0,"remark":""},{"date":"1-Nov-2025","field":"Ramarao Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE01Nov25MIXED1","type":"Special","ripe":395.0,"floats":33.0,"nett":362.0,"dry":110.0,"outturn":30.39,"brix":13.5,"ph":3.6,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.3,"dispatch":"12-Dec-2025","days":41,"sold":0.0,"balance":110.0,"remark":"120 Hours T Lime Natural"},{"date":"1-Nov-2025","field":"Ramarao Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE01Nov25MIXED2","type":"Regular","ripe":33.0,"floats":0.0,"nett":33.0,"dry":9.0,"outturn":27.27,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"8-Dec-2025","days":37,"sold":0.0,"balance":9.0,"remark":""},{"date":"3-Nov-2025","field":"12 Acres Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE03Nov25MIXED1","type":"Special","ripe":736.0,"floats":41.0,"nett":695.0,"dry":212.0,"outturn":30.5,"brix":16.85,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":11.6,"dispatch":"12-Dec-2025","days":39,"sold":0.0,"balance":212.0,"remark":"120 Hours WaterMelon Naturals"},{"date":"3-Nov-2025","field":"12 Acres Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE03Nov25MIXED2","type":"Regular","ripe":41.0,"floats":0.0,"nett":41.0,"dry":12.0,"outturn":29.27,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"16-Dec-2025","days":43,"sold":0.0,"balance":12.0,"remark":""},{"date":"4-Nov-2025","field":"12 Acres Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE04Nov25MIXED1","type":"Special","ripe":949.0,"floats":59.0,"nett":890.0,"dry":255.0,"outturn":28.65,"brix":16.85,"ph":3.9,"surface":"SE Raised Table","method":"Naturals - 72 Hours Dry Fermentation","moisture":10.8,"dispatch":"12-Dec-2025","days":38,"sold":0.0,"balance":255.0,"remark":"120 Hours WaterMelon Naturals"},{"date":"4-Nov-2025","field":"12 Acres Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE04Nov25MIXED2","type":"Regular","ripe":59.0,"floats":0.0,"nett":59.0,"dry":16.0,"outturn":27.12,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.6,"dispatch":"16-Dec-2025","days":42,"sold":0.0,"balance":16.0,"remark":""},{"date":"5-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE05Nov25MIXED1","type":"Special","ripe":908.0,"floats":90.0,"nett":818.0,"dry":162.0,"outturn":19.8,"brix":13.3,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.9,"dispatch":"25-Nov-2025","days":20,"sold":0.0,"balance":162.0,"remark":""},{"date":"5-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE05Nov25MIXED2","type":"Regular","ripe":90.0,"floats":0.0,"nett":90.0,"dry":24.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":45,"sold":0.0,"balance":24.0,"remark":""},{"date":"6-Nov-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE06Nov25MIXED1","type":"Special","ripe":1025.0,"floats":102.0,"nett":923.0,"dry":208.0,"outturn":22.54,"brix":13.78,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"25-Nov-2025","days":19,"sold":0.0,"balance":208.0,"remark":""},{"date":"6-Nov-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE06Nov25MIXED2","type":"Regular","ripe":102.0,"floats":0.0,"nett":102.0,"dry":27.0,"outturn":26.47,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":44,"sold":0.0,"balance":27.0,"remark":""},{"date":"7-Nov-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE07Nov25MIXED1","type":"Special","ripe":1270.0,"floats":115.0,"nett":1155.0,"dry":236.0,"outturn":20.43,"brix":15.42,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":11.8,"dispatch":"13-Dec-2025","days":36,"sold":0.0,"balance":236.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"7-Nov-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE07Nov25MIXED2","type":"Regular","ripe":115.0,"floats":0.0,"nett":115.0,"dry":31.0,"outturn":26.96,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":43,"sold":0.0,"balance":31.0,"remark":""},{"date":"8-Nov-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE08Nov25MIXED1","type":"Special","ripe":536.0,"floats":50.0,"nett":486.0,"dry":116.0,"outturn":23.87,"brix":15.54,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.2,"dispatch":"12-Dec-2025","days":34,"sold":0.0,"balance":116.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"8-Nov-2025","field":"Puthur Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE08Nov25MIXED2","type":"Regular","ripe":50.0,"floats":0.0,"nett":50.0,"dry":13.0,"outturn":26.0,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":42,"sold":0.0,"balance":13.0,"remark":""},{"date":"10-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE10Nov25MIXED1","type":"Special","ripe":265.0,"floats":26.0,"nett":239.0,"dry":59.0,"outturn":24.69,"brix":12.72,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.2,"dispatch":"16-Dec-2025","days":36,"sold":0.0,"balance":59.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"10-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE10Nov25MIXED2","type":"Regular","ripe":26.0,"floats":0.0,"nett":26.0,"dry":7.0,"outturn":26.92,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":40,"sold":0.0,"balance":7.0,"remark":""},{"date":"11-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE11Nov25MIXED1","type":"Special","ripe":582.0,"floats":55.0,"nett":527.0,"dry":127.0,"outturn":24.1,"brix":16.05,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.2,"dispatch":"16-Dec-2025","days":35,"sold":0.0,"balance":127.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"10-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE10Nov25MIXED2","type":"Regular","ripe":55.0,"floats":0.0,"nett":55.0,"dry":15.0,"outturn":27.27,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":40,"sold":0.0,"balance":15.0,"remark":""},{"date":"12-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE12Nov25MIXED1","type":"Special","ripe":711.0,"floats":63.0,"nett":648.0,"dry":145.0,"outturn":22.38,"brix":15.2,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.2,"dispatch":"12-Dec-2025","days":30,"sold":0.0,"balance":145.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"12-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE12Nov25MIXED2","type":"Regular","ripe":63.0,"floats":0.0,"nett":63.0,"dry":17.0,"outturn":26.98,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Dec-2025","days":38,"sold":0.0,"balance":17.0,"remark":""},{"date":"13-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE13Nov25MIXED1","type":"Special","ripe":717.0,"floats":64.0,"nett":653.0,"dry":146.0,"outturn":22.36,"brix":15.4,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.2,"dispatch":"12-Dec-2025","days":29,"sold":0.0,"balance":146.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"13-Nov-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE13Nov25MIXED2","type":"Regular","ripe":64.0,"floats":0.0,"nett":64.0,"dry":17.0,"outturn":26.56,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.0,"dispatch":"22-Dec-2025","days":39,"sold":0.0,"balance":17.0,"remark":""},{"date":"14-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE14Nov25MIXED1","type":"Special","ripe":920.0,"floats":82.0,"nett":838.0,"dry":200.0,"outturn":23.87,"brix":17.7,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.0,"dispatch":"16-Dec-2025","days":32,"sold":0.0,"balance":200.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"14-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE14Nov25MIXED2","type":"Regular","ripe":82.0,"floats":0.0,"nett":82.0,"dry":22.0,"outturn":26.83,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.0,"dispatch":"22-Dec-2025","days":38,"sold":0.0,"balance":22.0,"remark":""},{"date":"15-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE15Nov25MIXED1","type":"Special","ripe":824.0,"floats":73.0,"nett":751.0,"dry":179.0,"outturn":23.83,"brix":17.7,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.0,"dispatch":"16-Dec-2025","days":31,"sold":0.0,"balance":179.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"15-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE15Nov25MIXED2","type":"Regular","ripe":73.0,"floats":0.0,"nett":73.0,"dry":20.0,"outturn":27.4,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.0,"dispatch":"22-Dec-2025","days":37,"sold":0.0,"balance":20.0,"remark":""},{"date":"17-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE17Nov25MIXED1","type":"Special","ripe":697.0,"floats":65.0,"nett":632.0,"dry":142.0,"outturn":22.47,"brix":16.1,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.1,"dispatch":"16-Dec-2025","days":29,"sold":0.0,"balance":142.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"17-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE17Nov25MIXED2","type":"Regular","ripe":65.0,"floats":0.0,"nett":65.0,"dry":17.0,"outturn":26.15,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.0,"dispatch":"22-Dec-2025","days":35,"sold":0.0,"balance":17.0,"remark":""},{"date":"18-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE18Nov25MIXED1","type":"Special","ripe":571.0,"floats":52.0,"nett":519.0,"dry":117.0,"outturn":22.54,"brix":16.1,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.1,"dispatch":"16-Dec-2025","days":28,"sold":0.0,"balance":117.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"18-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE18Nov25MIXED2","type":"Regular","ripe":52.0,"floats":0.0,"nett":52.0,"dry":14.0,"outturn":26.92,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":11.0,"dispatch":"29-Dec-2025","days":41,"sold":0.0,"balance":14.0,"remark":""},{"date":"19-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE19Nov25MIXED1","type":"Special","ripe":775.0,"floats":71.0,"nett":704.0,"dry":158.0,"outturn":22.44,"brix":16.1,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Honey","moisture":12.1,"dispatch":"16-Dec-2025","days":27,"sold":0.0,"balance":158.0,"remark":"72 Hours Yellow Honey Kamala"},{"date":"19-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE19Nov25MIXED2","type":"Regular","ripe":71.0,"floats":0.0,"nett":71.0,"dry":19.0,"outturn":26.76,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.7,"dispatch":"29-Dec-2025","days":40,"sold":0.0,"balance":19.0,"remark":""},{"date":"20-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE20Nov25MIXED1","type":"Special","ripe":862.0,"floats":79.0,"nett":783.0,"dry":161.0,"outturn":20.56,"brix":12.06,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"12-Dec-2025","days":22,"sold":0.0,"balance":161.0,"remark":""},{"date":"20-Nov-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE20Nov25MIXED2","type":"Regular","ripe":79.0,"floats":0.0,"nett":79.0,"dry":21.0,"outturn":26.58,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"29-Dec-2025","days":39,"sold":0.0,"balance":21.0,"remark":""},{"date":"21-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE21Nov25MIXED1","type":"Special","ripe":730.0,"floats":68.0,"nett":662.0,"dry":137.0,"outturn":20.69,"brix":12.06,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"12-Dec-2025","days":21,"sold":0.0,"balance":137.0,"remark":""},{"date":"21-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE21Nov25MIXED2","type":"Regular","ripe":68.0,"floats":0.0,"nett":68.0,"dry":18.0,"outturn":26.47,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"29-Dec-2025","days":38,"sold":0.0,"balance":18.0,"remark":""},{"date":"22-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE22Nov25MIXED1","type":"Special","ripe":919.0,"floats":85.0,"nett":834.0,"dry":172.0,"outturn":20.62,"brix":11.3,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"12-Dec-2025","days":20,"sold":0.0,"balance":172.0,"remark":""},{"date":"22-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE22Nov25MIXED2","type":"Regular","ripe":85.0,"floats":0.0,"nett":85.0,"dry":22.0,"outturn":25.88,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.7,"dispatch":"29-Dec-2025","days":37,"sold":0.0,"balance":22.0,"remark":""},{"date":"25-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE25Nov25MIXED1","type":"Special","ripe":1029.0,"floats":101.0,"nett":928.0,"dry":174.0,"outturn":18.75,"brix":11.4,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.2,"dispatch":"13-Dec-2025","days":18,"sold":0.0,"balance":174.0,"remark":""},{"date":"25-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE25Nov25MIXED2","type":"Regular","ripe":101.0,"floats":0.0,"nett":101.0,"dry":28.0,"outturn":27.72,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.9,"dispatch":"6-Jan-2026","days":42,"sold":0.0,"balance":28.0,"remark":""},{"date":"26-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE26Nov25MIXED1","type":"Special","ripe":1039.0,"floats":102.0,"nett":937.0,"dry":175.0,"outturn":18.68,"brix":11.4,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.2,"dispatch":"13-Dec-2025","days":17,"sold":0.0,"balance":175.0,"remark":""},{"date":"26-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE26Nov25MIXED2","type":"Regular","ripe":102.0,"floats":0.0,"nett":102.0,"dry":28.0,"outturn":27.45,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.9,"dispatch":"6-Jan-2026","days":41,"sold":0.0,"balance":28.0,"remark":""},{"date":"27-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE27Nov25MIXED1","type":"Special","ripe":800.0,"floats":76.0,"nett":724.0,"dry":149.0,"outturn":20.58,"brix":13.7,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"24-Dec-2025","days":27,"sold":0.0,"balance":149.0,"remark":""},{"date":"27-Nov-2025","field":"Bungalow Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE27Nov25MIXED2","type":"Regular","ripe":76.0,"floats":0.0,"nett":76.0,"dry":21.0,"outturn":27.63,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.9,"dispatch":"6-Jan-2026","days":40,"sold":0.0,"balance":21.0,"remark":""},{"date":"28-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE28Nov25MIXED1","type":"Special","ripe":539.0,"floats":51.0,"nett":488.0,"dry":104.0,"outturn":21.31,"brix":13.7,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"24-Dec-2025","days":26,"sold":0.0,"balance":104.0,"remark":""},{"date":"28-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE28Nov25MIXED2","type":"Regular","ripe":51.0,"floats":0.0,"nett":51.0,"dry":14.0,"outturn":27.45,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.9,"dispatch":"6-Jan-2026","days":39,"sold":0.0,"balance":14.0,"remark":""},{"date":"29-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE29Nov25MIXED1","type":"Special","ripe":598.0,"floats":57.0,"nett":541.0,"dry":120.0,"outturn":22.18,"brix":13.1,"ph":4.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":12.0,"dispatch":"24-Dec-2025","days":25,"sold":0.0,"balance":120.0,"remark":""},{"date":"29-Nov-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE29Nov25MIXED2","type":"Regular","ripe":57.0,"floats":0.0,"nett":57.0,"dry":14.0,"outturn":24.56,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.9,"dispatch":"6-Jan-2026","days":38,"sold":0.0,"balance":14.0,"remark":""},{"date":"2-Dec-2025","field":"7 Acre Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE02Dec25MIXED1","type":"Special","ripe":1343.0,"floats":130.0,"nett":1213.0,"dry":236.0,"outturn":19.46,"brix":12.26,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.8,"dispatch":"23-Dec-2025","days":21,"sold":0.0,"balance":236.0,"remark":"Watermelon Pineappe"},{"date":"2-Dec-2025","field":"7 Acre Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE02Dec25MIXED2","type":"Regular","ripe":130.0,"floats":0.0,"nett":130.0,"dry":36.0,"outturn":27.69,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"12-Jan-2026","days":41,"sold":0.0,"balance":36.0,"remark":""},{"date":"3-Dec-2025","field":"12 Acres Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE03Dec25MIXED1","type":"Special","ripe":1495.0,"floats":145.0,"nett":1350.0,"dry":262.0,"outturn":19.41,"brix":12.26,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.8,"dispatch":"23-Dec-2025","days":20,"sold":0.0,"balance":262.0,"remark":"Watermelon Pineappe"},{"date":"3-Dec-2025","field":"12 Acres Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE03Dec25MIXED2","type":"Regular","ripe":145.0,"floats":0.0,"nett":145.0,"dry":40.0,"outturn":27.59,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"12-Jan-2026","days":40,"sold":0.0,"balance":40.0,"remark":""},{"date":"4-Dec-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE04Dec25MIXED1","type":"Special","ripe":1466.0,"floats":139.0,"nett":1327.0,"dry":330.0,"outturn":24.87,"brix":12.32,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":10.6,"dispatch":"19-Jan-2026","days":46,"sold":0.0,"balance":330.0,"remark":"Watermelon pineapple natural"},{"date":"4-Dec-2025","field":"Kondiyuran Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE04Dec25MIXED2","type":"Regular","ripe":139.0,"floats":0.0,"nett":139.0,"dry":39.0,"outturn":28.06,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"12-Jan-2026","days":39,"sold":0.0,"balance":39.0,"remark":""},{"date":"5-Dec-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE05Dec25MIXED1","type":"Special","ripe":1381.0,"floats":131.0,"nett":1250.0,"dry":312.0,"outturn":24.96,"brix":12.32,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":10.6,"dispatch":"19-Jan-2026","days":45,"sold":0.0,"balance":312.0,"remark":"Watermelon pineapple natural"},{"date":"5-Dec-2025","field":"Thagaraline Kadu","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE05Dec25MIXED2","type":"Regular","ripe":131.0,"floats":0.0,"nett":131.0,"dry":36.0,"outturn":27.48,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"12-Jan-2026","days":38,"sold":0.0,"balance":36.0,"remark":""},{"date":"6-Dec-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"1","lot":"HFE06Dec25MIXED1","type":"Special","ripe":564.0,"floats":53.0,"nett":511.0,"dry":145.0,"outturn":28.38,"brix":12.32,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.2,"dispatch":"19-Jan-2026","days":44,"sold":0.0,"balance":145.0,"remark":"Watermelon pineapple natural"},{"date":"6-Dec-2025","field":"Line Field","varietal":"MIXED","round":"1st Round","quality":"2","lot":"HFE06Dec25MIXED2","type":"Regular","ripe":53.0,"floats":0.0,"nett":53.0,"dry":15.0,"outturn":28.3,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"12-Jan-2026","days":37,"sold":0.0,"balance":15.0,"remark":""},{"date":"31-Dec-2025","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE31Dec25MIXED1","type":"Special","ripe":216.0,"floats":14.0,"nett":202.0,"dry":57.0,"outturn":28.22,"brix":14.08,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.2,"dispatch":"4-Feb-2026","days":35,"sold":0.0,"balance":57.0,"remark":"Bag Natural"},{"date":"31-Dec-2025","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE31Dec25MIXED2","type":"Regular","ripe":14.0,"floats":0.0,"nett":14.0,"dry":4.0,"outturn":28.57,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"12-Jan-2026","days":12,"sold":0.0,"balance":4.0,"remark":""},{"date":"2-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE02Jan26MIXED1","type":"Special","ripe":201.0,"floats":17.0,"nett":184.0,"dry":40.0,"outturn":21.74,"brix":13.69,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.8,"dispatch":"23-Jan-2026","days":21,"sold":0.0,"balance":40.0,"remark":""},{"date":"2-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE02Jan26MIXED2","type":"Regular","ripe":17.0,"floats":0.0,"nett":17.0,"dry":5.0,"outturn":29.41,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":18,"sold":0.0,"balance":5.0,"remark":""},{"date":"3-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE03Jan26MIXED1","type":"Special","ripe":269.0,"floats":23.0,"nett":246.0,"dry":54.0,"outturn":21.95,"brix":13.69,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.4,"dispatch":"23-Jan-2026","days":20,"sold":0.0,"balance":54.0,"remark":""},{"date":"3-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE03Jan26MIXED2","type":"Regular","ripe":23.0,"floats":0.0,"nett":23.0,"dry":6.0,"outturn":26.09,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":17,"sold":0.0,"balance":6.0,"remark":""},{"date":"5-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE05Jan26MIXED1","type":"Special","ripe":153.0,"floats":15.0,"nett":138.0,"dry":40.0,"outturn":28.99,"brix":17.69,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.6,"dispatch":"10-Feb-2026","days":36,"sold":0.0,"balance":40.0,"remark":"Bag Natural"},{"date":"5-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE05Jan26MIXED2","type":"Regular","ripe":15.0,"floats":0.0,"nett":15.0,"dry":4.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":15,"sold":0.0,"balance":4.0,"remark":""},{"date":"6-Jan-2026","field":"Line Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE06Jan26MIXED1","type":"Special","ripe":143.0,"floats":14.0,"nett":129.0,"dry":37.0,"outturn":28.68,"brix":17.69,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.6,"dispatch":"10-Feb-2026","days":35,"sold":0.0,"balance":37.0,"remark":"Bag Natural"},{"date":"6-Jan-2026","field":"Line Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE06Jan26MIXED2","type":"Regular","ripe":14.0,"floats":0.0,"nett":14.0,"dry":4.0,"outturn":28.57,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":14,"sold":0.0,"balance":4.0,"remark":""},{"date":"7-Jan-2026","field":"Line Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE07Jan26MIXED1","type":"Special","ripe":198.0,"floats":19.0,"nett":179.0,"dry":49.0,"outturn":27.37,"brix":16.96,"ph":3.8,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":10.9,"dispatch":"11-Feb-2026","days":35,"sold":0.0,"balance":49.0,"remark":"Bag Natural"},{"date":"7-Jan-2026","field":"Line Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE07Jan26MIXED2","type":"Regular","ripe":19.0,"floats":0.0,"nett":19.0,"dry":5.0,"outturn":26.32,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":13,"sold":0.0,"balance":5.0,"remark":""},{"date":"8-Jan-2026","field":"Line Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE08Jan26MIXED1","type":"Special","ripe":213.0,"floats":21.0,"nett":192.0,"dry":52.0,"outturn":27.08,"brix":16.96,"ph":3.8,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":10.9,"dispatch":"11-Feb-2026","days":34,"sold":0.0,"balance":52.0,"remark":"Bag Natural"},{"date":"8-Jan-2026","field":"Line Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE08Jan26MIXED2","type":"Regular","ripe":21.0,"floats":0.0,"nett":21.0,"dry":6.0,"outturn":28.57,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":12,"sold":0.0,"balance":6.0,"remark":""},{"date":"9-Jan-2026","field":"Puthur Kadu","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE09Jan26MIXED1","type":"Special","ripe":977.0,"floats":93.0,"nett":884.0,"dry":255.0,"outturn":28.85,"brix":19.36,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.2,"dispatch":"17-Feb-2026","days":39,"sold":0.0,"balance":255.0,"remark":"Bag Natural"},{"date":"9-Jan-2026","field":"Puthur Kadu","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE09Jan26MIXED2","type":"Regular","ripe":93.0,"floats":0.0,"nett":93.0,"dry":26.0,"outturn":27.96,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":11,"sold":0.0,"balance":26.0,"remark":""},{"date":"10-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE10Jan26MIXED1","type":"Special","ripe":1694.0,"floats":135.0,"nett":1559.0,"dry":478.0,"outturn":30.66,"brix":18.99,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.5,"dispatch":"17-Feb-2026","days":38,"sold":0.0,"balance":478.0,"remark":"Bag Natural"},{"date":"10-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE10Jan26MIXED2","type":"Regular","ripe":135.0,"floats":0.0,"nett":135.0,"dry":38.0,"outturn":28.15,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":10,"sold":0.0,"balance":38.0,"remark":""},{"date":"12-Jan-2026","field":"7 Acre Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE12Jan26MIXED1","type":"Special","ripe":1487.0,"floats":122.0,"nett":1365.0,"dry":260.0,"outturn":19.05,"brix":11.98,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.4,"dispatch":"28-Jan-2026","days":16,"sold":0.0,"balance":260.0,"remark":""},{"date":"12-Jan-2026","field":"7 Acre Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE12Jan26MIXED2","type":"Regular","ripe":122.0,"floats":0.0,"nett":122.0,"dry":34.0,"outturn":27.87,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"20-Jan-2026","days":8,"sold":0.0,"balance":34.0,"remark":""},{"date":"13-Jan-2026","field":"Ramarao Kadu","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE13Jan26MIXED1","type":"Special","ripe":1626.0,"floats":130.0,"nett":1496.0,"dry":312.0,"outturn":20.86,"brix":13.8,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.8,"dispatch":"3-Feb-2026","days":21,"sold":0.0,"balance":312.0,"remark":""},{"date":"13-Jan-2026","field":"Ramarao Kadu","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE13Jan26MIXED2","type":"Regular","ripe":130.0,"floats":0.0,"nett":130.0,"dry":36.0,"outturn":27.69,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"28-Jan-2026","days":15,"sold":0.0,"balance":36.0,"remark":""},{"date":"14-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE14Jan26MIXED1","type":"Special","ripe":467.0,"floats":32.0,"nett":435.0,"dry":80.0,"outturn":18.39,"brix":10.26,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.8,"dispatch":"3-Feb-2026","days":20,"sold":0.0,"balance":80.0,"remark":""},{"date":"14-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE14Jan26MIXED2","type":"Regular","ripe":32.0,"floats":0.0,"nett":32.0,"dry":9.0,"outturn":28.13,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.4,"dispatch":"14-Jan-2026","days":0,"sold":0.0,"balance":9.0,"remark":""},{"date":"23-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE23Jan26MIXED1","type":"Special","ripe":239.0,"floats":30.0,"nett":209.0,"dry":68.0,"outturn":32.54,"brix":17.9,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.2,"dispatch":"17-Feb-2026","days":25,"sold":0.0,"balance":68.0,"remark":"Bag Natural"},{"date":"23-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE23Jan26MIXED2","type":"Regular","ripe":30.0,"floats":0.0,"nett":30.0,"dry":8.0,"outturn":26.67,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"14-Feb-2026","days":22,"sold":0.0,"balance":8.0,"remark":""},{"date":"24-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE24Jan26MIXED1","type":"Special","ripe":245.0,"floats":31.0,"nett":214.0,"dry":70.0,"outturn":32.71,"brix":17.91,"ph":3.9,"surface":"SE Raised Table","method":"MSP 90 + Special Natural","moisture":11.2,"dispatch":"17-Feb-2026","days":24,"sold":0.0,"balance":70.0,"remark":"Bag Natural"},{"date":"24-Jan-2026","field":"Bungalow Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE24Jan26MIXED2","type":"Regular","ripe":31.0,"floats":0.0,"nett":31.0,"dry":9.0,"outturn":29.03,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"14-Feb-2026","days":21,"sold":0.0,"balance":9.0,"remark":""},{"date":"28-Jan-2026","field":"12 Acres Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE28Jan26MIXED1","type":"Special","ripe":99.0,"floats":8.0,"nett":91.0,"dry":21.0,"outturn":23.08,"brix":15.46,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.6,"dispatch":"10-Feb-2026","days":13,"sold":0.0,"balance":21.0,"remark":"Watermelon Washed"},{"date":"28-Jan-2026","field":"12 Acres Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE28Jan26MIXED2","type":"Regular","ripe":8.0,"floats":0.0,"nett":8.0,"dry":2.0,"outturn":25.0,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"14-Feb-2026","days":17,"sold":0.0,"balance":2.0,"remark":""},{"date":"30-Jan-2026","field":"7 Acre Field","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE30Jan26MIXED1","type":"Special","ripe":267.0,"floats":28.0,"nett":239.0,"dry":52.0,"outturn":21.76,"brix":15.46,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.5,"dispatch":"18-Feb-2026","days":19,"sold":0.0,"balance":52.0,"remark":"Watermelon Washed"},{"date":"30-Jan-2026","field":"7 Acre Field","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE30Jan26MIXED2","type":"Regular","ripe":28.0,"floats":0.0,"nett":28.0,"dry":8.0,"outturn":28.57,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"14-Feb-2026","days":15,"sold":0.0,"balance":8.0,"remark":""},{"date":"2-Feb-2026","field":"Ramarao Kadu","varietal":"MIXED","round":"3rd Round","quality":"1","lot":"HFE02Feb26MIXED1","type":"Special","ripe":209.0,"floats":21.0,"nett":188.0,"dry":41.0,"outturn":21.81,"brix":12.46,"ph":0.0,"surface":"SE Raised Table","method":"MSP 90 + Special Washed","moisture":11.5,"dispatch":"18-Feb-2026","days":16,"sold":0.0,"balance":41.0,"remark":"Watermelon Washed"},{"date":"2-Feb-2026","field":"Ramarao Kadu","varietal":"MIXED","round":"3rd Round","quality":"2","lot":"HFE02Feb26MIXED2","type":"Regular","ripe":21.0,"floats":0.0,"nett":21.0,"dry":6.0,"outturn":28.57,"brix":0.0,"ph":0.0,"surface":"SE Raised Table","method":"Naturals - No Fermentation","moisture":10.6,"dispatch":"14-Feb-2026","days":12,"sold":0.0,"balance":6.0,"remark":""}];
-const LOT_BADGE = {'Special':'b-Special','Regular':'b-Regular','Stripping':'b-Stripping','Gleanings':'b-Gleanings','90+ Project':'b-90'};
-function fmtN(v){ return v>0?v.toLocaleString('en-IN',{maximumFractionDigits:0}):'—'; }
+const EXP_COLORS = {"MSP 90 + Special Honey":"#c8a020","MSP 90 + Special Natural":"#c47c2b","MSP 90 + Special Washed":"#3090c0","Naturals - 72 Hours Dry Fermentation":"#805040","Naturals - No Fermentation":"#606060"};
+const METH_COLORS = {"MSP 90 + Special Honey":"#c8a020","MSP 90 + Special Natural":"#c47c2b","MSP 90 + Special Washed":"#3090c0","Naturals - 72 Hours Dry Fermentation":"#805040","Naturals - No Fermentation":"#606060"};
+const METH_SHORT  = {"MSP 90 + Special Honey":"Honey","MSP 90 + Special Natural":"Natural","MSP 90 + Special Washed":"Washed","Naturals - 72 Hours Dry Fermentation":"72Hr Natural","Naturals - No Fermentation":"No Fermentation"};
+const LOT_COLORS  = {'Special':'#e09030','Regular':'#909090','Stripping':'#5090c0','90+ Project':'#a060d0','Gleanings':'#60a060'};
 
-const MON={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-function parseDate(s){const[d,m,y]=s.split('-');return new Date(+y,MON[m],+d).getTime();}
+let filtered = [...DATA];
+let sortKey = null, sortAsc = true;
+let chartExp, chartLot, chartMethod;
 
-let sortCol='date', sortDir=1;
+function fmtN(v){return (v&&v!==0)?Number(v).toLocaleString():'—'}
+function fmtP(v){return (v&&v>0)?v.toFixed(1)+'%':'—'}
+function fmtF(v){return (v&&v>0)?v.toFixed(2):'—'}
+function badgeCls(lt){
+  if(lt==='Special') return 'b-Special';
+  if(lt==='Regular') return 'b-Regular';
+  if(lt==='Stripping') return 'b-Stripping';
+  if(lt==='90+ Project') return 'b-90';
+  if(lt==='Gleanings') return 'b-Gleanings';
+  return 'b-Regular';
+}
+function methDot(m){return METH_COLORS[m]||'#808080'}
 
-function renderTable(rows){
-  const body=document.getElementById('tbl-body');
-  if(!rows.length){ body.innerHTML='<tr><td colspan="17" class="no-results">No matching batches</td></tr>'; updateFooter([]); updateKPIs([]); return; }
-  body.innerHTML=rows.map(b=>`
-    <tr>
-      <td>${b.date}</td>
-      <td><span class="badge ${LOT_BADGE[b.type]||'b-Regular'}">${b.type}</span></td>
-      <td style="font-size:.7rem;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis">${b.field||'—'}</td>
-      <td style="font-size:.68rem;color:#6b7280;font-family:monospace">${b.lot}</td>
-      <td><span class="method-chip">${b.method||'—'}</span></td>
+function renderTable(){
+  const tbody = document.getElementById('batchBody');
+  let rows = [...filtered];
+  if(sortKey){
+    rows.sort((a,b)=>{
+      let av=a[sortKey]??'', bv=b[sortKey]??'';
+      let cmp;
+      if(sortKey==='date'){const p=s=>{const[d,m,y]=s.split('-'),M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};return new Date(+y,M[m],+d).getTime();};cmp=p(av)-p(bv);}
+      else cmp=(typeof av==='number'&&typeof bv==='number')?av-bv:String(av).localeCompare(String(bv));
+      return sortAsc?cmp:-cmp;
+    });
+  }
+  tbody.innerHTML = rows.map(b=>{
+    const rem=b.remark||'';
+    const remShort=rem.length>35?rem.slice(0,35)+'…':rem;
+    const remTd=rem?`<span title="${rem}">${remShort}</span>`:'<span style="color:#504030">—</span>';
+    return `<tr>
+      <td>${b.date||'—'}</td>
+      <td><span class="badge ${badgeCls(b.type)}">${b.type||'—'}</span></td>
+      <td style="font-size:.7rem;color:#a09070">${b.field||'—'}</td>
+      <td style="font-size:.68rem;color:#a09070;font-family:monospace">${b.lot||''}</td>
+      <td><span class="method-dot" style="background:${methDot(b.method)}"></span><span class="exp-chip">${b.method||'—'}</span></td>
       <td class="num">${fmtN(b.ripe)}</td>
-      <td class="num" style="color:#6b7280">${fmtN(b.floats)}</td>
+      <td class="num">${fmtN(b.floats)}</td>
       <td class="num">${fmtN(b.nett)}</td>
-      <td class="num" style="font-weight:700;color:#1b4a1b">${fmtN(b.dry)}</td>
-      <td class="num">${b.outturn>0?b.outturn.toFixed(1)+'%':'—'}</td>
-      <td class="num" style="color:#6b7280">${b.brix>0?b.brix.toFixed(1):'—'}</td>
-      <td class="num" style="color:#6b7280">${b.ph>0?b.ph.toFixed(2):'—'}</td>
-      <td class="num" style="color:#6b7280">${b.moisture>0?b.moisture.toFixed(1)+'%':'—'}</td>
-      <td class="num" style="color:#6b7280">${b.days>0?b.days:'—'}</td>
-      <td class="num">${fmtN(b.sold)}</td>
-      <td class="num" style="color:#e09030">${fmtN(b.balance)}</td>
-      <td style="font-size:.7rem;color:#6b7280;max-width:200px">${b.remark||''}</td>
-    </tr>`).join('');
-  updateFooter(rows); updateKPIs(rows);
+      <td class="num" style="font-weight:700;color:#f0a835">${fmtN(b.dry)}</td>
+      <td class="num">${fmtP(b.outturn)}</td>
+      <td class="num">${fmtF(b.brix)}</td>
+      <td class="num">${fmtF(b.ph)}</td>
+      <td class="num">${fmtP(b.moisture)}</td>
+      <td style="font-size:.7rem;color:#a09070;max-width:200px">${remTd}</td>
+    </tr>`;
+  }).join('');
+
+  const totR=filtered.reduce((s,b)=>s+(b.ripe||0),0);
+  const totN=filtered.reduce((s,b)=>s+(b.nett||0),0);
+  const totD=filtered.reduce((s,b)=>s+(b.dry||0),0);
+  const specD=filtered.filter(b=>b.type==='Special'||b.type==='90+ Project').reduce((s,b)=>s+(b.dry||0),0);
+  const outVals=filtered.filter(b=>b.outturn>0).map(b=>b.outturn);
+  const avgOut=outVals.length?outVals.reduce((a,b)=>a+b,0)/outVals.length:0;
+  const expSet=new Set(filtered.map(b=>b.method).filter(Boolean));
+
+  document.getElementById('kpi-count').textContent=filtered.length;
+  document.getElementById('kpi-ripe').textContent=totR.toLocaleString();
+  document.getElementById('kpi-dry').textContent=totD.toLocaleString();
+  document.getElementById('kpi-special').textContent=specD.toLocaleString();
+  document.getElementById('kpi-outturn').textContent=avgOut.toFixed(1)+'%';
+  document.getElementById('kpi-exps').textContent=expSet.size;
+  document.getElementById('batchCount').textContent=filtered.length+' batches';
+  document.getElementById('totRipe').textContent=totR.toLocaleString();
+  document.getElementById('totNett').textContent=totN.toLocaleString();
+  document.getElementById('totDry').textContent=totD.toLocaleString();
+
+  updateCharts(filtered);
 }
 
-function updateFooter(rows){
-  const s=k=>rows.reduce((a,b)=>a+b[k],0);
-  const tr=s('ripe'),tf=s('floats'),tn=s('nett'),td=s('dry'),ts=s('sold'),tb=s('balance');
-  document.getElementById('foot-ripe').textContent=fmtN(tr);
-  document.getElementById('foot-floats').textContent=fmtN(tf);
-  document.getElementById('foot-nett').textContent=fmtN(tn);
-  document.getElementById('foot-dry').textContent=fmtN(td);
-  document.getElementById('foot-outturn').textContent=td>0&&tr>0?(td/tr*100).toFixed(1)+'%':'—';
-  document.getElementById('foot-sold').textContent=fmtN(ts);
-  document.getElementById('foot-balance').textContent=fmtN(tb);
-  document.getElementById('tbl-count').textContent=rows.length+' batches';
-  document.getElementById('results-count').textContent=rows.length+' of 118 lots';
+function groupBy(arr,key,val){
+  const m={};
+  arr.forEach(b=>{const k=b[key]||'Unknown';m[k]=(m[k]||0)+(b[val]||0);});
+  return m;
 }
-
-function updateKPIs(rows){
-  const tr=rows.reduce((a,b)=>a+b.ripe,0);
-  const td=rows.reduce((a,b)=>a+b.dry,0);
-  const ts=rows.reduce((a,b)=>a+(b.type==='Special'?b.dry:0),0);
-  const methods=new Set(rows.map(b=>b.method).filter(Boolean));
-  document.getElementById('kpi-count').textContent=rows.length;
-  document.getElementById('kpi-ripe').textContent=tr>0?tr.toLocaleString('en-IN',{maximumFractionDigits:0}):'0';
-  document.getElementById('kpi-dry').textContent=td>0?td.toLocaleString('en-IN',{maximumFractionDigits:0}):'0';
-  document.getElementById('kpi-special').textContent=ts>0?ts.toLocaleString('en-IN',{maximumFractionDigits:0}):'0';
-  document.getElementById('kpi-outturn').textContent=td>0&&tr>0?(td/tr*100).toFixed(1)+'%':'—';
-  document.getElementById('kpi-methods').textContent=methods.size||0;
-}
-
-function getFiltered(){
-  const type=document.getElementById('f-type').value;
-  const method=document.getElementById('f-method').value;
-  const field=document.getElementById('f-field').value;
-  const search=document.getElementById('f-search').value.toLowerCase();
-  return DATA.filter(b=>
-    (!type||b.type===type)&&(!method||b.method===method)&&
-    (!field||b.field===field)&&
-    (!search||b.lot.toLowerCase().includes(search)||(b.remark||'').toLowerCase().includes(search)||b.field.toLowerCase().includes(search))
-  );
-}
-
-function applyFilters(){ renderTable(sortData(getFiltered())); }
-function resetFilters(){
-  ['f-type','f-method','f-field'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-search').value='';
-  applyFilters();
-}
-
-function sortData(rows){
-  return [...rows].sort((a,b)=>{
-    let av=a[sortCol],bv=b[sortCol];
-    if(sortCol==='date') return (parseDate(av)-parseDate(bv))*sortDir;
-    if(typeof av==='string') return av.localeCompare(bv)*sortDir;
-    return (av-bv)*sortDir;
+function makeDonut(id,data,colors){
+  const labels=Object.keys(data),vals=Object.values(data);
+  const cols=labels.map(l=>colors[l]||'#808080');
+  return new Chart(document.getElementById(id),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:cols,borderColor:'#1a1208',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#c8b080',font:{size:11},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()} kg`}}}}
   });
 }
-
-function sortTable(col){
-  document.querySelectorAll('thead th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
-  if(sortCol===col) sortDir*=-1; else {sortCol=col;sortDir=1;}
-  const ths=[...document.querySelectorAll('thead th')];
-  const idx=ths.findIndex(th=>th.getAttribute('onclick')===`sortTable('${col}')`);
-  if(idx>=0) ths[idx].classList.add(sortDir===1?'sort-asc':'sort-desc');
-  applyFilters();
+function makeBar(id,data,colors){
+  const labels=Object.keys(data).map(l=>METH_SHORT[l]||l),vals=Object.values(data);
+  const cols=Object.keys(data).map(m=>METH_COLORS[m]||'#c47c2b');
+  return new Chart(document.getElementById(id),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:cols,borderColor:cols,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toLocaleString()} kg`}}},
+      scales:{
+        x:{ticks:{color:'#a08060',font:{size:11}},grid:{color:'#3a2a14'}},
+        y:{ticks:{color:'#a08060'},grid:{color:'#3a2a14'}}
+      }
+    }
+  });
+}
+function updateCharts(data){
+  if(chartExp)chartExp.destroy();
+  if(chartLot)chartLot.destroy();
+  if(chartMethod)chartMethod.destroy();
+  const expData  = groupBy(data,'method','dry');
+  const expSorted= Object.fromEntries(Object.entries(expData).sort((a,b)=>b[1]-a[1]));
+  const lotData  = groupBy(data,'type','dry');
+  const methData = groupBy(data,'method','dry');
+  chartExp    = makeDonut('chartExp',   expSorted,   EXP_COLORS);
+  chartLot    = makeDonut('chartLot',   lotData,     LOT_COLORS);
+  chartMethod = makeBar('chartMethod',  methData,    METH_COLORS);
 }
 
-const CHART_OPTS = {
-  plugins:{legend:{labels:{font:{family:"'Exo 2',system-ui",size:11},color:'#374151',boxWidth:12,padding:10}}},
-  layout:{padding:4}
-};
-new Chart(document.getElementById('chart-field'),{type:'doughnut',data:{labels:["Bungalow Field","Line Field","Puthur Kadu","Kondiyuran Kadu","Thagaraline Kadu","12 Acres Field","7 Acre Field","Ramarao Kadu","All Fields"],datasets:[{data:[2012.0,1439.0,1266.0,962.0,881.0,820.0,678.0,578.0,79.0],backgroundColor:["#e09030","#3090c0","#a060d0","#50a050","#c06050","#4080a0","#a070d0","#60c080","#909090"],borderWidth:2,borderColor:'#ffffff'}]},options:{...CHART_OPTS,cutout:'60%'}});
-new Chart(document.getElementById('chart-type'),{type:'doughnut',data:{labels:["Special","Regular"],datasets:[{data:[7820.0,895.0],backgroundColor:["#e09030","#909090"],borderWidth:2,borderColor:'#ffffff'}]},options:{...CHART_OPTS,cutout:'60%'}});
-new Chart(document.getElementById('chart-method'),{
-  type:'bar',
-  data:{labels:["MSP 90 + Special Washed","MSP 90 + Special Honey","MSP 90 + Special Natural","Naturals - 72Hr Dry Ferm.","Naturals - No Ferm."],datasets:[{data:[15912.0,7868.0,7489.0,5140.0,3281.0],backgroundColor:["#3090c0","#e09030","#50a050","#c06050","#909090"],borderRadius:6,borderSkipped:false}]},
-  options:{...CHART_OPTS,plugins:{...CHART_OPTS.plugins,legend:{display:false}},scales:{
-    x:{ticks:{font:{family:"'Exo 2',system-ui",size:10},color:'#374151',maxRotation:30},grid:{color:'#f0ead4'}},
-    y:{ticks:{font:{family:"'Exo 2',system-ui",size:10},color:'#6b7280'},grid:{color:'#f0ead4'}}
-  }}
-});
+function applyFilters(){
+  const lt  = document.getElementById('fLot').value;
+  const mth = document.getElementById('fMethod').value;
+  const exp = document.getElementById('fExp').value;
+  const fld = document.getElementById('fField').value;
+  const srch= document.getElementById('fSearch').value.toLowerCase();
+  filtered = DATA.filter(b=>
+    (!lt  || b.type    === lt)  &&
+    (!mth || b.method  === mth) &&
+    (!exp || b.method  === exp) &&
+    (!fld || b.field   === fld) &&
+    (!srch|| JSON.stringify(b).toLowerCase().includes(srch))
+  );
+  renderTable();
+}
+function resetFilters(){
+  ['fLot','fMethod','fExp','fField'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fSearch').value='';
+  filtered=[...DATA];
+  renderTable();
+}
 
-renderTable(sortData(DATA));
+function sortTable(th,key){
+  document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+  if(sortKey===key){sortAsc=!sortAsc;}else{sortKey=key;sortAsc=true;}
+  th.classList.add(sortAsc?'sort-asc':'sort-desc');
+  renderTable();
+}
+
+renderTable();
 </script>
 </body></html>
