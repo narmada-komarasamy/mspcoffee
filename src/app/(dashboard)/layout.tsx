@@ -236,15 +236,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             if (hasChildren) {
               return (
                 <div key={item.href}>
-                  <button
-                    onClick={() => setExpandedNav(prev => ({ ...prev, [item.href]: !prev[item.href] }))}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition w-full text-left"
-                    style={childActive ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1">{item.label}</span>
-                    <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
-                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.6 }} />
-                  </button>
+                  <div className="flex items-center rounded-lg transition"
+                    style={childActive || active ? { background: 'rgba(255,255,255,0.18)' } : {}}>
+                    <Link href={item.href} onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium flex-1 min-w-0"
+                      style={childActive || active ? { color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                    <button
+                      onClick={() => setExpandedNav(prev => ({ ...prev, [item.href]: !prev[item.href] }))}
+                      className="px-2 py-2.5 transition"
+                      style={{ color: childActive || active ? '#e8c84a' : 'rgba(255,255,255,0.5)' }}>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                    </button>
+                  </div>
                   {isExpanded && (
                     <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
                       {item.children!.map(child => {
