@@ -118,6 +118,29 @@ tfoot td.num{text-align:right}
     </select>
   </div>
   <div class="filter-group">
+    <label>Varietal</label>
+    <select id="fVarietal" onchange="applyFilters()">
+      <option value="">All Varietals</option>
+      <option value="SLN9">SLN9</option>
+      <option value="BBTC">BBTC</option>
+      <option value="MIXED">MIXED</option>
+      <option value="CMORE">CMORE</option>
+      <option value="CGIRI">CGIRI</option>
+      <option value="SLN5A">SLN5A</option>
+      <option value="SLN5B">SLN5B</option>
+      <option value="SLN6">SLN6</option>
+      <option value="SLN795">SLN795</option>
+      <option value="KENT">KENT</option>
+      <option value="SRAMON">SRAMON</option>
+      <option value="ROBUSTA">ROBUSTA</option>
+      <option value="HRC">HRC</option>
+      <option value="YBBEN">YBBEN</option>
+      <option value="RBBEN">RBBEN</option>
+      <option value="4180">4180</option>
+      <option value="1932">1932</option>
+    </select>
+  </div>
+  <div class="filter-group">
     <label>Search</label>
     <input type="text" id="fSearch" placeholder="Lot #, remark…" oninput="applyFilters()">
   </div>
@@ -311,17 +334,19 @@ function applyFilters(){
   const exp = document.getElementById('fExp').value;
   const fld = document.getElementById('fField').value;
   const srch= document.getElementById('fSearch').value.toLowerCase();
+  const vrt = document.getElementById('fVarietal').value;
   filtered = DATA.filter(b=>
     (!lt  || b.type    === lt)  &&
     (!mth || b.method  === mth) &&
     (!exp || b.method  === exp) &&
     (!fld || b.field   === fld) &&
+    (!vrt  || b.varietal === vrt) &&
     (!srch|| JSON.stringify(b).toLowerCase().includes(srch))
   );
   renderTable();
 }
 function resetFilters(){
-  ['fLot','fMethod','fExp','fField'].forEach(id=>document.getElementById(id).value='');
+  ['fLot','fMethod','fExp','fField','fVarietal'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fSearch').value='';
   filtered=[...DATA];
   renderTable();
