@@ -1,9 +1,8 @@
 /**
- * GET  /api/cup-scores/seed  ← just navigate to this URL in the browser while logged in
- * POST /api/cup-scores/seed  ← or call via fetch('/api/cup-scores/seed',{method:'POST'})
+ * GET  /api/cup-scores/seed  ← navigate to this URL in the browser while logged in
+ * POST /api/cup-scores/seed  ← or fetch('/api/cup-scores/seed',{method:'POST'})
  *
  * Idempotent — safe to call multiple times. Skips rows that already exist.
- * Requires an active session (log into the dashboard first).
  */
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
@@ -11,14 +10,6 @@ import { SEED_COFFEES } from '@/lib/cup-scores-seed';
 
 async function runSeed() {
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json(
-      { error: 'Unauthorized — log into the dashboard first, then visit this URL again.' },
-      { status: 401 },
-    );
-  }
 
   const records = SEED_COFFEES.map((c) => ({
     lot:            c.lot,
@@ -50,10 +41,10 @@ async function runSeed() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({
-    ok:    true,
+    ok:     true,
     seeded: count ?? records.length,
     total:  records.length,
-    note:  'Already-existing rows were skipped (idempotent).',
+    note:   'Already-existing rows were skipped (idempotent).',
   });
 }
 

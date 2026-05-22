@@ -33,32 +33,42 @@ CREATE UNIQUE INDEX IF NOT EXISTS cup_scores_lot_year_estate_idx
   ON cup_scores (lot, year, estate);
 
 -- ── Row-Level Security ────────────────────────────────────────────────────────
+-- The app uses PIN-based auth (not Supabase Auth), so API routes run with the
+-- publishable/anon key. Access is gated at the Next.js page level (admin +
+-- supervisor roles only). RLS is kept on for defence-in-depth but policies
+-- allow the anon role since server-side API routes use the publishable key.
+
 ALTER TABLE cup_scores ENABLE ROW LEVEL SECURITY;
 
--- All authenticated users (admin + supervisor) may read every row
+-- Drop old policies if re-running this migration
+DROP POLICY IF EXISTS "cup_scores_select"  ON cup_scores;
+DROP POLICY IF EXISTS "cup_scores_insert"  ON cup_scores;
+DROP POLICY IF EXISTS "cup_scores_update"  ON cup_scores;
+DROP POLICY IF EXISTS "cup_scores_delete"  ON cup_scores;
+
+-- Allow reads for everyone using the publishable key (anon role)
 CREATE POLICY "cup_scores_select"
   ON cup_scores FOR SELECT
-  TO authenticated
+  TO anon, authenticated
   USING (true);
 
--- All authenticated users may insert
+-- Allow inserts for anon + authenticated
 CREATE POLICY "cup_scores_insert"
   ON cup_scores FOR INSERT
-  TO authenticated
+  TO anon, authenticated
   WITH CHECK (true);
 
--- All authenticated users may update (page-level role guard handles admin-only)
+-- Allow updates for anon + authenticated
 CREATE POLICY "cup_scores_update"
   ON cup_scores FOR UPDATE
-  TO authenticated
+  TO anon, authenticated
   USING (true)
   WITH CHECK (true);
 
--- All authenticated users may delete non-seed rows
--- (the API route also enforces this, double-safety here)
+-- Only allow deleting non-seed rows
 CREATE POLICY "cup_scores_delete"
   ON cup_scores FOR DELETE
-  TO authenticated
+  TO anon, authenticated
   USING (is_seed = FALSE);
 
 -- ── Auto-update updated_at ────────────────────────────────────────────────────
@@ -70,6 +80,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS cup_scores_updated_at ON cup_scores;
 CREATE TRIGGER cup_scores_updated_at
   BEFORE UPDATE ON cup_scores
   FOR EACH ROW

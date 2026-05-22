@@ -15,15 +15,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const body = await request.json();
 
   const { data, error } = await supabase
     .from('cup_scores')
-    .insert([{ ...body, created_by: user.email, is_seed: false }])
+    .insert([{ ...body, is_seed: false }])
     .select()
     .single();
 

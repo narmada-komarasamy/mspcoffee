@@ -7,10 +7,6 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PUT(request: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
   const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const body = await request.json();
 
   const { data, error } = await supabase
@@ -28,10 +24,7 @@ export async function DELETE(_request: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  // Block deletion of seed rows at the API level (RLS also enforces this)
+  // Block deletion of seed rows (RLS policy also enforces this)
   const { data: row } = await supabase
     .from('cup_scores')
     .select('is_seed')
