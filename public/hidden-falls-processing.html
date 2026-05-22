@@ -28,12 +28,6 @@ body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;c
 .filter-group input::placeholder{color:#9ca3af}
 .btn-reset{background:transparent;border:1.5px solid #e5dfc8;border-radius:6px;color:#6b7280;padding:7px 16px;cursor:pointer;font-size:.82rem;align-self:flex-end}
 .btn-reset:hover{border-color:#4a9e4a;color:#2d6e2d}
-
-.pills{display:flex;gap:5px;flex-wrap:wrap}
-.pill{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:20px;padding:5px 15px;font-size:.78rem;font-weight:600;color:#374151;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap;line-height:1.4}
-.pill:hover{border-color:#4a9e4a;color:#2d6e2d}
-.pill.active{background:#2d6e2d;border-color:#2d6e2d;color:#ffffff}
-
 .main{padding:20px 28px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
 .card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:20px 22px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
@@ -124,14 +118,6 @@ tfoot td.num{text-align:right}
     </select>
   </div>
   <div class="filter-group">
-    <label>Varietal</label>
-    <div class="pills" id="pillVarietal">
-      <button class="pill active" data-val="" onclick="setVarietal(this)">All</button>
-      <button class="pill" data-val="MIXED" onclick="setVarietal(this)">Mixed</button>
-      <button class="pill" data-val="ROBUSTA" onclick="setVarietal(this)">Robusta</button>
-    </div>
-  </div>
-  <div class="filter-group">
     <label>Search</label>
     <input type="text" id="fSearch" placeholder="Lot #, remark…" oninput="applyFilters()">
   </div>
@@ -204,7 +190,6 @@ const LOT_COLORS  = {'Special':'#e09030','Regular':'#909090','Stripping':'#5090c
 
 let filtered = [...DATA];
 let sortKey = null, sortAsc = true;
-let varietalFilter = '';
 let chartExp, chartLot, chartMethod;
 
 function fmtN(v){return (v&&v!==0)?Number(v).toLocaleString():'—'}
@@ -320,12 +305,6 @@ function updateCharts(data){
   chartMethod = makeBar('chartMethod',  methData,    METH_COLORS);
 }
 
-function setVarietal(btn){
-  document.querySelectorAll('#pillVarietal .pill').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
-  varietalFilter = btn.dataset.val;
-  applyFilters();
-}
 function applyFilters(){
   const lt  = document.getElementById('fLot').value;
   const mth = document.getElementById('fMethod').value;
@@ -333,20 +312,17 @@ function applyFilters(){
   const fld = document.getElementById('fField').value;
   const srch= document.getElementById('fSearch').value.toLowerCase();
   filtered = DATA.filter(b=>
-    (!lt           || b.type     === lt)   &&
-    (!mth          || b.method   === mth)  &&
-    (!exp          || b.method   === exp)  &&
-    (!fld          || b.field    === fld)  &&
-    (!varietalFilter || b.varietal === varietalFilter) &&
-    (!srch         || JSON.stringify(b).toLowerCase().includes(srch))
+    (!lt  || b.type    === lt)  &&
+    (!mth || b.method  === mth) &&
+    (!exp || b.method  === exp) &&
+    (!fld || b.field   === fld) &&
+    (!srch|| JSON.stringify(b).toLowerCase().includes(srch))
   );
   renderTable();
 }
 function resetFilters(){
   ['fLot','fMethod','fExp','fField'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fSearch').value='';
-  varietalFilter='';
-  document.querySelectorAll('#pillVarietal .pill').forEach((p,i)=>p.classList.toggle('active',i===0));
   filtered=[...DATA];
   renderTable();
 }
