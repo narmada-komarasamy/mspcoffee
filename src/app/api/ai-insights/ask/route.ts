@@ -4,8 +4,15 @@
  *
  * Streams a Claude response grounded in live Supabase data.
  */
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+  );
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +42,7 @@ export async function POST(request: Request) {
   }
 
   // Fetch live context
-  const supabase = await createClient();
+  const supabase = getSupabase();
 
   const [rainRes, fleetRes, cupRes] = await Promise.all([
     supabase.from('rainfall').select('date,estate,rainfall_mm').gte('date', daysAgo(30)).order('date', { ascending: false }),

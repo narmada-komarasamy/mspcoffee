@@ -6,8 +6,16 @@
  * Returns { insights, summary, refreshedAt }.
  */
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+
+// Use anon key directly — no cookies needed, tables have anon RLS policies
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+  );
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +39,7 @@ function r1(n: number) { return Math.round(n * 10) / 10; }
 
 // ── Build compact context from Supabase data ───────────────────────────────────
 async function buildContext() {
-  const supabase = await createClient();
+  const supabase = getSupabase();
 
   const today      = new Date().toISOString().split('T')[0];
   const w7ago      = daysAgo(7);

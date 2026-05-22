@@ -139,8 +139,8 @@ export default function AIInsightsPage() {
     setError(null);
     try {
       const res = await fetch('/api/ai-insights');
-      if (!res.ok) throw new Error(`API error ${res.status}`);
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? `API error ${res.status}`);
       const sorted = (json.insights as Insight[]).sort(
         (a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
       );
@@ -303,7 +303,7 @@ export default function AIInsightsPage() {
             {error && (
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '16px 18px',
                 color: '#dc2626', fontSize: '.82rem' }}>
-                ⚠️ {error} — Check that ANTHROPIC_API_KEY is set in your environment.
+                ⚠️ {error}
               </div>
             )}
 
