@@ -4,7 +4,7 @@ export default function OrchardaleEstateProcessingPage() {
       <iframe
         src="/orchardale-processing.html"
         style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-        title="Orchardale Estate — Coffee Processing Dashboard 2025–26"
+        title="Orchardale Estate — Harvest & Fermentation Suite"
       />
     </div>
   );

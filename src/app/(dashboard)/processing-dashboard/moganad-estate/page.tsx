@@ -4,7 +4,7 @@ export default function MoganadEstateProcessingPage() {
       <iframe
         src="/moganad-estate-processing.html"
         style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-        title="Moganad Estate — Coffee Processing Dashboard 2025–26"
+        title="Moganad Estate — Harvest & Fermentation Suite"
       />
     </div>
   );

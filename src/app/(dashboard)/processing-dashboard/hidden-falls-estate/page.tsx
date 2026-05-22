@@ -4,7 +4,7 @@ export default function HiddenFallsEstateProcessingPage() {
       <iframe
         src="/hidden-falls-processing.html"
         style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-        title="Hidden Falls Estate — Coffee Processing Dashboard 2025–26"
+        title="Hidden Falls Estate — Harvest & Fermentation Suite"
       />
     </div>
   );
