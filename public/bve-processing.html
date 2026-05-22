@@ -220,7 +220,9 @@ function renderTable(){
   if(sortKey){
     rows.sort((a,b)=>{
       let av=a[sortKey]??'', bv=b[sortKey]??'';
-      const cmp=(typeof av==='number'&&typeof bv==='number')?av-bv:String(av).localeCompare(String(bv));
+      let cmp;
+      if(sortKey==='date'){const p=s=>{const[d,m,y]=s.split('-'),M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};return new Date(+y,M[m],+d).getTime();};cmp=p(av)-p(bv);}
+      else cmp=(typeof av==='number'&&typeof bv==='number')?av-bv:String(av).localeCompare(String(bv));
       return sortAsc?cmp:-cmp;
     });
   }

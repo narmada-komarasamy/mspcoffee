@@ -199,6 +199,9 @@ const DATA = [{"date":"8-Oct-2025","field":"All Fields","varietal":"MIXED","roun
 const LOT_BADGE = {'Special':'b-Special','Regular':'b-Regular','Stripping':'b-Stripping','Gleanings':'b-Gleanings','90+ Project':'b-90'};
 function fmtN(v){ return v>0?v.toLocaleString('en-IN',{maximumFractionDigits:0}):'—'; }
 
+const MON={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function parseDate(s){const[d,m,y]=s.split('-');return new Date(+y,MON[m],+d).getTime();}
+
 let sortCol='date', sortDir=1;
 
 function renderTable(rows){
@@ -274,6 +277,7 @@ function resetFilters(){
 function sortData(rows){
   return [...rows].sort((a,b)=>{
     let av=a[sortCol],bv=b[sortCol];
+    if(sortCol==='date') return (parseDate(av)-parseDate(bv))*sortDir;
     if(typeof av==='string') return av.localeCompare(bv)*sortDir;
     return (av-bv)*sortDir;
   });
