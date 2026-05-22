@@ -174,7 +174,7 @@ export async function GET() {
 
     const client = new Anthropic();
     const msg = await client.messages.create({
-      model:      'claude-3-5-haiku-20241022',
+      model:      'claude-haiku-4-5',
       max_tokens: 2048,
       system: `You are an analytics assistant for MSP Coffee, a specialty coffee estate group in Yercaud, India.
 Your job: analyse the provided estate data and produce concise, specific, actionable insights in JSON format.

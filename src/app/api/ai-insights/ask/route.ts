@@ -80,7 +80,7 @@ Top lots: ${cupData.slice(0, 8).map(c => `${c.name} ${c.score}pts (${c.process},
 
   const client = new Anthropic();
   const stream = await client.messages.stream({
-    model:      'claude-3-5-haiku-20241022',
+    model:      'claude-haiku-4-5',
     max_tokens: 512,
     system: `You are an AI analytics assistant for MSP Coffee estates in Yercaud, India.
 You have access to live data below. Answer questions concisely and specifically — always cite actual numbers from the data.
