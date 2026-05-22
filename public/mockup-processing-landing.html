@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Processing Dashboard — Mockup</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Exo 2',system-ui,sans-serif;background:#fdf8ee;color:#1a1a1a;min-height:100vh}
+
+  /* ── Header ── */
+  .header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);padding:22px 32px;display:flex;align-items:center;gap:16px;border-bottom:2px solid #4a9e4a}
+  .header-icon{font-size:2rem}
+  .header-text h1{font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:.03em}
+  .header-text p{font-size:.82rem;color:rgba(255,255,255,.7);margin-top:2px}
+  .season-badge{margin-left:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 18px;font-size:.76rem;font-weight:700;color:#fff;letter-spacing:.06em}
+
+  /* ── Season tabs ── */
+  .season-nav{background:#f5eedc;border-bottom:1px solid #e5dfc8;padding:0 32px;display:flex;gap:0;align-items:flex-end}
+  .season-tab{padding:12px 22px;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s}
+  .season-tab:hover{color:#2d6e2d}
+  .season-tab.active{color:#1b4a1b;border-bottom-color:#2d6e2d}
+
+  /* ── Summary strip ── */
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 32px;background:#f5eedc;border-bottom:1px solid #e5dfc8}
+  .scard{background:#fff;border:1px solid #e5dfc8;border-radius:10px;padding:14px 18px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}
+  .scard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#2d6e2d}
+  .scard-label{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#6b7280}
+  .scard-value{font-size:1.7rem;font-weight:700;color:#1b4a1b;line-height:1}
+  .scard-sub{font-size:.7rem;color:#9ca3af}
+
+  /* ── Estate grid ── */
+  .main{padding:28px 32px}
+  .section-hdr{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .section-hdr h2{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151}
+  .section-hdr .divider{flex:1;height:1px;background:#e5dfc8}
+
+  .estate-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+
+  .estate-card{background:#fff;border:1px solid #e5dfc8;border-radius:14px;overflow:hidden;box-shadow:0 2px 14px rgba(27,74,27,.07);cursor:pointer;transition:transform .15s,box-shadow .15s;text-decoration:none;display:block}
+  .estate-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(27,74,27,.14)}
+
+  .estate-card-top{padding:18px 18px 14px;position:relative}
+  .estate-accent{position:absolute;top:0;left:0;right:0;height:4px}
+  .estate-icon{font-size:1.6rem;margin-bottom:8px;margin-top:4px}
+  .estate-name{font-size:.82rem;font-weight:700;color:#1b4a1b;line-height:1.25;margin-bottom:2px}
+  .estate-code{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af}
+
+  .estate-card-kpis{padding:12px 18px 16px;border-top:1px solid #f0ead4;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-mini{display:flex;flex-direction:column;gap:2px}
+  .kpi-mini-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af}
+  .kpi-mini-value{font-size:1.1rem;font-weight:700;color:#1b4a1b;line-height:1}
+  .kpi-mini-unit{font-size:.62rem;color:#6b7280}
+
+  .estate-card-footer{padding:8px 18px 12px;display:flex;align-items:center;justify-content:space-between}
+  .view-btn{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#2d6e2d;display:flex;align-items:center;gap:4px}
+  .view-btn svg{width:12px;height:12px}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:#4a9e4a}
+
+  /* outturn bar */
+  .outturn-bar-wrap{padding:0 18px 14px}
+  .outturn-bar-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;margin-bottom:4px;display:flex;justify-content:space-between}
+  .outturn-bar-track{height:5px;background:#f0ead4;border-radius:3px;overflow:hidden}
+  .outturn-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#2d6e2d,#4a9e4a)}
+
+  /* estate accent colours */
+  .acc-stanmore{background:#1b5e20}
+  .acc-moganad{background:#1a237e}
+  .acc-orchardale{background:#4a148c}
+  .acc-bison{background:#e65100}
+  .acc-hfe{background:#006064}
+
+  /* ── Process breakdown row ── */
+  .breakdown{margin-top:28px}
+  .process-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+  .process-card{background:#fff;border:1px solid #e5dfc8;border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:14px}
+  .process-dot{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
+  .process-info{}
+  .process-name{font-size:.72rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em}
+  .process-val{font-size:1.3rem;font-weight:700;color:#1b4a1b}
+  .process-sub{font-size:.65rem;color:#9ca3af}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-icon">☕</div>
+  <div class="header-text">
+    <h1>Processing Dashboard</h1>
+    <p>Harvest & Fermentation · All Estates · Live season data</p>
+  </div>
+  <div class="season-badge">2025 – 2026</div>
+</div>
+
+<!-- SEASON TABS -->
+<div class="season-nav">
+  <div class="season-tab active">2025 – 2026</div>
+  <div class="season-tab">2024 – 2025</div>
+  <div class="season-tab">2023 – 2024</div>
+</div>
+
+<!-- SUMMARY STRIP -->
+<div class="summary">
+  <div class="scard">
+    <div class="scard-label">Total Batches</div>
+    <div class="scard-value">939</div>
+    <div class="scard-sub">across all 5 estates</div>
+  </div>
+  <div class="scard">
+    <div class="scard-label">Ripe Cherry</div>
+    <div class="scard-value">4,12,806</div>
+    <div class="scard-sub">kg input this season</div>
+  </div>
+  <div class="scard">
+    <div class="scard-label">Dry Parchment</div>
+    <div class="scard-value">1,07,340</div>
+    <div class="scard-sub">kg output this season</div>
+  </div>
+  <div class="scard">
+    <div class="scard-label">Avg Outturn</div>
+    <div class="scard-value">26.0%</div>
+    <div class="scard-sub">cherry to dry parchment</div>
+  </div>
+</div>
+
+<!-- ESTATE CARDS -->
+<div class="main">
+  <div class="section-hdr">
+    <h2>Estates</h2>
+    <div class="divider"></div>
+  </div>
+
+  <div class="estate-grid">
+
+    <!-- Stanmore -->
+    <a class="estate-card" href="#">
+      <div class="estate-card-top">
+        <div class="estate-accent acc-stanmore"></div>
+        <div class="estate-icon">🌿</div>
+        <div class="estate-name">Stanmore Estate</div>
+        <div class="estate-code">SE · Yercaud</div>
+      </div>
+      <div class="estate-card-kpis">
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Batches</div>
+          <div class="kpi-mini-value">246</div>
+          <div class="kpi-mini-unit">this season</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Ripe Cherry</div>
+          <div class="kpi-mini-value">1,18,420</div>
+          <div class="kpi-mini-unit">kg input</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Dry Parch</div>
+          <div class="kpi-mini-value">31,204</div>
+          <div class="kpi-mini-unit">kg output</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Outturn</div>
+          <div class="kpi-mini-value">26.4%</div>
+          <div class="kpi-mini-unit">avg</div>
+        </div>
+      </div>
+      <div class="outturn-bar-wrap">
+        <div class="outturn-bar-label"><span>Outturn</span><span>26.4%</span></div>
+        <div class="outturn-bar-track"><div class="outturn-bar-fill" style="width:52%"></div></div>
+      </div>
+      <div class="estate-card-footer">
+        <span class="view-btn">Open Dashboard <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="status-dot"></div>
+      </div>
+    </a>
+
+    <!-- Moganad -->
+    <a class="estate-card" href="#">
+      <div class="estate-card-top">
+        <div class="estate-accent acc-moganad"></div>
+        <div class="estate-icon">☕</div>
+        <div class="estate-name">Moganad Estate</div>
+        <div class="estate-code">ME · Yercaud</div>
+      </div>
+      <div class="estate-card-kpis">
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Batches</div>
+          <div class="kpi-mini-value">407</div>
+          <div class="kpi-mini-unit">this season</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Ripe Cherry</div>
+          <div class="kpi-mini-value">2,04,189</div>
+          <div class="kpi-mini-unit">kg input</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Dry Parch</div>
+          <div class="kpi-mini-value">51,182</div>
+          <div class="kpi-mini-unit">kg output</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Outturn</div>
+          <div class="kpi-mini-value">28.3%</div>
+          <div class="kpi-mini-unit">avg</div>
+        </div>
+      </div>
+      <div class="outturn-bar-wrap">
+        <div class="outturn-bar-label"><span>Outturn</span><span>28.3%</span></div>
+        <div class="outturn-bar-track"><div class="outturn-bar-fill" style="width:57%"></div></div>
+      </div>
+      <div class="estate-card-footer">
+        <span class="view-btn">Open Dashboard <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="status-dot"></div>
+      </div>
+    </a>
+
+    <!-- Orchardale -->
+    <a class="estate-card" href="#">
+      <div class="estate-card-top">
+        <div class="estate-accent acc-orchardale"></div>
+        <div class="estate-icon">🌱</div>
+        <div class="estate-name">Orchardale Estate</div>
+        <div class="estate-code">OE · Yercaud</div>
+      </div>
+      <div class="estate-card-kpis">
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Batches</div>
+          <div class="kpi-mini-value">118</div>
+          <div class="kpi-mini-unit">this season</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Ripe Cherry</div>
+          <div class="kpi-mini-value">48,310</div>
+          <div class="kpi-mini-unit">kg input</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Dry Parch</div>
+          <div class="kpi-mini-value">11,820</div>
+          <div class="kpi-mini-unit">kg output</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Outturn</div>
+          <div class="kpi-mini-value">24.5%</div>
+          <div class="kpi-mini-unit">avg</div>
+        </div>
+      </div>
+      <div class="outturn-bar-wrap">
+        <div class="outturn-bar-label"><span>Outturn</span><span>24.5%</span></div>
+        <div class="outturn-bar-track"><div class="outturn-bar-fill" style="width:49%"></div></div>
+      </div>
+      <div class="estate-card-footer">
+        <span class="view-btn">Open Dashboard <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="status-dot"></div>
+      </div>
+    </a>
+
+    <!-- Bison Valley -->
+    <a class="estate-card" href="#">
+      <div class="estate-card-top">
+        <div class="estate-accent acc-bison"></div>
+        <div class="estate-icon">🦬</div>
+        <div class="estate-name">Bison Valley Estate</div>
+        <div class="estate-code">BVE · Yercaud</div>
+      </div>
+      <div class="estate-card-kpis">
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Batches</div>
+          <div class="kpi-mini-value">79</div>
+          <div class="kpi-mini-unit">this season</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Ripe Cherry</div>
+          <div class="kpi-mini-value">29,440</div>
+          <div class="kpi-mini-unit">kg input</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Dry Parch</div>
+          <div class="kpi-mini-value">7,480</div>
+          <div class="kpi-mini-unit">kg output</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Outturn</div>
+          <div class="kpi-mini-value">25.4%</div>
+          <div class="kpi-mini-unit">avg</div>
+        </div>
+      </div>
+      <div class="outturn-bar-wrap">
+        <div class="outturn-bar-label"><span>Outturn</span><span>25.4%</span></div>
+        <div class="outturn-bar-track"><div class="outturn-bar-fill" style="width:51%"></div></div>
+      </div>
+      <div class="estate-card-footer">
+        <span class="view-btn">Open Dashboard <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="status-dot"></div>
+      </div>
+    </a>
+
+    <!-- Hidden Falls -->
+    <a class="estate-card" href="#">
+      <div class="estate-card-top">
+        <div class="estate-accent acc-hfe"></div>
+        <div class="estate-icon">🌊</div>
+        <div class="estate-name">Hidden Falls Estate</div>
+        <div class="estate-code">HFE · Yercaud</div>
+      </div>
+      <div class="estate-card-kpis">
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Batches</div>
+          <div class="kpi-mini-value">149</div>
+          <div class="kpi-mini-unit">this season</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Ripe Cherry</div>
+          <div class="kpi-mini-value">52,161</div>
+          <div class="kpi-mini-unit">kg input</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Dry Parch</div>
+          <div class="kpi-mini-value">12,614</div>
+          <div class="kpi-mini-unit">kg output</div>
+        </div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-label">Outturn</div>
+          <div class="kpi-mini-value">24.2%</div>
+          <div class="kpi-mini-unit">avg</div>
+        </div>
+      </div>
+      <div class="outturn-bar-wrap">
+        <div class="outturn-bar-label"><span>Outturn</span><span>24.2%</span></div>
+        <div class="outturn-bar-track"><div class="outturn-bar-fill" style="width:48%"></div></div>
+      </div>
+      <div class="estate-card-footer">
+        <span class="view-btn">Open Dashboard <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="status-dot"></div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- PROCESS BREAKDOWN -->
+  <div class="breakdown">
+    <div class="section-hdr">
+      <h2>Season Breakdown by Process</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="process-row">
+      <div class="process-card">
+        <div class="process-dot" style="background:#e8f5e9">🌿</div>
+        <div class="process-info">
+          <div class="process-name">Naturals</div>
+          <div class="process-val">412</div>
+          <div class="process-sub">batches · 44% of season</div>
+        </div>
+      </div>
+      <div class="process-card">
+        <div class="process-dot" style="background:#e3f2fd">💧</div>
+        <div class="process-info">
+          <div class="process-name">Washed</div>
+          <div class="process-val">318</div>
+          <div class="process-sub">batches · 34% of season</div>
+        </div>
+      </div>
+      <div class="process-card">
+        <div class="process-dot" style="background:#fff8e1">🍯</div>
+        <div class="process-info">
+          <div class="process-name">Honey / PSD</div>
+          <div class="process-val">143</div>
+          <div class="process-sub">batches · 15% of season</div>
+        </div>
+      </div>
+      <div class="process-card">
+        <div class="process-dot" style="background:#fbe9e7">☕</div>
+        <div class="process-info">
+          <div class="process-name">Robusta</div>
+          <div class="process-val">66</div>
+          <div class="process-sub">batches · 7% of season</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
