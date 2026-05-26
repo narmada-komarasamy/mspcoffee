@@ -242,7 +242,7 @@ export default function FleetPage() {
       if (rows.length < BATCH) break;
       from += BATCH;
     }
-    setData(all.filter(r => r.vehicle_id !== "BRUSH CUTTER"));
+    setData(all.filter(r => r.vehicle_id?.toUpperCase() !== "BRUSH CUTTER"));
     if (all.length > 0) setMaxDataDate(all[all.length - 1].date);
     setLastRefreshed(new Date().toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true }));
     setLoading(false);
