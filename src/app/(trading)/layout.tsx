@@ -19,12 +19,15 @@ const FONT_SIZES = { sm: '13px', md: '15px', lg: '17px' } as const;
 type FontKey = keyof typeof FONT_SIZES;
 
 type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
-type NavItem = { label: string; href: string; icon: React.ElementType; roles: string[] };
+type NavItem = { label: string; href: string; icon: React.ElementType; roles: string[]; children?: NavItem[] };
 
 const navItems: NavItem[] = [
-  { label: 'Export Operations',   href: '/export-operations',    icon: Globe,      roles: ['admin', 'supervisor'] },
-  { label: 'Cup Score Catalogue', href: '/cup-scores-catalogue', icon: Award,      roles: ['admin', 'supervisor'] },
-  { label: 'B2B Trading Hub',     href: '/trading-dashboard',    icon: BarChart2,  roles: ['admin', 'supervisor'] },
+  { label: 'Cup Score Catalogue', href: '/cup-scores-catalogue', icon: Award,     roles: ['admin', 'supervisor'] },
+  { label: 'B2B Trading Hub',     href: '/trading-dashboard',    icon: BarChart2, roles: ['admin', 'supervisor'],
+    children: [
+      { label: 'Export Operations', href: '/export-operations', icon: Globe, roles: ['admin', 'supervisor'] },
+    ],
+  },
 ];
 
 export default function TradingLayout({ children }: { children: React.ReactNode }) {
@@ -63,12 +66,13 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   const handleLogout = () => { localStorage.removeItem('msp_user'); router.push('/login'); };
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  useActivityTracker(navItems.find(i => i.href === pathname)?.label);
+  useActivityTracker(navItems.flatMap(i => [i, ...(i.children ?? [])]).find(i => i.href === pathname)?.label);
 
   if (!user) return null;
 
   const filteredNav  = navItems.filter(item => item.roles.includes(user.role));
-  const currentTitle = navItems.find(item => item.href === pathname)?.label ?? 'Trading Management';
+  const allItems     = navItems.flatMap(item => [item, ...(item.children ?? [])]);
+  const currentTitle = allItems.find(item => item.href === pathname)?.label ?? 'Trading Management';
   const today        = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   const sidebarGrad  = `linear-gradient(180deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
   const headerGrad   = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
@@ -109,13 +113,29 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
           {filteredNav.map(item => {
             const Icon = item.icon;
             const active = pathname === item.href;
+            const childActive = item.children?.some(c => pathname === c.href);
             return (
-              <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
-                style={active ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
-                <Icon className="h-4 w-4 shrink-0" />
-                {item.label}
-              </Link>
+              <div key={item.href}>
+                <Link href={item.href} onClick={() => setSidebarOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
+                  style={active || childActive ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </Link>
+                {item.children && item.children.filter(c => c.roles.includes(user.role)).map(child => {
+                  const ChildIcon = child.icon;
+                  const childIsActive = pathname === child.href;
+                  return (
+                    <Link key={child.href} href={child.href} onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ml-4 mt-0.5"
+                      style={childIsActive ? { background: 'rgba(255,255,255,0.14)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.6)' }}>
+                      <span className="w-px h-3 rounded-full shrink-0" style={{ background: 'rgba(255,255,255,0.25)', marginLeft: '2px' }} />
+                      <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                      {child.label}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
