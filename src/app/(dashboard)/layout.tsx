@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useActivityTracker } from '@/lib/useActivityTracker';
@@ -26,6 +26,8 @@ import {
   LogOut,
   Coffee,
   ChevronDown,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 const THEMES = {
@@ -100,9 +102,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [themeKey, setThemeKey]       = useState<ThemeKey>('forest');
   const [fontKey, setFontKey]         = useState<FontKey>('md');
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>({});
-  const paletteRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const theme = THEMES[themeKey];
 
@@ -117,18 +118,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [router]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (paletteRef.current && !paletteRef.current.contains(e.target as Node))
-        setPaletteOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
   }, []);
 
   const applyTheme = (k: ThemeKey) => {
     setThemeKey(k);
     localStorage.setItem('msp_theme', k);
-    setPaletteOpen(false);
   };
 
   const applyFont = (k: FontKey) => {
@@ -363,28 +368,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ))}
             </div>
 
-            {/* Colour palette */}
-            <div className="relative" ref={paletteRef}>
-              <button onClick={() => setPaletteOpen(v => !v)}
-                className="flex items-center justify-center w-8 h-8 rounded-full transition text-base"
-                style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)' }}
-                title="Colour theme">🎨</button>
-
-              {paletteOpen && (
-                <div className="absolute top-full right-0 mt-2 rounded-xl py-3 px-3 z-50"
-                     style={{ background: 'white', border: '1px solid #e5dfc8', boxShadow: '0 8px 28px rgba(27,74,27,0.18)', minWidth: '180px' }}>
-                  <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#6b7280' }}>🎨 Colour Theme</div>
-                  {(Object.entries(THEMES) as [ThemeKey, typeof THEMES[ThemeKey]][]).map(([key, t]) => (
-                    <button key={key} onClick={() => applyTheme(key)}
-                      className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-lg text-left text-sm font-medium transition"
-                      style={{ background: key === themeKey ? '#f0ead4' : 'transparent', color: '#1a1a1a', outline: key === themeKey ? `2px solid ${t.mid}` : 'none' }}>
-                      <span className="w-5 h-5 rounded-full shrink-0 border-2 border-black/10" style={{ background: t.swatch }} />
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Fullscreen toggle */}
+            <button onClick={toggleFullscreen}
+              className="flex items-center justify-center w-8 h-8 rounded-full transition"
+              style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.85)' }}
+              title={isFullscreen ? 'Exit full page' : 'Full page'}>
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
 
             <span className="text-sm hidden lg:block" style={{ color: 'rgba(255,255,255,0.7)', paddingLeft: '8px', borderLeft: '1px solid rgba(255,255,255,0.2)' }}>{today}</span>
           </div>
