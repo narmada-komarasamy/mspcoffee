@@ -12,6 +12,8 @@ const CARDS = [
     company: 'MSP Coffee',
     abbr: 'MSP',
     photo: '/MSP ESTATE.png',
+    photoBg: '#1a120a',
+    objectFit: 'contain' as const,
     sub: 'Estate Management',
     href: '/rainfall',
     active: true,
@@ -21,6 +23,8 @@ const CARDS = [
     company: 'MSP (P) Ltd',
     abbr: 'MSP',
     photo: '/MSP TRADING.png',
+    photoBg: '#0a0a0a',
+    objectFit: 'contain' as const,
     sub: 'Trading Management',
     href: '/export-operations',
     active: true,
@@ -30,6 +34,8 @@ const CARDS = [
     company: 'HillTiller Coffee Roasters',
     abbr: 'HT',
     photo: '/HILLTILLER.png',
+    photoBg: '#0a0a0a',
+    objectFit: 'cover' as const,
     sub: 'Sales Management',
     href: null,
     active: false,
@@ -146,13 +152,13 @@ export default function HomePage() {
               </div>
 
               {/* Photo */}
-              <div className="relative mx-3 rounded-xl overflow-hidden" style={{ height: '200px' }}>
+              <div className="relative mx-3 rounded-xl overflow-hidden" style={{ height: '200px', background: card.photoBg }}>
                 <Image
                   src={card.photo}
                   alt={card.sub}
                   fill
-                  className="object-cover object-center"
-                  style={{ filter: 'brightness(0.95)' }}
+                  className="object-center"
+                  style={{ objectFit: card.objectFit, filter: 'brightness(0.97)' }}
                 />
               </div>
 
