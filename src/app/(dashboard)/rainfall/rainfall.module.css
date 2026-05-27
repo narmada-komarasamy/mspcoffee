@@ -57,7 +57,7 @@
   font-size: 10px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, var(--t-accent));
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -68,7 +68,7 @@
   content: '';
   width: 20px;
   height: 1px;
-  background: var(--t-accent, #4a9e4a);
+  background: var(--t-accent, var(--t-accent));
 }
 
 .title {
@@ -76,20 +76,20 @@
   font-size: clamp(32px, 5vw, 60px);
   font-weight: 300;
   letter-spacing: -0.02em;
-  color: var(--t-heading, #1b4a1b);
+  color: var(--t-heading, var(--t-heading));
   line-height: 1;
 }
 
 .titleStrong {
   font-weight: 700;
-  color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, var(--t-accent));
 }
 
 .clockDisplay {
   font-family: var(--font-jetbrains), monospace;
   font-size: 26px;
   font-weight: 300;
-  color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, var(--t-accent));
   letter-spacing: 0.05em;
   line-height: 1;
   margin-bottom: 4px;
@@ -166,7 +166,7 @@
 }
 
 .ctrlSelect {
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-text, #333333);
   font-family: var(--font-jetbrains), monospace;
@@ -180,13 +180,13 @@
 }
 
 .ctrlSelect:hover, .ctrlSelect:focus {
-  border-color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
 }
 
 .unitToggle {
   display: flex;
   gap: 2px;
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   padding: 2px;
@@ -207,7 +207,7 @@
 }
 
 .unitBtnActive {
-  background: var(--t-accent, #4a9e4a);
+  background: var(--t-accent, var(--t-accent));
   color: #000;
   font-weight: 600;
 }
@@ -249,14 +249,14 @@
 }
 
 .actionBtn:hover {
-  border-color: var(--t-accent, #4a9e4a);
-  color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
+  color: var(--t-accent, var(--t-accent));
 }
 
 .uploadBtn {
-  background: var(--t-accent, #4a9e4a);
+  background: var(--t-accent, var(--t-accent));
   border: none;
-  color: var(--t-bg, #fdf8ee);
+  color: var(--t-bg, var(--t-bg));
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   font-weight: 600;
@@ -309,7 +309,7 @@
   font-family: var(--font-jetbrains), monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
   transition: all 0.18s;
   user-select: none;
 }
@@ -349,7 +349,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--t-subtle, #f5eedc);
+  background: var(--t-subtle, var(--t-subtle));
 }
 
 /* ─── KPI Grid ──────────────────────────────────────────────────────────────── */
@@ -403,7 +403,7 @@
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--t-label, #374151);
+  color: var(--t-label, var(--t-label));
   margin-bottom: 6px;
 }
 
@@ -455,7 +455,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--t-subtle, #f5eedc);
+  border-bottom: 1px solid var(--t-subtle, var(--t-subtle));
 }
 
 .estateDot {
@@ -487,9 +487,9 @@
 
 .metricItem {
   padding: 10px 12px;
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
   border-radius: 3px;
-  border: 1px solid var(--t-subtle, #f5eedc);
+  border: 1px solid var(--t-subtle, var(--t-subtle));
 }
 
 .metricLabel {
@@ -557,7 +557,7 @@
 .chartTabs {
   display: flex;
   gap: 2px;
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   padding: 2px;
@@ -578,7 +578,7 @@
 }
 
 .chartTabActive {
-  background: var(--t-accent, #4a9e4a);
+  background: var(--t-accent, var(--t-accent));
   color: #000;
   font-weight: 600;
 }
@@ -620,7 +620,7 @@
 .tableEl td {
   font-size: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid var(--t-subtle, #f5eedc);
+  border-bottom: 1px solid var(--t-subtle, var(--t-subtle));
   color: var(--t-text, #333333);
   font-family: var(--font-jetbrains), monospace;
 }
@@ -647,7 +647,7 @@
 
 .rankBadgeTop {
   background: rgba(228,184,74,0.1);
-  color: var(--t-gold, #e4b84a);
+  color: var(--t-gold, var(--t-gold));
 }
 
 .estateTag {
@@ -671,7 +671,7 @@
 
 .barFill {
   height: 4px;
-  background: var(--t-accent, #4a9e4a);
+  background: var(--t-accent, var(--t-accent));
   border-radius: 2px;
   min-width: 3px;
 }
@@ -694,12 +694,12 @@
 }
 
 .yearCard:hover {
-  border-color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
   background: rgba(56,189,248,0.08);
 }
 
 .yearCardSelected {
-  border-color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
   background: rgba(56,189,248,0.12);
 }
 
@@ -750,7 +750,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 24px;
-  border-top: 1px solid var(--t-subtle, #f5eedc);
+  border-top: 1px solid var(--t-subtle, var(--t-subtle));
   font-size: 11px;
   color: var(--t-muted, #7ab8d8);
   font-family: var(--font-jetbrains), monospace;
@@ -769,8 +769,8 @@
 }
 
 .pageBtn:hover:not(:disabled) {
-  border-color: var(--t-accent, #4a9e4a);
-  color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
+  color: var(--t-accent, var(--t-accent));
 }
 
 .pageBtn:disabled {
@@ -806,7 +806,7 @@
   font-size: 9px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, var(--t-accent));
   margin-bottom: 10px;
 }
 
@@ -827,7 +827,7 @@
   font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
   font-size: 26px;
   font-weight: 600;
-  color: var(--t-heading, #1b4a1b);
+  color: var(--t-heading, var(--t-heading));
   line-height: 1;
 }
 
@@ -857,15 +857,15 @@
 
 /* ─── Colour palette ────────────────────────────────────────────────────────── */
 .actionBtnActive {
-  border-color: var(--t-accent, #4a9e4a) !important;
-  color: var(--t-accent, #4a9e4a) !important;
+  border-color: var(--t-accent, var(--t-accent)) !important;
+  color: var(--t-accent, var(--t-accent)) !important;
   background: rgba(56,189,248,0.08) !important;
 }
 
 .palettePanel {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid var(--t-subtle, #f5eedc);
+  border-top: 1px solid var(--t-subtle, var(--t-subtle));
 }
 
 .paletteRow {
@@ -880,7 +880,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
   border: 1px solid var(--t-border, #162d44);
   border-radius: 3px;
   cursor: pointer;
@@ -971,7 +971,7 @@
   border: 1px solid var(--t-border, #162d44);
   border-right: none;
   border-radius: 8px 0 0 8px;
-  color: var(--t-accent, #4a9e4a);
+  color: var(--t-accent, var(--t-accent));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -983,7 +983,7 @@
 }
 
 .cpTab:hover {
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
 }
 
 .cpBody {
@@ -1003,7 +1003,7 @@
   gap: 10px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--t-subtle, #f5eedc);
+  border-bottom: 1px solid var(--t-subtle, var(--t-subtle));
 }
 
 .cpTitle {
@@ -1026,7 +1026,7 @@
 
 .cpDivider {
   height: 1px;
-  background: var(--t-subtle, #f5eedc);
+  background: var(--t-subtle, var(--t-subtle));
   margin: 14px 0 4px;
 }
 
@@ -1041,7 +1041,7 @@
 }
 
 .cpRow:hover {
-  background: var(--t-surface, #f0ead4);
+  background: var(--t-surface, var(--t-surface));
 }
 
 .cpLabel {
@@ -1174,14 +1174,14 @@
 }
 
 .yoyBtn:hover {
-  border-color: var(--t-accent, #4a9e4a);
-  color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
+  color: var(--t-accent, var(--t-accent));
 }
 
 .yoyBtnActive {
   background: rgba(74,158,74,0.12);
-  border-color: var(--t-accent, #4a9e4a);
-  color: var(--t-accent, #4a9e4a);
+  border-color: var(--t-accent, var(--t-accent));
+  color: var(--t-accent, var(--t-accent));
   font-weight: 600;
 }
 

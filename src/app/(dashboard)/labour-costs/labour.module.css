@@ -4,25 +4,18 @@
 
 /* ── Page wrapper ─────────────────────────────────────────────────────────── */
 .page {
-  --lc-coffee: #1b4a1b;
-  --lc-cream:  #fdf8ee;
-  --lc-gold:   #e8c84a;
-  --lc-green:  #2d6e2d;
-  --lc-blue:   #1B4F8A;
-  --lc-red:    #9B2335;
-  --lc-thumb:  #1b4a1b;
-  background: var(--t-bg, #fdf8ee);
+  background: var(--t-bg, var(--t-bg));
   min-height: 100%;
   margin: -1rem;
   padding: 1.5rem 1.5rem 4rem;
   font-family: var(--t-font, 'Exo 2', system-ui, sans-serif);
-  color: var(--t-text, #1a1a1a);
+  color: var(--t-text, var(--t-text));
 }
 
 .page:fullscreen {
   margin: 0;
   overflow-y: auto;
-  background: #fdf8ee;
+  background: var(--t-bg);
 }
 
 /* ── Page header ──────────────────────────────────────────────────────────── */
@@ -34,17 +27,17 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--t-label, #374151);
+  color: var(--t-label, var(--t-label));
   margin-bottom: 4px;
 }
 .pageTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--t-text);
   line-height: 1.2;
 }
 .pageTitle span {
-  color: #e8c84a;
+  color: var(--t-gold);
 }
 
 /* ── Tab nav ──────────────────────────────────────────────────────────────── */
@@ -62,7 +55,7 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -70,14 +63,14 @@
 }
 .tabBtn:hover {
   background: rgba(27,74,27,0.06);
-  color: #1a1a1a;
+  color: var(--t-text);
 }
 .tabBtnActive {
-  background: #1b4a1b;
+  background: var(--t-heading);
   color: #ffffff;
 }
 .tabBtnActive:hover {
-  background: #1b4a1b;
+  background: var(--t-heading);
   color: #ffffff;
 }
 
@@ -94,7 +87,7 @@
 .cardTitle {
   font-size: 10px;
   font-weight: 600;
-  color: var(--t-label, #374151);
+  color: var(--t-label, var(--t-label));
   text-transform: uppercase;
   letter-spacing: 0.08em;
   display: flex;
@@ -122,7 +115,7 @@
   padding: 0.75rem 1rem;
 }
 .rateGroupFixed {
-  border-color: #e8c84a;
+  border-color: var(--t-gold);
   background: rgba(27,74,27,0.04);
   grid-column: span 2;
 }
@@ -135,7 +128,7 @@
 .rateGroupLabel {
   font-size: 12px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--t-text);
 }
 .badge {
   font-size: 9px;
@@ -147,7 +140,7 @@
 }
 .badgeGrey {
   background: rgba(27,74,27,0.10);
-  color: #4a9e4a;
+  color: var(--t-accent);
 }
 .badgeBlue {
   background: rgba(27,79,138,0.12);
@@ -165,7 +158,7 @@
 }
 .rateInputRow label {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--t-muted);
   width: 72px;
   flex-shrink: 0;
 }
@@ -175,18 +168,18 @@
   border: 1px solid rgba(27,74,27,0.20);
   border-radius: 6px;
   background: #FFF;
-  color: #1a1a1a;
+  color: var(--t-text);
   font-size: 12px;
   font-weight: 500;
 }
 .numInput:focus {
   outline: none;
-  border-color: #e8c84a;
+  border-color: var(--t-gold);
   box-shadow: 0 0 0 2px rgba(74,158,74,0.15);
 }
 .rupeePrefix {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--t-muted);
   margin-left: -4px;
 }
 
@@ -209,12 +202,12 @@
 .sliderLabelText {
   font-size: 12px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--t-text);
 }
 .sliderValue {
   font-size: 13px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--t-text);
   background: rgba(27,74,27,0.07);
   padding: 1px 8px;
   border-radius: 5px;
@@ -237,7 +230,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #1b4a1b;
+  background: var(--t-heading);
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(27,74,27,0.30);
 }
@@ -245,7 +238,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #1b4a1b;
+  background: var(--t-heading);
   cursor: pointer;
   border: none;
   box-shadow: 0 1px 4px rgba(27,74,27,0.30);
@@ -270,7 +263,7 @@
   border: 1px solid rgba(27,74,27,0.20);
   background: transparent;
   font-size: 12px;
-  color: #4a9e4a;
+  color: var(--t-accent);
   cursor: pointer;
   transition: all 0.12s;
   font-weight: 500;
@@ -279,9 +272,9 @@
   background: rgba(27,74,27,0.05);
 }
 .dayPillActive {
-  background: #1b4a1b;
+  background: var(--t-heading);
   color: #ffffff;
-  border-color: #1a1a1a;
+  border-color: var(--t-text);
 }
 .targetStatus {
   margin-top: 8px;
@@ -292,7 +285,7 @@
 }
 .targetUnder {
   background: rgba(45,106,79,0.1);
-  color: #2d6e2d;
+  color: var(--t-green);
 }
 .targetOver {
   background: rgba(155,35,53,0.1);
@@ -314,17 +307,17 @@
   gap: 2px;
 }
 .metricPrimary {
-  background: #1b4a1b;
+  background: var(--t-heading);
   color: #ffffff;
 }
 .metricPrimary .metricLabel { color: rgba(245,237,224,0.65); }
 .metricDefault {
   background: #ffffff;
   border: 0.5px solid rgba(27,74,27,0.15);
-  color: #1a1a1a;
+  color: var(--t-text);
   box-shadow: 0 1px 6px rgba(27,74,27,0.06);
 }
-.metricDefault .metricLabel { color: var(--t-label, #374151); }
+.metricDefault .metricLabel { color: var(--t-label, var(--t-label)); }
 .metricGold {
   background: #fef3c7;
   color: #92400e;
@@ -332,9 +325,9 @@
 .metricGold .metricLabel { color: #a16207; }
 .metricGreen {
   background: #eef7ee;
-  color: #1b4a1b;
+  color: var(--t-heading);
 }
-.metricGreen .metricLabel { color: #2d6e2d; }
+.metricGreen .metricLabel { color: var(--t-green); }
 .metricBlue {
   background: #E3EEFF;
   color: #1B4F8A;
@@ -369,7 +362,7 @@
 }
 .breakdownTable th {
   background: rgba(27,74,27,0.06);
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -385,7 +378,7 @@
 .breakdownTable td {
   padding: 9px 12px;
   border-bottom: 0.5px solid rgba(27,74,27,0.08);
-  color: #1a1a1a;
+  color: var(--t-text);
   vertical-align: middle;
 }
 .breakdownTable tr:last-child td {
@@ -412,13 +405,13 @@
 .shareBarFill {
   height: 100%;
   border-radius: 3px;
-  background: #e8c84a;
+  background: var(--t-gold);
   transition: width 0.3s ease;
 }
 .shareBarText {
   font-size: 11px;
   font-weight: 600;
-  color: #4a9e4a;
+  color: var(--t-accent);
   min-width: 36px;
   text-align: right;
 }
@@ -439,7 +432,7 @@
 .scenarioTitle {
   font-size: 11px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--t-text);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
@@ -447,18 +440,18 @@
 .scenarioCost {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--t-text);
   margin-bottom: 4px;
 }
 .scenarioSaves {
   font-size: 12px;
   font-weight: 600;
 }
-.scenarioSavesGreen { color: #2d6e2d; }
+.scenarioSavesGreen { color: var(--t-green); }
 .scenarioSavesRed   { color: #9B2335; }
 .scenarioMeta {
   font-size: 10px;
-  color: #6b7280;
+  color: var(--t-muted);
   margin-top: 4px;
 }
 
@@ -484,7 +477,7 @@
 .formLabel {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--t-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -493,7 +486,7 @@
   border: 1px solid rgba(27,74,27,0.20);
   border-radius: 8px;
   background: #ffffff;
-  color: #1a1a1a;
+  color: var(--t-text);
   font-size: 13px;
   font-weight: 500;
   width: 100%;
@@ -501,7 +494,7 @@
 }
 .formInput:focus {
   outline: none;
-  border-color: #e8c84a;
+  border-color: var(--t-gold);
   box-shadow: 0 0 0 2px rgba(74,158,74,0.15);
 }
 .momRateGrid {
@@ -514,7 +507,7 @@
   border-radius: 8px;
   border: 1.5px solid rgba(27,74,27,0.25);
   background: transparent;
-  color: #4a9e4a;
+  color: var(--t-accent);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -529,7 +522,7 @@
   padding: 10px 12px;
   border-radius: 8px;
   border: none;
-  background: #1b4a1b;
+  background: var(--t-heading);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
@@ -569,7 +562,7 @@
   border: 1px solid rgba(27,74,27,0.20);
   background: transparent;
   font-size: 11px;
-  color: #4a9e4a;
+  color: var(--t-accent);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.12s;
@@ -578,9 +571,9 @@
   background: rgba(27,74,27,0.05);
 }
 .rangeBtnActive {
-  background: #1b4a1b;
+  background: var(--t-heading);
   color: #ffffff;
-  border-color: #1a1a1a;
+  border-color: var(--t-text);
 }
 
 /* Summary stat cards */
@@ -599,7 +592,7 @@
 .statLabel {
   font-size: 10px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--t-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 3px;
@@ -607,11 +600,11 @@
 .statValue {
   font-size: 1rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--t-text);
 }
 .statSub {
   font-size: 10px;
-  color: #6b7280;
+  color: var(--t-muted);
   margin-top: 2px;
 }
 
@@ -626,7 +619,7 @@
 .chartTitle {
   font-size: 10px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--t-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0.75rem;
@@ -644,7 +637,7 @@
 }
 .momTable th {
   background: rgba(27,74,27,0.06);
-  color: #6b7280;
+  color: var(--t-muted);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -657,7 +650,7 @@
 .momTable td {
   padding: 8px 10px;
   border-bottom: 0.5px solid rgba(27,74,27,0.07);
-  color: #1a1a1a;
+  color: var(--t-text);
   white-space: nowrap;
 }
 .momTable tr:last-child td {
@@ -687,9 +680,9 @@
   text-align: center;
   padding: 40px 0;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--t-muted);
 }
-.tagGreen { color: #2d6e2d; font-weight: 600; }
+.tagGreen { color: var(--t-green); font-weight: 600; }
 .tagRed   { color: #9B2335; font-weight: 600; }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
