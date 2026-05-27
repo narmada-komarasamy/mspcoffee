@@ -184,9 +184,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--t-font);
   }
   html {
-    @apply font-sans;
+    font-family: var(--t-font);
   }
 }
 
@@ -266,7 +267,9 @@
   --t-label:    #374151;   /* KPI card labels — uppercase, small, needs high contrast */
   --t-border:   #e5dfc8;   /* borders */
   --t-subtle:   #f5eedc;   /* subtle surface */
-  --t-font:     'Exo 2', system-ui, sans-serif; /* standard dashboard font */
+  --t-font:         var(--font-exo2), 'Exo 2', system-ui, sans-serif;
+  --t-font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --t-font-mono:    var(--font-jetbrains), 'JetBrains Mono', monospace;
 }
 
 /* ── MSP utility classes ─────────────────────────────────────────────────────── */

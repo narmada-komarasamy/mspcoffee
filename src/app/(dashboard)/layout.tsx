@@ -187,7 +187,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const headerGrad  = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#fdf8ee', color: '#1a1a1a', fontSize: FONT_SIZES[fontKey] }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--t-bg)', color: 'var(--t-text)', fontSize: FONT_SIZES[fontKey] }}>
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -390,7 +390,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ background: '#fdf8ee' }}>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ background: 'var(--t-bg)' }}>
           {children}
         </main>
       </div>

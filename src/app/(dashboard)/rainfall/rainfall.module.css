@@ -72,7 +72,7 @@
 }
 
 .title {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: clamp(32px, 5vw, 60px);
   font-weight: 300;
   letter-spacing: -0.02em;
@@ -86,7 +86,7 @@
 }
 
 .clockDisplay {
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 26px;
   font-weight: 300;
   color: var(--t-accent, var(--t-accent));
@@ -169,7 +169,7 @@
   background: var(--t-surface, var(--t-surface));
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-text, #333333);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 12px;
   padding: 8px 12px;
   border-radius: 3px;
@@ -198,7 +198,7 @@
   background: transparent;
   border: none;
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   padding: 4px 14px;
   border-radius: 2px;
@@ -216,7 +216,7 @@
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   padding: 8px 18px;
   border-radius: 3px;
@@ -235,7 +235,7 @@
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   padding: 8px 16px;
   border-radius: 3px;
@@ -257,7 +257,7 @@
   background: var(--t-accent, var(--t-accent));
   border: none;
   color: var(--t-bg, var(--t-bg));
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   font-weight: 600;
   padding: 8px 18px;
@@ -306,7 +306,7 @@
   border-radius: 2px;
   border: 1px solid transparent;
   cursor: pointer;
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   letter-spacing: 0.04em;
   background: var(--t-surface, var(--t-surface));
@@ -408,7 +408,7 @@
 }
 
 .kpiValue {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 32px;
   font-weight: 700;
   line-height: 1;
@@ -419,7 +419,7 @@
   font-size: 14px;
   font-weight: 300;
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   margin-left: 3px;
 }
 
@@ -466,7 +466,7 @@
 }
 
 .estateCardName {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -501,7 +501,7 @@
 }
 
 .metricValue {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 22px;
   font-weight: 700;
   color: var(--t-text, #333333);
@@ -512,7 +512,7 @@
   font-size: 10px;
   color: var(--t-muted, #7ab8d8);
   margin-left: 2px;
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 .metricSub {
@@ -541,7 +541,7 @@
 }
 
 .chartTitle {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 22px;
   font-weight: 600;
   color: var(--t-text, #333333);
@@ -567,7 +567,7 @@
   background: transparent;
   border: none;
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -610,7 +610,7 @@
   padding: 0 0 10px;
   text-align: left;
   font-weight: 400;
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 .tableEl th:last-child {
@@ -622,7 +622,7 @@
   padding: 9px 0;
   border-bottom: 1px solid var(--t-subtle, var(--t-subtle));
   color: var(--t-text, #333333);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 .tableEl td:last-child {
@@ -704,7 +704,7 @@
 }
 
 .yearNum {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 24px;
   font-weight: 700;
   color: var(--t-text, #333333);
@@ -715,7 +715,7 @@
   font-size: 10px;
   color: var(--t-muted, #7ab8d8);
   margin-top: 3px;
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 /* ─── Records section ───────────────────────────────────────────────────────── */
@@ -753,14 +753,14 @@
   border-top: 1px solid var(--t-subtle, var(--t-subtle));
   font-size: 11px;
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 .pageBtn {
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 10px;
   padding: 4px 12px;
   border-radius: 2px;
@@ -824,7 +824,7 @@
 }
 
 .weatherTemp {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 26px;
   font-weight: 600;
   color: var(--t-heading, var(--t-heading));
@@ -851,7 +851,7 @@
   gap: 5px;
   font-size: 10px;
   color: var(--t-muted, #6b7fa0);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   letter-spacing: 0.04em;
 }
 
@@ -906,7 +906,7 @@
 }
 
 .paletteEstateName {
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   letter-spacing: 0.04em;
 }
@@ -926,7 +926,7 @@
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 10px;
   padding: 6px 14px;
   border-radius: 3px;
@@ -1007,7 +1007,7 @@
 }
 
 .cpTitle {
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   letter-spacing: 0.25em;
   text-transform: uppercase;
@@ -1021,7 +1021,7 @@
   text-transform: uppercase;
   color: var(--t-muted, #7ab8d8);
   margin: 12px 0 6px;
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 .cpDivider {
@@ -1045,7 +1045,7 @@
 }
 
 .cpLabel {
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1080,7 +1080,7 @@
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   padding: 9px 0;
@@ -1132,7 +1132,7 @@
 }
 
 .presetLabel {
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1159,7 +1159,7 @@
   background: transparent;
   border: 1px solid var(--t-border, #162d44);
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1215,7 +1215,7 @@
 }
 
 .yoyEstate {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1239,11 +1239,11 @@
   text-transform: uppercase;
   color: var(--t-muted, #7ab8d8);
   margin-bottom: 3px;
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
 }
 
 .yoyMetricVal {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', serif;
+  font-family: var(--t-font-display);
   font-size: 22px;
   font-weight: 700;
   color: var(--t-text, #333333);
@@ -1253,7 +1253,7 @@
 .yoyMetricUnit {
   font-size: 9px;
   color: var(--t-muted, #7ab8d8);
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   margin-left: 2px;
 }
 
@@ -1264,7 +1264,7 @@
 }
 
 .yoyDelta {
-  font-family: var(--font-jetbrains), monospace;
+  font-family: var(--t-font-mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;

@@ -4,7 +4,7 @@
   min-height: 100%;
   margin: -1rem;
   color: var(--t-text, var(--t-text));
-  font-family: 'Exo 2', var(--font-jetbrains), monospace;
+  font-family: var(--t-font);
 }
 @media (min-width: 1024px) { .page { margin: -1.5rem; } }
 .page:fullscreen {
@@ -351,7 +351,7 @@
 .colDate    { color: var(--t-text); font-weight: 600; white-space: nowrap; }
 .colVehicle { font-weight: 600; white-space: nowrap; }
 .colAccount { color: var(--t-muted); }
-.colNumber  { text-align: right; font-family: var(--font-jetbrains), monospace; }
+.colNumber  { text-align: right; font-family: var(--t-font-mono); }
 .summaryRow { background: rgba(31,200,200,0.08); border-top: 2px solid var(--t-accent); }
 .summaryRow td { font-weight: 700; color: var(--t-accent); border-bottom: none !important; }
 

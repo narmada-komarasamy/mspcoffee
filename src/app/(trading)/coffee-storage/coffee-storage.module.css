@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Newsreader', 'Instrument Serif', Georgia, serif;
+  font-family: var(--t-font-display);
 }
 .tab:hover { color: var(--t-text); }
 .tabActive {
@@ -427,7 +427,7 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--t-text);
-  font-family: 'Newsreader', 'Instrument Serif', Georgia, serif;
+  font-family: var(--t-font-display);
 }
 .drawerClose {
   width: 30px; height: 30px;

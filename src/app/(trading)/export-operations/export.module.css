@@ -17,7 +17,7 @@
   border-bottom: 3px solid transparent;
   background: transparent;
   color: var(--t-muted);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -42,7 +42,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.9375rem;
   font-weight: 700;
   letter-spacing: 0.125em;
@@ -83,7 +83,7 @@
 }
 
 .kpiLabel {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -92,20 +92,20 @@
   margin-bottom: 0.375rem;
 }
 .kpiValue {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--t-heading);
   line-height: 1;
 }
 .kpiUnit {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   color: var(--t-muted);
   margin-left: 0.25rem;
 }
 .kpiSub {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.75rem;
   color: var(--t-muted);
   margin-top: 0.25rem;
@@ -132,7 +132,7 @@
   padding: 1.125rem;
 }
 .chartSubTitle {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -142,7 +142,7 @@
 }
 
 .legendRow { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.625rem; }
-.legendDot { display: flex; align-items: center; gap: 0.35rem; font-family: 'Exo 2', sans-serif; font-size: 0.75rem; color: var(--t-muted); }
+.legendDot { display: flex; align-items: center; gap: 0.35rem; font-family: var(--t-font); font-size: 0.75rem; color: var(--t-muted); }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 .pieLegendRow { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem; }
@@ -166,7 +166,7 @@
 }
 .table th {
   text-align: left;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-weight: 700;
   font-size: 0.6875rem;
   text-transform: uppercase;
@@ -178,7 +178,7 @@
   white-space: nowrap;
 }
 .table td {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   padding: 0.5625rem 0.875rem;
   border-bottom: 1px solid rgba(255,255,255,0.04);
   color: var(--t-text);
@@ -230,7 +230,7 @@
 }
 .ctrlGrp { display: flex; flex-direction: column; gap: 0.3rem; }
 .ctrlLbl {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -242,7 +242,7 @@
   border: 1px solid var(--t-border);
   border-radius: 0.375rem;
   color: var(--t-text);
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   cursor: pointer;
@@ -256,7 +256,7 @@
   border: 1px solid var(--t-border);
   border-radius: 0.375rem;
   color: var(--t-text);
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   outline: none;
@@ -274,7 +274,7 @@
   background: var(--t-accent);
   border: none;
   color: var(--t-bg);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -292,7 +292,7 @@
   background: var(--t-subtle);
   border: 1px solid var(--t-border);
   color: var(--t-accent);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -333,7 +333,7 @@
   background: transparent;
   border: 1px solid var(--t-border);
   color: var(--t-muted);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -403,7 +403,7 @@
   border-bottom: 1px solid var(--t-border);
 }
 .modalTitle {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -426,7 +426,7 @@
 
 .formSection { margin-bottom: 1.5rem; }
 .formSectionTitle {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -440,7 +440,7 @@
   gap: 0.5rem;
 }
 .calcBadge {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.625rem;
   font-weight: 600;
   background: rgba(245,166,35,0.15);
@@ -464,7 +464,7 @@
 
 .formGroup { display: flex; flex-direction: column; gap: 0.35rem; }
 .formLabel {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -476,7 +476,7 @@
   border: 1px solid var(--t-border);
   border-radius: 0.375rem;
   color: var(--t-text);
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.8125rem;
   padding: 0.5rem 0.75rem;
   outline: none;
@@ -503,7 +503,7 @@
   background: var(--t-accent);
   border: none;
   color: var(--t-bg);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -519,7 +519,7 @@
   background: var(--t-subtle);
   border: 1px solid var(--t-border);
   color: var(--t-muted);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.875rem;
   font-weight: 700;
   padding: 0.625rem 1.25rem;
@@ -601,7 +601,7 @@
   border-bottom: 1px solid var(--t-border);
 }
 .sectionRowTitle {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--t-font);
   font-size: 0.9375rem;
   font-weight: 700;
   letter-spacing: 0.125em;

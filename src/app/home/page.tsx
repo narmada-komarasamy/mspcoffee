@@ -66,10 +66,6 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Google Font — Playfair Display for elegant italic header */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=swap');
-      `}</style>
 
       <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-6 py-8">
 
@@ -90,7 +86,7 @@ export default function HomePage() {
         {/* ── Header ── */}
         <div className="relative z-10 text-center mb-8">
           <h1 style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
+            fontFamily: 'var(--t-font-display)',
             fontSize: 'clamp(30px, 5.5vw, 68px)',
             fontStyle: 'italic',
             fontWeight: 700,
@@ -125,7 +121,7 @@ export default function HomePage() {
               {/* Company name — italic serif */}
               <div className="text-center px-4 pt-5 pb-0">
                 <p style={{
-                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontFamily: 'var(--t-font-display)',
                   fontStyle: 'italic',
                   fontSize: '16px',
                   fontWeight: 700,
@@ -139,7 +135,7 @@ export default function HomePage() {
               {/* Abbreviation — big bold */}
               <div className="text-center px-4 pt-0 pb-1">
                 <p style={{
-                  fontFamily: "'Arial Black', Impact, sans-serif",
+                  fontFamily: 'var(--t-font)',
                   fontSize: '80px',
                   fontWeight: 900,
                   color: 'white',
@@ -165,7 +161,7 @@ export default function HomePage() {
               {/* COFFEE */}
               <div className="text-center px-4 pt-3 pb-0">
                 <p style={{
-                  fontFamily: "'Arial Black', Impact, sans-serif",
+                  fontFamily: 'var(--t-font)',
                   fontSize: '42px',
                   fontWeight: 900,
                   color: 'white',
@@ -176,7 +172,7 @@ export default function HomePage() {
                   COFFEE
                 </p>
                 <p style={{
-                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontFamily: 'var(--t-font-display)',
                   fontStyle: 'italic',
                   fontSize: '13px',
                   color: 'rgba(255,255,255,0.80)',
