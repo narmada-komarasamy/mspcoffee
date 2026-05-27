@@ -4,7 +4,15 @@
       "Bash(npx next:*)",
       "Bash(node_modules/.bin/next build:*)",
       "Bash(where.exe node:*)",
-      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")"
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(git -C /Users/ashokrajes/Documents/Projects/mspcoffee add public/bve-processing.html public/cup-scores-catalogue.html public/processing-dashboard.html public/stanmore-estate-processing.html public/trading-dashboard.html)",
+      "Bash(git -C /Users/ashokrajes/Documents/Projects/mspcoffee commit -m ' *)",
+      "Bash(git -C /Users/ashokrajes/Documents/Projects/mspcoffee push origin main)",
+      "Bash(git -C /Users/ashokrajes/Documents/Projects/mspcoffee commit --allow-empty -m \"chore: trigger Vercel redeploy\")",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix\\(cup-scores/seed\\): add GET handler so seeding works by visiting the URL in a browser *)",
+      "Bash(git push *)"
     ]
   }
 }

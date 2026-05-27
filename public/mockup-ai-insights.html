@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Insights — Mockup</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,'Segoe UI',sans-serif;background:#fdf8ee;color:#1a1a1a;min-height:100vh}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);padding:20px 32px;display:flex;align-items:center;gap:16px}
+.header-icon{font-size:1.8rem}
+.header-text h1{font-size:1.3rem;font-weight:700;color:#fff}
+.header-text p{font-size:.78rem;color:rgba(255,255,255,.65);margin-top:2px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.refresh-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:7px 16px;font-size:.73rem;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.04em}
+.last-updated{font-size:.7rem;color:rgba(255,255,255,.5)}
+
+/* ── Tabs ── */
+.tabs{background:#f5eedc;border-bottom:1px solid #e5dfc8;padding:0 32px;display:flex;gap:0;align-items:flex-end}
+.tab{padding:10px 20px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;display:flex;align-items:center;gap:6px;transition:all .15s}
+.tab:hover{color:#2d6e2d}
+.tab.active{color:#1b4a1b;border-bottom-color:#2d6e2d}
+.tab-count{background:#e5dfc8;color:#6b7280;border-radius:99px;padding:1px 7px;font-size:.65rem;font-weight:700}
+.tab.active .tab-count{background:#2d6e2d;color:#fff}
+
+/* ── Body layout ── */
+.body{display:grid;grid-template-columns:1fr 340px;gap:0;min-height:calc(100vh - 120px)}
+
+/* ── Main feed ── */
+.feed{padding:24px 28px;display:flex;flex-direction:column;gap:14px;border-right:1px solid #e5dfc8}
+
+/* ── Summary strip ── */
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
+.sstat{background:#fff;border:1px solid #e5dfc8;border-radius:10px;padding:12px 14px;position:relative;overflow:hidden}
+.sstat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sstat.green::before{background:#2d6e2d}
+.sstat.amber::before{background:#f59e0b}
+.sstat.red::before{background:#ef4444}
+.sstat.blue::before{background:#3b82f6}
+.sstat-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af}
+.sstat-val{font-size:1.4rem;font-weight:700;color:#1b4a1b;line-height:1.1;margin:3px 0 1px}
+.sstat-sub{font-size:.65rem;color:#6b7280;display:flex;align-items:center;gap:4px}
+.delta-up{color:#16a34a;font-weight:700}
+.delta-down{color:#dc2626;font-weight:700}
+.delta-flat{color:#9ca3af;font-weight:700}
+
+/* ── Section label ── */
+.section-label{display:flex;align-items:center;gap:10px;margin:4px 0 2px}
+.section-label span{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;white-space:nowrap}
+.section-label hr{flex:1;border:none;border-top:1px solid #e5dfc8}
+
+/* ── Insight cards ── */
+.insight-card{background:#fff;border:1px solid #e5dfc8;border-radius:12px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;transition:box-shadow .15s}
+.insight-card:hover{box-shadow:0 4px 20px rgba(27,74,27,.1)}
+
+.priority-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.p-red{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.2)}
+.p-amber{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2)}
+.p-green{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+.p-blue{background:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+
+.insight-body{flex:1;min-width:0}
+.insight-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.insight-category{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;padding:2px 8px;border-radius:99px}
+.cat-processing{background:#e8f5e9;color:#1b5e20}
+.cat-rainfall{background:#e3f2fd;color:#0d47a1}
+.cat-labour{background:#fff3e0;color:#e65100}
+.cat-alert{background:#fce4ec;color:#880e4f}
+.insight-estate{font-size:.65rem;font-weight:600;color:#6b7280}
+.insight-time{font-size:.6rem;color:#9ca3af;margin-left:auto}
+
+.insight-text{font-size:.83rem;color:#1a1a1a;line-height:1.55}
+.insight-text strong{color:#1b4a1b}
+
+.insight-footer{margin-top:10px;display:flex;align-items:center;gap:12px}
+.source-tag{font-size:.62rem;color:#9ca3af;display:flex;align-items:center;gap:4px}
+
+/* Sparkline bars */
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:24px;margin-left:auto}
+.spark-bar{width:6px;border-radius:2px 2px 0 0;background:#e5dfc8;flex-shrink:0}
+.spark-bar.hi{background:#2d6e2d}
+.spark-bar.lo{background:#ef4444}
+.spark-bar.mid{background:#f59e0b}
+.spark-bar.now{background:#1b4a1b;outline:1.5px solid #1b4a1b}
+
+/* ── Sidebar ── */
+.sidebar{padding:24px 22px;background:#faf5e8;display:flex;flex-direction:column;gap:20px}
+
+/* Ask AI box */
+.ask-box{background:#fff;border:1.5px solid #2d6e2d;border-radius:14px;overflow:hidden}
+.ask-header{background:linear-gradient(135deg,#1b4a1b,#2d6e2d);padding:12px 16px;display:flex;align-items:center;gap:8px}
+.ask-header-text{font-size:.78rem;font-weight:700;color:#fff}
+.ask-header-sub{font-size:.65rem;color:rgba(255,255,255,.6);margin-top:1px}
+.ask-ai-icon{font-size:1.2rem}
+
+.chat-history{padding:14px 14px 0;display:flex;flex-direction:column;gap:10px}
+.chat-bubble{border-radius:10px;padding:9px 12px;font-size:.76rem;line-height:1.45;max-width:92%}
+.chat-user{background:#e8f5e9;color:#1b4a1b;align-self:flex-end;border-bottom-right-radius:3px}
+.chat-ai{background:#f5f5f5;color:#374151;align-self:flex-start;border-bottom-left-radius:3px}
+.chat-ai strong{color:#1b4a1b}
+.typing{display:flex;gap:4px;align-items:center;padding:10px 12px}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;animation:blink 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+.ask-input-row{padding:10px 12px;display:flex;gap:8px;border-top:1px solid #e5dfc8}
+.ask-input{flex:1;border:1px solid #e5dfc8;border-radius:8px;padding:7px 10px;font-size:.76rem;color:#1a1a1a;background:#fdf8ee;outline:none}
+.ask-input:focus{border-color:#2d6e2d}
+.ask-send{background:#2d6e2d;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer}
+
+.quick-prompts-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:0 14px 8px}
+.quick-prompts{display:flex;flex-direction:column;gap:4px;padding:0 12px 12px}
+.qp{background:#f5eedc;border:1px solid #e5dfc8;border-radius:8px;padding:7px 10px;font-size:.72rem;color:#374151;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.qp:hover{background:#e8f5e9;border-color:#2d6e2d;color:#1b4a1b}
+.qp-icon{font-size:.85rem;flex-shrink:0}
+
+/* ── Data sources ── */
+.data-sources{background:#fff;border:1px solid #e5dfc8;border-radius:12px;overflow:hidden}
+.ds-header{padding:12px 14px;background:#f5eedc;border-bottom:1px solid #e5dfc8;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;display:flex;align-items:center;gap:6px}
+.ds-row{padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0ead4;font-size:.73rem}
+.ds-row:last-child{border-bottom:none}
+.ds-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ds-name{flex:1;color:#374151;font-weight:500}
+.ds-count{color:#9ca3af;font-size:.67rem}
+.ds-live{font-size:.62rem;font-weight:700;color:#16a34a;background:#dcfce7;border-radius:99px;padding:1px 7px}
+
+/* ── Generated report banner ── */
+.report-banner{background:linear-gradient(135deg,#1b4a1b,#2d6e2d);border-radius:12px;padding:14px 16px;color:#fff;display:flex;align-items:center;gap:12px}
+.report-icon{font-size:1.4rem;flex-shrink:0}
+.report-text p{font-size:.75rem;font-weight:700}
+.report-text span{font-size:.67rem;color:rgba(255,255,255,.65)}
+.report-btn{margin-left:auto;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:6px 12px;font-size:.7rem;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-icon">🧠</div>
+  <div class="header-text">
+    <h1>AI Insights</h1>
+    <p>Automatically generated from your Supabase data · Rainfall · Processing · Labour</p>
+  </div>
+  <div class="header-right">
+    <div class="last-updated">Last refreshed: Today, 7:14 AM</div>
+    <button class="refresh-btn">⟳ &nbsp;Refresh Insights</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active">All <span class="tab-count">11</span></div>
+  <div class="tab">🏭 Processing <span class="tab-count">5</span></div>
+  <div class="tab">🌧 Rainfall <span class="tab-count">2</span></div>
+  <div class="tab">👷 Labour <span class="tab-count">2</span></div>
+  <div class="tab">⚠️ Alerts <span class="tab-count">2</span></div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- ── MAIN FEED ── -->
+  <div class="feed">
+
+    <!-- Summary strip -->
+    <div class="summary-strip">
+      <div class="sstat green">
+        <div class="sstat-label">Season Avg Outturn</div>
+        <div class="sstat-val">26.0%</div>
+        <div class="sstat-sub"><span class="delta-up">↑ 1.2%</span> vs last season</div>
+      </div>
+      <div class="sstat amber">
+        <div class="sstat-label">Rainfall This Week</div>
+        <div class="sstat-val">0 mm</div>
+        <div class="sstat-sub"><span class="delta-down">↓ 18mm</span> below avg</div>
+      </div>
+      <div class="sstat red">
+        <div class="sstat-label">Labour Cost / kg</div>
+        <div class="sstat-val">₹48.20</div>
+        <div class="sstat-sub"><span class="delta-down">↑ 12%</span> vs last month</div>
+      </div>
+      <div class="sstat blue">
+        <div class="sstat-label">Active Insights</div>
+        <div class="sstat-val">11</div>
+        <div class="sstat-sub"><span class="delta-flat">2</span> need attention</div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="section-label"><span>⚠️ Needs Attention</span><hr></div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-red"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-alert">Alert</span>
+          <span class="insight-estate">Moganad Estate</span>
+          <span class="insight-time">2h ago</span>
+        </div>
+        <div class="insight-text">
+          <strong>3 batches have been in fermentation for over 72 hours</strong> with no dry weight recorded (ME-401, ME-402, ME-405). At this stage, over-fermentation risk is high. Verify with field supervisor and log dry weights immediately.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on 407 processing batches · Moganad 2025-26</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-red"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-alert">Alert</span>
+          <span class="insight-estate">Orchardale Estate</span>
+          <span class="insight-time">5h ago</span>
+        </div>
+        <div class="insight-text">
+          <strong>Outturn dropped below 20% for 2 consecutive batches</strong> (OE-116: 18.4%, OE-117: 19.1%) — both Washed lots from Field C. Season average for Orchardale Washed is 24.1%. Possible cause: unripe cherry or pulping calibration issue.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on 118 processing batches · Orchardale 2025-26</span>
+          <div class="sparkline">
+            <div class="spark-bar" style="height:14px" class="mid"></div>
+            <div class="spark-bar" style="height:18px"></div>
+            <div class="spark-bar" style="height:16px"></div>
+            <div class="spark-bar" style="height:15px"></div>
+            <div class="spark-bar hi" style="height:22px"></div>
+            <div class="spark-bar mid" style="height:12px;background:#f59e0b"></div>
+            <div class="spark-bar lo" style="height:7px;background:#ef4444"></div>
+            <div class="spark-bar lo now" style="height:6px;background:#ef4444"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESSING -->
+    <div class="section-label"><span>🏭 Processing</span><hr></div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-amber"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-processing">Processing</span>
+          <span class="insight-estate">Stanmore Estate</span>
+          <span class="insight-time">Today</span>
+        </div>
+        <div class="insight-text">
+          <strong>This week's outturn (24.1%) is 3.4% below Stanmore's season average (27.5%).</strong> Batches SE-241 to SE-265 show a gradual downward trend over the past 10 days. Consider checking cherry ripeness scoring at harvest and fermentation tank temperatures.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on 265 batches · Stanmore 2025-26</span>
+          <div class="sparkline">
+            <div class="spark-bar hi" style="height:20px"></div>
+            <div class="spark-bar hi" style="height:22px"></div>
+            <div class="spark-bar hi" style="height:19px"></div>
+            <div class="spark-bar" style="height:17px"></div>
+            <div class="spark-bar mid" style="height:14px;background:#f59e0b"></div>
+            <div class="spark-bar mid" style="height:13px;background:#f59e0b"></div>
+            <div class="spark-bar lo now" style="height:9px;background:#ef4444"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-green"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-processing">Processing</span>
+          <span class="insight-estate">Moganad Estate</span>
+          <span class="insight-time">Today</span>
+        </div>
+        <div class="insight-text">
+          <strong>Moganad is the top-performing estate this season at 28.3% avg outturn</strong> — highest across all 5 estates and 1.8% above the previous season's best. Natural process lots are driving this: Moganad Naturals avg 30.1% vs 25.4% for Washed.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on 407 batches · Moganad 2025-26</span>
+          <div class="sparkline">
+            <div class="spark-bar hi" style="height:16px"></div>
+            <div class="spark-bar hi" style="height:20px"></div>
+            <div class="spark-bar hi" style="height:22px"></div>
+            <div class="spark-bar hi" style="height:21px"></div>
+            <div class="spark-bar hi" style="height:23px"></div>
+            <div class="spark-bar hi" style="height:22px"></div>
+            <div class="spark-bar hi now" style="height:24px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-blue"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-processing">Processing</span>
+          <span class="insight-estate">All Estates</span>
+          <span class="insight-time">Today</span>
+        </div>
+        <div class="insight-text">
+          <strong>Natural process batches yield 27.4% avg outturn vs 23.8% for Washed across all estates this season.</strong> With 412 Natural batches (44% of total), this is the biggest driver of season performance. HFE Washed outperforms HFE Natural — the exception to the pattern worth investigating.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on 939 batches across 5 estates · 2025-26</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-amber"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-processing">Processing</span>
+          <span class="insight-estate">Bison Valley Estate</span>
+          <span class="insight-time">Yesterday</span>
+        </div>
+        <div class="insight-text">
+          <strong>Bison Valley has 12 Stripping-type batches this month — 52% more than October.</strong> Stripping lots typically indicate late or unripe cherry. Cross-reference with harvest muster rolls to identify which pickers and fields are contributing.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on 79 batches · Bison Valley 2025-26</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RAINFALL -->
+    <div class="section-label"><span>🌧 Rainfall</span><hr></div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-amber"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-rainfall">Rainfall</span>
+          <span class="insight-estate">Yercaud · All Estates</span>
+          <span class="insight-time">Today</span>
+        </div>
+        <div class="insight-text">
+          <strong>0 mm recorded this week — the 3rd consecutive dry week.</strong> Seasonal weekly average is 18 mm. Total season rainfall (342 mm) remains within 5% of the 10-year average (360 mm), but the dry spell is unusual for this time of year. Monitor soil moisture, especially at Stanmore Block 4 and Moganad Upper sections.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on rain gauge data · 2025-26 season</span>
+          <div class="sparkline">
+            <div class="spark-bar hi" style="height:22px"></div>
+            <div class="spark-bar hi" style="height:18px"></div>
+            <div class="spark-bar hi" style="height:20px"></div>
+            <div class="spark-bar" style="height:11px"></div>
+            <div class="spark-bar mid" style="height:8px;background:#f59e0b"></div>
+            <div class="spark-bar lo" style="height:3px;background:#ef4444"></div>
+            <div class="spark-bar lo now" style="height:2px;background:#ef4444"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-green"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-rainfall">Rainfall</span>
+          <span class="insight-estate">Yercaud · All Estates</span>
+          <span class="insight-time">This week</span>
+        </div>
+        <div class="insight-text">
+          <strong>Season total (342 mm) is on track — within 5% of the 10-year average of 360 mm.</strong> Heavy pre-season rains in June–July (148 mm in 3 weeks) have buffered the recent dry spell. No irrigation advisory yet, but watch conditions through next week.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on rain gauge data · 2025-26 season</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LABOUR -->
+    <div class="section-label"><span>👷 Labour</span><hr></div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-amber"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-labour">Labour</span>
+          <span class="insight-estate">Stanmore Estate</span>
+          <span class="insight-time">This month</span>
+        </div>
+        <div class="insight-text">
+          <strong>Labour cost per kg dry parchment at Stanmore is ₹48.20 — up 12% from last month (₹43.10).</strong> The increase aligns with 18 overtime shifts logged in the first two weeks of November. If outturn continues declining, cost per kg will worsen further. Review shift scheduling.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on labour cost records · Stanmore Nov 2025</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="priority-dot p-green"></div>
+      <div class="insight-body">
+        <div class="insight-meta">
+          <span class="insight-category cat-labour">Labour</span>
+          <span class="insight-estate">Hidden Falls Estate</span>
+          <span class="insight-time">This month</span>
+        </div>
+        <div class="insight-text">
+          <strong>HFE has the best labour efficiency across all estates at ₹38.10/kg — 21% below the all-estate average.</strong> Smaller team (avg 22 workers vs 38 at Stanmore) with fewer overtime shifts and consistent outturn around 24.2%. The HFE batch scheduling model may be worth replicating at Bison Valley.
+        </div>
+        <div class="insight-footer">
+          <span class="source-tag">📊 Based on labour cost records · HFE Nov 2025</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- Ask AI -->
+    <div class="ask-box">
+      <div class="ask-header">
+        <div class="ask-ai-icon">🤖</div>
+        <div>
+          <div class="ask-header-text">Ask AI</div>
+          <div class="ask-header-sub">Ask anything about your estate data</div>
+        </div>
+      </div>
+      <div class="chat-history">
+        <div class="chat-bubble chat-user">Which estate has the best outturn this week?</div>
+        <div class="chat-bubble chat-ai">
+          <strong>Moganad Estate leads this week at 29.1% outturn</strong> — above its own season average of 28.3%. It's followed by Stanmore (24.1%, below average) and HFE (24.8%). Moganad's current Natural processing lots are the key driver.
+        </div>
+      </div>
+      <div class="ask-input-row">
+        <input class="ask-input" type="text" placeholder="Ask about your estates…">
+        <button class="ask-send">Ask →</button>
+      </div>
+      <div style="height:8px"></div>
+      <div class="quick-prompts-label">Suggested questions</div>
+      <div class="quick-prompts">
+        <div class="qp"><span class="qp-icon">📉</span>Why is Stanmore outturn dropping?</div>
+        <div class="qp"><span class="qp-icon">🌧</span>How does rainfall compare to last year?</div>
+        <div class="qp"><span class="qp-icon">💰</span>Which estate has the lowest cost per kg?</div>
+        <div class="qp"><span class="qp-icon">🏆</span>Best performing process type this season?</div>
+      </div>
+    </div>
+
+    <!-- Data sources -->
+    <div class="data-sources">
+      <div class="ds-header">📦 Data Sources</div>
+      <div class="ds-row">
+        <div class="ds-dot" style="background:#2d6e2d"></div>
+        <div class="ds-name">Processing Batches</div>
+        <div class="ds-count">939 records</div>
+        <div class="ds-live">Live</div>
+      </div>
+      <div class="ds-row">
+        <div class="ds-dot" style="background:#3b82f6"></div>
+        <div class="ds-name">Rain Gauge</div>
+        <div class="ds-count">Season data</div>
+        <div class="ds-live">Live</div>
+      </div>
+      <div class="ds-row">
+        <div class="ds-dot" style="background:#f59e0b"></div>
+        <div class="ds-name">Labour Costs</div>
+        <div class="ds-count">Nov 2025</div>
+        <div class="ds-live">Live</div>
+      </div>
+      <div class="ds-row">
+        <div class="ds-dot" style="background:#8b5cf6"></div>
+        <div class="ds-name">Cup Scores</div>
+        <div class="ds-count">73 lots</div>
+        <div class="ds-live">Live</div>
+      </div>
+    </div>
+
+    <!-- Generate report -->
+    <div class="report-banner">
+      <div class="report-icon">📄</div>
+      <div class="report-text">
+        <p>Weekly Estate Report</p>
+        <span>PDF summary of all insights</span>
+      </div>
+      <button class="report-btn">Generate →</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
