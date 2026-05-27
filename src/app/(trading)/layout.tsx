@@ -83,9 +83,9 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--t-bg)', color: 'var(--t-text)', fontSize: FONT_SIZES[fontKey] }}>
       {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Sidebar */}
+      {/* Sidebar — hidden in fullscreen */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 flex flex-col transition-transform duration-200 ${isFullscreen ? 'hidden' : sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         style={{ background: sidebarGrad, borderRight: '1px solid rgba(255,255,255,0.12)' }}
       >
         <div className="flex items-center gap-2.5 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
