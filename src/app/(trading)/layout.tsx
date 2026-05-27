@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee } from 'lucide-react';
+import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee, Warehouse } from 'lucide-react';
 import { useActivityTracker } from '@/lib/useActivityTracker';
 
 const THEMES = {
@@ -25,7 +25,8 @@ const navItems: NavItem[] = [
   { label: 'Cup Score Catalogue', href: '/cup-scores-catalogue', icon: Award,     roles: ['admin', 'supervisor'] },
   { label: 'B2B Trading Hub',     href: '/trading-dashboard',    icon: BarChart2, roles: ['admin', 'supervisor'],
     children: [
-      { label: 'Export Operations', href: '/export-operations', icon: Globe, roles: ['admin', 'supervisor'] },
+      { label: 'Export Operations',    href: '/export-operations',  icon: Globe,      roles: ['admin', 'supervisor'] },
+      { label: 'Coffee Storage Central', href: '/coffee-storage',   icon: Warehouse,  roles: ['admin', 'supervisor'] },
     ],
   },
 ];
