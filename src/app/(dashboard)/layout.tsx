@@ -82,7 +82,12 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
-  { label: 'Daily Report',         href: '/daily-report',         icon: FileText,     roles: ['admin', 'supervisor', 'worker'] },
+  {
+    label: 'Daily Report', href: '/daily-report', icon: FileText, roles: ['admin', 'supervisor', 'worker'],
+    children: [
+      { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },
+    ],
+  },
   { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Harvest Yield',        href: '/harvest-yield',        icon: Wheat,        roles: ['admin', 'supervisor'] },
   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor'] },
