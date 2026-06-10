@@ -354,31 +354,32 @@ function OverviewTab({ rows, totals, colors }: {
 
       {/* KPI cards */}
       <div className={css.kpiGrid}>
-        {/* Diesel */}
-        <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "var(--msp-danger)" : "var(--msp-gold-light)" } as React.CSSProperties}>
+       {/* Diesel */}
+        <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>⛽ Diesel in Store</div>
           <div>
-            <span className={`${css.kpiValue} ${lowDiesel ? css.kpiValueLow : ""}`}>{fmt(dieselStock)}</span>
+            <span className={`${css.kpiValue} ${lowDiesel ? css.kpiValueLow : css.kpiValueGood}`}>{fmt(dieselStock)}</span>
             <span className={css.kpiUnit}>L</span>
           </div>
           <div className={css.kpiSub}>Purchased: {fmt(dP)}L · Issued: {fmt(dI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(dieselStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-gold-light)" }} />
+              style={{ width: `${Math.min(100,(dieselStock/LOW_DIESEL_THRESHOLD)*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" }} />
           </div>
         </div>
         {/* Petrol */}
-        <div className={css.kpiCard} style={{ "--accent": lowPetrol ? "var(--msp-danger)" : "var(--msp-teal)" } as React.CSSProperties}>
+        <div className={css.kpiCard} style={{ "--accent": lowPetrol ? "var(--msp-danger)" : "var(--msp-green)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>🛢️ Petrol in Store</div>
           <div>
-            <span className={`${css.kpiValue} ${lowPetrol ? css.kpiValueLow : ""}`}>{fmt(petrolStock)}</span>
+            <span className={`${css.kpiValue} ${lowPetrol ? css.kpiValueLow : css.kpiValueGood}`}>{fmt(petrolStock)}</span>
             <span className={css.kpiUnit}>L</span>
           </div>
           <div className={css.kpiSub}>Purchased: {fmt(pP)}L · Issued: {fmt(pI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(petrolStock/LOW_STOCK_THRESHOLD)*100)}%`, background: lowPetrol ? "var(--msp-danger)" : "var(--msp-teal)" }} />
+              style={{ width: `${Math.min(100,(petrolStock/LOW_PETROL_THRESHOLD)*100)}%`, background: lowPetrol ? "var(--msp-danger)" : "var(--msp-green)" }} />
           </div>
+        </div>
         </div>
         {/* Total Purchased */}
         <div className={css.kpiCard} style={{ "--accent": "var(--msp-green)" } as React.CSSProperties}>
