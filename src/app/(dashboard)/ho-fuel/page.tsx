@@ -364,7 +364,7 @@ function OverviewTab({ rows, totals, colors }: {
           <div className={css.kpiSub}>Purchased: {fmt(dP)}L · Issued: {fmt(dI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(dieselStock/LOW_DIESEL_THRESHOLD)*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" }} />
+              style={{ width: `${Math.min(100,dieselStock/LOW_DIESEL_THRESHOLD*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" }} />
           </div>
         </div>
         {/* Petrol */}
