@@ -658,9 +658,6 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
         <div className={css.ctrlGrp}>
           <span className={css.ctrlLbl}>Estate</span>
           <select className={css.sel} value={filterEstate} onChange={(e) => setFilterEstate(e.target.value)}>
-            <option value="ALL">All Estates<div className={css.ctrlGrp}>
-          <span className={css.ctrlLbl}>Estate</span>
-          <select className={css.sel} value={filterEstate} onChange={(e) => setFilterEstate(e.target.value)}>
             <option value="ALL">All Estates</option>
             {estates.map((e) => <option key={e} value={e}>{e}</option>)}
           </select>
