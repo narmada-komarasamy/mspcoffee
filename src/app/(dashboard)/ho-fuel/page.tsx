@@ -680,10 +680,7 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
           </select>
         </div>
       </div>
-            {estates.map((e) => <option key={e} value={e}>{e}</option>)}
-          </select>
-        </div>
-      </div>
+
 
       <div className={css.consumerGrid}>
         {/* Top consumers bar chart */}
