@@ -695,6 +695,7 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
                 <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
                   tickFormatter={(v) => `${v}L`} />
                <YAxis type="category" dataKey="vehicle" tick={{ fill: "#2d4a2d", fontSize: 12, fontFamily: "Rajdhani, sans-serif", fontWeight: 600 }}
+                 tickLine={false} axisLine={false} width={130} />
                 <Tooltip
                   contentStyle={{ background: "var(--msp-navy-mid)", border: "1px solid var(--msp-navy-border)", borderRadius: 8, fontSize: 12 }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
