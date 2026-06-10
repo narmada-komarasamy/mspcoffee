@@ -354,7 +354,7 @@ function OverviewTab({ rows, totals, colors }: {
 
       {/* KPI cards */}
       <div className={css.kpiGrid}>
-       {/* Diesel */}
+ {/* Diesel */}
         <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>⛽ Diesel in Store</div>
           <div>
@@ -364,7 +364,7 @@ function OverviewTab({ rows, totals, colors }: {
           <div className={css.kpiSub}>Purchased: {fmt(dP)}L · Issued: {fmt(dI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,dieselStock/LOW_DIESEL_THRESHOLD*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" }} />
+              style={{ width: `${Math.min(100,(dieselStock/LOW_DIESEL_THRESHOLD)*100)}%`, background: lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" }} />
           </div>
         </div>
         {/* Petrol */}
@@ -379,7 +379,6 @@ function OverviewTab({ rows, totals, colors }: {
             <div className={css.kpiBarFill}
               style={{ width: `${Math.min(100,(petrolStock/LOW_PETROL_THRESHOLD)*100)}%`, background: lowPetrol ? "var(--msp-danger)" : "var(--msp-green)" }} />
           </div>
-        </div>
         </div>
         {/* Total Purchased */}
         <div className={css.kpiCard} style={{ "--accent": "var(--msp-green)" } as React.CSSProperties}>
