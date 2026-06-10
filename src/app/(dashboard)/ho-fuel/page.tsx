@@ -354,7 +354,7 @@ function OverviewTab({ rows, totals, colors }: {
 
       {/* KPI cards */}
       <div className={css.kpiGrid}>
- {/* Diesel */}
+        {/* Diesel */}
         <div className={css.kpiCard} style={{ "--accent": lowDiesel ? "var(--msp-danger)" : "var(--msp-green)" } as React.CSSProperties}>
           <div className={css.kpiLabel}>⛽ Diesel in Store</div>
           <div>
@@ -692,10 +692,10 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
                 margin={{ top: 4, right: 16, bottom: 4, left: 135 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
+                <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 11, fontFamily: "Rajdhani, sans-serif" }} tickLine={false} axisLine={false}
                   tickFormatter={(v) => `${v}L`} />
-               <YAxis type="category" dataKey="vehicle" tick={{ fill: "#2d4a2d", fontSize: 12, fontFamily: "Rajdhani, sans-serif", fontWeight: 600 }}
-                 tickLine={false} axisLine={false} width={130} />
+                <YAxis type="category" dataKey="vehicle" tick={{ fill: "#2d4a2d", fontSize: 12, fontFamily: "Rajdhani, sans-serif", fontWeight: 600 }}
+                  tickLine={false} axisLine={false} width={130} />
                 <Tooltip
                   contentStyle={{ background: "var(--msp-navy-mid)", border: "1px solid var(--msp-navy-border)", borderRadius: 8, fontSize: 12 }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -721,7 +721,7 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
                 margin={{ top: 4, right: 16, bottom: 4, left: 145 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
+                <XAxis type="number" tick={{ fill: "var(--msp-neutral)", fontSize: 11, fontFamily: "Rajdhani, sans-serif" }} tickLine={false} axisLine={false}
                   tickFormatter={(v) => `${v}L`} />
                 <YAxis type="category" dataKey="estate" tick={{ fill: "#2d4a2d", fontSize: 12, fontFamily: "Rajdhani, sans-serif", fontWeight: 600 }}
                   tickLine={false} axisLine={false} width={140} />

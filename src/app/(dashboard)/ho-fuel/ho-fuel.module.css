@@ -124,7 +124,8 @@
   line-height: 1;
 }
 
-.kpiValueLow { color: #e8524a !important; }
+.kpiValueLow  { color: #e8524a !important; }
+.kpiValueGood { color: #2d6e2d !important; }
 
 .kpiUnit {
   font-family: var(--t-font);

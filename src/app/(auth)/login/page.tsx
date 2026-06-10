@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Coffee, Delete, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -63,12 +63,35 @@ export default function LoginPage() {
     worker: 'text-green-400',
   };
 
-  const coffeeImages = [
-    { src: '/home/card1-estate.jpg', alt: 'Coffee estate' },
-    { src: '/home/card1-beans.jpg', alt: 'Coffee beans' },
-    { src: '/home/card2-sacks.jpg', alt: 'Coffee sacks' },
-    { src: '/home/card3-pkgs.jpg', alt: 'Coffee packages' },
+  const slides = [
+    { type: 'video' as const, src: '/background_merged.mp4' },
+    { type: 'image' as const, src: '/home/msp-bg.jpg',        alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/home/card1-estate.jpg',  alt: 'Coffee estate' },
+    { type: 'image' as const, src: '/home/card1-beans.jpg',   alt: 'Coffee beans' },
+    { type: 'image' as const, src: '/home/card2-sacks.jpg',   alt: 'Coffee sacks' },
+    { type: 'image' as const, src: '/home/card3-pkgs.jpg',    alt: 'Coffee packages' },
+    { type: 'image' as const, src: '/msp-sacks.png',          alt: 'MSP sacks' },
+    { type: 'image' as const, src: '/bg.png',                 alt: 'Background' },
   ];
+
+  const SLIDE_DURATION = 5000; // ms per slide
+  const [activeSlide, setActiveSlide] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % slides.length);
+    }, SLIDE_DURATION);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Play video whenever its slide becomes active
+  useEffect(() => {
+    if (slides[activeSlide].type === 'video') {
+      videoRef.current?.play().catch(() => {});
+    }
+  }, [activeSlide, slides]);
 
   if (loading) {
     return (
@@ -80,35 +103,41 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
-      {/* Background video */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/background_merged.mp4" type="video/mp4" />
-      </video>
-
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/55" />
-
-      {/* Bottom image strip */}
-      <div className="absolute bottom-0 left-0 right-0 flex h-24 overflow-hidden">
-        {coffeeImages.map((img) => (
-          <div key={img.src} className="relative flex-1 overflow-hidden">
+      {/* Background slideshow */}
+      {slides.map((slide, i) =>
+        slide.type === 'video' ? (
+          <video
+            key="bg-video"
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+            style={{ opacity: activeSlide === i ? 1 : 0 }}
+          >
+            <source src={slide.src} type="video/mp4" />
+          </video>
+        ) : (
+          <div
+            key={slide.src}
+            className="absolute inset-0 transition-opacity duration-1000"
+            style={{ opacity: activeSlide === i ? 1 : 0 }}
+          >
             <Image
-              src={img.src}
-              alt={img.alt}
+              src={slide.src}
+              alt={slide.alt}
               fill
-              className="object-cover opacity-50"
-              sizes="25vw"
+              className="object-cover"
+              sizes="100vw"
+              priority={i === 0}
             />
           </div>
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-      </div>
+        )
+      )}
+
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center w-full">
