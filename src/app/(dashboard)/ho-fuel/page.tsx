@@ -559,9 +559,11 @@ function OverviewTab({ rows, totals, colors }: {
 // ─────────────────────────────────────────────────────────────────────────────
 function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
   const { teal, gold } = colors;
-  const [filterMonth, setFilterMonth] = useState("ALL");
-  const [filterFuel,  setFilterFuel]  = useState("ALL");
-  const [filterEstate,setFilterEstate]= useState("ALL");
+  const [filterMonth,    setFilterMonth]    = useState("ALL");
+  const [filterFuel,     setFilterFuel]     = useState("ALL");
+  const [filterEstate,   setFilterEstate]   = useState("ALL");
+  const [filterYear,     setFilterYear]     = useState("ALL");
+  const [filterConsumer, setFilterConsumer] = useState("ALL");
 
   const estates = useMemo(() => {
     const s = new Set<string>();
@@ -569,13 +571,33 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
     return Array.from(s).sort();
   }, [rows]);
 
+  const years = useMemo(() => {
+    const s = new Set<number>();
+    rows.forEach((r) => { if (r.year) s.add(r.year); });
+    return Array.from(s).sort((a, b) => b - a);
+  }, [rows]);
+
+  const consumers = useMemo(() => {
+    const s = new Set<string>();
+    rows.forEach((r) => {
+      const key = r.vehicle_number || r.vehicle_name;
+      if (key) s.add(key);
+    });
+    return Array.from(s).sort();
+  }, [rows]);
+
   const filtered = useMemo(() => rows.filter((r) => {
     if (r.transaction_type !== "ISSUE") return false;
-    if (filterMonth !== "ALL" && r.month !== parseInt(filterMonth)) return false;
-    if (filterFuel  !== "ALL" && r.fuel_type !== filterFuel)  return false;
-    if (filterEstate !== "ALL" && r.estate !== filterEstate)  return false;
+    if (filterMonth    !== "ALL" && r.month    !== parseInt(filterMonth))    return false;
+    if (filterFuel     !== "ALL" && r.fuel_type !== filterFuel)              return false;
+    if (filterEstate   !== "ALL" && r.estate    !== filterEstate)            return false;
+    if (filterYear     !== "ALL" && r.year      !== parseInt(filterYear))    return false;
+    if (filterConsumer !== "ALL") {
+      const key = r.vehicle_number || r.vehicle_name;
+      if (key !== filterConsumer) return false;
+    }
     return true;
-  }), [rows, filterMonth, filterFuel, filterEstate]);
+  }), [rows, filterMonth, filterFuel, filterEstate, filterYear, filterConsumer]);
 
   const estateBreakdown = useMemo(() => {
     const map = new Map<string, { diesel:number; petrol:number }>();
@@ -636,7 +658,28 @@ function ConsumersTab({ rows, colors }: { rows: TxRow[]; colors: HoColors }) {
         <div className={css.ctrlGrp}>
           <span className={css.ctrlLbl}>Estate</span>
           <select className={css.sel} value={filterEstate} onChange={(e) => setFilterEstate(e.target.value)}>
+            <option value="ALL">All Estates<div className={css.ctrlGrp}>
+          <span className={css.ctrlLbl}>Estate</span>
+          <select className={css.sel} value={filterEstate} onChange={(e) => setFilterEstate(e.target.value)}>
             <option value="ALL">All Estates</option>
+            {estates.map((e) => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+        <div className={css.ctrlGrp}>
+          <span className={css.ctrlLbl}>Year</span>
+          <select className={css.sel} value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+            <option value="ALL">All Years</option>
+            {years.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+          </select>
+        </div>
+        <div className={css.ctrlGrp}>
+          <span className={css.ctrlLbl}>Consumer</span>
+          <select className={css.sel} value={filterConsumer} onChange={(e) => setFilterConsumer(e.target.value)}>
+            <option value="ALL">All Consumers</option>
+            {consumers.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
             {estates.map((e) => <option key={e} value={e}>{e}</option>)}
           </select>
         </div>
