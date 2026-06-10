@@ -93,7 +93,7 @@ const navItems: NavItem[] = [
   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor'] },
   { label: 'Spraying Log',         href: '/spraying-log',         icon: SprayCan,     roles: ['admin', 'supervisor'] },
   { label: 'Vehicle Log',          href: '/vehicle-log',          icon: Truck,        roles: ['admin', 'supervisor'] },
-  { label: 'Store Inventory',      href: '/store-inventory',      icon: Package,      roles: ['admin', 'supervisor', 'worker'],
+  { label: 'Store Inventory',      href: '/store-inventory',      icon: Package,      roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Shopify Orders',       href: '/shopify-orders',       icon: ShoppingCart, roles: ['admin', 'supervisor', 'worker'],
   { label: 'Weather',              href: '/weather',              icon: CloudSun,     roles: ['admin', 'worker'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker'],
