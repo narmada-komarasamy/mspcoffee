@@ -16,7 +16,8 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYXd4b3Z2eXZwY2praHl4Z2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDY1MTgsImV4cCI6MjA5MDUyMjUxOH0.V8Bu91H6lidK1A4qqyPAotp7KFRaF9dm2iEFZvWxWPg"
 );
 
-const LOW_STOCK_THRESHOLD = 50_000;
+const LOW_DIESEL_THRESHOLD = 100;
+const LOW_PETROL_THRESHOLD = 50;
 
 /* ─── Theme ───────────────────────────────────────────────────────────────────── */
 type HoThemeConfig = {
@@ -265,8 +266,8 @@ function OverviewTab({ rows, totals, colors }: {
   const { teal, gold, red, green } = colors;
   const { dP, dI, pP, pI, amt, dieselStock, petrolStock, totalPurchased, totalIssued } = totals;
 
-  const lowDiesel = dieselStock < LOW_STOCK_THRESHOLD;
-  const lowPetrol = petrolStock < LOW_STOCK_THRESHOLD;
+  const lowDiesel = dieselStock < LOW_DIESEL_THRESHOLD;
+  const lowPetrol = petrolStock < LOW_PETROL_THRESHOLD;
 
   // Timeline — monthly
   const timelineData = useMemo(() => {
