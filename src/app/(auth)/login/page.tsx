@@ -63,35 +63,58 @@ export default function LoginPage() {
     worker: 'text-green-400',
   };
 
-  const slides = [
-    { type: 'video' as const, src: '/background_merged.mp4' },
-    { type: 'image' as const, src: '/home/msp-bg.jpg',        alt: 'MSP Coffee' },
-    { type: 'image' as const, src: '/home/card1-estate.jpg',  alt: 'Coffee estate' },
-    { type: 'image' as const, src: '/home/card1-beans.jpg',   alt: 'Coffee beans' },
-    { type: 'image' as const, src: '/home/card2-sacks.jpg',   alt: 'Coffee sacks' },
-    { type: 'image' as const, src: '/home/card3-pkgs.jpg',    alt: 'Coffee packages' },
-    { type: 'image' as const, src: '/msp-sacks.png',          alt: 'MSP sacks' },
-    { type: 'image' as const, src: '/bg.png',                 alt: 'Background' },
+  type Slide =
+    | { type: 'video'; src: string }
+    | { type: 'image'; src: string; alt: string };
+
+  const slides: Slide[] = [
+    { type: 'video', src: '/bg-video-1.mp4' },
+    { type: 'image', src: '/cover-img-1.jpg',  alt: 'MSP Coffee' },
+    { type: 'image', src: '/cover-img-2.webp', alt: 'MSP Coffee' },
+    { type: 'video', src: '/bg-video-2.mp4' },
+    { type: 'image', src: '/cover-img-3.png',  alt: 'MSP Coffee' },
+    { type: 'image', src: '/cover-img-4.png',  alt: 'MSP Coffee' },
+    { type: 'video', src: '/bg-video-3.mp4' },
+    { type: 'image', src: '/cover-img-5.png',  alt: 'MSP Coffee' },
+    { type: 'image', src: '/cover-img-6.jpg',  alt: 'MSP Coffee' },
+    { type: 'image', src: '/cover-img-7.jpg',  alt: 'MSP Coffee' },
   ];
 
-  const SLIDE_DURATION = 5000; // ms per slide
+  const IMAGE_DURATION = 5000; // ms to show each image
   const [activeSlide, setActiveSlide] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % slides.length);
-    }, SLIDE_DURATION);
-    return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const goNext = (current: number) => {
+    setActiveSlide((current + 1) % slides.length);
+  };
 
-  // Play video whenever its slide becomes active
+  // When active slide changes: play video or start image timer
   useEffect(() => {
-    if (slides[activeSlide].type === 'video') {
-      videoRef.current?.play().catch(() => {});
+    if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+
+    const slide = slides[activeSlide];
+    if (slide.type === 'video') {
+      // Play active video, pause others
+      slides.forEach((s, i) => {
+        if (s.type !== 'video') return;
+        const vid = videoRefs.current[i];
+        if (!vid) return;
+        if (i === activeSlide) {
+          vid.currentTime = 0;
+          vid.play().catch(() => {});
+        } else {
+          vid.pause();
+        }
+      });
+    } else {
+      // Auto-advance images after IMAGE_DURATION
+      imageTimerRef.current = setTimeout(() => goNext(activeSlide), IMAGE_DURATION);
     }
-  }, [activeSlide, slides]);
+
+    return () => { if (imageTimerRef.current) clearTimeout(imageTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlide]);
 
   if (loading) {
     return (
@@ -107,12 +130,11 @@ export default function LoginPage() {
       {slides.map((slide, i) =>
         slide.type === 'video' ? (
           <video
-            key="bg-video"
-            ref={videoRef}
-            autoPlay
-            loop
+            key={slide.src}
+            ref={(el) => { videoRefs.current[i] = el; }}
             muted
             playsInline
+            onEnded={() => goNext(i)}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
             style={{ opacity: activeSlide === i ? 1 : 0 }}
           >
@@ -124,14 +146,7 @@ export default function LoginPage() {
             className="absolute inset-0 transition-opacity duration-1000"
             style={{ opacity: activeSlide === i ? 1 : 0 }}
           >
-            <Image
-              src={slide.src}
-              alt={slide.alt}
-              fill
-              className="object-cover"
-              sizes="100vw"
-              priority={i === 0}
-            />
+            <Image src={slide.src} alt={slide.alt} fill className="object-cover" sizes="100vw" priority={i === 0} />
           </div>
         )
       )}
