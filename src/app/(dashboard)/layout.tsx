@@ -41,7 +41,7 @@ const THEMES = {
 } as const;
 type ThemeKey = keyof typeof THEMES;
 
-const FONT_SIZES = { sm: '13px', md: '15px', lg: '17px' } as const;
+const FONT_SIZES = { md: '14px', lg: '16px', xl: '19px' } as const;
 type FontKey = keyof typeof FONT_SIZES;
 
 type AppUser = {
@@ -128,7 +128,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const t = localStorage.getItem('msp_theme') as ThemeKey | null;
     const f = localStorage.getItem('msp_font') as FontKey | null;
     if (t && THEMES[t]) setThemeKey(t);
-    if (f && FONT_SIZES[f]) { setFontKey(f); document.documentElement.style.fontSize = FONT_SIZES[f]; }
+    const validFont = (f && FONT_SIZES[f as FontKey]) ? f as FontKey : 'md';
+    setFontKey(validFont);
+    document.documentElement.style.fontSize = FONT_SIZES[validFont];
   }, [router]);
 
   useEffect(() => {
@@ -368,14 +370,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="ml-auto flex items-center gap-2">
             {/* Font size */}
             <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.25)' }}>
-              {(['sm','md','lg'] as FontKey[]).map((f, i) => (
+              {(['md','lg','xl'] as FontKey[]).map((f, i) => (
                 <button key={f} onClick={() => applyFont(f)}
                   className="transition"
                   style={{
                     padding: '4px 9px',
                     background: fontKey === f ? 'rgba(255,255,255,0.25)' : 'transparent',
                     color: fontKey === f ? '#e8c84a' : 'rgba(255,255,255,0.7)',
-                    fontSize: f === 'sm' ? '11px' : f === 'md' ? '13px' : '15px',
+                    fontSize: f === 'md' ? '11px' : f === 'lg' ? '13px' : '16px',
                     fontWeight: 700,
                     borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none',
                   }}>A</button>
