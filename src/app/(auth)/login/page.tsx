@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Coffee, Delete, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -63,58 +63,49 @@ export default function LoginPage() {
     worker: 'text-green-400',
   };
 
-  type Slide =
-    | { type: 'video'; src: string }
-    | { type: 'image'; src: string; alt: string };
-
-  const slides: Slide[] = [
-    { type: 'video', src: '/bg-video-1.mp4' },
-    { type: 'image', src: '/cover-img-1.jpg',  alt: 'MSP Coffee' },
-    { type: 'image', src: '/cover-img-2.webp', alt: 'MSP Coffee' },
-    { type: 'video', src: '/bg-video-2.mp4' },
-    { type: 'image', src: '/cover-img-3.png',  alt: 'MSP Coffee' },
-    { type: 'image', src: '/cover-img-4.png',  alt: 'MSP Coffee' },
-    { type: 'video', src: '/bg-video-3.mp4' },
-    { type: 'image', src: '/cover-img-5.png',  alt: 'MSP Coffee' },
-    { type: 'image', src: '/cover-img-6.jpg',  alt: 'MSP Coffee' },
-    { type: 'image', src: '/cover-img-7.jpg',  alt: 'MSP Coffee' },
+  const SLIDES = [
+    { type: 'video' as const, src: '/bg-video-1.mp4' },
+    { type: 'image' as const, src: '/cover-img-1.jpg',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-2.webp', alt: 'MSP Coffee' },
+    { type: 'video' as const, src: '/bg-video-2.mp4' },
+    { type: 'image' as const, src: '/cover-img-3.png',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-4.png',  alt: 'MSP Coffee' },
+    { type: 'video' as const, src: '/bg-video-3.mp4' },
+    { type: 'image' as const, src: '/cover-img-5.png',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-6.jpg',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-7.jpg',  alt: 'MSP Coffee' },
   ];
+  const IMAGE_DURATION = 5000;
 
-  const IMAGE_DURATION = 5000; // ms to show each image
   const [activeSlide, setActiveSlide] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const imageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const goNext = (current: number) => {
-    setActiveSlide((current + 1) % slides.length);
-  };
+  const advance = useCallback(() => {
+    setActiveSlide((prev) => (prev + 1) % SLIDES.length);
+  }, []);
 
-  // When active slide changes: play video or start image timer
   useEffect(() => {
-    if (imageTimerRef.current) clearTimeout(imageTimerRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
 
-    const slide = slides[activeSlide];
+    const slide = SLIDES[activeSlide];
+
     if (slide.type === 'video') {
-      // Play active video, pause others
-      slides.forEach((s, i) => {
-        if (s.type !== 'video') return;
-        const vid = videoRefs.current[i];
-        if (!vid) return;
-        if (i === activeSlide) {
-          vid.currentTime = 0;
-          vid.play().catch(() => {});
-        } else {
-          vid.pause();
-        }
+      const vid = videoRefs.current[activeSlide];
+      if (vid) {
+        vid.currentTime = 0;
+        vid.play().catch(() => {});
+      }
+      // Pause all other videos
+      videoRefs.current.forEach((v, i) => {
+        if (v && i !== activeSlide) v.pause();
       });
     } else {
-      // Auto-advance images after IMAGE_DURATION
-      imageTimerRef.current = setTimeout(() => goNext(activeSlide), IMAGE_DURATION);
+      timerRef.current = setTimeout(advance, IMAGE_DURATION);
     }
 
-    return () => { if (imageTimerRef.current) clearTimeout(imageTimerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSlide]);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [activeSlide, advance]);
 
   if (loading) {
     return (
@@ -127,14 +118,14 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
       {/* Background slideshow */}
-      {slides.map((slide, i) =>
+      {SLIDES.map((slide, i) =>
         slide.type === 'video' ? (
           <video
             key={slide.src}
             ref={(el) => { videoRefs.current[i] = el; }}
             muted
             playsInline
-            onEnded={() => goNext(i)}
+            onEnded={advance}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
             style={{ opacity: activeSlide === i ? 1 : 0 }}
           >
