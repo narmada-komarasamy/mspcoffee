@@ -75,36 +75,34 @@ export default function LoginPage() {
     { type: 'image' as const, src: '/cover-img-6.jpg',  alt: 'MSP Coffee' },
     { type: 'image' as const, src: '/cover-img-7.jpg',  alt: 'MSP Coffee' },
   ];
-  const IMAGE_DURATION = 5000;
+  const IMAGE_DURATION = 5000;  // ms per image
+  const VIDEO_FALLBACK  = 12000; // max ms before forcing next if video stalls
 
   const [activeSlide, setActiveSlide] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const advance = useCallback(() => {
     setActiveSlide((prev) => (prev + 1) % SLIDES.length);
   }, []);
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-
     const slide = SLIDES[activeSlide];
 
-    if (slide.type === 'video') {
-      const vid = videoRefs.current[activeSlide];
-      if (vid) {
-        vid.currentTime = 0;
-        vid.play().catch(() => {});
+    // Play active video; pause all others
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === activeSlide && slide.type === 'video') {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        v.pause();
       }
-      // Pause all other videos
-      videoRefs.current.forEach((v, i) => {
-        if (v && i !== activeSlide) v.pause();
-      });
-    } else {
-      timerRef.current = setTimeout(advance, IMAGE_DURATION);
-    }
+    });
 
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    // Always set a fallback timer so the show never stalls
+    const duration = slide.type === 'image' ? IMAGE_DURATION : VIDEO_FALLBACK;
+    const timer = setTimeout(advance, duration);
+    return () => clearTimeout(timer);
   }, [activeSlide, advance]);
 
   if (loading) {
