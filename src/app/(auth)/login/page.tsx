@@ -24,16 +24,34 @@ export default function LoginPage() {
   const [muted, setMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Try autoplay; fall back to playing on first interaction
+  // Start audio on first user interaction (browsers block autoplay with sound)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.volume = 0.4;
-    const tryPlay = () => { audio.play().catch(() => {}); };
+    audio.volume = 0.5;
+    audio.muted = false;
+
+    const tryPlay = () => {
+      audio.play().catch(() => {});
+    };
+
+    // Try immediately (works if page was already interacted with)
     tryPlay();
-    window.addEventListener('pointerdown', tryPlay, { once: true });
-    return () => window.removeEventListener('pointerdown', tryPlay);
+
+    // Otherwise wait for first touch/click
+    document.addEventListener('click', tryPlay, { once: true });
+    document.addEventListener('touchstart', tryPlay, { once: true });
+
+    return () => {
+      document.removeEventListener('click', tryPlay);
+      document.removeEventListener('touchstart', tryPlay);
+    };
   }, []);
+
+  // Sync mute state via ref (React's muted prop is unreliable)
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, [muted]);
 
   useEffect(() => {
     supabase
@@ -129,7 +147,7 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
       {/* Background audio */}
-      <audio ref={audioRef} src="/bg-music.m4a" loop muted={muted} />
+      <audio ref={audioRef} src="/bg-music.m4a" loop preload="auto" />
 
       {/* Mute toggle */}
       <button
