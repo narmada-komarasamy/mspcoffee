@@ -5,27 +5,29 @@ import { supabase } from '@/lib/supabase';
 import { Lock, RefreshCw, Save, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
 // ── All pages and their default role access ────────────────────────────────
+type Access = 'none' | 'view' | 'full';
+
 const PAGES = [
-  { href: '/rainfall',              label: 'Rain Gauge',            defaults: ['admin', 'supervisor', 'worker'] },
-  { href: '/fuel-expenses',         label: 'Fleet Fuel Expenses',   defaults: ['admin', 'supervisor'] },
-  { href: '/ho-fuel',               label: 'HO Fuel',               defaults: ['admin', 'supervisor'] },
-  { href: '/processing-dashboard',  label: 'Processing Dashboard',  defaults: ['admin', 'supervisor'] },
-  { href: '/labour-costs',          label: 'Labour Costs',          defaults: ['admin'] },
-  { href: '/daily-report',          label: 'Daily Report',          defaults: ['admin', 'supervisor', 'worker'] },
-  { href: '/muster-roll',           label: 'Muster Roll',           defaults: ['admin', 'supervisor', 'worker'] },
-  { href: '/harvest-yield',         label: 'Harvest Yield',         defaults: ['admin', 'supervisor'] },
-  { href: '/nursery',               label: 'Nursery',               defaults: ['admin', 'supervisor'] },
-  { href: '/spraying-log',          label: 'Spraying Log',          defaults: ['admin', 'supervisor'] },
-  { href: '/vehicle-log',           label: 'Vehicle Log',           defaults: ['admin', 'supervisor'] },
-  { href: '/store-inventory',       label: 'Store Inventory',       defaults: ['admin', 'supervisor', 'worker'] },
-  { href: '/shopify-orders',        label: 'Shopify Orders',        defaults: ['admin', 'supervisor', 'worker'] },
-  { href: '/weather',               label: 'Weather',               defaults: ['admin', 'supervisor', 'worker'] },
-  { href: '/ai-insights',           label: 'AI Insights',           defaults: ['admin', 'supervisor', 'worker'] },
+  { href: '/rainfall',             label: 'Rain Gauge',           defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/fuel-expenses',        label: 'Fleet Fuel Expenses',  defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/ho-fuel',              label: 'HO Fuel',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/processing-dashboard', label: 'Processing Dashboard', defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/labour-costs',         label: 'Labour Costs',         defaults: { supervisor: 'none' as Access, worker: 'none' as Access } },
+  { href: '/daily-report',         label: 'Daily Report',         defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/muster-roll',          label: 'Muster Roll',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/harvest-yield',        label: 'Harvest Yield',        defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/nursery',              label: 'Nursery',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/spraying-log',         label: 'Spraying Log',         defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/vehicle-log',          label: 'Vehicle Log',          defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/store-inventory',      label: 'Store Inventory',      defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/shopify-orders',       label: 'Shopify Orders',       defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/weather',              label: 'Weather',              defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/ai-insights',          label: 'AI Insights',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
 ];
 
-const ROLES = ['supervisor', 'worker'] as const; // admin is always locked
+const ROLES = ['supervisor', 'worker'] as const;
 
-type PermMap = Record<string, Record<string, boolean>>;
+type PermMap = Record<string, Record<string, Access>>;
 
 // ── Style tokens ───────────────────────────────────────────────────────────
 const card: React.CSSProperties = {
@@ -56,65 +58,86 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: 'middle',
 };
 
-// ── Toggle switch ──────────────────────────────────────────────────────────
-function Toggle({ checked, locked, onChange }: { checked: boolean; locked?: boolean; onChange?: (v: boolean) => void }) {
+const ACCESS_OPTIONS: { value: Access; label: string; color: string; bg: string }[] = [
+  { value: 'none', label: 'No Access', color: '#6b7280', bg: '#f3f4f6' },
+  { value: 'view', label: 'View Only', color: '#1a3a6e', bg: '#dbeafe' },
+  { value: 'full', label: 'Full',      color: '#1b4a1b', bg: '#dcfce7' },
+];
+
+// ── 3-state segmented control ──────────────────────────────────────────────
+function AccessControl({ value, locked, onChange }: {
+  value: Access;
+  locked?: boolean;
+  onChange?: (v: Access) => void;
+}) {
+  if (locked) {
+    return (
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px',
+        background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '3px 10px' }}>
+        <Lock size={10} style={{ color: '#1b4a1b' }} />
+        <span style={{ fontSize: '11px', fontWeight: 700, color: '#1b4a1b' }}>Full</span>
+      </div>
+    );
+  }
+
   return (
-    <button
-      onClick={() => !locked && onChange?.(!checked)}
-      disabled={locked}
-      style={{
-        width: 36, height: 20, borderRadius: 10, border: 'none', cursor: locked ? 'not-allowed' : 'pointer',
-        background: checked ? '#1b4a1b' : '#d1d5db',
-        position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-        opacity: locked ? 0.5 : 1,
-      }}
-    >
-      <span style={{
-        position: 'absolute', top: 2, left: checked ? 18 : 2,
-        width: 16, height: 16, borderRadius: '50%', background: 'white',
-        transition: 'left 0.2s', display: 'block',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-      }} />
-    </button>
+    <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden',
+      border: '1px solid #e5dfc8', background: '#f9f6ed' }}>
+      {ACCESS_OPTIONS.map((opt, i) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange?.(opt.value)}
+            style={{
+              padding: '5px 10px',
+              fontSize: '11px',
+              fontWeight: active ? 700 : 500,
+              border: 'none',
+              borderRight: i < ACCESS_OPTIONS.length - 1 ? '1px solid #e5dfc8' : 'none',
+              cursor: 'pointer',
+              background: active ? opt.bg : 'transparent',
+              color: active ? opt.color : '#9ca3af',
+              transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function PermissionsPage() {
-  const [perms,    setPerms]    = useState<PermMap>({});
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
-  const [saved,    setSaved]    = useState(false);
-  const [dbReady,  setDbReady]  = useState(true);
-  const [toast,    setToast]    = useState('');
+  const [perms,   setPerms]   = useState<PermMap>({});
+  const [loading, setLoading] = useState(true);
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [dbReady, setDbReady] = useState(true);
+  const [toast,   setToast]   = useState('');
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-  // ── Build default perms map ──────────────────────────────────────────────
   const buildDefaults = useCallback((): PermMap => {
     const map: PermMap = {};
     for (const p of PAGES) {
-      map[p.href] = {};
-      for (const r of ROLES) {
-        map[p.href][r] = p.defaults.includes(r);
-      }
+      map[p.href] = { supervisor: p.defaults.supervisor, worker: p.defaults.worker };
     }
     return map;
   }, []);
 
-  // ── Load from Supabase ───────────────────────────────────────────────────
   const load = useCallback(async () => {
     setLoading(true);
-    const defaults = buildDefaults();
-
     const { data, error } = await supabase
       .from('role_permissions')
-      .select('page_href, role, allowed');
+      .select('page_href, role, access');
 
     if (error) {
-      // Table likely doesn't exist yet
       setDbReady(false);
-      setPerms(defaults);
+      setPerms(buildDefaults());
       setLoading(false);
       return;
     }
@@ -122,8 +145,8 @@ export default function PermissionsPage() {
     setDbReady(true);
     const merged = buildDefaults();
     for (const row of data ?? []) {
-      if (merged[row.page_href]) {
-        merged[row.page_href][row.role] = row.allowed;
+      if (merged[row.page_href] && row.access) {
+        merged[row.page_href][row.role] = row.access as Access;
       }
     }
     setPerms(merged);
@@ -132,22 +155,17 @@ export default function PermissionsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Toggle a permission ──────────────────────────────────────────────────
-  const toggle = (href: string, role: string, val: boolean) => {
-    setPerms(prev => ({
-      ...prev,
-      [href]: { ...prev[href], [role]: val },
-    }));
+  const toggle = (href: string, role: string, val: Access) => {
+    setPerms(prev => ({ ...prev, [href]: { ...prev[href], [role]: val } }));
     setSaved(false);
   };
 
-  // ── Save to Supabase ─────────────────────────────────────────────────────
   const save = async () => {
     setSaving(true);
     const rows = [];
     for (const [href, roleMap] of Object.entries(perms)) {
-      for (const [role, allowed] of Object.entries(roleMap)) {
-        rows.push({ page_href: href, role, allowed });
+      for (const [role, access] of Object.entries(roleMap)) {
+        rows.push({ page_href: href, role, access });
       }
     }
 
@@ -161,20 +179,15 @@ export default function PermissionsPage() {
     showToast('Permissions saved');
   };
 
-  const SQL = `-- Run this once in your Supabase SQL editor
-CREATE TABLE IF NOT EXISTS role_permissions (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  page_href   text NOT NULL,
-  role        text NOT NULL,
-  allowed     boolean NOT NULL DEFAULT true,
-  updated_at  timestamptz DEFAULT now(),
-  UNIQUE (page_href, role)
-);
-ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "allow_all" ON role_permissions FOR ALL USING (true) WITH CHECK (true);`;
+  const SQL = `-- Run this in your Supabase SQL editor to upgrade the table
+ALTER TABLE role_permissions
+  ADD COLUMN IF NOT EXISTS access text NOT NULL DEFAULT 'full';
+
+-- Migrate existing boolean data
+UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' END;`;
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -196,64 +209,66 @@ CREATE POLICY "allow_all" ON role_permissions FOR ALL USING (true) WITH CHECK (t
           </button>
           <button onClick={save} disabled={saving || !dbReady}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px',
-              background: saved ? '#16a34a' : '#1b4a1b', color: 'white', border: 'none', cursor: dbReady ? 'pointer' : 'not-allowed',
-              fontWeight: 600, fontSize: '13px', opacity: !dbReady ? 0.5 : 1 }}>
+              background: saved ? '#16a34a' : '#1b4a1b', color: 'white', border: 'none',
+              cursor: dbReady ? 'pointer' : 'not-allowed', fontWeight: 600, fontSize: '13px', opacity: !dbReady ? 0.5 : 1 }}>
             {saved ? <CheckCircle2 size={13} /> : <Save size={13} />}
             {saved ? 'Saved' : 'Save Changes'}
           </button>
         </div>
       </div>
 
-      {/* DB setup banner */}
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        {ACCESS_OPTIONS.map(opt => (
+          <div key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 3, background: opt.bg, border: `1px solid ${opt.color}33` }} />
+            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600 }}>{opt.label}</span>
+          </div>
+        ))}
+        <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>— View Only = can see the page, cannot edit</span>
+      </div>
+
+      {/* DB upgrade banner */}
       {!dbReady && (
         <div style={{ ...card, padding: '1.25rem', marginBottom: '1.5rem', borderLeft: '4px solid #b8920a', background: '#fffbeb' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
             <AlertTriangle size={16} style={{ color: '#b8920a', flexShrink: 0 }} />
-            <strong style={{ color: '#92400e', fontSize: '14px' }}>Database table required</strong>
+            <strong style={{ color: '#92400e', fontSize: '14px' }}>Database migration required</strong>
           </div>
           <p style={{ color: '#92400e', fontSize: '13px', marginBottom: '0.75rem' }}>
-            Run this SQL once in your Supabase SQL Editor to enable dynamic permissions:
+            Run this SQL in your Supabase SQL Editor:
           </p>
           <pre style={{ background: '#1a1a2e', color: '#86efac', borderRadius: '8px', padding: '12px',
-            fontSize: '12px', overflowX: 'auto', margin: 0, lineHeight: 1.6 }}>
-            {SQL}
-          </pre>
+            fontSize: '12px', overflowX: 'auto', margin: 0, lineHeight: 1.6 }}>{SQL}</pre>
         </div>
       )}
 
-      {/* Info banner */}
+      {/* Info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px',
         background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', marginBottom: '1.25rem', fontSize: '13px', color: '#1e40af' }}>
         <Info size={14} style={{ flexShrink: 0 }} />
-        Changes take effect on the user&apos;s next page load. Admin access cannot be removed.
+        Changes take effect on the user&apos;s next page load. Admin access cannot be changed.
       </div>
 
-      {/* Permission grid */}
+      {/* Grid */}
       <div style={{ ...card, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ ...thStyle, textAlign: 'left', width: '40%' }}>Module</th>
-              {/* Admin — always locked */}
+              <th style={{ ...thStyle, textAlign: 'left', width: '35%' }}>Module</th>
               <th style={{ ...thStyle }}>
-                <span style={{ background: '#1b4a1b', color: 'white', borderRadius: '999px',
-                  padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>Admin</span>
+                <span style={{ background: '#1b4a1b', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>Admin</span>
               </th>
               {ROLES.map(r => (
                 <th key={r} style={{ ...thStyle }}>
-                  <span style={{
-                    background: r === 'supervisor' ? '#1a3a6e' : '#6b3a1f',
-                    color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'capitalize',
-                  }}>{r}</span>
+                  <span style={{ background: r === 'supervisor' ? '#1a3a6e' : '#6b3a1f', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'capitalize' }}>{r}</span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem', color: '#9ca3af' }}>
-                Loading…
-              </td></tr>
+              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem', color: '#9ca3af' }}>Loading…</td></tr>
             ) : PAGES.map((page, idx) => (
               <tr key={page.href}
                 style={{ background: idx % 2 === 0 ? 'white' : '#faf8f2' }}
@@ -263,14 +278,13 @@ CREATE POLICY "allow_all" ON role_permissions FOR ALL USING (true) WITH CHECK (t
                   <span style={{ fontWeight: 600, color: '#1a1a1a' }}>{page.label}</span>
                   <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '6px' }}>{page.href}</span>
                 </td>
-                {/* Admin — always on, locked */}
                 <td style={{ ...tdStyle, textAlign: 'center' }}>
-                  <Toggle checked locked />
+                  <AccessControl value="full" locked />
                 </td>
                 {ROLES.map(role => (
                   <td key={role} style={{ ...tdStyle, textAlign: 'center' }}>
-                    <Toggle
-                      checked={perms[page.href]?.[role] ?? false}
+                    <AccessControl
+                      value={perms[page.href]?.[role] ?? 'none'}
                       onChange={v => toggle(page.href, role, v)}
                     />
                   </td>
@@ -281,7 +295,6 @@ CREATE POLICY "allow_all" ON role_permissions FOR ALL USING (true) WITH CHECK (t
         </table>
       </div>
 
-      {/* Toast */}
       {toast && (
         <div style={{ position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
           background: '#1b4a1b', color: 'white', padding: '10px 20px', borderRadius: '10px',
