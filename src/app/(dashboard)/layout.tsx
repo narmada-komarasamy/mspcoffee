@@ -21,6 +21,8 @@ import {
   Brain,
   BarChart2,
   Activity,
+  Shield,
+  UserCog,
   Menu,
   X,
   LogOut,
@@ -97,7 +99,13 @@ const navItems: NavItem[] = [
   { label: 'Shopify Orders',       href: '/shopify-orders',       icon: ShoppingCart, roles: ['admin', 'supervisor', 'worker'] },
   { label: 'Weather',              href: '/weather',              icon: CloudSun,     roles: ['admin', 'supervisor', 'worker'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Activity Log',         href: '/activity-log',         icon: Activity,     roles: ['admin'] },
+  {
+    label: 'Admin Controls', href: '/admin-controls', icon: Shield, roles: ['admin'],
+    children: [
+      { label: 'User Management', href: '/admin-controls/users' },
+      { label: 'Activity Log',    href: '/admin-controls/activity-log' },
+    ],
+  },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
