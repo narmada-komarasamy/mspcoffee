@@ -23,7 +23,7 @@ const sections = [
     icon: Lock,
     title: 'Role & Permissions',
     description: 'Control which roles can access which modules.',
-    available: false,
+    available: true,
   },
   {
     href: '/admin-controls/security',

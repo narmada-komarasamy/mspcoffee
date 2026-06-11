@@ -102,8 +102,9 @@ const navItems: NavItem[] = [
   {
     label: 'Admin Controls', href: '/admin-controls', icon: Shield, roles: ['admin'],
     children: [
-      { label: 'User Management', href: '/admin-controls/users' },
-      { label: 'Activity Log',    href: '/admin-controls/activity-log' },
+      { label: 'User Management',   href: '/admin-controls/users' },
+      { label: 'Role & Permissions', href: '/admin-controls/permissions' },
+      { label: 'Activity Log',      href: '/admin-controls/activity-log' },
     ],
   },
 ];
