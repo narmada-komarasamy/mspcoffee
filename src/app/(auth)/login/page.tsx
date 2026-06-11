@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Coffee, Delete, Loader2 } from 'lucide-react';
+import { Delete, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -146,11 +146,15 @@ export default function LoginPage() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center w-full">
         {/* Branding */}
-        <div className="flex items-center gap-3 mb-8">
-          <Coffee className="h-10 w-10 text-[#86efac]" />
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            MSP <span className="text-[#86efac]">Coffee</span>
-          </h1>
+        <div className="mb-8">
+          <Image
+            src="/msp-logo-new.png"
+            alt="MSP Coffee"
+            width={160}
+            height={206}
+            className="mx-auto drop-shadow-2xl"
+            priority
+          />
         </div>
 
         {!selectedUser ? (
