@@ -174,10 +174,12 @@ export default function LoginPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium truncate">{u.name}</p>
-                  <p className={`text-xs capitalize ${roleColor[u.role] ?? 'text-gray-400'}`}>
-                    {u.role}
-                    {u.estate && ` · ${u.estate}`}
-                  </p>
+                  {!['Ashok Rajes', 'MD', 'Navin Rajes'].includes(u.name) && (
+                    <p className={`text-xs capitalize ${roleColor[u.role] ?? 'text-gray-400'}`}>
+                      {u.role}
+                      {u.estate && ` · ${u.estate}`}
+                    </p>
+                  )}
                 </div>
               </button>
             ))}
