@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Delete, Loader2 } from 'lucide-react';
+import { Delete, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -21,6 +21,19 @@ export default function LoginPage() {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [muted, setMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Try autoplay; fall back to playing on first interaction
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.4;
+    const tryPlay = () => { audio.play().catch(() => {}); };
+    tryPlay();
+    window.addEventListener('pointerdown', tryPlay, { once: true });
+    return () => window.removeEventListener('pointerdown', tryPlay);
+  }, []);
 
   useEffect(() => {
     supabase
@@ -115,6 +128,17 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
+      {/* Background audio */}
+      <audio ref={audioRef} src="/bg-music.m4a" loop muted={muted} />
+
+      {/* Mute toggle */}
+      <button
+        onClick={() => setMuted((m) => !m)}
+        className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/30 text-white/70 hover:text-white hover:bg-black/50 transition"
+        aria-label={muted ? 'Unmute' : 'Mute'}
+      >
+        {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
       {/* Background slideshow */}
       {SLIDES.map((slide, i) =>
         slide.type === 'video' ? (
