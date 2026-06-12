@@ -1311,13 +1311,7 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
           <option value="scored">Has score</option>
           <option value="unscored">No score</option>
         </select>
-        {(filterEstate !== "all" || filterProcess !== "all" || filterScore !== "all") && (
-          <button onClick={() => { setFilterEstate("all"); setFilterProcess("all"); setFilterScore("all"); }}
-            style={{ height:34, padding:"0 12px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:12, background:"#fff", color:"#6b7280", cursor:"pointer" }}>
-            ✕ Clear
-          </button>
-        )}
-        <span style={{ marginLeft:"auto", fontSize:12, color:"#6b7280" }}>
+        <span style={{ fontSize:12, color:"#6b7280" }}>
           {filtered.length} lot{filtered.length!==1?"s":""}
           {filtered.length > 0 && (
             <span style={{ marginLeft:8, fontWeight:600, color:"#1a1a1a" }}>
@@ -1325,6 +1319,12 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
             </span>
           )}
         </span>
+        {(filterEstate !== "all" || filterProcess !== "all" || filterScore !== "all") && (
+          <button onClick={() => { setFilterEstate("all"); setFilterProcess("all"); setFilterScore("all"); }}
+            style={{ height:34, padding:"0 12px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:12, background:"#fff", color:"#6b7280", cursor:"pointer", marginLeft:"auto" }}>
+            ✕ Clear
+          </button>
+        )}
       </div>
 
       <GreenLotTable lots={filtered} onSell={setSaleDrawer} />
