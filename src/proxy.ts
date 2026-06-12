@@ -1,18 +1,30 @@
 /**
  * Next.js 16 Proxy (formerly middleware).
- * Sole responsibility: refresh the Supabase session cookie on every request
- * so the access token stays valid.
- *
- * Auth redirects (unauthenticated → /login, must_change_password → /reset-password)
- * are handled by requireUser() in the dashboard Server Component layout, which
- * reads cookies via next/headers — more reliable than request.cookies in the proxy.
+ * Responsibilities:
+ * 1. Refresh the Supabase session cookie on every request.
+ * 2. Redirect unauthenticated users to /login.
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+const PUBLIC_ROUTES = [
+  '/login',
+  '/forgot-password',
+  '/reset-password',
+  '/accept-invite',
+  '/auth/callback',
+];
+
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Let public routes and static assets through immediately
+  const isPublic = PUBLIC_ROUTES.some(r => pathname.startsWith(r));
+  const isStatic = pathname.startsWith('/api/auth') ||
+                   /\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|m4a|woff2?)$/.test(pathname);
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -36,21 +48,21 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Calling getSession() refreshes the access token cookie if it has expired.
-  await supabase.auth.getSession();
+  // Always refresh the session cookie
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Redirect unauthenticated users to login (except public/static routes)
+  if (!user && !isPublic && !isStatic) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirectTo', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * - _next/static  (static assets)
-     * - _next/image   (image optimisation)
-     * - favicon.ico
-     * - public folder files (images, etc.)
-     */
     '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
