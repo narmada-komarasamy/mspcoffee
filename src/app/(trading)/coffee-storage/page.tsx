@@ -1872,28 +1872,57 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
         );
       })}
 
-      {(greenAvail.length > 0 || htAvail.length > 0) && (
-        <div style={{ display:"flex", gap:8, marginTop:8 }}>
-          <select className={css.formSelect} value={addLotId} onChange={e=>setAddLotId(e.target.value)} style={{ flex:1 }}>
-            <option value="">Add a lot…</option>
-            {greenAvail.length > 0 && (
-              <optgroup label="☕ Green Store (own production)">
-                {greenAvail.map(g => (
-                  <option key={g.id} value={g.id}>{g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg</option>
-                ))}
-              </optgroup>
-            )}
-            {htAvail.length > 0 && (
-              <optgroup label="🌱 HillTiller Green Stock">
-                {htAvail.map(h => (
-                  <option key={h.id} value={h.id}>{h.lot} · {h.supplier} · {h.process} · {Math.round(h.current_kg)} kg · ₹{n(h.rate_per_kg).toFixed(0)}/kg</option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          <button className={css.btnSecondary} onClick={addLot} disabled={!addLotId}>Add</button>
-        </div>
-      )}
+      {(greenAvail.length > 0 || htAvail.length > 0) && (() => {
+        // Combine all available lots and normalise process into a category
+        type AvailLot = { id: string; label: string; process: string };
+        const getCat = (p: string) => {
+          const lp = p.toLowerCase();
+          if (lp.includes('natural')) return 'Natural';
+          if (lp.includes('washed'))  return 'Washed';
+          if (lp.includes('honey') || lp.includes('psd')) return 'Black Honey';
+          return 'Other';
+        };
+        const CAT_ORDER = ['Washed', 'Natural', 'Black Honey', 'Other'];
+        const CAT_EMOJI: Record<string, string> = {
+          'Washed':     '💧 Washed',
+          'Natural':    '☀️ Natural',
+          'Black Honey':'🍯 Black Honey',
+          'Other':      '🌿 Other',
+        };
+        const allAvail: AvailLot[] = [
+          ...greenAvail.map(g => ({
+            id: g.id,
+            label: `${g.lot} · ${g.field} · ${g.process} · ${Math.round(g.current_kg)} kg · ₹${n(g.rate_per_kg).toFixed(0)}/kg`,
+            process: g.process,
+          })),
+          ...htAvail.map(h => ({
+            id: h.id,
+            label: `${h.lot} · ${h.supplier} · ${h.process} · ${Math.round(h.current_kg)} kg · ₹${n(h.rate_per_kg).toFixed(0)}/kg`,
+            process: h.process,
+          })),
+        ];
+        const grouped: Record<string, AvailLot[]> = {};
+        for (const lot of allAvail) {
+          const cat = getCat(lot.process);
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(lot);
+        }
+        return (
+          <div style={{ display:"flex", gap:8, marginTop:8 }}>
+            <select className={css.formSelect} value={addLotId} onChange={e=>setAddLotId(e.target.value)} style={{ flex:1 }}>
+              <option value="">Add a lot…</option>
+              {CAT_ORDER.filter(cat => grouped[cat]?.length).map(cat => (
+                <optgroup key={cat} label={CAT_EMOJI[cat]}>
+                  {grouped[cat].map(lot => (
+                    <option key={lot.id} value={lot.id}>{lot.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <button className={css.btnSecondary} onClick={addLot} disabled={!addLotId}>Add</button>
+          </div>
+        );
+      })()}
 
       <div className={css.computedStrip} style={{ marginTop:14 }}>
         <div className={css.computedItem}>
