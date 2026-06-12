@@ -1317,7 +1317,14 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
             ✕ Clear
           </button>
         )}
-        <span style={{ marginLeft:"auto", fontSize:12, color:"#6b7280" }}>{filtered.length} lot{filtered.length!==1?"s":""}</span>
+        <span style={{ marginLeft:"auto", fontSize:12, color:"#6b7280" }}>
+          {filtered.length} lot{filtered.length!==1?"s":""}
+          {filtered.length > 0 && (
+            <span style={{ marginLeft:8, fontWeight:600, color:"#1a1a1a" }}>
+              · {Math.round(filtered.filter(g=>g.status==="in-stock").reduce((a,g)=>a+n(g.current_kg),0)).toLocaleString("en-IN")} kg
+            </span>
+          )}
+        </span>
       </div>
 
       <GreenLotTable lots={filtered} onSell={setSaleDrawer} />
