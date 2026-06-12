@@ -224,10 +224,10 @@ export default function CoffeeStoragePage() {
       {tab === "overview" && <OverviewTab batches={batches} greenLots={greenLots} sales={sales} setTab={setTab} />}
       {tab === "yard"     && <YardTab     batches={batches} greenLots={greenLots} reload={reload} />}
       {tab === "milling"  && <MillingTab  batches={batches} greenLots={greenLots} reload={reload} />}
-      {tab === "green"    && <GreenTab    greenLots={greenLots} reload={reload} />}
+      {tab === "green"    && <GreenTab    greenLots={greenLots} reload={reload} setTab={setTab} />}
       {tab === "hilltiller" && <HillTillerTab />}
-      {tab === "blends"   && <BlendsTab   blends={blends} greenLots={greenLots} reload={reload} />}
-      {tab === "sales"    && <SalesTab    sales={sales} greenLots={greenLots} reload={reload} />}
+      {tab === "blends"   && <BlendsTab   blends={blends} greenLots={greenLots} reload={reload} setTab={setTab} />}
+      {tab === "sales"    && <SalesTab    sales={sales} greenLots={greenLots} reload={reload} setTab={setTab} />}
       {tab === "audit"    && <AuditTab    audit={audit} />}
     </div>
   );
@@ -1230,7 +1230,7 @@ function GreenLotTable({ lots, onSell }: { lots: GreenLot[]; onSell: (g: GreenLo
   );
 }
 
-function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => void }) {
+function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload: () => void; setTab: (t: Tab) => void }) {
   const [saleDrawer,    setSaleDrawer]    = useState<GreenLot | null>(null);
   const [activeSeason,  setActiveSeason]  = useState<Season>("2024-2025");
   const [filterEstate,  setFilterEstate]  = useState("all");
@@ -1323,7 +1323,7 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
       <GreenLotTable lots={filtered} onSell={setSaleDrawer} />
 
       {saleDrawer && (
-        <RecordSaleDrawer greenLots={greenLots} defaultLot={saleDrawer} onClose={() => setSaleDrawer(null)} reload={reload} />
+        <RecordSaleDrawer greenLots={greenLots} defaultLot={saleDrawer} onClose={() => setSaleDrawer(null)} reload={reload} onSuccess={() => { reload(); setTab("sales"); }} />
       )}
     </div>
   );
@@ -1568,8 +1568,8 @@ function HillTillerTab() {
 // Unified lot row used in the dropdown
 type UnifiedLot = { id: string; lot: string; current_kg: number; rate_per_kg: number; label: string; source: "green" | "hilltiller" };
 
-function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
-  greenLots: GreenLot[]; defaultLot: GreenLot | null; onClose: () => void; reload: () => void;
+function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }: {
+  greenLots: GreenLot[]; defaultLot: GreenLot | null; onClose: () => void; reload: () => void; onSuccess?: () => void;
 }) {
   // Fetch HillTiller lots
   const [htLots, setHtLots] = useState<HTLot[]>([]);
@@ -1642,8 +1642,8 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
         entity: sale.id, before: null, after: `${kg}kg @ ₹${price}/kg → ${customer}`, note: channel });
     }
     setSaving(false);
-    reload();
     onClose();
+    if (onSuccess) onSuccess(); else reload();
   };
 
   const channelOptions: { key: Channel; label: string; icon: string }[] = [
@@ -1749,10 +1749,190 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
 /* ═══════════════════════════════════════════════════════════════
    BLENDS TAB
 ═══════════════════════════════════════════════════════════════ */
-function BlendsTab({ blends, greenLots, reload }: { blends: Blend[]; greenLots: GreenLot[]; reload: () => void }) {
-  const [drawer, setDrawer] = useState<"builder"|"produce"|null>(null);
+/* ─── Sell Blend Drawer ───────────────────────────────────── */
+function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
+  blend: Blend; greenLots: GreenLot[]; onClose: () => void; reload: () => void; onSuccess?: () => void;
+}) {
+  const [htLots,   setHtLots]   = useState<HTLot[]>([]);
+  const [channel,  setChannel]  = useState<Channel>("exporter");
+  const [customer, setCustomer] = useState("");
+  const [kg,       setKg]       = useState("");
+  const [price,    setPrice]    = useState(String(blend.target_sell_price_per_kg || ""));
+  const [date,     setDate]     = useState(todayStr());
+  const [ref,      setRef]      = useState("");
+  const [notes,    setNotes]    = useState("");
+  const [saving,   setSaving]   = useState(false);
+
+  useEffect(() => {
+    supabase.from("hilltiller_stock").select("*")
+      .then(({ data }) => setHtLots((data ?? []) as HTLot[]));
+  }, []);
+
+  const recipe      = blend.recipe ?? [];
+  const recipeTotal = recipe.reduce((a, r) => a + n(r.kg), 0);
+
+  const resolveLot = (id: string) => {
+    const g = greenLots.find(l => l.id === id);
+    if (g) return { lot: g.lot, field: g.field, process: g.process, current_kg: g.current_kg, rate_per_kg: g.rate_per_kg, source: "green" as const, status: g.status };
+    const h = htLots.find(l => l.id === id);
+    if (h) return { lot: h.lot, field: h.supplier, process: h.process, current_kg: h.current_kg, rate_per_kg: h.rate_per_kg, source: "hilltiller" as const, status: h.status };
+    return null;
+  };
+
+  // Max sellable kg = minimum available across lots (proportional)
+  const maxKg = recipeTotal > 0 ? recipe.reduce((min, r) => {
+    const lot = resolveLot(r.green_lot_id);
+    if (!lot) return min;
+    const canMake = (n(lot.current_kg) / n(r.kg)) * recipeTotal;
+    return Math.min(min, canMake);
+  }, Infinity) : 0;
+
+  const saleKg       = n(kg);
+  const weightedCost = recipeTotal > 0
+    ? recipe.reduce((a, r) => a + n(r.kg) * n(resolveLot(r.green_lot_id)?.rate_per_kg ?? 0), 0) / recipeTotal
+    : 0;
+  const revenue      = saleKg * n(price);
+  const margin       = (n(price) - weightedCost) * saleKg;
+  const insufficient = saleKg > 0 && saleKg > maxKg;
+
+  const channelOptions: { key: Channel; label: string; icon: string }[] = [
+    { key: "exporter",       label: "Exporter",          icon: "🌍" },
+    { key: "cafe",           label: "Local Café",         icon: "☕" },
+    { key: "internal-roast", label: "Internal Roastery",  icon: "🔥" },
+    { key: "retail",         label: "Direct Retail",      icon: "🛒" },
+  ];
+
+  const confirm = async () => {
+    if (!customer.trim() || !kg || !price || !date) {
+      alert("Customer, quantity, price and date are required."); return;
+    }
+    if (insufficient) { alert(`Maximum available from this blend is ${Math.floor(maxKg)} kg.`); return; }
+    setSaving(true);
+
+    // Proportional deduction from each recipe lot
+    const lotIds: string[] = [];
+    for (const r of recipe) {
+      const lot = resolveLot(r.green_lot_id);
+      if (!lot) continue;
+      const deduct = (n(r.kg) / recipeTotal) * saleKg;
+      const newKg  = lot.current_kg - deduct;
+      const table  = lot.source === "hilltiller" ? "hilltiller_stock" : "green_lots";
+      await supabase.from(table).update({
+        current_kg: newKg,
+        status: newKg <= 0 ? "depleted" : lot.status,
+      }).eq("id", r.green_lot_id);
+      lotIds.push(r.green_lot_id);
+    }
+
+    const { data: sale } = await supabase.from("coffee_sales").insert([{
+      date, channel, customer: customer.trim(),
+      green_lot_ids: lotIds,
+      kg: saleKg, price_per_kg: n(price), currency: "INR",
+      status: channel === "internal-roast" ? "transferred" : "pending",
+      reference: ref || null,
+      notes: `Blend sale: ${blend.name}${notes ? ` — ${notes}` : ""}`,
+    }]).select().single();
+
+    if (sale) {
+      await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "sale-created",
+        entity: sale.id, before: null,
+        after: `${saleKg} kg @ ₹${price}/kg → ${customer} (blend: ${blend.name})`,
+        note: channel });
+    }
+
+    setSaving(false);
+    onClose();
+    if (onSuccess) onSuccess(); else reload();
+  };
+
+  return (
+    <Drawer title={`🌍 Sell Blend — ${blend.name}`} onClose={onClose}>
+      {/* Recipe summary */}
+      <div style={{ background:"#f9f6ef", borderRadius:10, padding:"10px 14px", marginBottom:14, border:"1px solid #e5dfc8" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#7a90b0", marginBottom:6, letterSpacing:"0.05em" }}>RECIPE</div>
+        {recipe.map(r => {
+          const lot = resolveLot(r.green_lot_id);
+          const pct = recipeTotal > 0 ? (n(r.kg)/recipeTotal*100).toFixed(0) : "0";
+          return (
+            <div key={r.green_lot_id} style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:3 }}>
+              <span className={css.tdMono}>{lot?.lot ?? r.green_lot_id}
+                {lot?.source === "hilltiller" && <span style={{ fontSize:9, fontWeight:700, background:"#dcfce7", color:"#166534", borderRadius:4, padding:"1px 5px", marginLeft:4 }}>HT</span>}
+              </span>
+              <span style={{ color:"#6b7280" }}>{lot?.field} · {pct}% · {Math.round(lot?.current_kg??0)} kg avail</span>
+            </div>
+          );
+        })}
+        <div style={{ fontSize:11, color:"#6b7280", marginTop:6 }}>
+          Max sellable: <strong style={{ color: maxKg > 0 ? "#1a1a1a" : "#e8524a" }}>{isFinite(maxKg) ? Math.floor(maxKg).toLocaleString("en-IN") : 0} kg</strong>
+          &nbsp;·&nbsp;Cost/kg: <strong>₹{weightedCost.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      {/* Channel selector */}
+      <div className={css.channelBtnBar}>
+        {channelOptions.map(c => (
+          <button key={c.key} onClick={() => setChannel(c.key)}
+            className={`${css.channelBtn} ${channel===c.key ? (c.key==="exporter"?css.channelBtnActiveExp:c.key==="cafe"?css.channelBtnActiveCafe:c.key==="internal-roast"?css.channelBtnActiveRoast:css.channelBtnActiveRetail) : ""}`}>
+            {c.icon} {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={css.formGrid2}>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Customer *</label>
+          <input className={css.formInput} placeholder="e.g. Starbucks India" value={customer} onChange={e=>setCustomer(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Quantity (kg) *</label>
+          <input type="number" className={`${css.formInput} ${insufficient ? css.inputError ?? "" : ""}`}
+            min="0" step="1" value={kg} onChange={e=>setKg(e.target.value)} />
+          {insufficient && <span style={{ fontSize:10, color:"#e8524a" }}>Exceeds available stock ({Math.floor(maxKg)} kg max)</span>}
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Sale Price ₹/kg *</label>
+          <input type="number" className={css.formInput} min="0" step="0.01" value={price} onChange={e=>setPrice(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Date *</label>
+          <input type="date" className={css.formInput} value={date} onChange={e=>setDate(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Reference</label>
+          <input className={css.formInput} placeholder="PO or contract #" value={ref} onChange={e=>setRef(e.target.value)} />
+        </div>
+      </div>
+      <div className={css.formGroup} style={{ marginTop:10 }}>
+        <label className={css.formLabel}>Notes</label>
+        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+      </div>
+
+      <div className={css.computedStrip}>
+        <div className={css.computedItem}>
+          <span className={css.computedLabel}>Revenue</span>
+          <span className={`${css.computedValue} ${css.computedValueGold}`}>{fmtINR(revenue)}</span>
+        </div>
+        <div className={css.computedItem}>
+          <span className={css.computedLabel}>Margin/kg</span>
+          <span className={`${css.computedValue} ${margin>=0?css.computedValueGreen:css.computedValueRed}`}>
+            ₹{(n(price)-weightedCost).toFixed(2)}
+          </span>
+        </div>
+        <div className={css.computedItem}>
+          <span className={css.computedLabel}>Total margin</span>
+          <span className={`${css.computedValue} ${margin>=0?css.computedValueGreen:css.computedValueRed}`}>{fmtINR(margin)}</span>
+        </div>
+      </div>
+      <DrawerFooter onCancel={onClose} onConfirm={confirm} saving={saving} disabled={insufficient || !kg} label="🌍 Record Blend Sale" />
+    </Drawer>
+  );
+}
+
+function BlendsTab({ blends, greenLots, reload, setTab }: { blends: Blend[]; greenLots: GreenLot[]; reload: () => void; setTab: (t: Tab) => void }) {
+  const [drawer, setDrawer] = useState<"builder"|"produce"|"sell"|null>(null);
   const [editBlend, setEditBlend] = useState<Blend | null>(null);
   const [produceBlend, setProduceBlend] = useState<Blend | null>(null);
+  const [sellBlend, setSellBlend] = useState<Blend | null>(null);
 
   const activeBlends = blends.filter(b => b.status !== "retired");
 
@@ -1835,6 +2015,10 @@ function BlendsTab({ blends, greenLots, reload }: { blends: Blend[]; greenLots: 
                     onClick={() => { setProduceBlend(b); setDrawer("produce"); }}>
                     ▶ Produce batch
                   </button>
+                  <button className={css.btnNew} style={{ fontSize:12 }}
+                    onClick={() => { setSellBlend(b); setDrawer("sell"); }}>
+                    🌍 Sell blend
+                  </button>
                 </div>
               </div>
             );
@@ -1847,6 +2031,9 @@ function BlendsTab({ blends, greenLots, reload }: { blends: Blend[]; greenLots: 
       )}
       {drawer === "produce" && produceBlend && (
         <ProduceBlendDrawer blend={produceBlend} greenLots={greenLots} onClose={() => { setDrawer(null); setProduceBlend(null); }} reload={reload} />
+      )}
+      {drawer === "sell" && sellBlend && (
+        <SellBlendDrawer blend={sellBlend} greenLots={greenLots} onClose={() => { setDrawer(null); setSellBlend(null); }} reload={reload} onSuccess={() => { reload(); setTab("sales"); }} />
       )}
     </div>
   );
@@ -2187,7 +2374,7 @@ function ProduceBlendDrawer({ blend, greenLots, onClose, reload }: {
 /* ═══════════════════════════════════════════════════════════════
    SALES TAB
 ═══════════════════════════════════════════════════════════════ */
-function SalesTab({ sales, greenLots, reload }: { sales: CoffeeSale[]; greenLots: GreenLot[]; reload: () => void }) {
+function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; greenLots: GreenLot[]; reload: () => void; setTab: (t: Tab) => void }) {
   const [channelFilter, setChannelFilter] = useState<Channel | "all">("all");
   const [saleDrawer, setSaleDrawer] = useState(false);
 
@@ -2267,7 +2454,7 @@ function SalesTab({ sales, greenLots, reload }: { sales: CoffeeSale[]; greenLots
       </div>
 
       {saleDrawer && (
-        <RecordSaleDrawer greenLots={greenLots} defaultLot={null} onClose={()=>setSaleDrawer(false)} reload={reload} />
+        <RecordSaleDrawer greenLots={greenLots} defaultLot={null} onClose={()=>setSaleDrawer(false)} reload={reload} onSuccess={() => { reload(); setTab("sales"); }} />
       )}
     </div>
   );
