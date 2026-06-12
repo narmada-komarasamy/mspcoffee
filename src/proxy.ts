@@ -1,13 +1,11 @@
 /**
  * Next.js 16 Proxy (formerly middleware).
- * Responsibilities:
- * 1. Refresh the Supabase session cookie on every request.
- * 2. Redirect unauthenticated users to /login.
+ * Redirects unauthenticated users to /login.
+ * Auth is tracked via the msp_auth cookie set on PIN login.
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -20,45 +18,24 @@ const PUBLIC_ROUTES = [
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Let public routes and static assets through immediately
   const isPublic = PUBLIC_ROUTES.some(r => pathname.startsWith(r));
-  const isStatic = pathname.startsWith('/api/auth') ||
+  const isStatic = pathname.startsWith('/api/') ||
                    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|m4a|woff2?)$/.test(pathname);
 
-  let response = NextResponse.next({ request });
+  if (isPublic || isStatic) {
+    return NextResponse.next({ request });
+  }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  // Check for PIN login session cookie
+  const isLoggedIn = request.cookies.has('msp_auth');
 
-  // Always refresh the session cookie
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Redirect unauthenticated users to login (except public/static routes)
-  if (!user && !isPublic && !isStatic) {
+  if (!isLoggedIn) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  return response;
+  return NextResponse.next({ request });
 }
 
 export const config = {

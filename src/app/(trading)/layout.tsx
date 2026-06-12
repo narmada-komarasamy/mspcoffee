@@ -85,7 +85,11 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
 
   const applyTheme = (k: ThemeKey) => { setThemeKey(k); localStorage.setItem('msp_theme', k); };
   const applyFont  = (k: FontKey)  => { setFontKey(k);  localStorage.setItem('msp_font', k); document.documentElement.style.fontSize = FONT_SIZES[k]; };
-  const handleLogout = () => { localStorage.removeItem('msp_user'); router.push('/login'); };
+  const handleLogout = () => {
+    localStorage.removeItem('msp_user');
+    document.cookie = 'msp_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    router.push('/login');
+  };
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useActivityTracker(navItems.flatMap(i => [i, ...(i.children ?? [])]).find(i => i.href === pathname)?.label);

@@ -68,6 +68,8 @@ export default function LoginPage() {
     if (pin.length === 4 && selectedUser) {
       if (pin === selectedUser.pin) {
         localStorage.setItem('msp_user', JSON.stringify(selectedUser));
+        // Set a session cookie so proxy.ts can verify auth server-side
+        document.cookie = 'msp_auth=1; path=/; SameSite=Lax';
         router.push('/home');
       } else {
         setError('Incorrect PIN');
