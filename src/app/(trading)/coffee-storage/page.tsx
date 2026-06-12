@@ -1121,12 +1121,28 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
 ═══════════════════════════════════════════════════════════════ */
 function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => void }) {
   const [saleDrawer, setSaleDrawer] = useState<GreenLot | null>(null);
+  const [filterEstate,  setFilterEstate]  = useState("all");
+  const [filterProcess, setFilterProcess] = useState("all");
+  const [filterScore,   setFilterScore]   = useState("all");
 
-  const inStock   = greenLots.filter(g => g.status === "in-stock");
+  const estates   = Array.from(new Set(greenLots.map(g => g.field).filter(Boolean))).sort();
+  const processes = Array.from(new Set(greenLots.map(g => g.process).filter(Boolean))).sort();
+
+  const filtered = greenLots.filter(g => {
+    if (filterEstate  !== "all" && g.field   !== filterEstate)  return false;
+    if (filterProcess !== "all" && g.process !== filterProcess) return false;
+    if (filterScore === "scored"   && !g.score)  return false;
+    if (filterScore === "unscored" &&  g.score)  return false;
+    if (filterScore === "85+"      && (g.score ?? 0) < 85) return false;
+    if (filterScore === "80-85"    && ((g.score ?? 0) < 80 || (g.score ?? 0) >= 85)) return false;
+    return true;
+  });
+
+  const inStock   = filtered.filter(g => g.status === "in-stock");
   const totalKg   = inStock.reduce((a,g) => a + n(g.current_kg), 0);
   const stockVal  = inStock.reduce((a,g) => a + n(g.current_kg) * n(g.rate_per_kg), 0);
-  const reserved  = greenLots.filter(g => g.status === "reserved").reduce((a,g)=>a+n(g.current_kg),0);
-  const soldYTD   = greenLots.reduce((a,g) => a + (n(g.green_kg_in) - n(g.current_kg)), 0);
+  const reserved  = filtered.filter(g => g.status === "reserved").reduce((a,g)=>a+n(g.current_kg),0);
+  const soldYTD   = filtered.reduce((a,g) => a + (n(g.green_kg_in) - n(g.current_kg)), 0);
 
   return (
     <div>
@@ -1157,10 +1173,35 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
         </div>
       </div>
 
-      <div className={css.actionBar}>
-        <button className={css.btnNew} onClick={() => setSaleDrawer(greenLots.find(g=>g.status==="in-stock") ?? null)}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+        <button className={css.btnNew} onClick={() => setSaleDrawer(filtered.find(g=>g.status==="in-stock") ?? null)}>
           <Plus size={13} /> Record sale
         </button>
+        <select value={filterEstate} onChange={e=>setFilterEstate(e.target.value)}
+          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
+          <option value="all">All Estates</option>
+          {estates.map(e => <option key={e} value={e}>{e}</option>)}
+        </select>
+        <select value={filterProcess} onChange={e=>setFilterProcess(e.target.value)}
+          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
+          <option value="all">All Processes</option>
+          {processes.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select value={filterScore} onChange={e=>setFilterScore(e.target.value)}
+          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
+          <option value="all">All Scores</option>
+          <option value="85+">85+</option>
+          <option value="80-85">80–85</option>
+          <option value="scored">Has score</option>
+          <option value="unscored">No score</option>
+        </select>
+        {(filterEstate !== "all" || filterProcess !== "all" || filterScore !== "all") && (
+          <button onClick={() => { setFilterEstate("all"); setFilterProcess("all"); setFilterScore("all"); }}
+            style={{ height:34, padding:"0 12px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:12, background:"#fff", color:"#6b7280", cursor:"pointer" }}>
+            ✕ Clear
+          </button>
+        )}
+        <span style={{ marginLeft:"auto", fontSize:12, color:"#6b7280" }}>{filtered.length} lot{filtered.length!==1?"s":""}</span>
       </div>
 
       <div className={css.tableCard}>
@@ -1173,9 +1214,9 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
               <th className={css.tdRight}>Value</th><th>Bin</th><th>Status</th><th></th>
             </tr></thead>
             <tbody>
-              {greenLots.length === 0 ? (
-                <tr><td colSpan={13} className={css.empty}>No green lots yet.</td></tr>
-              ) : greenLots.map(g => {
+              {filtered.length === 0 ? (
+                <tr><td colSpan={13} className={css.empty}>No lots match the filters.</td></tr>
+              ) : filtered.map(g => {
                 const pct = g.green_kg_in > 0 ? g.current_kg / g.green_kg_in : 0;
                 const barClass = pct > 0.5 ? css.progressFill : pct > 0.2 ? css.progressFillLow : css.progressFillEmpty;
                 return (
