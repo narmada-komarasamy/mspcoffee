@@ -35,7 +35,7 @@ type GreenLot = {
   green_kg_in: number; current_kg: number; rate_per_kg: number;
   process: string; field: string; grade: string; screen: string;
   score: number | null; milled_date: string; warehouse: string;
-  status: GreenStatus; notes: string | null;
+  status: GreenStatus; notes: string | null; season: string;
 };
 type CoffeeSale = {
   id: string; date: string; channel: Channel; customer: string;
@@ -1119,16 +1119,130 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
 /* ═══════════════════════════════════════════════════════════════
    GREEN STORE TAB (Sheet 2)
 ═══════════════════════════════════════════════════════════════ */
+const SEASONS = ["2024-2025", "2025-2026"] as const;
+type Season = typeof SEASONS[number];
+
+function GreenSeasonKPIs({ lots, season }: { lots: GreenLot[]; season: Season }) {
+  const seasonLots = lots.filter(g => (g.season ?? "2024-2025") === season);
+  const inStock    = seasonLots.filter(g => g.status === "in-stock");
+  const totalKg    = inStock.reduce((a,g) => a + n(g.current_kg), 0);
+  const stockVal   = inStock.reduce((a,g) => a + n(g.current_kg) * n(g.rate_per_kg), 0);
+  const reserved   = seasonLots.filter(g => g.status === "reserved").reduce((a,g)=>a+n(g.current_kg),0);
+  const soldYTD    = seasonLots.reduce((a,g) => a + (n(g.green_kg_in) - n(g.current_kg)), 0);
+
+  const accentColor = season === "2024-2025" ? "#1fc8c8" : "#7c3aed";
+  return (
+    <div className={css.kpiGrid} style={{ marginBottom:8 }}>
+      <div className={css.kpiCard}>
+        <div className={css.kpiLabel}>☕ Green In Stock</div>
+        <div><span className={css.kpiValue}>{Math.round(totalKg).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
+        <div className={css.kpiSub}>{inStock.length} active lots</div>
+        <div className={css.kpiAccent} style={{ background: accentColor }} />
+      </div>
+      <div className={css.kpiCard}>
+        <div className={css.kpiLabel}>💰 Stock Value</div>
+        <div className={css.kpiValue} style={{ fontSize:"1.35rem" }}>{fmtINR(stockVal)}</div>
+        <div className={css.kpiSub}>Weighted cost basis</div>
+        <div className={css.kpiAccent} style={{ background:"#f5a623" }} />
+      </div>
+      <div className={css.kpiCard}>
+        <div className={css.kpiLabel}>🔒 Reserved</div>
+        <div><span className={css.kpiValue}>{Math.round(reserved).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
+        <div className={css.kpiSub}>Allocated to blends</div>
+        <div className={css.kpiAccent} style={{ background:"#9b59b6" }} />
+      </div>
+      <div className={css.kpiCard}>
+        <div className={css.kpiLabel}>📤 Sold / Used</div>
+        <div><span className={css.kpiValue}>{Math.round(soldYTD).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
+        <div className={css.kpiSub}>Total depleted</div>
+        <div className={css.kpiAccent} style={{ background:"#2ecc71" }} />
+      </div>
+    </div>
+  );
+}
+
+function GreenLotTable({ lots, onSell }: { lots: GreenLot[]; onSell: (g: GreenLot) => void }) {
+  if (lots.length === 0) return (
+    <div className={css.tableCard}>
+      <div className={css.tableWrap}>
+        <table className={css.table}><tbody>
+          <tr><td colSpan={13} className={css.empty}>No lots in this season yet.</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  );
+  return (
+    <div className={css.tableCard}>
+      <div className={css.tableWrap}>
+        <table className={css.table}>
+          <thead><tr>
+            <th>Lot</th><th>Derived from</th><th>Field</th><th>Process</th>
+            <th>Grade</th><th>Screen</th><th>Score</th>
+            <th className={css.tdRight}>Available</th><th className={css.tdRight}>Rate ₹/kg</th>
+            <th className={css.tdRight}>Value</th><th>Bin</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody>
+            {lots.map(g => {
+              const pct = g.green_kg_in > 0 ? g.current_kg / g.green_kg_in : 0;
+              const barClass = pct > 0.5 ? css.progressFill : pct > 0.2 ? css.progressFillLow : css.progressFillEmpty;
+              return (
+                <tr key={g.id}>
+                  <td>
+                    <div className={css.tdMono}>{g.lot}</div>
+                    <div style={{ fontSize:10, color:"#7a90b0" }}>{fmtDate(g.milled_date)}</div>
+                  </td>
+                  <td className={css.tdMono} style={{ fontSize:10, color:"#7a90b0" }}>
+                    {g.derived_from.slice(0,3).join(", ")}{g.derived_from.length>3 ? ` +${g.derived_from.length-3}` : ""}
+                  </td>
+                  <td>{g.field}</td>
+                  <td><span className={`${css.badge} ${processBadgeClass(g.process)}`}>{g.process}</span></td>
+                  <td>{g.grade || "—"}</td>
+                  <td className={css.tdMono}>{g.screen || "—"}</td>
+                  <td className={css.tdNum}>{g.score ?? "—"}</td>
+                  <td>
+                    <div className={css.progressWrap}>
+                      <div style={{ fontSize:12, fontWeight:600, color:"#1a1a1a", fontVariantNumeric:"tabular-nums" }}>
+                        {Math.round(g.current_kg).toLocaleString("en-IN")} kg
+                      </div>
+                      <div className={css.progressBar}>
+                        <div className={barClass} style={{ width:`${Math.max(0,Math.min(100,pct*100)).toFixed(1)}%` }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td className={css.tdNum}>₹{n(g.rate_per_kg).toFixed(2)}</td>
+                  <td className={css.tdNum} style={{ color:"#f5a623" }}>{fmtINR(n(g.current_kg)*n(g.rate_per_kg))}</td>
+                  <td className={css.tdMono}>{g.warehouse || "—"}</td>
+                  <td><span className={statusBadgeClass(g.status)}>{g.status}</span></td>
+                  <td>
+                    {g.status === "in-stock" && (
+                      <button className={css.btnNew} style={{ padding:"4px 10px", fontSize:11 }} onClick={()=>onSell(g)}>
+                        Sell
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => void }) {
-  const [saleDrawer, setSaleDrawer] = useState<GreenLot | null>(null);
+  const [saleDrawer,    setSaleDrawer]    = useState<GreenLot | null>(null);
+  const [activeSeason,  setActiveSeason]  = useState<Season>("2024-2025");
   const [filterEstate,  setFilterEstate]  = useState("all");
   const [filterProcess, setFilterProcess] = useState("all");
   const [filterScore,   setFilterScore]   = useState("all");
 
-  const estates   = Array.from(new Set(greenLots.map(g => g.field).filter(Boolean))).sort();
-  const processes = Array.from(new Set(greenLots.map(g => g.process).filter(Boolean))).sort();
+  const seasonLots = greenLots.filter(g => (g.season ?? "2024-2025") === activeSeason);
 
-  const filtered = greenLots.filter(g => {
+  const estates   = Array.from(new Set(seasonLots.map(g => g.field).filter(Boolean))).sort();
+  const processes = Array.from(new Set(seasonLots.map(g => g.process).filter(Boolean))).sort();
+
+  const filtered = seasonLots.filter(g => {
     if (filterEstate  !== "all" && g.field   !== filterEstate)  return false;
     if (filterProcess !== "all" && g.process !== filterProcess) return false;
     if (filterScore === "scored"   && !g.score)  return false;
@@ -1138,44 +1252,46 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
     return true;
   });
 
-  const inStock   = filtered.filter(g => g.status === "in-stock");
-  const totalKg   = inStock.reduce((a,g) => a + n(g.current_kg), 0);
-  const stockVal  = inStock.reduce((a,g) => a + n(g.current_kg) * n(g.rate_per_kg), 0);
-  const reserved  = filtered.filter(g => g.status === "reserved").reduce((a,g)=>a+n(g.current_kg),0);
-  const soldYTD   = filtered.reduce((a,g) => a + (n(g.green_kg_in) - n(g.current_kg)), 0);
+  const seasonAccent = (s: Season) => s === "2024-2025" ? "#1fc8c8" : "#7c3aed";
 
   return (
     <div>
-      <div className={css.kpiGrid}>
-        <div className={css.kpiCard}>
-          <div className={css.kpiLabel}>☕ Green In Stock</div>
-          <div><span className={css.kpiValue}>{Math.round(totalKg).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
-          <div className={css.kpiSub}>{inStock.length} active lots</div>
-          <div className={css.kpiAccent} style={{ background:"#1fc8c8" }} />
-        </div>
-        <div className={css.kpiCard}>
-          <div className={css.kpiLabel}>💰 Stock Value</div>
-          <div className={css.kpiValue} style={{ fontSize:"1.35rem" }}>{fmtINR(stockVal)}</div>
-          <div className={css.kpiSub}>Weighted cost basis</div>
-          <div className={css.kpiAccent} style={{ background:"#f5a623" }} />
-        </div>
-        <div className={css.kpiCard}>
-          <div className={css.kpiLabel}>🔒 Reserved</div>
-          <div><span className={css.kpiValue}>{Math.round(reserved).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
-          <div className={css.kpiSub}>Allocated to blends</div>
-          <div className={css.kpiAccent} style={{ background:"#9b59b6" }} />
-        </div>
-        <div className={css.kpiCard}>
-          <div className={css.kpiLabel}>📤 Sold / Used</div>
-          <div><span className={css.kpiValue}>{Math.round(soldYTD).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
-          <div className={css.kpiSub}>Total depleted</div>
-          <div className={css.kpiAccent} style={{ background:"#2ecc71" }} />
-        </div>
+      {/* Season summary strip — always visible */}
+      <div style={{ display:"flex", gap:12, marginBottom:16 }}>
+        {SEASONS.map(s => {
+          const sLots    = greenLots.filter(g => (g.season ?? "2024-2025") === s);
+          const sInStock = sLots.filter(g => g.status === "in-stock");
+          const sVal     = sInStock.reduce((a,g) => a + n(g.current_kg)*n(g.rate_per_kg), 0);
+          const sKg      = sInStock.reduce((a,g) => a + n(g.current_kg), 0);
+          const active   = activeSeason === s;
+          return (
+            <button key={s} onClick={() => { setActiveSeason(s); setFilterEstate("all"); setFilterProcess("all"); setFilterScore("all"); }}
+              style={{
+                flex:1, padding:"14px 18px", borderRadius:12, cursor:"pointer", textAlign:"left",
+                border: active ? `2px solid ${seasonAccent(s)}` : "2px solid #e5dfc8",
+                background: active ? "#fff" : "#faf7f0",
+                boxShadow: active ? `0 0 0 3px ${seasonAccent(s)}22` : "none",
+                transition:"all 0.15s",
+              }}>
+              <div style={{ fontSize:11, fontWeight:700, color: seasonAccent(s), letterSpacing:"0.05em", marginBottom:4 }}>
+                🌱 {s} SEASON
+              </div>
+              <div style={{ fontSize:22, fontWeight:800, color:"#1a1a1a", lineHeight:1 }}>{fmtINR(sVal)}</div>
+              <div style={{ fontSize:12, color:"#6b7280", marginTop:4 }}>
+                {Math.round(sKg).toLocaleString("en-IN")} kg · {sInStock.length} lots
+              </div>
+            </button>
+          );
+        })}
       </div>
 
+      {/* KPIs for active season */}
+      <GreenSeasonKPIs lots={greenLots} season={activeSeason} />
+
+      {/* Filters + Record sale */}
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
         <button className={css.btnNew} onClick={() => setSaleDrawer(filtered.find(g=>g.status==="in-stock") ?? null)}>
-          <Plus size={13} /> Record sale
+          <Plus size={13} /> Record sale ({activeSeason})
         </button>
         <select value={filterEstate} onChange={e=>setFilterEstate(e.target.value)}
           style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
@@ -1204,63 +1320,7 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
         <span style={{ marginLeft:"auto", fontSize:12, color:"#6b7280" }}>{filtered.length} lot{filtered.length!==1?"s":""}</span>
       </div>
 
-      <div className={css.tableCard}>
-        <div className={css.tableWrap}>
-          <table className={css.table}>
-            <thead><tr>
-              <th>Lot</th><th>Derived from</th><th>Field</th><th>Process</th>
-              <th>Grade</th><th>Screen</th><th>Score</th>
-              <th className={css.tdRight}>Available</th><th className={css.tdRight}>Rate ₹/kg</th>
-              <th className={css.tdRight}>Value</th><th>Bin</th><th>Status</th><th></th>
-            </tr></thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={13} className={css.empty}>No lots match the filters.</td></tr>
-              ) : filtered.map(g => {
-                const pct = g.green_kg_in > 0 ? g.current_kg / g.green_kg_in : 0;
-                const barClass = pct > 0.5 ? css.progressFill : pct > 0.2 ? css.progressFillLow : css.progressFillEmpty;
-                return (
-                  <tr key={g.id}>
-                    <td>
-                      <div className={css.tdMono}>{g.lot}</div>
-                      <div style={{ fontSize:10, color:"#7a90b0" }}>{fmtDate(g.milled_date)}</div>
-                    </td>
-                    <td className={css.tdMono} style={{ fontSize:10, color:"#7a90b0" }}>
-                      {g.derived_from.slice(0,3).join(", ")}{g.derived_from.length>3 ? ` +${g.derived_from.length-3}` : ""}
-                    </td>
-                    <td>{g.field}</td>
-                    <td><span className={`${css.badge} ${processBadgeClass(g.process)}`}>{g.process}</span></td>
-                    <td>{g.grade || "—"}</td>
-                    <td className={css.tdMono}>{g.screen || "—"}</td>
-                    <td className={css.tdNum}>{g.score ?? "—"}</td>
-                    <td>
-                      <div className={css.progressWrap}>
-                        <div style={{ fontSize:12, fontWeight:600, color:"#1a1a1a", fontVariantNumeric:"tabular-nums" }}>
-                          {Math.round(g.current_kg).toLocaleString("en-IN")} kg
-                        </div>
-                        <div className={css.progressBar}>
-                          <div className={barClass} style={{ width:`${Math.max(0,Math.min(100,pct*100)).toFixed(1)}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td className={css.tdNum}>₹{n(g.rate_per_kg).toFixed(2)}</td>
-                    <td className={css.tdNum} style={{ color:"#f5a623" }}>{fmtINR(n(g.current_kg)*n(g.rate_per_kg))}</td>
-                    <td className={css.tdMono}>{g.warehouse || "—"}</td>
-                    <td><span className={statusBadgeClass(g.status)}>{g.status}</span></td>
-                    <td>
-                      {g.status === "in-stock" && (
-                        <button className={css.btnNew} style={{ padding:"4px 10px", fontSize:11 }} onClick={()=>setSaleDrawer(g)}>
-                          Sell
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <GreenLotTable lots={filtered} onSell={setSaleDrawer} />
 
       {saleDrawer && (
         <RecordSaleDrawer greenLots={greenLots} defaultLot={saleDrawer} onClose={() => setSaleDrawer(null)} reload={reload} />
@@ -1611,15 +1671,19 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
         <div className={css.formGroup}>
           <label className={css.formLabel}>Green Lot *</label>
           <select className={css.formSelect} value={lotId} onChange={e=>setLotId(e.target.value)}>
-            {greenAvailable.length > 0 && (
-              <optgroup label="☕ Green Store (own production)">
-                {greenAvailable.map(g => (
-                  <option key={g.id} value={g.id}>
-                    {g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg
-                  </option>
-                ))}
-              </optgroup>
-            )}
+            {SEASONS.map(s => {
+              const sLots = greenAvailable.filter(g => (g.season ?? "2024-2025") === s);
+              if (sLots.length === 0) return null;
+              return (
+                <optgroup key={s} label={`☕ Green Store ${s}`}>
+                  {sLots.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
             {htLots.length > 0 && (
               <optgroup label="🌱 HillTiller Green Stock">
                 {htLots.map(h => (
