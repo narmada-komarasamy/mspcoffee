@@ -180,16 +180,17 @@
 .table td {
   font-family: var(--t-font);
   padding: 0.5625rem 0.875rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  color: var(--t-text);
+  border-bottom: 1px solid #ede8db;
+  color: #1a1a1a;
+  font-weight: 500;
   white-space: nowrap;
 }
 .table tr:last-child td { border-bottom: none; }
 .table tbody tr:hover td { background: var(--t-bg); }
 
-.tdNum { text-align: right; font-weight: 600; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.tdNum { text-align: right; font-weight: 600; font-size: 0.875rem; font-variant-numeric: tabular-nums; color: #1a1a1a; }
 .tdRight { text-align: right; }
-.tdMuted { color: var(--t-muted) !important; }
+.tdMuted { color: #6b7280 !important; }
 
 .totalRow td { border-top: 2px solid var(--t-accent); font-weight: 700; color: var(--t-accent); background: rgba(74,158,74,0.06); }
 
