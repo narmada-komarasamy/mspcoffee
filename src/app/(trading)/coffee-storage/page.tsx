@@ -1464,13 +1464,38 @@ function HillTillerTab() {
 }
 
 /* ─── Record Sale Drawer ──────────────────────────────────── */
+// Unified lot row used in the dropdown
+type UnifiedLot = { id: string; lot: string; current_kg: number; rate_per_kg: number; label: string; source: "green" | "hilltiller" };
+
 function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
   greenLots: GreenLot[]; defaultLot: GreenLot | null; onClose: () => void; reload: () => void;
 }) {
-  const availableLots = greenLots.filter(g => g.status === "in-stock");
+  // Fetch HillTiller lots
+  const [htLots, setHtLots] = useState<HTLot[]>([]);
+  useEffect(() => {
+    supabase.from("hilltiller_stock").select("*").eq("status", "in-stock")
+      .then(({ data }) => setHtLots((data ?? []) as HTLot[]));
+  }, []);
+
+  const greenAvailable = greenLots.filter(g => g.status === "in-stock");
+
+  // Combined lot list for dropdown
+  const allLots: UnifiedLot[] = [
+    ...greenAvailable.map(g => ({
+      id: g.id, lot: g.lot, current_kg: g.current_kg, rate_per_kg: g.rate_per_kg,
+      label: `${g.lot} · ${g.field} · ${g.process} · ${Math.round(g.current_kg)} kg · ₹${n(g.rate_per_kg).toFixed(0)}/kg`,
+      source: "green" as const,
+    })),
+    ...htLots.map(h => ({
+      id: h.id, lot: h.lot, current_kg: h.current_kg, rate_per_kg: h.rate_per_kg,
+      label: `${h.lot} · ${h.supplier} · ${h.process} · ${Math.round(h.current_kg)} kg · ₹${n(h.rate_per_kg).toFixed(0)}/kg`,
+      source: "hilltiller" as const,
+    })),
+  ];
+
   const [channel,   setChannel]   = useState<Channel>("exporter");
   const [customer,  setCustomer]  = useState("");
-  const [lotId,     setLotId]     = useState(defaultLot?.id ?? availableLots[0]?.id ?? "");
+  const [lotId,     setLotId]     = useState(defaultLot?.id ?? allLots[0]?.id ?? "");
   const [kg,        setKg]        = useState("");
   const [price,     setPrice]     = useState("");
   const [date,      setDate]      = useState(todayStr());
@@ -1478,7 +1503,12 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
   const [notes,     setNotes]     = useState("");
   const [saving,    setSaving]    = useState(false);
 
-  const selectedLot = greenLots.find(g => g.id === lotId);
+  // Set default lot once allLots loads
+  useEffect(() => {
+    if (!lotId && allLots.length > 0) setLotId(allLots[0].id);
+  }, [allLots.length]); // eslint-disable-line
+
+  const selectedLot = allLots.find(l => l.id === lotId);
   const revenue     = n(kg) * n(price);
   const margin      = (n(price) - n(selectedLot?.rate_per_kg ?? 0)) * n(kg);
 
@@ -1487,7 +1517,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
       alert("Customer, lot, qty, price, and date are required."); return;
     }
     if (selectedLot && n(kg) > selectedLot.current_kg) {
-      alert(`Only ${selectedLot.current_kg} kg available in this lot.`); return;
+      alert(`Only ${Math.round(selectedLot.current_kg)} kg available in this lot.`); return;
     }
     setSaving(true);
     const { data: sale } = await supabase.from("coffee_sales").insert([{
@@ -1496,11 +1526,14 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
       status: channel === "internal-roast" ? "transferred" : "pending",
       reference: ref || null, notes: notes || null,
     }]).select().single();
+
+    // Deduct from the correct table
     if (selectedLot) {
       const newKg = selectedLot.current_kg - n(kg);
-      await supabase.from("green_lots").update({
+      const table = selectedLot.source === "hilltiller" ? "hilltiller_stock" : "green_lots";
+      await supabase.from(table).update({
         current_kg: newKg,
-        status: newKg <= 0 ? "depleted" : selectedLot.status,
+        status: newKg <= 0 ? "depleted" : "in-stock",
       }).eq("id", lotId);
     }
     if (sale) {
@@ -1537,15 +1570,36 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload }: {
         <div className={css.formGroup}>
           <label className={css.formLabel}>Green Lot *</label>
           <select className={css.formSelect} value={lotId} onChange={e=>setLotId(e.target.value)}>
-            {availableLots.map(g => (
-              <option key={g.id} value={g.id}>{g.lot} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(2)}/kg</option>
-            ))}
+            {greenAvailable.length > 0 && (
+              <optgroup label="☕ Green Store (own production)">
+                {greenAvailable.map(g => (
+                  <option key={g.id} value={g.id}>
+                    {g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {htLots.length > 0 && (
+              <optgroup label="🌱 HillTiller Green Stock">
+                {htLots.map(h => (
+                  <option key={h.id} value={h.id}>
+                    {h.lot} · {h.supplier} · {h.process} · {Math.round(h.current_kg)} kg · ₹{n(h.rate_per_kg).toFixed(0)}/kg
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {allLots.length === 0 && <option value="">No stock available</option>}
           </select>
+          {selectedLot && (
+            <span style={{ fontSize:10, color:"#7a90b0", marginTop:2, display:"block" }}>
+              Available: {Math.round(selectedLot.current_kg)} kg
+              {selectedLot.source === "hilltiller" && " · HillTiller stock"}
+            </span>
+          )}
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Quantity (kg) *</label>
           <input type="number" className={css.formInput} min="0" step="0.1" value={kg} onChange={e=>setKg(e.target.value)} />
-          {selectedLot && <span style={{ fontSize:10, color:"#7a90b0" }}>Available: {Math.round(selectedLot.current_kg)} kg</span>}
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Sale Price ₹/kg *</label>
