@@ -82,6 +82,7 @@ function RolePill({ role }: { role: string }) {
 export default function ActivityLogPage() {
   const router = useRouter();
   const [rows,         setRows]         = useState<ActivityRow[]>([]);
+  const [allUsers,     setAllUsers]     = useState<string[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState('');
   const [filterUser,   setFilterUser]   = useState('all');
@@ -97,6 +98,14 @@ export default function ActivityLogPage() {
     const user = JSON.parse(stored);
     if (user.role !== 'admin') { router.push('/home'); }
   }, [router]);
+
+  // Load all registered users for the filter dropdown
+  useEffect(() => {
+    supabase.from('app_users').select('name').order('name')
+      .then(({ data }) => {
+        if (data) setAllUsers(data.map((u: { name: string }) => u.name));
+      });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -136,7 +145,8 @@ export default function ActivityLogPage() {
     return acc;
   }, {});
 
-  const userNames = Array.from(new Set(rows.map(r => r.user_name))).sort();
+  // Merge registered users with any names that appear only in activity logs
+  const userNames = Array.from(new Set([...allUsers, ...rows.map(r => r.user_name)])).sort();
 
   // ── Filtered rows ────────────────────────────────────────────────────────
 
