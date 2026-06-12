@@ -27,16 +27,16 @@ type FleetThemeConfig = {
 };
 
 const FLEET_THEME_DEFAULT: FleetThemeConfig = {
-  bg:      "#fdf8ee",
-  surface: "#f0ead4",
-  card:    "#ffffff",
-  border:  "#e5dfc8",
-  text:    "#1a1a1a",
-  muted:   "#6b7280",
-  teal:    "#4a9e4a",
-  gold:    "#e8c84a",
+  bg:      "var(--t-bg)",
+  surface: "var(--t-surface)",
+  card:    "var(--t-card)",
+  border:  "var(--t-border)",
+  text:    "var(--t-text)",
+  muted:   "var(--t-muted)",
+  teal:    "var(--t-accent)",
+  gold:    "var(--t-gold)",
   red:     "#e8524a",
-  green:   "#2d6e2d",
+  green:   "var(--t-green)",
   purple:  "#9b59b6",
   blue:    "#3498db",
   vehicles: [
@@ -46,11 +46,11 @@ const FLEET_THEME_DEFAULT: FleetThemeConfig = {
 };
 
 const FLEET_THEME_MAP: Record<string, Partial<FleetThemeConfig>> = {
-  forest:   { bg: "#fdf8ee", surface: "#f0ead4", card: "#ffffff", border: "#e5dfc8", text: "#1a1a1a", muted: "#6b7280", teal: "#4a9e4a", green: "#2d6e2d" },
-  coffee:   { bg: "#fdf6ee", surface: "#f0e8d8", card: "#ffffff", border: "#e0d0b8", text: "#1a1a1a", muted: "#7a6050", teal: "#c0874a", green: "#8b5e3c" },
-  navy:     { bg: "#f0f4f8", surface: "#e8edf5", card: "#ffffff", border: "#d0dae8", text: "#1a2a4a", muted: "#6b7fa0", teal: "#1fc8c8", green: "#2ecc71" },
-  burgundy: { bg: "#fdf0f2", surface: "#f0dfe2", card: "#ffffff", border: "#e0c8cc", text: "#1a1a1a", muted: "#7a5060", teal: "#c04a6a", green: "#4a9e4a" },
-  slate:    { bg: "#f0f4f5", surface: "#e4ecef", card: "#ffffff", border: "#ccd8dd", text: "#1a2a30", muted: "#6a7f8a", teal: "#4ab0c0", green: "#4a9e4a" },
+  forest:   { bg: "var(--t-bg)", surface: "var(--t-surface)", card: "var(--t-card)", border: "var(--t-border)", text: "var(--t-text)", muted: "var(--t-muted)", teal: "var(--t-accent)", green: "var(--t-green)" },
+  coffee:   { bg: "var(--t-bg)", surface: "#f0e8d8", card: "var(--t-card)", border: "#e0d0b8", text: "var(--t-text)", muted: "#7a6050", teal: "#c0874a", green: "#8b5e3c" },
+  navy:     { bg: "var(--t-bg)", surface: "#e8edf5", card: "var(--t-card)", border: "#d0dae8", text: "#1a2a4a", muted: "#6b7fa0", teal: "#1fc8c8", green: "#2ecc71" },
+  burgundy: { bg: "var(--t-bg)", surface: "#f0dfe2", card: "var(--t-card)", border: "#e0c8cc", text: "var(--t-text)", muted: "#7a5060", teal: "#c04a6a", green: "var(--t-accent)" },
+  slate:    { bg: "var(--t-bg)", surface: "#e4ecef", card: "var(--t-card)", border: "#ccd8dd", text: "#1a2a30", muted: "#6a7f8a", teal: "#4ab0c0", green: "var(--t-accent)" },
 };
 
 /* ─── Helpers ────────────────────────────────────────────────────────────────── */
@@ -76,7 +76,7 @@ function aggRows(rows: Row[]) {
   };
 }
 
-const ttStyle = { backgroundColor:"var(--msp-navy-mid)", border:"1px solid var(--msp-navy-border)", borderRadius:8, fontSize:11, color:"var(--msp-text)" };
+const ttStyle = { backgroundColor:"var(--t-surface)", border:"1px solid var(--t-border)", borderRadius:8, fontSize:11, color:"var(--t-text)" };
 
 function filterRows(rows: Row[], vehicle: string, year: string, month: string, type?: string) {
   return rows.filter(r => {
@@ -209,10 +209,10 @@ export default function FleetPage() {
   };
 
   /* ── Dynamic colour constants (used throughout JSX) ──────────────────────────── */
-  const TEAL           = theme.teal;
-  const GOLD           = theme.gold;
-  const RED            = theme.red;
-  const GREEN          = theme.green;
+  const TEAL           = 'var(--t-accent)';
+  const GOLD           = 'var(--t-gold)';
+  const RED            = '#e8524a';
+  const GREEN          = 'var(--t-green)';
   const PURPLE         = theme.purple;
   const BLUE           = theme.blue;
   const VEHICLE_PALETTE = theme.vehicles;
@@ -517,15 +517,7 @@ export default function FleetPage() {
 
   /* ══════════════════════════════════════════════════════════════════════════════ */
   return (
-    <div ref={pageRef} className={s.page} style={{
-      "--t-bg":      theme.bg,
-      "--t-surface": theme.surface,
-      "--t-card":    theme.card,
-      "--t-border":  theme.border,
-      "--t-text":    theme.text,
-      "--t-muted":   theme.muted,
-      "--t-teal":    theme.teal,
-    } as React.CSSProperties}>
+    <div ref={pageRef} className={s.page} style={{} as React.CSSProperties}>
       <div className={s.content}>
 
         {/* ── Top info bar ─────────────────────────────────────────────────────── */}
@@ -588,7 +580,7 @@ export default function FleetPage() {
                 style={{
                   display:"flex", alignItems:"center", gap:"7px",
                   padding:"8px 18px", borderRadius:"8px",
-                  background:"#1b4a1b", color:"white", border:"none",
+                  background:"var(--t-heading)", color:"white", border:"none",
                   fontWeight:700, fontSize:"12px", cursor:"pointer",
                   boxShadow:"0 2px 8px rgba(27,74,27,0.22)",
                   letterSpacing:"0.03em",
@@ -799,9 +791,9 @@ export default function FleetPage() {
                           <stop offset="95%" stopColor={GOLD} stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--t-surface)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown) => [fmtC(v as number), "Fuel Cost"]}/>
                       <Area type="monotone" dataKey="fuelCost" stroke={GOLD} fill="url(#fg)" strokeWidth={2} dot={false}/>
                     </AreaChart>
@@ -812,9 +804,9 @@ export default function FleetPage() {
                   <div className={s.chartTitle}>Monthly KM Run</div>
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={monthlyTrend} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v as number)} width={44}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--t-surface)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmt(v as number)} width={44}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown) => [fmt(v as number) + " km", "KM Run"]}/>
                       <Bar dataKey="kmRun" fill={TEAL} fillOpacity={0.85} radius={[3,3,0,0]}/>
                     </BarChart>
@@ -825,9 +817,9 @@ export default function FleetPage() {
                   <div className={s.chartTitle}>Avg Mileage (km/L)</div>
                   <ResponsiveContainer width="100%" height={160}>
                     <LineChart data={monthlyTrend} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => (v as number).toFixed(1)} width={36}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--t-surface)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => (v as number).toFixed(1)} width={36}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown) => [(v as number).toFixed(2) + " km/L", "Mileage"]}/>
                       <Line type="monotone" dataKey="avgMileage" stroke={GREEN} strokeWidth={2} dot={{ r:3, fill:GREEN }}/>
                     </LineChart>
@@ -838,11 +830,11 @@ export default function FleetPage() {
                   <div className={s.chartTitle}>Fuel vs Maintenance</div>
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={monthlyTrend} margin={{ top:4, right:8, left:0, bottom:0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--msp-navy-mid)" vertical={false}/>
-                      <XAxis dataKey="label" tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fill:"var(--msp-neutral)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--t-surface)" vertical={false}/>
+                      <XAxis dataKey="label" tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} interval="preserveStartEnd"/>
+                      <YAxis tick={{ fill:"var(--t-muted)", fontSize:9 }} axisLine={false} tickLine={false} tickFormatter={v => fmtC(v as number)} width={52}/>
                       <Tooltip contentStyle={ttStyle} formatter={(v: unknown, n: unknown) => [fmtC(v as number), n === "fuelCost" ? "Fuel" : "Maintenance"]}/>
-                      <Legend wrapperStyle={{ fontSize:10, color:"var(--msp-neutral)" }}/>
+                      <Legend wrapperStyle={{ fontSize:10, color:"var(--t-muted)" }}/>
                       <Bar dataKey="fuelCost"  name="fuelCost"  stackId="a" fill={GOLD} fillOpacity={0.85}/>
                       <Bar dataKey="maintCost" name="maintCost" stackId="a" fill={RED}  fillOpacity={0.85} radius={[3,3,0,0]}/>
                     </BarChart>
@@ -1132,7 +1124,7 @@ export default function FleetPage() {
             {(() => {
               const logReady = logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo;
               if (!logReady) return (
-                <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"var(--msp-charcoal)", border:"1px dashed var(--msp-navy-border)", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
+                <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"var(--t-label)", border:"1px dashed var(--t-border)", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
                   Select a vehicle or apply a filter above to view records
                 </div>
               );
@@ -1141,7 +1133,7 @@ export default function FleetPage() {
 
             {(logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo) && (
               <>
-            <div style={{ fontSize:11, color:"var(--msp-neutral)", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
+            <div style={{ fontSize:11, color:"var(--t-muted)", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
 
             <div className={s.dailyTableWrapper}>
               <table className={s.dailyTable}>
@@ -1174,9 +1166,9 @@ export default function FleetPage() {
                       <td className={s.colNumber} style={{ color:GOLD }}>{fmt(r.fuel_cost,0)}</td>
                       <td className={s.colNumber} style={{ color:RED }}>{fmt(r.maint_cost,0)}</td>
                       <td className={s.colNumber} style={{ color:GOLD, fontWeight:700 }}>{fmt(r.total_cost,0)}</td>
-                      <td style={{ color:"var(--msp-neutral)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
+                      <td style={{ color:"var(--t-muted)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
                       <td>
-                        <button onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"var(--msp-charcoal)", cursor:"pointer", padding:"2px 4px" }}>
+                        <button onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"var(--t-label)", cursor:"pointer", padding:"2px 4px" }}>
                           <Pencil size={13}/>
                         </button>
                       </td>
@@ -1202,7 +1194,7 @@ export default function FleetPage() {
             {logPages > 1 && (
               <div className={s.paginationRow}>
                 <button onClick={() => setLogPage(p => Math.max(1,p-1))} disabled={logPage===1} className={s.pageBtn}><ChevronLeft size={14}/></button>
-                <span style={{ fontSize:11, color:"var(--msp-neutral)" }}>Page {logPage} of {logPages}</span>
+                <span style={{ fontSize:11, color:"var(--t-muted)" }}>Page {logPage} of {logPages}</span>
                 <button onClick={() => setLogPage(p => Math.min(logPages,p+1))} disabled={logPage===logPages} className={s.pageBtn}><ChevronRight size={14}/></button>
               </div>
             )}
@@ -1357,18 +1349,18 @@ export default function FleetPage() {
           display:"flex", alignItems:"center", justifyContent:"center", padding:"16px",
         };
         const modal: React.CSSProperties = {
-          background:"#fdf8ee", borderRadius:"16px", width:"100%", maxWidth:"1100px",
+          background:"var(--t-bg)", borderRadius:"16px", width:"100%", maxWidth:"1100px",
           maxHeight:"90vh", display:"flex", flexDirection:"column",
           boxShadow:"0 24px 80px rgba(0,0,0,0.35)", overflow:"hidden",
         };
         const th: React.CSSProperties = {
-          padding:"9px 12px", background:"#1b4a1b", color:"white",
+          padding:"9px 12px", background:"var(--t-heading)", color:"white",
           fontSize:"11px", fontWeight:700, textTransform:"uppercase",
           letterSpacing:"0.05em", textAlign:"left", whiteSpace:"nowrap",
         };
         const thR: React.CSSProperties = { ...th, textAlign:"right" };
         const td: React.CSSProperties = {
-          padding:"8px 12px", fontSize:"12px", color:"#1a1a1a",
+          padding:"8px 12px", fontSize:"12px", color:"var(--t-text)",
           borderBottom:"1px solid #f0ead4", verticalAlign:"middle",
         };
         const tdR: React.CSSProperties = { ...td, textAlign:"right" };
@@ -1377,7 +1369,7 @@ export default function FleetPage() {
           <div style={overlay} onClick={e => { if (e.target === e.currentTarget) setShowReport(false); }}>
             <div style={modal}>
               {/* Header */}
-              <div style={{ padding:"16px 20px", borderBottom:"1px solid #e5dfc8", display:"flex", alignItems:"center", gap:"12px", background:"#1b4a1b" }}>
+              <div style={{ padding:"16px 20px", borderBottom:"1px solid #e5dfc8", display:"flex", alignItems:"center", gap:"12px", background:"var(--t-heading)" }}>
                 <span style={{ fontSize:"20px" }}>📊</span>
                 <div>
                   <div style={{ fontWeight:800, fontSize:"15px", color:"white", letterSpacing:"0.04em" }}>MIS REPORT — FLEET FUEL EXPENSES</div>
@@ -1388,37 +1380,37 @@ export default function FleetPage() {
               </div>
 
               {/* Date Range Controls */}
-              <div style={{ padding:"14px 20px", background:"#f0ead4", borderBottom:"1px solid #e5dfc8", display:"flex", flexWrap:"wrap", alignItems:"center", gap:"14px" }}>
-                <span style={{ fontWeight:700, fontSize:"12px", color:"#1b4a1b", letterSpacing:"0.05em" }}>PERIOD:</span>
+              <div style={{ padding:"14px 20px", background:"var(--t-surface)", borderBottom:"1px solid #e5dfc8", display:"flex", flexWrap:"wrap", alignItems:"center", gap:"14px" }}>
+                <span style={{ fontWeight:700, fontSize:"12px", color:"var(--t-heading)", letterSpacing:"0.05em" }}>PERIOD:</span>
                 {/* From */}
                 <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-                  <span style={{ fontSize:"12px", color:"#6b7280" }}>From</span>
+                  <span style={{ fontSize:"12px", color:"var(--t-muted)" }}>From</span>
                   <select value={reportFromMonth} onChange={e => setReportFromMonth(e.target.value)}
-                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"var(--t-text)" }}>
                     {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                   <select value={reportFromYear} onChange={e => setReportFromYear(e.target.value)}
-                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"var(--t-text)" }}>
                     {years.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 </div>
-                <span style={{ color:"#9ca3af" }}>→</span>
+                <span style={{ color:"var(--t-muted)" }}>→</span>
                 {/* To */}
                 <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-                  <span style={{ fontSize:"12px", color:"#6b7280" }}>To</span>
+                  <span style={{ fontSize:"12px", color:"var(--t-muted)" }}>To</span>
                   <select value={reportToMonth} onChange={e => setReportToMonth(e.target.value)}
-                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"var(--t-text)" }}>
                     {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                   <select value={reportToYear} onChange={e => setReportToYear(e.target.value)}
-                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"#1a1a1a" }}>
+                    style={{ height:"32px", padding:"0 8px", border:"1px solid #e5dfc8", borderRadius:"7px", fontSize:"13px", background:"white", color:"var(--t-text)" }}>
                     {years.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 </div>
 
                 <div style={{ marginLeft:"auto", display:"flex", gap:"8px" }}>
                   <button onClick={downloadCSV}
-                    style={{ display:"flex", alignItems:"center", gap:"6px", padding:"7px 14px", borderRadius:"8px", background:"#2d6e2d", color:"white", border:"none", fontWeight:700, fontSize:"12px", cursor:"pointer" }}>
+                    style={{ display:"flex", alignItems:"center", gap:"6px", padding:"7px 14px", borderRadius:"8px", background:"var(--t-green)", color:"white", border:"none", fontWeight:700, fontSize:"12px", cursor:"pointer" }}>
                     ⬇ Download CSV
                   </button>
                   <button onClick={printReport}
@@ -1429,11 +1421,11 @@ export default function FleetPage() {
               </div>
 
               {/* Report title strip */}
-              <div style={{ padding:"10px 20px", background:"#e8f0e8", borderBottom:"1px solid #d0e0d0" }}>
-                <span style={{ fontWeight:700, fontSize:"13px", color:"#1b4a1b" }}>
+              <div style={{ padding:"10px 20px", background:"var(--t-subtle)", borderBottom:"1px solid #d0e0d0" }}>
+                <span style={{ fontWeight:700, fontSize:"13px", color:"var(--t-heading)" }}>
                   {periodLabel.toUpperCase()} — ALL VEHICLES FUEL EXPENSE DETAILS
                 </span>
-                <span style={{ marginLeft:"12px", fontSize:"12px", color:"#6b7280" }}>
+                <span style={{ marginLeft:"12px", fontSize:"12px", color:"var(--t-muted)" }}>
                   {summaryRows.length} vehicle{summaryRows.length !== 1 ? "s" : ""} · {reportRows.length} entries
                 </span>
               </div>
@@ -1441,7 +1433,7 @@ export default function FleetPage() {
               {/* Table */}
               <div style={{ flex:1, overflowY:"auto", overflowX:"auto" }}>
                 {summaryRows.length === 0 ? (
-                  <div style={{ padding:"48px", textAlign:"center", color:"#9ca3af", fontSize:"14px" }}>
+                  <div style={{ padding:"48px", textAlign:"center", color:"var(--t-muted)", fontSize:"14px" }}>
                     No data found for the selected period. Try adjusting the date range.
                   </div>
                 ) : (
@@ -1462,30 +1454,30 @@ export default function FleetPage() {
                     </thead>
                     <tbody>
                       {summaryRows.map((r, i) => (
-                        <tr key={r.vehicle_id} style={{ background: i % 2 === 0 ? "#ffffff" : "#fdf8ee" }}>
-                          <td style={{ ...td, fontSize:"11px", color:"#6b7280" }}>{r.firstDate}</td>
-                          <td style={{ ...td, fontWeight:700, color:"#1b4a1b" }}>{r.vehicle_id}</td>
-                          <td style={td}><span style={{ background:"#e8f0e8", color:"#1b4a1b", borderRadius:"6px", padding:"2px 7px", fontSize:"11px", fontWeight:700 }}>{r.account}</span></td>
-                          <td style={{ ...tdR, color:"#6b7280" }}>{fmt(r.startKm,0)}</td>
-                          <td style={{ ...tdR, color:"#6b7280" }}>{fmt(r.closeKm,0)}</td>
+                        <tr key={r.vehicle_id} style={{ background: i % 2 === 0 ? "var(--t-card)" : "var(--t-bg)" }}>
+                          <td style={{ ...td, fontSize:"11px", color:"var(--t-muted)" }}>{r.firstDate}</td>
+                          <td style={{ ...td, fontWeight:700, color:"var(--t-heading)" }}>{r.vehicle_id}</td>
+                          <td style={td}><span style={{ background:"var(--t-subtle)", color:"var(--t-heading)", borderRadius:"6px", padding:"2px 7px", fontSize:"11px", fontWeight:700 }}>{r.account}</span></td>
+                          <td style={{ ...tdR, color:"var(--t-muted)" }}>{fmt(r.startKm,0)}</td>
+                          <td style={{ ...tdR, color:"var(--t-muted)" }}>{fmt(r.closeKm,0)}</td>
                           <td style={{ ...tdR, fontWeight:600 }}>{fmt(r.kmRun,0)}</td>
-                          <td style={{ ...tdR, color:"#2d6e2d", fontWeight:600 }}>{r.fuelFilled.toFixed(1)}</td>
+                          <td style={{ ...tdR, color:"var(--t-green)", fontWeight:600 }}>{r.fuelFilled.toFixed(1)}</td>
                           <td style={{ ...tdR, color:"#e8524a" }}>₹{fmt(r.fuelCost,0)}</td>
                           <td style={{ ...tdR, color:"#9b59b6" }}>₹{fmt(r.maintCost,0)}</td>
-                          <td style={{ ...tdR, fontWeight:800, color:"#1b4a1b", fontSize:"13px" }}>₹{fmt(r.totalCost,0)}</td>
+                          <td style={{ ...tdR, fontWeight:800, color:"var(--t-heading)", fontSize:"13px" }}>₹{fmt(r.totalCost,0)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr style={{ background:"#1b4a1b" }}>
+                      <tr style={{ background:"var(--t-heading)" }}>
                         <td colSpan={3} style={{ ...td, color:"white", fontWeight:800, fontSize:"13px", letterSpacing:"0.04em" }}>GRAND TOTAL</td>
                         <td style={{ ...tdR, color:"white" }}>—</td>
                         <td style={{ ...tdR, color:"white" }}>—</td>
-                        <td style={{ ...tdR, color:"#e8c84a", fontWeight:800 }}>{fmt(grand.kmRun,0)}</td>
-                        <td style={{ ...tdR, color:"#e8c84a", fontWeight:800 }}>{grand.fuelFilled.toFixed(1)}</td>
+                        <td style={{ ...tdR, color:"var(--t-gold)", fontWeight:800 }}>{fmt(grand.kmRun,0)}</td>
+                        <td style={{ ...tdR, color:"var(--t-gold)", fontWeight:800 }}>{grand.fuelFilled.toFixed(1)}</td>
                         <td style={{ ...tdR, color:"#fca5a5", fontWeight:800 }}>₹{fmt(grand.fuelCost,0)}</td>
                         <td style={{ ...tdR, color:"#d8b4fe", fontWeight:800 }}>₹{fmt(grand.maintCost,0)}</td>
-                        <td style={{ ...tdR, color:"#e8c84a", fontWeight:800, fontSize:"14px" }}>₹{fmt(grand.totalCost,0)}</td>
+                        <td style={{ ...tdR, color:"var(--t-gold)", fontWeight:800, fontSize:"14px" }}>₹{fmt(grand.totalCost,0)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -1494,16 +1486,16 @@ export default function FleetPage() {
 
               {/* Summary strip */}
               {summaryRows.length > 0 && (
-                <div style={{ padding:"14px 20px", borderTop:"1px solid #e5dfc8", background:"#f0ead4", display:"flex", flexWrap:"wrap", gap:"24px" }}>
+                <div style={{ padding:"14px 20px", borderTop:"1px solid #e5dfc8", background:"var(--t-surface)", display:"flex", flexWrap:"wrap", gap:"24px" }}>
                   {[
                     { label:"Fuel Purchase",      value:"₹" + fmt(grand.fuelCost,0),   clr:"#e8524a" },
                     { label:"Maintenance Cost",   value:"₹" + fmt(grand.maintCost,0),  clr:"#9b59b6" },
-                    { label:"Total Expense",      value:"₹" + fmt(grand.totalCost,0),  clr:"#1b4a1b" },
-                    { label:"Total KM Run",       value:fmt(grand.kmRun,0) + " km",    clr:"#2d6e2d" },
+                    { label:"Total Expense",      value:"₹" + fmt(grand.totalCost,0),  clr:"var(--t-heading)" },
+                    { label:"Total KM Run",       value:fmt(grand.kmRun,0) + " km",    clr:"var(--t-green)" },
                     { label:"Total Fuel Filled",  value:grand.fuelFilled.toFixed(0) + " L", clr:"#3498db" },
                   ].map(k => (
                     <div key={k.label} style={{ textAlign:"center" }}>
-                      <div style={{ fontSize:"11px", color:"#6b7280", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em" }}>{k.label}</div>
+                      <div style={{ fontSize:"11px", color:"var(--t-muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em" }}>{k.label}</div>
                       <div style={{ fontSize:"16px", fontWeight:800, color:k.clr, marginTop:"2px" }}>{k.value}</div>
                     </div>
                   ))}

@@ -76,7 +76,7 @@ type ThemeKey = "forest" | "coffee" | "navy" | "burgundy" | "slate";
 
 /* ── Themes ─────────────────────────────────────────────────────────────────── */
 const THEMES: Record<ThemeKey, { label: string; swatch: string; vars: Record<string, string> }> = {
-  forest:   { label: "Forest Green", swatch: "#1b4a1b", vars: { "--green-dark": "#1b4a1b", "--green-mid": "#2d6e2d", "--cream": "#fdf8ee", "--border": "#e5dfc8" } },
+  forest:   { label: "Forest Green", swatch: "var(--t-heading)", vars: { "--green-dark": "var(--t-heading)", "--green-mid": "var(--t-green)", "--cream": "var(--t-bg)", "--border": "var(--t-border)" } },
   coffee:   { label: "Deep Coffee",  swatch: "#3e2010", vars: { "--green-dark": "#3e2010", "--green-mid": "#6b3a1f", "--cream": "#fdf5ee", "--border": "#e8d8c4" } },
   navy:     { label: "Navy Blue",    swatch: "#1a2a4a", vars: { "--green-dark": "#1a2a4a", "--green-mid": "#253d6e", "--cream": "#f0f4ff", "--border": "#d0d8f0" } },
   burgundy: { label: "Burgundy",     swatch: "#4a1020", vars: { "--green-dark": "#4a1020", "--green-mid": "#7a1f35", "--cream": "#fff0f3", "--border": "#f0d0d8" } },
@@ -122,7 +122,7 @@ const BLANK_FORM = {
 function CoffeeCard({ coffee: c, onDelete }: { coffee: Coffee; onDelete: (id: string) => void }) {
   const tier = getTier(c.score);
   const tasteTags = parseTasteNotes(c.notes);
-  const estColor = ESTATE_COLORS[c.estate] || "#1b4a1b";
+  const estColor = ESTATE_COLORS[c.estate] || "var(--t-heading)";
 
   return (
     <div className={`${s.card} ${c._userAdded ? s.userAdded : ""}`}>

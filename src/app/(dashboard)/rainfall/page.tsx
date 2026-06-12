@@ -30,35 +30,35 @@ type ThemeConfig = {
 };
 
 const THEME_DEFAULT: ThemeConfig = {
-  bg:      "#fdf8ee",  surface: "#f0ead4",  card:    "#ffffff",
-  border:  "#e5dfc8",  subtle:  "#f5eedc",  heading: "#1b4a1b",
-  text:    "#1a1a1a",  muted:   "#6b7280",
-  accent:  "#4a9e4a",  gold:    "#e8c84a",  coral:   "#f87171",
+  bg:      "var(--t-bg)",  surface: "var(--t-surface)",  card:    "var(--t-card)",
+  border:  "var(--t-border)",  subtle:  "#f5eedc",  heading: "var(--t-heading)",
+  text:    "var(--t-text)",  muted:   "var(--t-muted)",
+  accent:  "var(--t-accent)",  gold:    "var(--t-gold)",  coral:   "#f87171",
   green:   "#4ade80",  purple:  "#a78bfa",
   estates: { ...ESTATE_COLORS_DEFAULT },
 };
 
 // Map global msp_theme key → rainfall preset
 const MSP_THEME_MAP: Record<string, Partial<ThemeConfig>> = {
-  forest:   { bg: "#fdf8ee", surface: "#f0ead4", card: "#ffffff", border: "#e5dfc8", subtle: "#f5eedc", heading: "#1b4a1b", text: "#1a1a1a", muted: "#6b7280", accent: "#4a9e4a" },
-  coffee:   { bg: "#fdf6ee", surface: "#f0e8d8", card: "#ffffff", border: "#e0d0b8", subtle: "#f5eedc", heading: "#3e2010", text: "#1a1a1a", muted: "#7a6050", accent: "#c0874a" },
-  navy:     { bg: "#f0f4f8", surface: "#e8edf5", card: "#ffffff", border: "#d0dae8", subtle: "#e8edf5", heading: "#0f2235", text: "#1a2a4a", muted: "#6b7fa0", accent: "#38bdf8" },
-  burgundy: { bg: "#fdf0f2", surface: "#f0dfe2", card: "#ffffff", border: "#e0c8cc", subtle: "#f5e8ea", heading: "#4a1020", text: "#1a1a1a", muted: "#7a5060", accent: "#c04a6a" },
-  slate:    { bg: "#f0f4f5", surface: "#e4ecef", card: "#ffffff", border: "#ccd8dd", subtle: "#e8eff2", heading: "#1a2a30", text: "#1a2a30", muted: "#6a7f8a", accent: "#4ab0c0" },
+  forest:   { bg: "var(--t-bg)", surface: "var(--t-surface)", card: "var(--t-card)", border: "var(--t-border)", subtle: "#f5eedc", heading: "var(--t-heading)", text: "var(--t-text)", muted: "var(--t-muted)", accent: "var(--t-accent)" },
+  coffee:   { bg: "#fdf6ee", surface: "#f0e8d8", card: "var(--t-card)", border: "#e0d0b8", subtle: "#f5eedc", heading: "#3e2010", text: "var(--t-text)", muted: "#7a6050", accent: "#c0874a" },
+  navy:     { bg: "#f0f4f8", surface: "#e8edf5", card: "var(--t-card)", border: "#d0dae8", subtle: "#e8edf5", heading: "#0f2235", text: "#1a2a4a", muted: "#6b7fa0", accent: "#38bdf8" },
+  burgundy: { bg: "#fdf0f2", surface: "#f0dfe2", card: "var(--t-card)", border: "#e0c8cc", subtle: "#f5e8ea", heading: "#4a1020", text: "var(--t-text)", muted: "#7a5060", accent: "#c04a6a" },
+  slate:    { bg: "#f0f4f5", surface: "#e4ecef", card: "var(--t-card)", border: "#ccd8dd", subtle: "#e8eff2", heading: "#1a2a30", text: "#1a2a30", muted: "#6a7f8a", accent: "#4ab0c0" },
 };
 
 type PresetTheme = { name: string; swatch: string; theme: Partial<ThemeConfig> };
 const PRESET_THEMES: PresetTheme[] = [
   { name: "Navy",     swatch: "#1a2a4a",
-    theme: { bg: "#f0f4f8", surface: "#e8edf5", card: "#ffffff", border: "#d0dae8", subtle: "#e8edf5", heading: "#0f2235", text: "#1a2a4a", muted: "#6b7fa0", accent: "#38bdf8" } },
-  { name: "Forest",   swatch: "#1b4a1b",
-    theme: { bg: "#fdf8ee", surface: "#f0ead4", card: "#ffffff", border: "#e5dfc8", subtle: "#f5eedc", heading: "#1b4a1b", text: "#1a1a1a", muted: "#6b7280", accent: "#4a9e4a" } },
+    theme: { bg: "#f0f4f8", surface: "#e8edf5", card: "var(--t-card)", border: "#d0dae8", subtle: "#e8edf5", heading: "#0f2235", text: "#1a2a4a", muted: "#6b7fa0", accent: "#38bdf8" } },
+  { name: "Forest",   swatch: "var(--t-heading)",
+    theme: { bg: "var(--t-bg)", surface: "var(--t-surface)", card: "var(--t-card)", border: "var(--t-border)", subtle: "#f5eedc", heading: "var(--t-heading)", text: "var(--t-text)", muted: "var(--t-muted)", accent: "var(--t-accent)" } },
   { name: "Coffee",   swatch: "#3e2010",
-    theme: { bg: "#fdf6ee", surface: "#f0e8d8", card: "#ffffff", border: "#e0d0b8", subtle: "#f5eedc", heading: "#3e2010", text: "#1a1a1a", muted: "#7a6050", accent: "#c0874a" } },
+    theme: { bg: "#fdf6ee", surface: "#f0e8d8", card: "var(--t-card)", border: "#e0d0b8", subtle: "#f5eedc", heading: "#3e2010", text: "var(--t-text)", muted: "#7a6050", accent: "#c0874a" } },
   { name: "Burgundy", swatch: "#4a1020",
-    theme: { bg: "#fdf0f2", surface: "#f0dfe2", card: "#ffffff", border: "#e0c8cc", subtle: "#f5e8ea", heading: "#4a1020", text: "#1a1a1a", muted: "#7a5060", accent: "#c04a6a" } },
+    theme: { bg: "#fdf0f2", surface: "#f0dfe2", card: "var(--t-card)", border: "#e0c8cc", subtle: "#f5e8ea", heading: "#4a1020", text: "var(--t-text)", muted: "#7a5060", accent: "#c04a6a" } },
   { name: "Slate",    swatch: "#2a3540",
-    theme: { bg: "#f0f4f5", surface: "#e4ecef", card: "#ffffff", border: "#ccd8dd", subtle: "#e8eff2", heading: "#1a2a30", text: "#1a2a30", muted: "#6a7f8a", accent: "#4ab0c0" } },
+    theme: { bg: "#f0f4f5", surface: "#e4ecef", card: "var(--t-card)", border: "#ccd8dd", subtle: "#e8eff2", heading: "#1a2a30", text: "#1a2a30", muted: "#6a7f8a", accent: "#4ab0c0" } },
 ];
 
 const MONTHS = [
@@ -100,10 +100,10 @@ const wmoDesc = (code: number): string => {
 // ─── Weather icon component ───────────────────────────────────────────────────
 function WIcon({ icon, size = 32 }: { icon: string; size?: number }) {
   const cls = "opacity-80";
-  if (icon === "sun")        return <Sun       size={size} className={cls} style={{ color: "var(--msp-gold)" }} />;
-  if (icon === "cloud-sun")  return <CloudSun  size={size} className={cls} style={{ color: "var(--msp-teal-light)" }} />;
-  if (icon === "cloud-rain") return <CloudRain size={size} className={cls} style={{ color: "var(--msp-teal-light)" }} />;
-  return                            <Cloud     size={size} className={cls} style={{ color: "var(--msp-teal-light)" }} />;
+  if (icon === "sun")        return <Sun       size={size} className={cls} style={{ color: "var(--t-gold)" }} />;
+  if (icon === "cloud-sun")  return <CloudSun  size={size} className={cls} style={{ color: "var(--t-accent)" }} />;
+  if (icon === "cloud-rain") return <CloudRain size={size} className={cls} style={{ color: "var(--t-accent)" }} />;
+  return                            <Cloud     size={size} className={cls} style={{ color: "var(--t-accent)" }} />;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -456,36 +456,24 @@ export default function RainfallPage() {
 
   // ─── Dynamic KPI accents from theme ──────────────────────────────────────
   const kpiAccents = useMemo(
-    () => [theme.accent, theme.gold, theme.coral, theme.green, theme.purple],
+    () => ['var(--t-accent)', 'var(--t-gold)', '#e8524a', 'var(--t-green)', '#9b59b6'],
     [theme]
   );
 
   // ─── Tooltip style ─────────────────────────────────────────────────────────
-  const ttStyle = { backgroundColor: "var(--msp-bg)", border: "1px solid var(--msp-navy-border)", borderRadius: 4, color: "var(--msp-text-dim)", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
+  const ttStyle = { backgroundColor: "var(--t-bg)", border: "1px solid var(--t-border)", borderRadius: 4, color: "var(--t-text)", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
 
   if (loading) return (
     <div className={s.page}>
       <div className={s.content} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <span style={{ color: "var(--msp-teal-light)", fontSize: 13, fontFamily: "var(--font-jetbrains), monospace", letterSpacing: "0.2em" }}>LOADING…</span>
+        <span style={{ color: "var(--t-accent)", fontSize: 13, fontFamily: "var(--font-jetbrains), monospace", letterSpacing: "0.2em" }}>LOADING…</span>
       </div>
     </div>
   );
 
   return (
     <>
-      <div ref={pageRef} className={s.page} style={{
-        "--t-bg":      theme.bg,
-        "--t-surface": theme.surface,
-        "--t-card":    theme.card,
-        "--t-border":  theme.border,
-        "--t-subtle":  theme.subtle,
-        "--t-heading": theme.heading,
-        "--t-text":    theme.text,
-        "--t-muted":   theme.muted,
-        "--t-accent":  theme.accent,
-        "--t-gold":    theme.gold,
-        "--t-green":   theme.green,
-      } as React.CSSProperties}>
+      <div ref={pageRef} className={s.page} style={{} as React.CSSProperties}>
         <div className={s.content}>
 
           {/* ─── Header ─────────────────────────────────────────────────── */}
@@ -499,7 +487,7 @@ export default function RainfallPage() {
               <div className={s.dateDisplay}>{dateStr}</div>
               <div className={s.lastUpdated}>
                 Data last updated: <span>{maxDataDate ? fmtDate(maxDataDate) : "—"}</span>
-                {lastRefreshed && <span style={{ color: "var(--msp-charcoal)", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
+                {lastRefreshed && <span style={{ color: "var(--t-label)", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
               </div>
               <button className={s.headerFullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
                 {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -530,7 +518,7 @@ export default function RainfallPage() {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ color: "var(--msp-charcoal)", fontSize: 11, marginTop: 8 }}>Loading…</div>
+                    <div style={{ color: "var(--t-label)", fontSize: 11, marginTop: 8 }}>Loading…</div>
                   )}
                 </div>
               );
@@ -609,7 +597,7 @@ export default function RainfallPage() {
                     key={estate}
                     onClick={() => toggleCompare(estate)}
                     className={`${s.pill} ${active ? s.pillActive : s.pillInactive}`}
-                    style={{ borderColor: active ? color : "transparent", color: active ? color : theme.text }}
+                    style={{ borderColor: active ? color : "transparent", color: active ? color : 'var(--t-text)' }}
                   >
                     <span className={s.pip} style={{ backgroundColor: color }} />
                     {estate}
@@ -712,7 +700,7 @@ export default function RainfallPage() {
               </div>
             </div>
             {data.length === 0 ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 260, color: "var(--msp-charcoal)", fontSize: 12, letterSpacing: "0.1em" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 260, color: "var(--t-label)", fontSize: 12, letterSpacing: "0.1em" }}>
                 NO DATA — UPLOAD YOUR EXCEL TO BEGIN
               </div>
             ) : (
@@ -720,8 +708,8 @@ export default function RainfallPage() {
                 {grouping === "monthly" ? (
                   <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.06)" />
-                    <XAxis dataKey="name" stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
-                    <YAxis stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <XAxis dataKey="name" stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <YAxis stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
@@ -737,8 +725,8 @@ export default function RainfallPage() {
                 ) : (
                   <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.06)" />
-                    <XAxis dataKey="name" stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
-                    <YAxis stroke="var(--msp-charcoal)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <XAxis dataKey="name" stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <YAxis stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
                     <Tooltip contentStyle={ttStyle} />
                     <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
                     {activeEstates.map((e) => (
@@ -801,7 +789,7 @@ export default function RainfallPage() {
               </thead>
               <tbody>
                 {topEvents.length === 0 ? (
-                  <tr><td colSpan={5} style={{ textAlign: "center", color: "var(--msp-charcoal)", padding: "32px 0" }}>No data for selected filters</td></tr>
+                  <tr><td colSpan={5} style={{ textAlign: "center", color: "var(--t-label)", padding: "32px 0" }}>No data for selected filters</td></tr>
                 ) : topEvents.map((r, i) => (
                   <tr key={r.id}>
                     <td>
@@ -809,7 +797,7 @@ export default function RainfallPage() {
                         {i < 3 ? MEDALS[i] : i + 1}
                       </span>
                     </td>
-                    <td style={{ color: "var(--msp-neutral)" }}>{fmtDate(r.date)}</td>
+                    <td style={{ color: "var(--t-muted)" }}>{fmtDate(r.date)}</td>
                     <td>
                       <span className={s.estateTag}>
                         <span className={s.tagDot} style={{ backgroundColor: theme.estates[r.estate] }} />
@@ -819,16 +807,16 @@ export default function RainfallPage() {
                     <td style={{ textAlign: "right" }}>
                       <span className={s.rainfallBar}>
                         <span className={s.barFill} style={{ width: `${(r.rainfall_mm / maxMm) * 80}px` }} />
-                        <span style={{ color: "var(--msp-teal-light)" }}>{unit === "mm" ? r.rainfall_mm : r.inches.toFixed(3)}</span>
-                        <span style={{ color: "var(--msp-charcoal)", fontSize: 10 }}>{unitStr}</span>
+                        <span style={{ color: "var(--t-accent)" }}>{unit === "mm" ? r.rainfall_mm : r.inches.toFixed(3)}</span>
+                        <span style={{ color: "var(--t-label)", fontSize: 10 }}>{unitStr}</span>
                       </span>
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <button
                         onClick={() => setEditRecord({ id: r.id, date: r.date, estate: r.estate, rainfall_mm: r.rainfall_mm, inches: r.inches })}
-                        style={{ background: "none", border: "none", color: "var(--msp-charcoal)", cursor: "pointer", padding: "2px 4px" }}
-                        onMouseOver={(e) => (e.currentTarget.style.color = "var(--msp-teal-light)")}
-                        onMouseOut={(e) => (e.currentTarget.style.color = "var(--msp-charcoal)")}
+                        style={{ background: "none", border: "none", color: "var(--t-label)", cursor: "pointer", padding: "2px 4px" }}
+                        onMouseOver={(e) => (e.currentTarget.style.color = "var(--t-accent)")}
+                        onMouseOut={(e) => (e.currentTarget.style.color = "var(--t-label)")}
                       >
                         <Pencil size={13} />
                       </button>
@@ -860,9 +848,9 @@ export default function RainfallPage() {
             <button className={s.recordsToggle} onClick={() => setShowRecords((v) => !v)}>
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: 13, fontWeight: 500 }}>All Records</div>
-                <div style={{ fontSize: 10, color: "var(--msp-charcoal)", marginTop: 2 }}>{filtered.length.toLocaleString()} records · click to {showRecords ? "hide" : "expand"}</div>
+                <div style={{ fontSize: 10, color: "var(--t-label)", marginTop: 2 }}>{filtered.length.toLocaleString()} records · click to {showRecords ? "hide" : "expand"}</div>
               </div>
-              <span style={{ color: "var(--msp-charcoal)", fontSize: 11 }}>{showRecords ? "▲" : "▼"}</span>
+              <span style={{ color: "var(--t-label)", fontSize: 11 }}>{showRecords ? "▲" : "▼"}</span>
             </button>
             {showRecords && (
               <>
@@ -880,21 +868,21 @@ export default function RainfallPage() {
                     <tbody>
                       {pagedRecords.map((r) => (
                         <tr key={r.id}>
-                          <td style={{ paddingLeft: 24, color: "var(--msp-neutral)" }}>{fmtDate(r.date)}</td>
+                          <td style={{ paddingLeft: 24, color: "var(--t-muted)" }}>{fmtDate(r.date)}</td>
                           <td>
                             <span className={s.estateTag}>
                               <span className={s.tagDot} style={{ backgroundColor: theme.estates[r.estate] }} />
                               <span style={{ color: theme.estates[r.estate] }}>{r.estate}</span>
                             </span>
                           </td>
-                          <td style={{ textAlign: "right", color: "var(--msp-teal-light)" }}>{r.rainfall_mm}</td>
-                          <td style={{ textAlign: "right", color: "var(--msp-charcoal)" }}>{r.inches.toFixed(3)}</td>
+                          <td style={{ textAlign: "right", color: "var(--t-accent)" }}>{r.rainfall_mm}</td>
+                          <td style={{ textAlign: "right", color: "var(--t-label)" }}>{r.inches.toFixed(3)}</td>
                           <td style={{ textAlign: "right", paddingRight: 24 }}>
                             <button
                               onClick={() => setEditRecord({ id: r.id, date: r.date, estate: r.estate, rainfall_mm: r.rainfall_mm, inches: r.inches })}
-                              style={{ background: "none", border: "none", color: "var(--msp-charcoal)", cursor: "pointer" }}
-                              onMouseOver={(e) => (e.currentTarget.style.color = "var(--msp-teal-light)")}
-                              onMouseOut={(e) => (e.currentTarget.style.color = "var(--msp-charcoal)")}
+                              style={{ background: "none", border: "none", color: "var(--t-label)", cursor: "pointer" }}
+                              onMouseOver={(e) => (e.currentTarget.style.color = "var(--t-accent)")}
+                              onMouseOut={(e) => (e.currentTarget.style.color = "var(--t-label)")}
                             >
                               <Pencil size={13} />
                             </button>

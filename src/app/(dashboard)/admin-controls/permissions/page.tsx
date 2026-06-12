@@ -31,7 +31,7 @@ type PermMap = Record<string, Record<string, Access>>;
 
 // ── Style tokens ───────────────────────────────────────────────────────────
 const card: React.CSSProperties = {
-  background: '#ffffff',
+  background: 'var(--t-card)',
   border: '1px solid #e5dfc8',
   borderRadius: '12px',
   boxShadow: '0 2px 8px rgba(27,74,27,0.07)',
@@ -44,24 +44,24 @@ const thStyle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-  color: '#6b7280',
+  color: 'var(--t-muted)',
   borderBottom: '1px solid #e5dfc8',
-  background: '#f9f6ed',
+  background: 'var(--t-subtle)',
   whiteSpace: 'nowrap',
 };
 
 const tdStyle: React.CSSProperties = {
   padding: '10px 14px',
   fontSize: '13px',
-  color: '#1a1a1a',
+  color: 'var(--t-text)',
   borderBottom: '1px solid #f0ead4',
   verticalAlign: 'middle',
 };
 
 const ACCESS_OPTIONS: { value: Access; label: string; color: string; bg: string }[] = [
-  { value: 'none', label: 'No Access', color: '#6b7280', bg: '#f3f4f6' },
+  { value: 'none', label: 'No Access', color: 'var(--t-muted)', bg: '#f3f4f6' },
   { value: 'view', label: 'View Only', color: '#1a3a6e', bg: '#dbeafe' },
-  { value: 'full', label: 'Full',      color: '#1b4a1b', bg: '#dcfce7' },
+  { value: 'full', label: 'Full',      color: 'var(--t-heading)', bg: '#dcfce7' },
 ];
 
 // ── 3-state segmented control ──────────────────────────────────────────────
@@ -74,15 +74,15 @@ function AccessControl({ value, locked, onChange }: {
     return (
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px',
         background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '3px 10px' }}>
-        <Lock size={10} style={{ color: '#1b4a1b' }} />
-        <span style={{ fontSize: '11px', fontWeight: 700, color: '#1b4a1b' }}>Full</span>
+        <Lock size={10} style={{ color: 'var(--t-heading)' }} />
+        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--t-heading)' }}>Full</span>
       </div>
     );
   }
 
   return (
     <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden',
-      border: '1px solid #e5dfc8', background: '#f9f6ed' }}>
+      border: '1px solid #e5dfc8', background: 'var(--t-subtle)' }}>
       {ACCESS_OPTIONS.map((opt, i) => {
         const active = value === opt.value;
         return (
@@ -97,7 +97,7 @@ function AccessControl({ value, locked, onChange }: {
               borderRight: i < ACCESS_OPTIONS.length - 1 ? '1px solid #e5dfc8' : 'none',
               cursor: 'pointer',
               background: active ? opt.bg : 'transparent',
-              color: active ? opt.color : '#9ca3af',
+              color: active ? opt.color : 'var(--t-muted)',
               transition: 'all 0.15s',
               whiteSpace: 'nowrap',
             }}
@@ -192,24 +192,24 @@ UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' E
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1b4a1b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Lock size={22} style={{ color: '#1b4a1b' }} />
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--t-heading)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Lock size={22} style={{ color: 'var(--t-heading)' }} />
             Role & Permissions
           </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
+          <p style={{ color: 'var(--t-muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
             Control which roles can access each module. Admin always has full access.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={load} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px',
-              background: '#f9f6ed', color: '#1b4a1b', border: '1px solid #e5dfc8', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
+              background: 'var(--t-subtle)', color: 'var(--t-heading)', border: '1px solid #e5dfc8', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
             <RefreshCw size={13} />
             Refresh
           </button>
           <button onClick={save} disabled={saving || !dbReady}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px',
-              background: saved ? '#16a34a' : '#1b4a1b', color: 'white', border: 'none',
+              background: saved ? '#16a34a' : 'var(--t-heading)', color: 'white', border: 'none',
               cursor: dbReady ? 'pointer' : 'not-allowed', fontWeight: 600, fontSize: '13px', opacity: !dbReady ? 0.5 : 1 }}>
             {saved ? <CheckCircle2 size={13} /> : <Save size={13} />}
             {saved ? 'Saved' : 'Save Changes'}
@@ -222,10 +222,10 @@ UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' E
         {ACCESS_OPTIONS.map(opt => (
           <div key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 3, background: opt.bg, border: `1px solid ${opt.color}33` }} />
-            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600 }}>{opt.label}</span>
+            <span style={{ fontSize: '12px', color: 'var(--t-muted)', fontWeight: 600 }}>{opt.label}</span>
           </div>
         ))}
-        <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>— View Only = can see the page, cannot edit</span>
+        <span style={{ fontSize: '12px', color: 'var(--t-muted)', marginLeft: '4px' }}>— View Only = can see the page, cannot edit</span>
       </div>
 
       {/* DB upgrade banner */}
@@ -257,7 +257,7 @@ UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' E
             <tr>
               <th style={{ ...thStyle, textAlign: 'left', width: '35%' }}>Module</th>
               <th style={{ ...thStyle }}>
-                <span style={{ background: '#1b4a1b', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>Admin</span>
+                <span style={{ background: 'var(--t-heading)', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700 }}>Admin</span>
               </th>
               {ROLES.map(r => (
                 <th key={r} style={{ ...thStyle }}>
@@ -268,15 +268,15 @@ UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' E
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem', color: '#9ca3af' }}>Loading…</td></tr>
+              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem', color: 'var(--t-muted)' }}>Loading…</td></tr>
             ) : PAGES.map((page, idx) => (
               <tr key={page.href}
-                style={{ background: idx % 2 === 0 ? 'white' : '#faf8f2' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#f3f0e6')}
-                onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'white' : '#faf8f2')}>
+                style={{ background: idx % 2 === 0 ? 'white' : 'var(--t-subtle)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--t-surface)')}
+                onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'white' : 'var(--t-subtle)')}>
                 <td style={tdStyle}>
-                  <span style={{ fontWeight: 600, color: '#1a1a1a' }}>{page.label}</span>
-                  <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '6px' }}>{page.href}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--t-text)' }}>{page.label}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--t-muted)', marginLeft: '6px' }}>{page.href}</span>
                 </td>
                 <td style={{ ...tdStyle, textAlign: 'center' }}>
                   <AccessControl value="full" locked />
@@ -297,7 +297,7 @@ UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' E
 
       {toast && (
         <div style={{ position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
-          background: '#1b4a1b', color: 'white', padding: '10px 20px', borderRadius: '10px',
+          background: 'var(--t-heading)', color: 'white', padding: '10px 20px', borderRadius: '10px',
           fontSize: '13px', fontWeight: 600, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
           {toast}
         </div>

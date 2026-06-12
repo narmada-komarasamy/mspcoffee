@@ -177,7 +177,7 @@ export default function StanmoreLabourPage() {
   };
 
   const statusColor = (s: string) =>
-    s === 'P' ? 'var(--t-accent)' : s === 'H' ? '#d97706' : 'var(--msp-danger, #e8524a)';
+    s === 'P' ? 'var(--t-accent)' : s === 'H' ? '#d97706' : '#e8524a';
 
   const TABS: { key: typeof tab; label: string }[] = [
     { key: 'daily',     label: 'Daily entry'  },

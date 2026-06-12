@@ -111,9 +111,9 @@ const EMPTY_FORM: OrderForm = {
 };
 
 const TT_STYLE = {
-  backgroundColor: "var(--msp-navy-mid)",
-  border: "1px solid var(--msp-navy-border)",
-  borderRadius: 8, fontSize: 11, color: "var(--msp-text)",
+  backgroundColor: "var(--t-surface)",
+  border: "1px solid var(--t-border)",
+  borderRadius: 8, fontSize: 11, color: "var(--t-text)",
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -639,10 +639,10 @@ function OverviewTab({
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={clientData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="client" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }}
+                <XAxis dataKey="client" tick={{ fill: "var(--t-muted)", fontSize: 10 }}
                   tickLine={false} axisLine={false}
                   tickFormatter={v => v.length > 12 ? v.slice(0, 11) + "…" : v} />
-                <YAxis tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
+                <YAxis tick={{ fill: "var(--t-muted)", fontSize: 10 }} tickLine={false} axisLine={false}
                   tickFormatter={v => v >= 100000 ? `₹${(v/100000).toFixed(1)}L` : `₹${v}`} />
                 <Tooltip contentStyle={TT_STYLE} formatter={(v: unknown) => [fmtINR(n(v)), "Revenue"]} />
                 <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
@@ -661,8 +661,8 @@ function OverviewTab({
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={monthlyData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="label" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <XAxis dataKey="label" tick={{ fill: "var(--t-muted)", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: "var(--t-muted)", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Tooltip contentStyle={TT_STYLE} formatter={(v: any) => [v, "Orders"]} />
                 <Line type="monotone" dataKey="count" stroke={gold} strokeWidth={2}
@@ -831,7 +831,7 @@ function RecordsTab({
           <tbody>
             {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={19} style={{ textAlign: "center", color: "var(--msp-neutral)", padding: "2.5rem" }}>
+                <td colSpan={19} style={{ textAlign: "center", color: "var(--t-muted)", padding: "2.5rem" }}>
                   No orders match the selected filters
                 </td>
               </tr>
@@ -1020,8 +1020,8 @@ function AnalyticsTab({ orders, theme }: { orders: ExportOrder[]; theme: ThemeCo
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={rateData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="label" tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "var(--msp-neutral)", fontSize: 10 }} tickLine={false} axisLine={false}
+                <XAxis dataKey="label" tick={{ fill: "var(--t-muted)", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: "var(--t-muted)", fontSize: 10 }} tickLine={false} axisLine={false}
                   tickFormatter={v => `₹${v}`} />
                 <Tooltip contentStyle={TT_STYLE}
                   formatter={(v: unknown, name: unknown) => [`₹${fmtNum(n(v), 2)}`, name as string]} />

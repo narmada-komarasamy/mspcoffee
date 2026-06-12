@@ -39,9 +39,9 @@ const PAGES = [
 ];
 
 const ACCESS_OPTS: { value: Access; label: string; color: string; bg: string; border: string }[] = [
-  { value: 'none', label: 'No Access', color: '#6b7280', bg: 'transparent', border: 'transparent' },
+  { value: 'none', label: 'No Access', color: 'var(--t-muted)', bg: 'transparent', border: 'transparent' },
   { value: 'view', label: 'View Only',  color: '#1a3a6e', bg: '#dbeafe',    border: '#93c5fd' },
-  { value: 'edit', label: 'Edit',       color: '#1b4a1b', bg: '#dcfce7',    border: '#86efac' },
+  { value: 'edit', label: 'Edit',       color: 'var(--t-heading)', bg: '#dcfce7',    border: '#86efac' },
 ];
 
 const ROLES   = ['admin', 'supervisor', 'worker'];
@@ -57,38 +57,38 @@ type Modal =
 const blank: Omit<AppUser, 'id'> = { name: '', pin: '', role: 'worker', estate: null, active: true };
 
 const roleColors: Record<string, { bg: string; color: string }> = {
-  admin:      { bg: '#1b4a1b', color: 'white' },
+  admin:      { bg: 'var(--t-heading)', color: 'white' },
   supervisor: { bg: '#1a3a6e', color: 'white' },
   worker:     { bg: '#6b3a1f', color: 'white' },
 };
 
 // ── Style tokens ───────────────────────────────────────────────────────────
 const card: React.CSSProperties = {
-  background: '#ffffff', border: '1px solid #e5dfc8',
+  background: 'var(--t-card)', border: '1px solid #e5dfc8',
   borderRadius: '12px', boxShadow: '0 2px 8px rgba(27,74,27,0.07)',
 };
 const thStyle: React.CSSProperties = {
   padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: 700,
-  textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280',
-  borderBottom: '1px solid #e5dfc8', background: '#f9f6ed', whiteSpace: 'nowrap',
+  textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--t-muted)',
+  borderBottom: '1px solid #e5dfc8', background: 'var(--t-subtle)', whiteSpace: 'nowrap',
 };
 const tdStyle: React.CSSProperties = {
-  padding: '10px 14px', fontSize: '13px', color: '#1a1a1a',
+  padding: '10px 14px', fontSize: '13px', color: 'var(--t-text)',
   borderBottom: '1px solid #f0ead4', verticalAlign: 'middle',
 };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', borderRadius: '8px',
-  border: '1px solid #e5dfc8', fontSize: '13px', color: '#1a1a1a',
+  border: '1px solid #e5dfc8', fontSize: '13px', color: 'var(--t-text)',
   background: '#faf8f2', outline: 'none',
 };
 const labelStyle: React.CSSProperties = {
-  fontSize: '12px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px',
+  fontSize: '12px', fontWeight: 600, color: 'var(--t-muted)', display: 'block', marginBottom: '4px',
 };
 
 // ── Access segmented control ───────────────────────────────────────────────
 function AccessControl({ value, onChange }: { value: Access; onChange: (v: Access) => void }) {
   return (
-    <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5dfc8', background: '#f9f6ed' }}>
+    <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5dfc8', background: 'var(--t-subtle)' }}>
       {ACCESS_OPTS.map((opt, i) => {
         const active = value === opt.value;
         return (
@@ -98,7 +98,7 @@ function AccessControl({ value, onChange }: { value: Access; onChange: (v: Acces
               borderRight: i < ACCESS_OPTS.length - 1 ? '1px solid #e5dfc8' : 'none',
               cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
               background: active ? opt.bg : 'transparent',
-              color: active ? opt.color : '#9ca3af',
+              color: active ? opt.color : 'var(--t-muted)',
             }}>
             {opt.label}
           </button>
@@ -224,23 +224,23 @@ export default function UserManagementPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1b4a1b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserCog size={24} style={{ color: '#1b4a1b' }} />
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--t-heading)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <UserCog size={24} style={{ color: 'var(--t-heading)' }} />
             User Management
           </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
+          <p style={{ color: 'var(--t-muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
             {users.length} users · {activeCount} active
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={load} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px',
-              background: '#f9f6ed', color: '#1b4a1b', border: '1px solid #e5dfc8', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
+              background: 'var(--t-subtle)', color: 'var(--t-heading)', border: '1px solid #e5dfc8', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
             <RefreshCw size={14} /> Refresh
           </button>
           <button onClick={() => { setForm(blank); setModal({ type: 'add' }); }}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px',
-              background: '#1b4a1b', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
+              background: 'var(--t-heading)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
             <Plus size={14} /> Add User
           </button>
         </div>
@@ -248,11 +248,11 @@ export default function UserManagementPage() {
 
       {/* Search */}
       <div style={{ ...card, padding: '12px 14px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Search size={15} style={{ color: '#9ca3af', flexShrink: 0 }} />
+        <Search size={15} style={{ color: 'var(--t-muted)', flexShrink: 0 }} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or role…"
-          style={{ border: 'none', outline: 'none', fontSize: '13px', color: '#1a1a1a', background: 'transparent', width: '100%' }} />
+          style={{ border: 'none', outline: 'none', fontSize: '13px', color: 'var(--t-text)', background: 'transparent', width: '100%' }} />
         {search && (
-          <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
+          <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-muted)' }}>
             <X size={14} />
           </button>
         )}
@@ -271,13 +271,13 @@ export default function UserManagementPage() {
           <tbody>
             {loading ? (
               <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem' }}>
-                <Loader2 size={20} style={{ color: '#1b4a1b', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                <Loader2 size={20} style={{ color: 'var(--t-heading)', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
               </td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>No users found</td></tr>
+              <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--t-muted)', padding: '2rem' }}>No users found</td></tr>
             ) : filtered.map((u) => {
               const active = u.active !== false;
-              const rc = roleColors[u.role] ?? { bg: '#6b7280', color: 'white' };
+              const rc = roleColors[u.role] ?? { bg: 'var(--t-muted)', color: 'white' };
               return (
                 <tr key={u.id} style={{ opacity: active ? 1 : 0.5, background: 'white' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#faf8f2')}
@@ -285,7 +285,7 @@ export default function UserManagementPage() {
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(27,74,27,0.10)',
-                        color: '#1b4a1b', fontWeight: 700, fontSize: '13px',
+                        color: 'var(--t-heading)', fontWeight: 700, fontSize: '13px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {u.name[0]?.toUpperCase()}
                       </div>
@@ -298,7 +298,7 @@ export default function UserManagementPage() {
                       {u.role}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, color: '#6b7280' }}>{u.estate ?? '—'}</td>
+                  <td style={{ ...tdStyle, color: 'var(--t-muted)' }}>{u.estate ?? '—'}</td>
                   <td style={tdStyle}>
                     {active
                       ? <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#16a34a', fontWeight: 600 }}><CheckCircle2 size={13} /> Active</span>
@@ -308,8 +308,8 @@ export default function UserManagementPage() {
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       <button onClick={() => { setForm({ name: u.name, pin: u.pin, role: u.role, estate: u.estate, active: u.active }); setModal({ type: 'edit', user: u }); }}
-                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: '#f9f6ed',
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#1b4a1b' }}>
+                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: 'var(--t-subtle)',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--t-heading)' }}>
                         <Edit2 size={12} /> Edit
                       </button>
                       {/* Permissions — only for non-admin users */}
@@ -321,12 +321,12 @@ export default function UserManagementPage() {
                         </button>
                       )}
                       <button onClick={() => { setNewPin(''); setModal({ type: 'pin', user: u }); }}
-                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: '#f9f6ed',
+                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: 'var(--t-subtle)',
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#b8920a' }}>
                         <KeyRound size={12} /> PIN
                       </button>
                       <button onClick={() => handleToggleActive(u)}
-                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: '#f9f6ed',
+                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: 'var(--t-subtle)',
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600,
                           color: active ? '#dc2626' : '#16a34a' }}>
                         {active ? <><XCircle size={12} /> Deactivate</> : <><CheckCircle2 size={12} /> Activate</>}
@@ -343,7 +343,7 @@ export default function UserManagementPage() {
       {/* Toast */}
       {toast && (
         <div style={{ position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
-          background: '#1b4a1b', color: 'white', padding: '10px 20px', borderRadius: '10px',
+          background: 'var(--t-heading)', color: 'white', padding: '10px 20px', borderRadius: '10px',
           fontSize: '13px', fontWeight: 600, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
           {toast}
         </div>
@@ -363,15 +363,15 @@ export default function UserManagementPage() {
               <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e5dfc8',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <div>
-                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1b4a1b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--t-heading)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShieldCheck size={18} style={{ color: '#4338ca' }} />
                     Permissions — {modal.user.name}
                   </h2>
-                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--t-muted)', margin: '2px 0 0' }}>
                     Set page-level access for this user
                   </p>
                 </div>
-                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
+                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-muted)' }}>
                   <X size={18} />
                 </button>
               </div>
@@ -380,19 +380,19 @@ export default function UserManagementPage() {
               <div style={{ padding: '10px 1.5rem', background: '#faf8f2', borderBottom: '1px solid #e5dfc8',
                 display: 'flex', gap: '16px', flexShrink: 0, flexWrap: 'wrap' }}>
                 {ACCESS_OPTS.map(o => (
-                  <span key={o.value} style={{ fontSize: '11px', fontWeight: 600, color: o.value === 'none' ? '#9ca3af' : o.color,
-                    background: o.bg || '#f3f4f6', border: `1px solid ${o.border || '#e5dfc8'}`,
+                  <span key={o.value} style={{ fontSize: '11px', fontWeight: 600, color: o.value === 'none' ? 'var(--t-muted)' : o.color,
+                    background: o.bg || '#f3f4f6', border: `1px solid ${o.border || 'var(--t-border)'}`,
                     borderRadius: '6px', padding: '2px 8px' }}>
                     {o.label}
                   </span>
                 ))}
-                <span style={{ fontSize: '11px', color: '#9ca3af' }}>— View Only hides edit/submit buttons</span>
+                <span style={{ fontSize: '11px', color: 'var(--t-muted)' }}>— View Only hides edit/submit buttons</span>
               </div>
 
               {/* Page list */}
               <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0' }}>
                 {permsLoading ? (
-                  <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Loading…</div>
+                  <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--t-muted)' }}>Loading…</div>
                 ) : PAGES.map((page, idx) => (
                   <div key={page.href} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -400,8 +400,8 @@ export default function UserManagementPage() {
                     borderBottom: '1px solid #f0ead4',
                   }}>
                     <div>
-                      <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a1a1a' }}>{page.label}</span>
-                      <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '6px' }}>{page.href}</span>
+                      <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--t-text)' }}>{page.label}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--t-muted)', marginLeft: '6px' }}>{page.href}</span>
                     </div>
                     <AccessControl
                       value={perms[page.href] ?? 'edit'}
@@ -415,12 +415,12 @@ export default function UserManagementPage() {
               <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5dfc8', flexShrink: 0, display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button onClick={() => setModal(null)}
                   style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e5dfc8',
-                    background: '#f9f6ed', color: '#6b7280', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
+                    background: 'var(--t-subtle)', color: 'var(--t-muted)', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
                   Cancel
                 </button>
                 <button onClick={() => savePerms(modal.user.id)} disabled={saving}
                   style={{ padding: '8px 18px', borderRadius: '8px', border: 'none',
-                    background: permsSaved ? '#16a34a' : '#1b4a1b', color: 'white',
+                    background: permsSaved ? '#16a34a' : 'var(--t-heading)', color: 'white',
                     cursor: 'pointer', fontWeight: 700, fontSize: '13px',
                     display: 'flex', alignItems: 'center', gap: '6px', opacity: saving ? 0.6 : 1 }}>
                   {saving ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
@@ -435,10 +435,10 @@ export default function UserManagementPage() {
           {(modal.type === 'edit' || modal.type === 'add') && (
             <div style={{ ...card, width: '100%', maxWidth: '400px', padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#1b4a1b', margin: 0 }}>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--t-heading)', margin: 0 }}>
                   {modal.type === 'add' ? 'Add New User' : 'Edit User'}
                 </h2>
-                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
+                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-muted)' }}>
                   <X size={18} />
                 </button>
               </div>
@@ -470,7 +470,7 @@ export default function UserManagementPage() {
               </div>
               <button onClick={modal.type === 'add' ? handleAddUser : handleSaveEdit} disabled={saving}
                 style={{ marginTop: '1.25rem', width: '100%', padding: '10px', borderRadius: '8px',
-                  background: '#1b4a1b', color: 'white', border: 'none', cursor: 'pointer',
+                  background: 'var(--t-heading)', color: 'white', border: 'none', cursor: 'pointer',
                   fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                   opacity: saving ? 0.6 : 1 }}>
                 {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />}
@@ -483,13 +483,13 @@ export default function UserManagementPage() {
           {modal.type === 'pin' && (
             <div style={{ ...card, width: '100%', maxWidth: '400px', padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#1b4a1b', margin: 0 }}>Reset PIN</h2>
-                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--t-heading)', margin: 0 }}>Reset PIN</h2>
+                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-muted)' }}>
                   <X size={18} />
                 </button>
               </div>
-              <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '1rem' }}>
-                Setting new PIN for <strong style={{ color: '#1a1a1a' }}>{modal.user.name}</strong>
+              <p style={{ fontSize: '13px', color: 'var(--t-muted)', marginBottom: '1rem' }}>
+                Setting new PIN for <strong style={{ color: 'var(--t-text)' }}>{modal.user.name}</strong>
               </p>
               <div>
                 <label style={labelStyle}>New 4-digit PIN</label>

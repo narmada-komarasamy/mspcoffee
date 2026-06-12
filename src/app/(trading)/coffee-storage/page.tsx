@@ -141,7 +141,7 @@ function channelColor(ch: string) {
 }
 const TT_STYLE = {
   backgroundColor: "#0a1824", border: "1px solid #2a3f5a",
-  borderRadius: 6, fontSize: 11, color: "#1a1a1a",
+  borderRadius: 6, fontSize: 11, color: "var(--t-text)",
 };
 
 function getUser() {
@@ -1330,7 +1330,7 @@ function GreenLotTable({ lots, onSell }: { lots: GreenLot[]; onSell: (g: GreenLo
                   <td className={css.tdNum}>{g.score ?? "—"}</td>
                   <td>
                     <div className={css.progressWrap}>
-                      <div style={{ fontSize:12, fontWeight:600, color:"#1a1a1a", fontVariantNumeric:"tabular-nums" }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:"var(--t-text)", fontVariantNumeric:"tabular-nums" }}>
                         {Math.round(g.current_kg).toLocaleString("en-IN")} kg
                       </div>
                       <div className={css.progressBar}>
@@ -1406,8 +1406,8 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
               <div style={{ fontSize:11, fontWeight:700, color: seasonAccent(s), letterSpacing:"0.05em", marginBottom:4 }}>
                 🌱 {s} SEASON
               </div>
-              <div style={{ fontSize:22, fontWeight:800, color:"#1a1a1a", lineHeight:1 }}>{fmtINR(sVal)}</div>
-              <div style={{ fontSize:12, color:"#6b7280", marginTop:4 }}>
+              <div style={{ fontSize:22, fontWeight:800, color:"var(--t-text)", lineHeight:1 }}>{fmtINR(sVal)}</div>
+              <div style={{ fontSize:12, color:"var(--t-muted)", marginTop:4 }}>
                 {Math.round(sKg).toLocaleString("en-IN")} kg · {sInStock.length} lots
               </div>
             </button>
@@ -1427,34 +1427,34 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
           <Plus size={13} /> Add lot ({activeSeason})
         </button>
         <select value={filterEstate} onChange={e=>setFilterEstate(e.target.value)}
-          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
+          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"var(--t-bg)", color:"var(--t-text)", cursor:"pointer" }}>
           <option value="all">All Estates</option>
           {estates.map(e => <option key={e} value={e}>{e}</option>)}
         </select>
         <select value={filterProcess} onChange={e=>setFilterProcess(e.target.value)}
-          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
+          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"var(--t-bg)", color:"var(--t-text)", cursor:"pointer" }}>
           <option value="all">All Processes</option>
           {processes.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
         <select value={filterScore} onChange={e=>setFilterScore(e.target.value)}
-          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
+          style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"var(--t-bg)", color:"var(--t-text)", cursor:"pointer" }}>
           <option value="all">All Scores</option>
           <option value="85+">85+</option>
           <option value="80-85">80–85</option>
           <option value="scored">Has score</option>
           <option value="unscored">No score</option>
         </select>
-        <span style={{ fontSize:12, color:"#6b7280" }}>
+        <span style={{ fontSize:12, color:"var(--t-muted)" }}>
           {filtered.length} lot{filtered.length!==1?"s":""}
           {filtered.length > 0 && (
-            <span style={{ marginLeft:8, fontWeight:600, color:"#1a1a1a" }}>
+            <span style={{ marginLeft:8, fontWeight:600, color:"var(--t-text)" }}>
               · {Math.round(filtered.filter(g=>g.status==="in-stock").reduce((a,g)=>a+n(g.current_kg),0)).toLocaleString("en-IN")} kg
             </span>
           )}
         </span>
         {(filterEstate !== "all" || filterProcess !== "all" || filterScore !== "all") && (
           <button onClick={() => { setFilterEstate("all"); setFilterProcess("all"); setFilterScore("all"); }}
-            style={{ height:34, padding:"0 12px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:12, background:"#fff", color:"#6b7280", cursor:"pointer", marginLeft:"auto" }}>
+            style={{ height:34, padding:"0 12px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:12, background:"#fff", color:"var(--t-muted)", cursor:"pointer", marginLeft:"auto" }}>
             ✕ Clear
           </button>
         )}
@@ -1610,7 +1610,7 @@ function HillTillerTab() {
                     <td className={css.tdNum}>{l.score ?? "—"}</td>
                     <td>
                       <div className={css.progressWrap}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", fontVariantNumeric: "tabular-nums" }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t-text)", fontVariantNumeric: "tabular-nums" }}>
                           {Math.round(l.current_kg).toLocaleString("en-IN")} kg
                         </div>
                         <div className={css.progressBar}>
@@ -2001,12 +2001,12 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
               <span className={css.tdMono}>{lot?.lot ?? r.green_lot_id}
                 {lot?.source === "hilltiller" && <span style={{ fontSize:9, fontWeight:700, background:"#dcfce7", color:"#166534", borderRadius:4, padding:"1px 5px", marginLeft:4 }}>HT</span>}
               </span>
-              <span style={{ color:"#6b7280" }}>{lot?.field} · {pct}% · {Math.round(lot?.current_kg??0)} kg avail</span>
+              <span style={{ color:"var(--t-muted)" }}>{lot?.field} · {pct}% · {Math.round(lot?.current_kg??0)} kg avail</span>
             </div>
           );
         })}
-        <div style={{ fontSize:11, color:"#6b7280", marginTop:6 }}>
-          Max sellable: <strong style={{ color: maxKg > 0 ? "#1a1a1a" : "#e8524a" }}>{isFinite(maxKg) ? Math.floor(maxKg).toLocaleString("en-IN") : 0} kg</strong>
+        <div style={{ fontSize:11, color:"var(--t-muted)", marginTop:6 }}>
+          Max sellable: <strong style={{ color: maxKg > 0 ? "var(--t-text)" : "#e8524a" }}>{isFinite(maxKg) ? Math.floor(maxKg).toLocaleString("en-IN") : 0} kg</strong>
           &nbsp;·&nbsp;Cost/kg: <strong>₹{weightedCost.toFixed(2)}</strong>
         </div>
       </div>

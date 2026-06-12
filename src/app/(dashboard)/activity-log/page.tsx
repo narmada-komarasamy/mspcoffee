@@ -60,13 +60,13 @@ function DeviceIcon({ type }: { type: string }) {
 
 function RolePill({ role }: { role: string }) {
   const map: Record<string, string> = {
-    admin:      '#1b4a1b',
+    admin:      'var(--t-heading)',
     supervisor: '#1a3a6e',
     worker:     '#6b3a1f',
     hr:         '#7a1f35',
     manager:    '#2a3540',
   };
-  const bg = map[role.toLowerCase()] ?? '#6b7280';
+  const bg = map[role.toLowerCase()] ?? 'var(--t-muted)';
   return (
     <span style={{
       background: bg, color: 'white',
@@ -168,7 +168,7 @@ export default function ActivityLogPage() {
   // ── Styles ────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
-    background: '#ffffff',
+    background: 'var(--t-card)',
     border: '1px solid #e5dfc8',
     borderRadius: '12px',
     padding: '1.25rem',
@@ -189,16 +189,16 @@ export default function ActivityLogPage() {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
-    color: '#6b7280',
+    color: 'var(--t-muted)',
     borderBottom: '1px solid #e5dfc8',
-    background: '#f9f6ed',
+    background: 'var(--t-subtle)',
     whiteSpace: 'nowrap',
   };
 
   const tdStyle: React.CSSProperties = {
     padding: '10px 14px',
     fontSize: '13px',
-    color: '#1a1a1a',
+    color: 'var(--t-text)',
     borderBottom: '1px solid #f0ead4',
     verticalAlign: 'middle',
   };
@@ -209,12 +209,12 @@ export default function ActivityLogPage() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1b4a1b', margin: 0 }}>Activity Log</h1>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>Track user sessions, page visits, and device usage</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--t-heading)', margin: 0 }}>Activity Log</h1>
+          <p style={{ color: 'var(--t-muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>Track user sessions, page visits, and device usage</p>
         </div>
         <button onClick={fetchData} disabled={loading}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px',
-            background: '#1b4a1b', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
+            background: 'var(--t-heading)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
           <RefreshCw className="h-4 w-4" style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           Refresh
         </button>
@@ -224,11 +224,11 @@ export default function ActivityLogPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={kpiCard}>
           <div style={{ background: 'rgba(27,74,27,0.10)', borderRadius: '10px', padding: '10px' }}>
-            <Activity className="h-5 w-5" style={{ color: '#1b4a1b' }} />
+            <Activity className="h-5 w-5" style={{ color: 'var(--t-heading)' }} />
           </div>
           <div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1b4a1b', lineHeight: 1 }}>{rows.length}</div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Total Page Views</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--t-heading)', lineHeight: 1 }}>{rows.length}</div>
+            <div style={{ fontSize: '12px', color: 'var(--t-muted)', marginTop: '2px' }}>Total Page Views</div>
           </div>
         </div>
 
@@ -238,7 +238,7 @@ export default function ActivityLogPage() {
           </div>
           <div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#3b82f6', lineHeight: 1 }}>{uniqueUsers}</div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Unique Users</div>
+            <div style={{ fontSize: '12px', color: 'var(--t-muted)', marginTop: '2px' }}>Unique Users</div>
           </div>
         </div>
 
@@ -248,7 +248,7 @@ export default function ActivityLogPage() {
           </div>
           <div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#b8920a', lineHeight: 1 }}>{totalSessions}</div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Sessions</div>
+            <div style={{ fontSize: '12px', color: 'var(--t-muted)', marginTop: '2px' }}>Sessions</div>
           </div>
         </div>
 
@@ -258,7 +258,7 @@ export default function ActivityLogPage() {
           </div>
           <div>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#9b59d6', lineHeight: 1 }}>{fmtDuration(avgDuration)}</div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>Avg Time / Page</div>
+            <div style={{ fontSize: '12px', color: 'var(--t-muted)', marginTop: '2px' }}>Avg Time / Page</div>
           </div>
         </div>
       </div>
@@ -268,22 +268,22 @@ export default function ActivityLogPage() {
 
         {/* Top Pages */}
         <div style={card}>
-          <div style={{ fontWeight: 700, fontSize: '14px', color: '#1b4a1b', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--t-heading)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <BarChart2 className="h-4 w-4" /> Most Visited Pages
           </div>
           {topPages.length === 0 ? (
-            <div style={{ color: '#9ca3af', fontSize: '13px' }}>No data yet</div>
+            <div style={{ color: 'var(--t-muted)', fontSize: '13px' }}>No data yet</div>
           ) : topPages.map(([label, count]) => {
             const max = topPages[0][1];
             const pct = Math.round((count / max) * 100);
             return (
               <div key={label} style={{ marginBottom: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                  <span style={{ color: '#1a1a1a', fontWeight: 500 }}>{label}</span>
-                  <span style={{ color: '#6b7280', fontWeight: 600 }}>{count}</span>
+                  <span style={{ color: 'var(--t-text)', fontWeight: 500 }}>{label}</span>
+                  <span style={{ color: 'var(--t-muted)', fontWeight: 600 }}>{count}</span>
                 </div>
-                <div style={{ background: '#f0ead4', borderRadius: '999px', height: '6px' }}>
-                  <div style={{ background: '#2d6e2d', borderRadius: '999px', height: '6px', width: `${pct}%` }} />
+                <div style={{ background: 'var(--t-surface)', borderRadius: '999px', height: '6px' }}>
+                  <div style={{ background: 'var(--t-green)', borderRadius: '999px', height: '6px', width: `${pct}%` }} />
                 </div>
               </div>
             );
@@ -292,7 +292,7 @@ export default function ActivityLogPage() {
 
         {/* Device Breakdown */}
         <div style={card}>
-          <div style={{ fontWeight: 700, fontSize: '14px', color: '#1b4a1b', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--t-heading)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Monitor className="h-4 w-4" /> Device Breakdown
           </div>
           {(['desktop', 'mobile', 'tablet'] as const).map(dev => {
@@ -304,10 +304,10 @@ export default function ActivityLogPage() {
                 <DeviceIcon type={dev} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                    <span style={{ textTransform: 'capitalize', fontWeight: 500, color: '#1a1a1a' }}>{dev}</span>
-                    <span style={{ color: '#6b7280' }}>{count} ({pct}%)</span>
+                    <span style={{ textTransform: 'capitalize', fontWeight: 500, color: 'var(--t-text)' }}>{dev}</span>
+                    <span style={{ color: 'var(--t-muted)' }}>{count} ({pct}%)</span>
                   </div>
-                  <div style={{ background: '#f0ead4', borderRadius: '999px', height: '6px' }}>
+                  <div style={{ background: 'var(--t-surface)', borderRadius: '999px', height: '6px' }}>
                     <div style={{ background: clr, borderRadius: '999px', height: '6px', width: `${pct}%` }} />
                   </div>
                 </div>
@@ -317,10 +317,10 @@ export default function ActivityLogPage() {
 
           {/* IP Summary */}
           <div style={{ borderTop: '1px solid #f0ead4', paddingTop: '12px', marginTop: '4px' }}>
-            <div style={{ fontWeight: 700, fontSize: '13px', color: '#1b4a1b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--t-heading)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Globe className="h-3.5 w-3.5" /> Unique IPs
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1b4a1b' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--t-heading)' }}>
               {new Set(rows.map(r => r.ip_address).filter(Boolean)).size}
             </div>
           </div>
@@ -329,29 +329,29 @@ export default function ActivityLogPage() {
 
       {/* ── Filters ── */}
       <div style={{ ...card, marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
-        <Filter className="h-4 w-4" style={{ color: '#6b7280', flexShrink: 0 }} />
+        <Filter className="h-4 w-4" style={{ color: 'var(--t-muted)', flexShrink: 0 }} />
 
         {/* Search */}
         <div style={{ position: 'relative', flex: '1', minWidth: '160px' }}>
-          <Search className="h-3.5 w-3.5" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+          <Search className="h-3.5 w-3.5" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-muted)' }} />
           <input
             type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
             placeholder="Search user, page, IP…"
             style={{ width: '100%', paddingLeft: '30px', paddingRight: '10px', height: '34px',
               border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px',
-              background: '#fdf8ee', color: '#1a1a1a', outline: 'none', boxSizing: 'border-box' }} />
+              background: '#fdf8ee', color: 'var(--t-text)', outline: 'none', boxSizing: 'border-box' }} />
         </div>
 
         {/* User */}
         <select value={filterUser} onChange={e => { setFilterUser(e.target.value); setPage(0); }}
-          style={{ height: '34px', padding: '0 10px', border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px', background: '#fdf8ee', color: '#1a1a1a', cursor: 'pointer' }}>
+          style={{ height: '34px', padding: '0 10px', border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px', background: '#fdf8ee', color: 'var(--t-text)', cursor: 'pointer' }}>
           <option value="all">All Users</option>
           {userNames.map(n => <option key={n} value={n}>{n}</option>)}
         </select>
 
         {/* Device */}
         <select value={filterDevice} onChange={e => { setFilterDevice(e.target.value); setPage(0); }}
-          style={{ height: '34px', padding: '0 10px', border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px', background: '#fdf8ee', color: '#1a1a1a', cursor: 'pointer' }}>
+          style={{ height: '34px', padding: '0 10px', border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px', background: '#fdf8ee', color: 'var(--t-text)', cursor: 'pointer' }}>
           <option value="all">All Devices</option>
           <option value="desktop">Desktop</option>
           <option value="mobile">Mobile</option>
@@ -360,14 +360,14 @@ export default function ActivityLogPage() {
 
         {/* Days */}
         <select value={filterDays} onChange={e => { setFilterDays(e.target.value); setPage(0); }}
-          style={{ height: '34px', padding: '0 10px', border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px', background: '#fdf8ee', color: '#1a1a1a', cursor: 'pointer' }}>
+          style={{ height: '34px', padding: '0 10px', border: '1px solid #e5dfc8', borderRadius: '8px', fontSize: '13px', background: '#fdf8ee', color: 'var(--t-text)', cursor: 'pointer' }}>
           <option value="1">Last 24 hours</option>
           <option value="7">Last 7 days</option>
           <option value="30">Last 30 days</option>
           <option value="90">Last 90 days</option>
         </select>
 
-        <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: 'auto' }}>
+        <span style={{ fontSize: '12px', color: 'var(--t-muted)', marginLeft: 'auto' }}>
           {filtered.length} record{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -375,12 +375,12 @@ export default function ActivityLogPage() {
       {/* ── Table ── */}
       <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--t-muted)' }}>
             <RefreshCw className="h-6 w-6" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px', display: 'block' }} />
             Loading activity data…
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--t-muted)' }}>
             No activity records found. Make sure you&apos;ve run <code>create_activity_log.sql</code> in Supabase.
           </div>
         ) : (
@@ -399,14 +399,14 @@ export default function ActivityLogPage() {
               </thead>
               <tbody>
                 {paged.map((row, i) => (
-                  <tr key={row.id} style={{ background: i % 2 === 0 ? '#ffffff' : '#fdf8ee' }}>
+                  <tr key={row.id} style={{ background: i % 2 === 0 ? 'var(--t-card)' : '#fdf8ee' }}>
                     <td style={{ ...tdStyle, fontWeight: 600 }}>{row.user_name}</td>
                     <td style={tdStyle}><RolePill role={row.user_role} /></td>
                     <td style={tdStyle}>
                       <div style={{ fontWeight: 500 }}>{row.page_label || row.page_path}</div>
-                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>{row.page_path}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--t-muted)' }}>{row.page_path}</div>
                     </td>
-                    <td style={{ ...tdStyle, fontWeight: row.duration_secs ? 600 : 400, color: row.duration_secs ? '#1b4a1b' : '#9ca3af' }}>
+                    <td style={{ ...tdStyle, fontWeight: row.duration_secs ? 600 : 400, color: row.duration_secs ? 'var(--t-heading)' : 'var(--t-muted)' }}>
                       {fmtDuration(row.duration_secs)}
                     </td>
                     <td style={tdStyle}>
@@ -416,7 +416,7 @@ export default function ActivityLogPage() {
                       </div>
                     </td>
                     <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: '12px', color: '#4b5563' }}>{row.ip_address || '—'}</td>
-                    <td style={{ ...tdStyle, fontSize: '12px', color: '#6b7280', whiteSpace: 'nowrap' }}>{fmtTime(row.entered_at)}</td>
+                    <td style={{ ...tdStyle, fontSize: '12px', color: 'var(--t-muted)', whiteSpace: 'nowrap' }}>{fmtTime(row.entered_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -428,17 +428,17 @@ export default function ActivityLogPage() {
         {totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid #f0ead4' }}>
             <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-              style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #e5dfc8', background: page === 0 ? '#f9f6ed' : '#1b4a1b',
-                color: page === 0 ? '#9ca3af' : 'white', cursor: page === 0 ? 'default' : 'pointer', fontWeight: 600, fontSize: '13px' }}>
+              style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #e5dfc8', background: page === 0 ? 'var(--t-subtle)' : 'var(--t-heading)',
+                color: page === 0 ? 'var(--t-muted)' : 'white', cursor: page === 0 ? 'default' : 'pointer', fontWeight: 600, fontSize: '13px' }}>
               ← Prev
             </button>
-            <span style={{ fontSize: '13px', color: '#6b7280' }}>
+            <span style={{ fontSize: '13px', color: 'var(--t-muted)' }}>
               Page {page + 1} of {totalPages}
             </span>
             <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
               style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #e5dfc8',
-                background: page === totalPages - 1 ? '#f9f6ed' : '#1b4a1b',
-                color: page === totalPages - 1 ? '#9ca3af' : 'white',
+                background: page === totalPages - 1 ? 'var(--t-subtle)' : 'var(--t-heading)',
+                color: page === totalPages - 1 ? 'var(--t-muted)' : 'white',
                 cursor: page === totalPages - 1 ? 'default' : 'pointer', fontWeight: 600, fontSize: '13px' }}>
               Next →
             </button>
