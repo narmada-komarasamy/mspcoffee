@@ -1758,19 +1758,30 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
   const [recipe,      setRecipe]      = useState<{ green_lot_id: string; kg: number }[]>(blend?.recipe ?? []);
   const [addLotId,    setAddLotId]    = useState("");
   const [saving,      setSaving]      = useState(false);
+  const [htLots,      setHtLots]      = useState<HTLot[]>([]);
 
-  const availableLots = greenLots.filter(g => g.status === "in-stock" && !recipe.some(r => r.green_lot_id === g.id));
-  const recipeTotal   = recipe.reduce((a,r)=>a+n(r.kg),0);
-  const weightedCost  = recipeTotal > 0
-    ? recipe.reduce((a,r) => {
-        const lot = greenLots.find(g=>g.id===r.green_lot_id);
-        return a + n(r.kg) * n(lot?.rate_per_kg??0);
-      }, 0) / recipeTotal
+  useEffect(() => {
+    supabase.from("hilltiller_stock").select("*").eq("status", "in-stock")
+      .then(({ data }) => setHtLots((data ?? []) as HTLot[]));
+  }, []);
+
+  // Unified lot lookup across both sources
+  const getLot = (id: string) => {
+    const g = greenLots.find(l => l.id === id);
+    if (g) return { lot: g.lot, desc: `${g.field} · ${g.process}`, current_kg: g.current_kg, rate_per_kg: g.rate_per_kg, source: "green" };
+    const h = htLots.find(l => l.id === id);
+    if (h) return { lot: h.lot, desc: `${h.supplier} · ${h.process}`, current_kg: h.current_kg, rate_per_kg: h.rate_per_kg, source: "hilltiller" };
+    return null;
+  };
+
+  const greenAvail = greenLots.filter(g => g.status === "in-stock" && !recipe.some(r => r.green_lot_id === g.id));
+  const htAvail    = htLots.filter(h => !recipe.some(r => r.green_lot_id === h.id));
+
+  const recipeTotal  = recipe.reduce((a,r) => a + n(r.kg), 0);
+  const weightedCost = recipeTotal > 0
+    ? recipe.reduce((a,r) => a + n(r.kg) * n(getLot(r.green_lot_id)?.rate_per_kg ?? 0), 0) / recipeTotal
     : 0;
-  const totalCost     = recipe.reduce((a,r)=>{
-    const lot = greenLots.find(g=>g.id===r.green_lot_id);
-    return a + n(r.kg) * n(lot?.rate_per_kg??0);
-  }, 0);
+  const totalCost = recipe.reduce((a,r) => a + n(r.kg) * n(getLot(r.green_lot_id)?.rate_per_kg ?? 0), 0);
 
   const addLot = () => {
     if (!addLotId) return;
@@ -1840,13 +1851,18 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
       {recipe.length === 0 ? (
         <div style={{ color:"#7a90b0", fontSize:12, marginBottom:10 }}>No lots added yet.</div>
       ) : recipe.map(r => {
-        const lot = greenLots.find(g=>g.id===r.green_lot_id);
+        const lot = getLot(r.green_lot_id);
         const pct = recipeTotal > 0 ? (n(r.kg)/recipeTotal*100).toFixed(1) : "0.0";
         return (
           <div key={r.green_lot_id} className={css.recipeRow}>
             <div className={css.recipeRowLot}>
-              <div>{lot?.lot ?? r.green_lot_id}</div>
-              <div style={{ fontSize:10, color:"#7a90b0" }}>{lot?.field} · {lot?.process} · {Math.round(n(lot?.current_kg??0))} kg avail.</div>
+              <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                {lot?.lot ?? r.green_lot_id}
+                {lot?.source === "hilltiller" && (
+                  <span style={{ fontSize:9, fontWeight:700, background:"#dcfce7", color:"#166534", borderRadius:4, padding:"1px 5px" }}>HT</span>
+                )}
+              </div>
+              <div style={{ fontSize:10, color:"#7a90b0" }}>{lot?.desc} · {Math.round(n(lot?.current_kg??0))} kg avail.</div>
             </div>
             <span className={css.recipeRowPct}>{pct}%</span>
             <input type="number" className={css.recipeKgInput} min="0" step="1" value={r.kg}
@@ -1856,11 +1872,24 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
         );
       })}
 
-      {availableLots.length > 0 && (
+      {(greenAvail.length > 0 || htAvail.length > 0) && (
         <div style={{ display:"flex", gap:8, marginTop:8 }}>
           <select className={css.formSelect} value={addLotId} onChange={e=>setAddLotId(e.target.value)} style={{ flex:1 }}>
             <option value="">Add a lot…</option>
-            {availableLots.map(g => <option key={g.id} value={g.id}>{g.lot} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(2)}/kg</option>)}
+            {greenAvail.length > 0 && (
+              <optgroup label="☕ Green Store (own production)">
+                {greenAvail.map(g => (
+                  <option key={g.id} value={g.id}>{g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg</option>
+                ))}
+              </optgroup>
+            )}
+            {htAvail.length > 0 && (
+              <optgroup label="🌱 HillTiller Green Stock">
+                {htAvail.map(h => (
+                  <option key={h.id} value={h.id}>{h.lot} · {h.supplier} · {h.process} · {Math.round(h.current_kg)} kg · ₹{n(h.rate_per_kg).toFixed(0)}/kg</option>
+                ))}
+              </optgroup>
+            )}
           </select>
           <button className={css.btnSecondary} onClick={addLot} disabled={!addLotId}>Add</button>
         </div>
