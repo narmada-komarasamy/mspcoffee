@@ -2079,12 +2079,27 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
 function ProduceBlendDrawer({ blend, greenLots, onClose, reload }: {
   blend: Blend; greenLots: GreenLot[]; onClose: () => void; reload: () => void;
 }) {
-  const [scale, setScale] = useState(1.0);
-  const [saving, setSaving] = useState(false);
+  const [scale,   setScale]   = useState(1.0);
+  const [saving,  setSaving]  = useState(false);
+  const [htLots,  setHtLots]  = useState<HTLot[]>([]);
+
+  useEffect(() => {
+    supabase.from("hilltiller_stock").select("*")
+      .then(({ data }) => setHtLots((data ?? []) as HTLot[]));
+  }, []);
+
+  // Resolve a lot id from either source
+  const resolveLot = (id: string) => {
+    const g = greenLots.find(l => l.id === id);
+    if (g) return { lot: g.lot, desc: g.field, current_kg: g.current_kg, rate_per_kg: g.rate_per_kg, source: "green" as const, status: g.status };
+    const h = htLots.find(l => l.id === id);
+    if (h) return { lot: h.lot, desc: `${h.supplier} · HT`, current_kg: h.current_kg, rate_per_kg: h.rate_per_kg, source: "hilltiller" as const, status: h.status };
+    return null;
+  };
 
   const recipe = blend.recipe ?? [];
   const hasInsufficient = recipe.some(r => {
-    const lot = greenLots.find(g=>g.id===r.green_lot_id);
+    const lot = resolveLot(r.green_lot_id);
     return n(r.kg) * scale > n(lot?.current_kg ?? 0);
   });
 
@@ -2092,16 +2107,19 @@ function ProduceBlendDrawer({ blend, greenLots, onClose, reload }: {
     if (hasInsufficient) return;
     setSaving(true);
     for (const r of recipe) {
-      const lot = greenLots.find(g=>g.id===r.green_lot_id);
+      const lot = resolveLot(r.green_lot_id);
       if (!lot) continue;
       const newKg = lot.current_kg - n(r.kg) * scale;
-      await supabase.from("green_lots").update({
+      const table = lot.source === "hilltiller" ? "hilltiller_stock" : "green_lots";
+      await supabase.from(table).update({
         current_kg: newKg,
         status: newKg <= 0 ? "depleted" : lot.status,
       }).eq("id", r.green_lot_id);
     }
     await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "blend-produced",
-      entity: blend.id, before: null, after: `${scale.toFixed(1)}× (${fmtKg(recipe.reduce((a,r)=>a+n(r.kg),0)*scale)})`, note: null });
+      entity: blend.id, before: null,
+      after: `${scale.toFixed(1)}× (${fmtKg(recipe.reduce((a,r)=>a+n(r.kg),0)*scale)}) — ${recipe.map(r=>resolveLot(r.green_lot_id)?.lot??r.green_lot_id).join(", ")}`,
+      note: null });
     setSaving(false);
     reload();
     onClose();
@@ -2120,14 +2138,19 @@ function ProduceBlendDrawer({ blend, greenLots, onClose, reload }: {
 
       <div className={css.formSectionTitle}>Lot Allocations</div>
       {recipe.map(r => {
-        const lot = greenLots.find(g=>g.id===r.green_lot_id);
+        const lot = resolveLot(r.green_lot_id);
         const allocKg = n(r.kg) * scale;
         const remaining = n(lot?.current_kg??0) - allocKg;
         const insufficient = allocKg > n(lot?.current_kg??0);
         return (
           <div key={r.green_lot_id} className={`${css.produce_alloc_row} ${insufficient?css.produce_alloc_insufficient:""}`}>
-            <span className={css.tdMono} style={{ fontSize:11 }}>{lot?.lot ?? r.green_lot_id}</span>
-            <span style={{ fontSize:11, color:"#7a90b0" }}>{lot?.field}</span>
+            <span className={css.tdMono} style={{ fontSize:11 }}>
+              {lot?.lot ?? r.green_lot_id}
+              {lot?.source === "hilltiller" && (
+                <span style={{ fontSize:9, fontWeight:700, background:"#dcfce7", color:"#166534", borderRadius:4, padding:"1px 5px", marginLeft:4 }}>HT</span>
+              )}
+            </span>
+            <span style={{ fontSize:11, color:"#7a90b0" }}>{lot?.desc}</span>
             <span style={{ fontSize:12, color: insufficient?"#e8524a":"#d1e8f5" }}>
               –{Math.round(allocKg)} kg → {Math.round(remaining)} kg left
             </span>
@@ -2150,7 +2173,7 @@ function ProduceBlendDrawer({ blend, greenLots, onClose, reload }: {
           <span className={css.computedLabel}>Production cost</span>
           <span className={`${css.computedValue} ${css.computedValueGold}`}>
             {fmtINR(recipe.reduce((a,r)=>{
-              const lot = greenLots.find(g=>g.id===r.green_lot_id);
+              const lot = resolveLot(r.green_lot_id);
               return a + n(r.kg)*scale*n(lot?.rate_per_kg??0);
             },0))}
           </span>
