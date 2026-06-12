@@ -142,13 +142,13 @@
 }
 
 .legendRow { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.625rem; }
-.legendDot { display: flex; align-items: center; gap: 0.35rem; font-family: var(--t-font); font-size: 0.75rem; color: var(--t-muted); }
+.legendDot { display: flex; align-items: center; gap: 0.35rem; font-family: var(--t-font); font-size: 0.75rem; color: #374151; font-weight: 500; }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 .pieLegendRow { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem; }
-.pieLegendItem { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: var(--t-text); }
+.pieLegendItem { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: #1a1a1a; font-weight: 500; }
 .pieLegendDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.pieLegendSub { font-size: 0.7rem; color: var(--t-muted); }
+.pieLegendSub { font-size: 0.7rem; color: #374151; font-weight: 500; }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
 .tableCard {
