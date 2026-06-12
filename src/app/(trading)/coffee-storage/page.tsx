@@ -63,7 +63,7 @@ type AppState = {
   loading: boolean;
 };
 
-type Tab = "overview" | "yard" | "milling" | "green" | "blends" | "sales" | "audit";
+type Tab = "overview" | "yard" | "milling" | "green" | "hilltiller" | "blends" | "sales" | "audit";
 
 /* ═══════════════════════════════════════════════════════════════
    HELPERS
@@ -208,8 +208,9 @@ export default function CoffeeStoragePage() {
           ["overview", "📊 Overview"],
           ["yard",     "🌾 Parchment Yard", "Sheet 1"],
           ["milling",  "⚙️ Milling"],
-          ["green",    "☕ Green Store",   "Sheet 2"],
-          ["blends",   "🧪 Blends"],
+          ["green",       "☕ Green Store",          "Sheet 2"],
+          ["hilltiller",  "🌱 HillTiller Green Stock"],
+          ["blends",      "🧪 Blends"],
           ["sales",    "🌍 Sales"],
           ["audit",    "📋 Audit Log"],
         ] as [Tab, string, string?][]).map(([t, label, sub]) => (
@@ -224,6 +225,7 @@ export default function CoffeeStoragePage() {
       {tab === "yard"     && <YardTab     batches={batches} greenLots={greenLots} reload={reload} />}
       {tab === "milling"  && <MillingTab  batches={batches} greenLots={greenLots} reload={reload} />}
       {tab === "green"    && <GreenTab    greenLots={greenLots} reload={reload} />}
+      {tab === "hilltiller" && <HillTillerTab />}
       {tab === "blends"   && <BlendsTab   blends={blends} greenLots={greenLots} reload={reload} />}
       {tab === "sales"    && <SalesTab    sales={sales} greenLots={greenLots} reload={reload} />}
       {tab === "audit"    && <AuditTab    audit={audit} />}
@@ -1221,6 +1223,241 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
 
       {saleDrawer && (
         <RecordSaleDrawer greenLots={greenLots} defaultLot={saleDrawer} onClose={() => setSaleDrawer(null)} reload={reload} />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HILLTILLER GREEN STOCK TAB
+═══════════════════════════════════════════════════════════════ */
+type HTLot = {
+  id: string;
+  lot: string;
+  date_received: string;
+  supplier: string;
+  process: string;
+  grade: string;
+  screen: string;
+  score: number | null;
+  green_kg_in: number;
+  current_kg: number;
+  rate_per_kg: number;
+  warehouse: string;
+  status: "in-stock" | "reserved" | "depleted";
+  notes: string | null;
+};
+
+const htBlank: Omit<HTLot, "id"> = {
+  lot: "", date_received: todayStr(), supplier: "HillTiller", process: "",
+  grade: "", screen: "", score: null, green_kg_in: 0, current_kg: 0,
+  rate_per_kg: 0, warehouse: "", status: "in-stock", notes: null,
+};
+
+function HillTillerTab() {
+  const [lots,    setLots]    = useState<HTLot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [drawer,  setDrawer]  = useState(false);
+  const [form,    setForm]    = useState<Omit<HTLot,"id">>(htBlank);
+  const [saving,  setSaving]  = useState(false);
+  const [editId,  setEditId]  = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from("hilltiller_stock").select("*").order("date_received", { ascending: false });
+    setLots((data ?? []) as HTLot[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const inStock  = lots.filter(l => l.status === "in-stock");
+  const totalKg  = inStock.reduce((a, l) => a + n(l.current_kg), 0);
+  const stockVal = inStock.reduce((a, l) => a + n(l.current_kg) * n(l.rate_per_kg), 0);
+  const reserved = lots.filter(l => l.status === "reserved").reduce((a, l) => a + n(l.current_kg), 0);
+  const depleted = lots.filter(l => l.status === "depleted").reduce((a, l) => a + n(l.green_kg_in), 0);
+
+  const openAdd = () => { setForm(htBlank); setEditId(null); setDrawer(true); };
+  const openEdit = (l: HTLot) => {
+    setForm({ lot: l.lot, date_received: l.date_received, supplier: l.supplier, process: l.process,
+      grade: l.grade, screen: l.screen, score: l.score, green_kg_in: l.green_kg_in,
+      current_kg: l.current_kg, rate_per_kg: l.rate_per_kg, warehouse: l.warehouse,
+      status: l.status, notes: l.notes });
+    setEditId(l.id);
+    setDrawer(true);
+  };
+
+  const save = async () => {
+    if (!form.lot.trim()) { alert("Lot number is required"); return; }
+    setSaving(true);
+    if (editId) {
+      await supabase.from("hilltiller_stock").update({ ...form }).eq("id", editId);
+    } else {
+      await supabase.from("hilltiller_stock").insert([{ ...form, current_kg: form.green_kg_in }]);
+    }
+    setSaving(false);
+    setDrawer(false);
+    load();
+  };
+
+  const f = (k: keyof Omit<HTLot,"id">, v: unknown) => setForm(p => ({ ...p, [k]: v }));
+
+  return (
+    <div>
+      {/* KPI row */}
+      <div className={css.kpiGrid}>
+        <div className={css.kpiCard}>
+          <div className={css.kpiLabel}>🌱 Green In Stock</div>
+          <div><span className={css.kpiValue}>{Math.round(totalKg).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
+          <div className={css.kpiSub}>{inStock.length} active lots</div>
+          <div className={css.kpiAccent} style={{ background: "#2ecc71" }} />
+        </div>
+        <div className={css.kpiCard}>
+          <div className={css.kpiLabel}>💰 Stock Value</div>
+          <div className={css.kpiValue} style={{ fontSize: "1.35rem" }}>{fmtINR(stockVal)}</div>
+          <div className={css.kpiSub}>Weighted cost basis</div>
+          <div className={css.kpiAccent} style={{ background: "#f5a623" }} />
+        </div>
+        <div className={css.kpiCard}>
+          <div className={css.kpiLabel}>🔒 Reserved</div>
+          <div><span className={css.kpiValue}>{Math.round(reserved).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
+          <div className={css.kpiSub}>Allocated to blends</div>
+          <div className={css.kpiAccent} style={{ background: "#9b59b6" }} />
+        </div>
+        <div className={css.kpiCard}>
+          <div className={css.kpiLabel}>📦 Total Received</div>
+          <div><span className={css.kpiValue}>{Math.round(lots.reduce((a,l)=>a+n(l.green_kg_in),0)).toLocaleString("en-IN")}</span><span className={css.kpiUnit}>kg</span></div>
+          <div className={css.kpiSub}>{depleted > 0 ? `${Math.round(depleted)} kg depleted` : "All lots tracked"}</div>
+          <div className={css.kpiAccent} style={{ background: "#1fc8c8" }} />
+        </div>
+      </div>
+
+      <div className={css.actionBar}>
+        <button className={css.btnNew} onClick={openAdd}><Plus size={13} /> Add Stock</button>
+      </div>
+
+      <div className={css.tableCard}>
+        <div className={css.tableWrap}>
+          <table className={css.table}>
+            <thead><tr>
+              <th>Lot</th><th>Date</th><th>Supplier</th><th>Process</th>
+              <th>Grade</th><th>Screen</th><th>Score</th>
+              <th className={css.tdRight}>Available</th>
+              <th className={css.tdRight}>Rate ₹/kg</th>
+              <th className={css.tdRight}>Value</th>
+              <th>Warehouse</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={13} className={css.empty}>Loading…</td></tr>
+              ) : lots.length === 0 ? (
+                <tr><td colSpan={13} className={css.empty}>No HillTiller stock yet. Click &quot;Add Stock&quot; to begin.</td></tr>
+              ) : lots.map(l => {
+                const pct = l.green_kg_in > 0 ? l.current_kg / l.green_kg_in : 0;
+                const barClass = pct > 0.5 ? css.progressFill : pct > 0.2 ? css.progressFillLow : css.progressFillEmpty;
+                return (
+                  <tr key={l.id}>
+                    <td><div className={css.tdMono}>{l.lot}</div></td>
+                    <td style={{ fontSize: 11, color: "#7a90b0" }}>{fmtDate(l.date_received)}</td>
+                    <td>{l.supplier || "—"}</td>
+                    <td><span className={`${css.badge} ${processBadgeClass(l.process)}`}>{l.process || "—"}</span></td>
+                    <td>{l.grade || "—"}</td>
+                    <td className={css.tdMono}>{l.screen || "—"}</td>
+                    <td className={css.tdNum}>{l.score ?? "—"}</td>
+                    <td>
+                      <div className={css.progressWrap}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#e8edf4", fontVariantNumeric: "tabular-nums" }}>
+                          {Math.round(l.current_kg).toLocaleString("en-IN")} kg
+                        </div>
+                        <div className={css.progressBar}>
+                          <div className={barClass} style={{ width: `${Math.max(0, Math.min(100, pct * 100)).toFixed(1)}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className={css.tdNum}>₹{n(l.rate_per_kg).toFixed(2)}</td>
+                    <td className={css.tdNum} style={{ color: "#f5a623" }}>{fmtINR(n(l.current_kg) * n(l.rate_per_kg))}</td>
+                    <td className={css.tdMono}>{l.warehouse || "—"}</td>
+                    <td><span className={statusBadgeClass(l.status)}>{l.status}</span></td>
+                    <td>
+                      <button className={css.btnNew} style={{ padding: "4px 10px", fontSize: 11 }} onClick={() => openEdit(l)}>
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add / Edit drawer */}
+      {drawer && (
+        <Drawer title={editId ? "✏️ Edit Lot" : "🌱 Add HillTiller Stock"} onClose={() => setDrawer(false)}>
+          <div className={css.formGrid2}>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Lot Number *</label>
+              <input className={css.formInput} value={form.lot} onChange={e => f("lot", e.target.value)} placeholder="e.g. HT-2026-001" />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Date Received *</label>
+              <input type="date" className={css.formInput} value={form.date_received} onChange={e => f("date_received", e.target.value)} />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Supplier</label>
+              <input className={css.formInput} value={form.supplier} onChange={e => f("supplier", e.target.value)} />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Process</label>
+              <input className={css.formInput} value={form.process} onChange={e => f("process", e.target.value)} placeholder="e.g. Washed" />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Grade</label>
+              <input className={css.formInput} value={form.grade} onChange={e => f("grade", e.target.value)} />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Screen</label>
+              <input className={css.formInput} value={form.screen} onChange={e => f("screen", e.target.value)} />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Score</label>
+              <input type="number" className={css.formInput} value={form.score ?? ""} onChange={e => f("score", e.target.value ? Number(e.target.value) : null)} placeholder="e.g. 84" />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Green kg In *</label>
+              <input type="number" className={css.formInput} min="0" step="0.1" value={form.green_kg_in || ""} onChange={e => f("green_kg_in", Number(e.target.value))} />
+            </div>
+            {editId && (
+              <div className={css.formGroup}>
+                <label className={css.formLabel}>Current kg</label>
+                <input type="number" className={css.formInput} min="0" step="0.1" value={form.current_kg || ""} onChange={e => f("current_kg", Number(e.target.value))} />
+              </div>
+            )}
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Rate ₹/kg</label>
+              <input type="number" className={css.formInput} min="0" step="0.01" value={form.rate_per_kg || ""} onChange={e => f("rate_per_kg", Number(e.target.value))} />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Warehouse / Bin</label>
+              <input className={css.formInput} value={form.warehouse} onChange={e => f("warehouse", e.target.value)} />
+            </div>
+            <div className={css.formGroup}>
+              <label className={css.formLabel}>Status</label>
+              <select className={css.formSelect} value={form.status} onChange={e => f("status", e.target.value)}>
+                <option value="in-stock">In Stock</option>
+                <option value="reserved">Reserved</option>
+                <option value="depleted">Depleted</option>
+              </select>
+            </div>
+          </div>
+          <div className={css.formGroup} style={{ marginTop: 8 }}>
+            <label className={css.formLabel}>Notes</label>
+            <textarea className={css.formInput} rows={2} value={form.notes ?? ""} onChange={e => f("notes", e.target.value || null)} />
+          </div>
+          <button className={css.btnConfirm} onClick={save} disabled={saving} style={{ marginTop: 16 }}>
+            {saving ? "Saving…" : editId ? "Save Changes" : "Add to Stock"}
+          </button>
+        </Drawer>
       )}
     </div>
   );
