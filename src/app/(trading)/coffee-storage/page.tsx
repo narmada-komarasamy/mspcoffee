@@ -141,7 +141,7 @@ function channelColor(ch: string) {
 }
 const TT_STYLE = {
   backgroundColor: "#0a1824", border: "1px solid #2a3f5a",
-  borderRadius: 6, fontSize: 11, color: "#e8edf4",
+  borderRadius: 6, fontSize: 11, color: "#1a1a1a",
 };
 
 function getUser() {
@@ -1194,7 +1194,7 @@ function GreenTab({ greenLots, reload }: { greenLots: GreenLot[]; reload: () => 
                     <td className={css.tdNum}>{g.score ?? "—"}</td>
                     <td>
                       <div className={css.progressWrap}>
-                        <div style={{ fontSize:12, fontWeight:600, color:"#e8edf4", fontVariantNumeric:"tabular-nums" }}>
+                        <div style={{ fontSize:12, fontWeight:600, color:"#1a1a1a", fontVariantNumeric:"tabular-nums" }}>
                           {Math.round(g.current_kg).toLocaleString("en-IN")} kg
                         </div>
                         <div className={css.progressBar}>
@@ -1366,7 +1366,7 @@ function HillTillerTab() {
                     <td className={css.tdNum}>{l.score ?? "—"}</td>
                     <td>
                       <div className={css.progressWrap}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#e8edf4", fontVariantNumeric: "tabular-nums" }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a", fontVariantNumeric: "tabular-nums" }}>
                           {Math.round(l.current_kg).toLocaleString("en-IN")} kg
                         </div>
                         <div className={css.progressBar}>
