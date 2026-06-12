@@ -53,6 +53,9 @@ type AppUser = {
   estate: string | null;
 };
 
+// hrefs the current user's role is allowed to access (null = not loaded yet)
+type AllowedSet = Set<string> | null;
+
 type NavLeaf  = { label: string; href: string };
 type NavGroup = { label: string; href?: never; children: NavLeaf[] };
 type NavChild = NavLeaf | NavGroup;
@@ -119,6 +122,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [fontKey, setFontKey]         = useState<FontKey>('md');
   const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [allowedPages, setAllowedPages] = useState<AllowedSet>(null);
 
   const theme = THEMES[themeKey];
 
@@ -142,17 +146,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .select('id, name, role, estate')
       .eq('id', cached.id)
       .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          // DB unreachable — fall back to cached but still load the page
-          setUser(cached);
+      .then(async ({ data, error }) => {
+        const verifiedRole = (!error && data) ? data.role : cached.role;
+        const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate };
+        setUser(verified);
+        localStorage.setItem('msp_user', JSON.stringify(verified));
+
+        // Admin always sees everything; for other roles, load from role_permissions
+        if (verifiedRole === 'admin') {
+          setAllowedPages(null); // null = show all
           return;
         }
-        // Use DB role, keep cached pin for display (pin not returned from select)
-        const verified: AppUser = { ...cached, role: data.role, name: data.name, estate: data.estate };
-        setUser(verified);
-        // Keep localStorage in sync so display is current
-        localStorage.setItem('msp_user', JSON.stringify({ ...cached, role: data.role, name: data.name, estate: data.estate }));
+
+        const { data: perms } = await supabase
+          .from('role_permissions')
+          .select('page_href, access')
+          .eq('role', verifiedRole)
+          .neq('access', 'none');
+
+        if (perms) {
+          setAllowedPages(new Set(perms.map(p => p.page_href)));
+        } else {
+          // Table not yet created — fall back to static role array
+          setAllowedPages(null);
+        }
       });
   }, [router]);
 
@@ -212,7 +229,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return null;
 
-  const filteredNav  = navItems.filter((item) => item.roles.includes(user.role));
+  // If allowedPages is loaded (non-null), use DB permissions; otherwise fall back to static roles
+  const filteredNav = navItems.filter((item) => {
+    if (user.role === 'admin') return true;
+    if (allowedPages !== null) return allowedPages.has(item.href);
+    return item.roles.includes(user.role);
+  });
   const allLeaves = [
     ...navItems.flatMap(i => i.children ?? []).flatMap(c =>
       'children' in c ? c.children : [c]
