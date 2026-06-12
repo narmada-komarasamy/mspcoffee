@@ -1119,6 +1119,135 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
 /* ═══════════════════════════════════════════════════════════════
    GREEN STORE TAB (Sheet 2)
 ═══════════════════════════════════════════════════════════════ */
+/* ─── Add Green Lot Drawer ────────────────────────────────── */
+const PROCESS_OPTIONS = [
+  "Arabica NATURAL","Arabica WASHED","Arabica PSD",
+  "Robusta NATURAL","Robusta WASHED","Robusta PSD",
+];
+const ESTATE_OPTIONS = [
+  "STANMORE ESTATE","ORCHARDALE ESTATE","HIDDEN FALLS ESTATE",
+  "MOGANAD ESTATE","BISON VALLEY ESTATE",
+];
+
+function AddLotDrawer({ season, onClose, reload }: { season: string; onClose: () => void; reload: () => void }) {
+  const [lot,        setLot]        = useState("");
+  const [field,      setField]      = useState(ESTATE_OPTIONS[0]);
+  const [fieldOther, setFieldOther] = useState("");
+  const [process,    setProcess]    = useState(PROCESS_OPTIONS[0]);
+  const [grade,      setGrade]      = useState("AB");
+  const [screen,     setScreen]     = useState("");
+  const [score,      setScore]      = useState("");
+  const [kgIn,       setKgIn]       = useState("");
+  const [rate,       setRate]       = useState("");
+  const [milledDate, setMilledDate] = useState(todayStr());
+  const [warehouse,  setWarehouse]  = useState("Stanmore Godown");
+  const [notes,      setNotes]      = useState("");
+  const [saving,     setSaving]     = useState(false);
+
+  const effectiveField = field === "__other__" ? fieldOther : field;
+
+  const save = async () => {
+    if (!lot.trim()) { alert("Lot number is required."); return; }
+    if (!kgIn || n(kgIn) <= 0) { alert("Quantity (kg) is required."); return; }
+    if (!rate || n(rate) <= 0) { alert("Rate ₹/kg is required."); return; }
+    setSaving(true);
+    await supabase.from("green_lots").insert([{
+      lot:          lot.trim(),
+      derived_from: [],
+      green_kg_in:  n(kgIn),
+      current_kg:   n(kgIn),
+      rate_per_kg:  n(rate),
+      process:      process,
+      field:        effectiveField,
+      grade:        grade,
+      screen:       screen || null,
+      score:        score ? n(score) : null,
+      milled_date:  milledDate,
+      warehouse:    warehouse,
+      status:       "in-stock",
+      notes:        notes || null,
+      season:       season,
+    }]);
+    await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "milling-return",
+      entity: lot.trim(), before: null, after: `${kgIn} kg added to Green Store (${season})`, note: process });
+    setSaving(false);
+    reload();
+    onClose();
+  };
+
+  return (
+    <Drawer title={`➕ Add Lot — ${season} Season`} onClose={onClose}>
+      <div className={css.formGrid2}>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Lot Number *</label>
+          <input className={css.formInput} placeholder="e.g. 215" value={lot} onChange={e=>setLot(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Milled Date</label>
+          <input type="date" className={css.formInput} value={milledDate} onChange={e=>setMilledDate(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Estate / Field</label>
+          <select className={css.formSelect} value={field} onChange={e=>setField(e.target.value)}>
+            {ESTATE_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
+            <option value="__other__">Other…</option>
+          </select>
+          {field === "__other__" && (
+            <input className={css.formInput} style={{ marginTop:6 }} placeholder="Enter estate name" value={fieldOther} onChange={e=>setFieldOther(e.target.value)} />
+          )}
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Process</label>
+          <select className={css.formSelect} value={process} onChange={e=>setProcess(e.target.value)}>
+            {PROCESS_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Quantity In (kg) *</label>
+          <input type="number" className={css.formInput} min="0" step="1" value={kgIn} onChange={e=>setKgIn(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Rate ₹/kg *</label>
+          <input type="number" className={css.formInput} min="0" step="0.01" value={rate} onChange={e=>setRate(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Grade</label>
+          <input className={css.formInput} placeholder="e.g. AB, A, PB" value={grade} onChange={e=>setGrade(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Screen</label>
+          <input className={css.formInput} placeholder="e.g. 16/17" value={screen} onChange={e=>setScreen(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Cup Score</label>
+          <input type="number" className={css.formInput} min="0" max="100" step="0.25" placeholder="e.g. 84.5" value={score} onChange={e=>setScore(e.target.value)} />
+        </div>
+        <div className={css.formGroup}>
+          <label className={css.formLabel}>Warehouse</label>
+          <input className={css.formInput} value={warehouse} onChange={e=>setWarehouse(e.target.value)} />
+        </div>
+      </div>
+      <div className={css.formGroup} style={{ marginTop:8 }}>
+        <label className={css.formLabel}>Notes</label>
+        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+      </div>
+      {n(kgIn) > 0 && n(rate) > 0 && (
+        <div className={css.computedStrip} style={{ marginTop:12 }}>
+          <div className={css.computedItem}>
+            <span className={css.computedLabel}>Lot value</span>
+            <span className={`${css.computedValue} ${css.computedValueGold}`}>{fmtINR(n(kgIn)*n(rate))}</span>
+          </div>
+          <div className={css.computedItem}>
+            <span className={css.computedLabel}>Season</span>
+            <span className={css.computedValue}>{season}</span>
+          </div>
+        </div>
+      )}
+      <DrawerFooter onCancel={onClose} onConfirm={save} saving={saving} label="✓ Add to Green Store" />
+    </Drawer>
+  );
+}
+
 const SEASONS = ["2024-2025", "2025-2026"] as const;
 type Season = typeof SEASONS[number];
 
@@ -1232,6 +1361,7 @@ function GreenLotTable({ lots, onSell }: { lots: GreenLot[]; onSell: (g: GreenLo
 
 function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload: () => void; setTab: (t: Tab) => void }) {
   const [saleDrawer,    setSaleDrawer]    = useState<GreenLot | null>(null);
+  const [addLotDrawer,  setAddLotDrawer]  = useState(false);
   const [activeSeason,  setActiveSeason]  = useState<Season>("2024-2025");
   const [filterEstate,  setFilterEstate]  = useState("all");
   const [filterProcess, setFilterProcess] = useState("all");
@@ -1293,6 +1423,9 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
         <button className={css.btnNew} onClick={() => setSaleDrawer(filtered.find(g=>g.status==="in-stock") ?? null)}>
           <Plus size={13} /> Record sale ({activeSeason})
         </button>
+        <button className={css.btnSecondary} onClick={() => setAddLotDrawer(true)}>
+          <Plus size={13} /> Add lot ({activeSeason})
+        </button>
         <select value={filterEstate} onChange={e=>setFilterEstate(e.target.value)}
           style={{ height:34, padding:"0 10px", border:"1px solid #e5dfc8", borderRadius:8, fontSize:13, background:"#fdf8ee", color:"#1a1a1a", cursor:"pointer" }}>
           <option value="all">All Estates</option>
@@ -1331,6 +1464,9 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
 
       {saleDrawer && (
         <RecordSaleDrawer greenLots={greenLots} defaultLot={saleDrawer} onClose={() => setSaleDrawer(null)} reload={reload} onSuccess={() => { reload(); setTab("sales"); }} />
+      )}
+      {addLotDrawer && (
+        <AddLotDrawer season={activeSeason} onClose={() => setAddLotDrawer(false)} reload={reload} />
       )}
     </div>
   );
