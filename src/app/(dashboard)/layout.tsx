@@ -105,6 +105,16 @@ const navItems: NavItem[] = [
           { label: 'Hidden Falls Estate',   href: '/processing-dashboard/2023-2024/hidden-falls-estate' },
         ],
       },
+      {
+        label: '2022–2023',
+        children: [
+          { label: 'Stanmore Estate',       href: '/processing-dashboard/2022-2023/stanmore-estate' },
+          { label: 'Bison Valley Estate',   href: '/processing-dashboard/2022-2023/bve' },
+          { label: 'Moganad Estate',        href: '/processing-dashboard/2022-2023/moganad-estate' },
+          { label: 'Orchardale Estate',     href: '/processing-dashboard/2022-2023/orchardale-estate' },
+          { label: 'Hidden Falls Estate',   href: '/processing-dashboard/2022-2023/hidden-falls-estate' },
+        ],
+      },
     ],
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
