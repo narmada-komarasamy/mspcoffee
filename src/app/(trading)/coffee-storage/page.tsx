@@ -1914,6 +1914,21 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
             ₹{(n(targetPrice)-weightedCost).toFixed(2)}
           </span>
         </div>
+        {recipeTotal > 0 && n(targetPrice) > 0 && (
+          <div className={css.computedItem}>
+            <span className={css.computedLabel}>vs Target</span>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              padding: '3px 10px', borderRadius: '999px', fontWeight: 700, fontSize: '12px',
+              background: (n(targetPrice) - weightedCost) >= 0 ? '#dcfce7' : '#fee2e2',
+              color:      (n(targetPrice) - weightedCost) >= 0 ? '#15803d' : '#dc2626',
+              border: `1px solid ${(n(targetPrice) - weightedCost) >= 0 ? '#86efac' : '#fca5a5'}`,
+            }}>
+              {(n(targetPrice) - weightedCost) >= 0 ? '▲' : '▼'}
+              {(n(targetPrice) - weightedCost) >= 0 ? ' Above target' : ' Below target'}
+            </span>
+          </div>
+        )}
       </div>
       <DrawerFooter onCancel={onClose} onConfirm={save} saving={saving} label="💾 Save Blend" />
     </Drawer>
