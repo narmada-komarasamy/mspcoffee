@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orchardale Estate — Harvest &amp; Fermentation Suite 2023–24</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;color:#1a1a1a;min-height:100vh}
+
+.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);border-bottom:2px solid #4a9e4a;padding:20px 28px;display:flex;align-items:center;gap:16px}
+.header-icon{font-size:2.2rem}
+.header-text h1{font-size:1.5rem;font-weight:700;color:#ffffff;letter-spacing:.03em}
+.header-text p{font-size:0.85rem;color:rgba(255,255,255,0.75);margin-top:2px}
+.season-badge{margin-left:auto;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;font-size:0.78rem;font-weight:700;color:#ffffff;letter-spacing:.06em}
+.pdf-btn{background:#e8c84a;border:none;border-radius:20px;padding:7px 18px;font-size:0.78rem;font-weight:700;color:#1b4a1b;cursor:pointer;margin-left:10px;letter-spacing:.04em}
+.pdf-btn:hover{background:#d4b030}
+
+.kpi-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:20px 28px;background:#f5eedc;border-bottom:1px solid #e5dfc8}
+.kpi{background:#ffffff;border:1px solid #e5dfc8;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#2d6e2d}
+.kpi-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#374151;margin-bottom:6px}
+.kpi-value{font-size:1.75rem;font-weight:700;color:#1b4a1b;line-height:1}
+.kpi-unit{font-size:.7rem;color:#6b7280;margin-top:4px}
+
+.filters{background:#f5eedc;border-bottom:1px solid #e5dfc8;padding:14px 28px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151}
+.filter-group select,.filter-group input{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:6px;color:#1a1a1a;padding:7px 10px;font-size:.82rem;min-width:160px;cursor:pointer}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:#4a9e4a}
+.filter-group input{min-width:200px}
+.filter-group input::placeholder{color:#9ca3af}
+.btn-reset{background:transparent;border:1.5px solid #e5dfc8;border-radius:6px;color:#6b7280;padding:7px 16px;cursor:pointer;font-size:.82rem;align-self:flex-end}
+.btn-reset:hover{border-color:#4a9e4a;color:#2d6e2d}
+
+.main{padding:20px 28px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:20px 22px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
+.card-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;margin-bottom:14px}
+.chart-wrap{position:relative;height:260px}
+
+.tbl-card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:16px 18px;margin-bottom:24px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
+.tbl-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tbl-header h2{font-size:.9rem;color:#1b4a1b;font-weight:700}
+.tbl-header .count{background:rgba(27,74,27,0.1);color:#2d6e2d;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700}
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:480px;border:1px solid #e5dfc8;border-radius:8px}
+.tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
+.tbl-wrap::-webkit-scrollbar-track{background:#f5eedc}
+.tbl-wrap::-webkit-scrollbar-thumb{background:#d4c9a8;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:.75rem}
+thead th{position:sticky;top:0;background:#f5eedc;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#374151;padding:9px 10px;text-align:left;border-bottom:1px solid #e5dfc8;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:#1b4a1b}
+thead th.sort-asc::after{content:' ▲';color:#4a9e4a}
+thead th.sort-desc::after{content:' ▼';color:#4a9e4a}
+tbody tr{border-bottom:1px solid #f0ead4;transition:background .1s}
+tbody tr:hover{background:#fdf5e6}
+tbody tr.hidden{display:none}
+tbody td{padding:7px 10px;color:#1a1a1a;vertical-align:middle;white-space:nowrap}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{position:sticky;bottom:0;background:#f5eedc;font-size:.7rem;font-weight:700;color:#1b4a1b;padding:8px 10px;border-top:2px solid #4a9e4a}
+tfoot td.num{text-align:right}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;letter-spacing:.05em;white-space:nowrap}
+.b-Special{background:#fff8e1;color:#92400e;border:1px solid #f0d080}
+.b-Regular{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
+.b-Stripping{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.b-90{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
+.b-Gleanings{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+.method-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.exp-chip{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.65rem;background:#fef9e7;border:1px solid #f0d080;color:#7d5a00}
+.no-results{text-align:center;padding:40px;color:#6b7280;font-size:.85rem}
+
+@media print{
+  @page{size:A4 landscape;margin:0}
+  body{padding:14mm 12mm!important;background:#ffffff!important}
+  .filters,.pdf-btn{display:none!important}
+  .tbl-wrap{max-height:none!important;overflow:visible!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">☕</div>
+  <div class="header-text">
+    <h1>Stanmore Estate — Harvest & Fermentation Suite</h1>
+    <p>Season 2023–2024 · Single Estate (SE) · 91 batches · Interactive filter</p>
+  </div>
+  <div class="season-badge">OE · 2023–24</div>
+  <button class="pdf-btn" onclick="window.print()">⬇ PDF</button>
+</div>
+
+<div class="kpi-bar">
+  <div class="kpi"><div class="kpi-label">Total Batches</div><div class="kpi-value" id="kpi-count">265</div><div class="kpi-unit">of 265 total</div></div>
+  <div class="kpi"><div class="kpi-label">Ripe Cherry</div><div class="kpi-value" id="kpi-ripe">113,291</div><div class="kpi-unit">kg input</div></div>
+  <div class="kpi"><div class="kpi-label">Dry Parchment</div><div class="kpi-value" id="kpi-dry">28,143</div><div class="kpi-unit">kg output</div></div>
+  <div class="kpi"><div class="kpi-label">Special Lots</div><div class="kpi-value" id="kpi-special">22,692</div><div class="kpi-unit">kg dry parch</div></div>
+  <div class="kpi"><div class="kpi-label">Avg Outturn</div><div class="kpi-value" id="kpi-outturn">27.5%</div><div class="kpi-unit">cherry to dry</div></div>
+  <div class="kpi"><div class="kpi-label">Experiments</div><div class="kpi-value" id="kpi-exps">24</div><div class="kpi-unit">process types</div></div>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <label>Lot Type</label>
+    <select id="fLot" onchange="applyFilters()">
+      <option value="">All Lot Types</option><option value="Special">Special</option><option value="Regular">Regular</option><option value="Stripping">Stripping</option><option value="90+ Project">90+ Project</option><option value="Gleanings">Gleanings</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Method</label>
+    <select id="fMethod" onchange="applyFilters()">
+      <option value="">All Methods</option><option value="MSP 90 + Special Honey">Honey</option><option value="MSP 90 + Special Natural">Natural</option><option value="MSP 90 + Special Washed">Washed</option><option value="Naturals - No Fermentation">No Fermentation</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Experiment</label>
+    <select id="fExp" onchange="applyFilters()">
+      <option value="">All Experiments</option><option value="All Spice Honey">All Spice Honey</option><option value="All Spice Natural">All Spice Natural</option><option value="Bag Natural">Bag Natural</option><option value="Banana Fermentation Natural">Banana Fermentation Natural</option><option value="Black Honey">Black Honey</option><option value="Black Honey Cinnamon">Black Honey Cinnamon</option><option value="Cinnamon Honey (Freezer 720h)">Cinnamon Honey (Freezer 720h)</option><option value="Cinnamon Natural">Cinnamon Natural</option><option value="Cinnamon Natural (Freezer 720h)">Cinnamon Natural (Freezer 720h)</option><option value="Direct to Table Natural">Direct to Table Natural</option><option value="Durian Freezer Natural">Durian Freezer Natural</option><option value="Extra Long Water Fermentation">Extra Long Water Fermentation</option><option value="Grapefruit Natural">Grapefruit Natural</option><option value="Jasmine Fermentation">Jasmine Fermentation</option><option value="Kamala Fruit Natural">Kamala Fruit Natural</option><option value="Kamala Peel Natural">Kamala Peel Natural</option><option value="Kamala Powder Natural">Kamala Powder Natural</option><option value="Pineapple Watermelon Natural">Pineapple Watermelon Natural</option><option value="Regular Natural">Regular Natural</option><option value="Regular Washed">Regular Washed</option><option value="Sugarcane Washed">Sugarcane Washed</option><option value="T Lime Natural">T Lime Natural</option><option value="Watermelon Bag Natural">Watermelon Bag Natural</option><option value="Watermelon Washed">Watermelon Washed</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Field</label>
+    <select id="fField" onchange="applyFilters()">
+      <option value="">All Fields</option><option value="All Fields">All Fields</option><option value="Bungalow Field">Bungalow Field</option><option value="Keelish">Keelish</option><option value="KrambuKadu">KrambuKadu</option><option value="Kuthirapatti">Kuthirapatti</option><option value="Leclar">Leclar</option><option value="Melish">Melish</option><option value="Nagalur Field">Nagalur Field</option><option value="Panjikadu">Panjikadu</option><option value="Patti Thundu">Patti Thundu</option><option value="Pattipadiyanthundu">Pattipadiyanthundu</option><option value="Pelamara Thundu">Pelamara Thundu</option><option value="Pidarikoil">Pidarikoil</option><option value="Sahib Thundu">Sahib Thundu</option><option value="Thandipadi">Thandipadi</option><option value="Theethanthundu">Theethanthundu</option><option value="ThirudanThundu">ThirudanThundu</option><option value="Valakadu">Valakadu</option><option value="Valakodavu">Valakodavu</option><option value="Vellamaniyankadu">Vellamaniyankadu</option><option value="Yerakathuputhukadu">Yerakathuputhukadu</option><option value="Yeriputhukadu">Yeriputhukadu</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Varietal</label>
+    <select id="fVarietal" onchange="applyFilters()">
+      <option value="">All Varietals</option>
+      <option value="SLN9">SLN9</option>
+      <option value="BBTC">BBTC</option>
+      <option value="MIXED">MIXED</option>
+      <option value="CMORE">CMORE</option>
+      <option value="CGIRI">CGIRI</option>
+      <option value="SLN5A">SLN5A</option>
+      <option value="SLN5B">SLN5B</option>
+      <option value="SLN6">SLN6</option>
+      <option value="SLN795">SLN795</option>
+      <option value="KENT">KENT</option>
+      <option value="SRAMON">SRAMON</option>
+      <option value="ROBUSTA">ROBUSTA</option>
+      <option value="HRC">HRC</option>
+      <option value="YBBEN">YBBEN</option>
+      <option value="RBBEN">RBBEN</option>
+      <option value="4180">4180</option>
+      <option value="1932">1932</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Search</label>
+    <input type="text" id="fSearch" placeholder="Lot #, remark…" oninput="applyFilters()">
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">✕ Reset</button>
+</div>
+
+<div class="main">
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Experiment Breakdown (kg)</div>
+      <div class="chart-wrap"><canvas id="chartExp"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Lot Type Distribution (kg)</div>
+      <div class="chart-wrap"><canvas id="chartLot"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Processing Method (kg)</div>
+      <div class="chart-wrap"><canvas id="chartMethod"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-header">
+      <h2>Batch Detail</h2>
+      <span class="count" id="batchCount">265 batches</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="batchTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(this,'date')">Date</th>
+            <th onclick="sortTable(this,'lot_type')">Type</th>
+            <th onclick="sortTable(this,'field')">Field</th>
+            <th onclick="sortTable(this,'lot_num')">Lot #</th>
+            <th onclick="sortTable(this,'experiment')">Experiment</th>
+            <th onclick="sortTable(this,'ripe')" class="num">Ripe Cherry</th>
+            <th onclick="sortTable(this,'floats')" class="num">Floats</th>
+            <th onclick="sortTable(this,'nett')" class="num">Nett Cherry</th>
+            <th onclick="sortTable(this,'dry_parch')" class="num">Dry Parch</th>
+            <th onclick="sortTable(this,'outturn')" class="num">Outturn %</th>
+            <th onclick="sortTable(this,'brix')" class="num">BRIX</th>
+            <th onclick="sortTable(this,'ph')" class="num">pH</th>
+            <th onclick="sortTable(this,'moisture')" class="num">Moisture%</th>
+            <th onclick="sortTable(this,'remarks')">Remarks</th>
+          </tr>
+        </thead>
+        <tbody id="batchBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" style="color:#a08060">TOTALS</td>
+            <td class="num" id="totRipe">—</td>
+            <td class="num">—</td>
+            <td class="num" id="totNett">—</td>
+            <td class="num" id="totDry">—</td>
+            <td colspan="5"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const RAW = [{"serial":"1","field":"All Fields","varietal":"MIXED","lot_num":"OE05Oct23MIXED1","lot_type":"Special","round":"Fly","date":"5-Oct-2023","method":"Naturals - 72 Hours Dry Fermentation","experiment":"Naturals - 72 Hours Dry Fermentation","ripe":315,"floats":21,"nett":294,"wet_parch":0,"dry_parch":96,"brix":13.08,"ph":3.9,"moisture":11.9,"outturn":32.65,"remarks":"Regular Naturals 96 hours","dispatch":"4-Nov-2023","storage":"SE Go-down - 1"},{"serial":"2","field":"All Fields","varietal":"MIXED","lot_num":"OE05Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"5-Oct-2023","method":"Washed - 10 Hour Wet Fermentation","experiment":"Washed - 10 Hour Wet Fermentation","ripe":21,"floats":0,"nett":21,"wet_parch":7,"dry_parch":3,"brix":13.08,"ph":3.9,"moisture":11.1,"outturn":14.29,"remarks":"","dispatch":"26-Oct-2023","storage":"SE - Old Gunnies Room"},{"serial":"3","field":"All Fields","varietal":"MIXED","lot_num":"OE10Oct23MIXED1","lot_type":"Special","round":"Fly","date":"10-Oct-2023","method":"Naturals - 72 Hours Dry Fermentation","experiment":"Naturals - 72 Hours Dry Fermentation","ripe":110,"floats":13,"nett":97,"wet_parch":0,"dry_parch":26,"brix":12.36,"ph":3.9,"moisture":11.3,"outturn":26.8,"remarks":"Regular Naturals 96 hours","dispatch":"1-Jan-2024","storage":""},{"serial":"4","field":"All Fields","varietal":"MIXED","lot_num":"OE10Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"10-Oct-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":13,"floats":0,"nett":13,"wet_parch":0,"dry_parch":4,"brix":12.36,"ph":0.0,"moisture":11.6,"outturn":30.77,"remarks":"Regular Dry Cherry","dispatch":"4-Nov-2023","storage":""},{"serial":"5","field":"All Fields","varietal":"MIXED","lot_num":"OE21Oct23MIXED1","lot_type":"Special","round":"Fly","date":"21-Oct-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":965,"floats":67,"nett":898,"wet_parch":394,"dry_parch":180,"brix":13.89,"ph":0.0,"moisture":11.6,"outturn":20.04,"remarks":"","dispatch":"14-Jan-2024","storage":""},{"serial":"6","field":"All Fields","varietal":"MIXED","lot_num":"OE21Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"21-Oct-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":67,"floats":0,"nett":67,"wet_parch":0,"dry_parch":19,"brix":12.36,"ph":0.0,"moisture":11.6,"outturn":28.36,"remarks":"","dispatch":"4-Nov-2023","storage":""},{"serial":"7","field":"All Fields","varietal":"MIXED","lot_num":"OE24Oct23MIXED1","lot_type":"Special","round":"Fly","date":"24-Oct-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":785,"floats":70,"nett":715,"wet_parch":313,"dry_parch":165,"brix":15.79,"ph":0.0,"moisture":12.0,"outturn":23.08,"remarks":"Regular Washded","dispatch":"14-Nov-2023","storage":""},{"serial":"8","field":"All Fields","varietal":"MIXED","lot_num":"OE24Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"24-Oct-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":70,"floats":0,"nett":70,"wet_parch":0,"dry_parch":18,"brix":15.79,"ph":0.0,"moisture":11.0,"outturn":25.71,"remarks":"Regular Cherry","dispatch":"18-Nov-2023","storage":""},{"serial":"9","field":"All Fields","varietal":"MIXED","lot_num":"OE27Oct23MIXED1","lot_type":"Special","round":"Fly","date":"27-Oct-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":610,"floats":42,"nett":568,"wet_parch":241,"dry_parch":125,"brix":13.16,"ph":0.0,"moisture":11.8,"outturn":22.01,"remarks":"","dispatch":"7-Dec-2023","storage":""},{"serial":"10","field":"All Fields","varietal":"MIXED","lot_num":"OE27Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"27-Oct-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":42,"floats":0,"nett":42,"wet_parch":0,"dry_parch":11,"brix":13.16,"ph":0.0,"moisture":11.0,"outturn":26.19,"remarks":"","dispatch":"18-Nov-2023","storage":""},{"serial":"11","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE28Oct23MIXED1","lot_type":"Special","round":"Fly","date":"28-Oct-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":700,"floats":43,"nett":657,"wet_parch":280,"dry_parch":123,"brix":16.69,"ph":0.0,"moisture":11.7,"outturn":18.72,"remarks":"Regular Washded","dispatch":"2-Jan-2024","storage":""},{"serial":"12","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE28Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"28-Oct-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":43,"floats":0,"nett":43,"wet_parch":0,"dry_parch":11,"brix":15.79,"ph":0.0,"moisture":11.0,"outturn":25.58,"remarks":"Regular Cherry","dispatch":"18-Nov-2023","storage":""},{"serial":"13","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE31Oct23MIXED1","lot_type":"Special","round":"Fly","date":"31-Oct-2023","method":"Naturals - 72 Hours Dry Fermentation","experiment":"Naturals - 72 Hours Dry Fermentation","ripe":485,"floats":30,"nett":455,"wet_parch":0,"dry_parch":123,"brix":16.69,"ph":4.0,"moisture":12.0,"outturn":27.03,"remarks":"Regular Naturals 96 hours in bag","dispatch":"15-Dec-2023","storage":""},{"serial":"14","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE31Oct23MIXED2","lot_type":"Regular","round":"Fly","date":"31-Oct-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":30,"floats":0,"nett":30,"wet_parch":8,"dry_parch":4,"brix":16.69,"ph":4.0,"moisture":11.0,"outturn":13.33,"remarks":"Regular Washed","dispatch":"18-Nov-2023","storage":""},{"serial":"15","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE03Nov23MIXED1","lot_type":"Special","round":"Fly","date":"3-Nov-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":655,"floats":39,"nett":616,"wet_parch":256,"dry_parch":125,"brix":11.67,"ph":4.1,"moisture":11.0,"outturn":20.29,"remarks":"Special Water Melon Washed","dispatch":"15-Dec-2023","storage":""},{"serial":"16","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE03Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"3-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":39,"floats":0,"nett":39,"wet_parch":15,"dry_parch":7,"brix":11.67,"ph":4.1,"moisture":10.6,"outturn":17.95,"remarks":"Regular Washed","dispatch":"20-Nov-2023","storage":""},{"serial":"17","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE04Nov23MIXED1","lot_type":"Special","round":"Fly","date":"4-Nov-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":825,"floats":49,"nett":776,"wet_parch":299,"dry_parch":150,"brix":13.21,"ph":4.1,"moisture":11.8,"outturn":19.33,"remarks":"Regular Washed","dispatch":"28-Dec-2023","storage":""},{"serial":"18","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE04Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"4-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":49,"floats":0,"nett":49,"wet_parch":20,"dry_parch":10,"brix":13.21,"ph":4.1,"moisture":10.6,"outturn":20.41,"remarks":"Regular Washed","dispatch":"20-Nov-2023","storage":""},{"serial":"19","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE07Nov23MIXED1","lot_type":"Special","round":"Fly","date":"7-Nov-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":510,"floats":30,"nett":480,"wet_parch":207,"dry_parch":100,"brix":9.51,"ph":4.1,"moisture":12.0,"outturn":20.83,"remarks":"","dispatch":"29-Dec-2023","storage":""},{"serial":"20","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE07Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"7-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":30,"floats":0,"nett":30,"wet_parch":12,"dry_parch":6,"brix":0.0,"ph":0.0,"moisture":10.6,"outturn":20.0,"remarks":"","dispatch":"20-Nov-2023","storage":""},{"serial":"21","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE13Nov23MIXED1","lot_type":"Special","round":"Fly","date":"13-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":189,"floats":7,"nett":182,"wet_parch":0,"dry_parch":56,"brix":15.04,"ph":3.9,"moisture":12.0,"outturn":30.77,"remarks":"","dispatch":"23-Dec-2023","storage":""},{"serial":"22","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE13Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"13-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":7,"floats":0,"nett":7,"wet_parch":2,"dry_parch":1,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":14.29,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"23","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE14Nov23MIXED1","lot_type":"Special","round":"Fly","date":"14-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":266,"floats":9,"nett":257,"wet_parch":0,"dry_parch":75,"brix":15.04,"ph":4.0,"moisture":11.7,"outturn":29.18,"remarks":"","dispatch":"1-Dec-2023","storage":""},{"serial":"24","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE14Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"14-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":9,"floats":9,"nett":0,"wet_parch":3,"dry_parch":1,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":0.0,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"25","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE16Nov23MIXED1","lot_type":"Special","round":"Fly","date":"16-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":1583,"floats":70,"nett":1513,"wet_parch":0,"dry_parch":430,"brix":15.07,"ph":3.9,"moisture":11.8,"outturn":28.42,"remarks":"","dispatch":"28-Dec-2023","storage":""},{"serial":"26","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE16Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"16-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":70,"floats":0,"nett":70,"wet_parch":26,"dry_parch":11,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":15.71,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"27","field":"Line Mel Thundu","varietal":"MIXED","lot_num":"OE17Nov23MIXED1","lot_type":"Special","round":"Fly","date":"17-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":946,"floats":40,"nett":906,"wet_parch":0,"dry_parch":254,"brix":17.75,"ph":4.0,"moisture":11.5,"outturn":28.04,"remarks":"","dispatch":"29-Dec-2023","storage":""},{"serial":"28","field":"Line Mel Thundu","varietal":"MIXED","lot_num":"OE17Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"17-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":40,"floats":0,"nett":40,"wet_parch":12,"dry_parch":6,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":15.0,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"29","field":"Bungalow View Point","varietal":"MIXED","lot_num":"OE18Nov23MIXED1","lot_type":"Special","round":"Fly","date":"18-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":1410,"floats":58,"nett":1352,"wet_parch":0,"dry_parch":370,"brix":17.75,"ph":4.0,"moisture":11.4,"outturn":27.37,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"30","field":"Bungalow View Point","varietal":"MIXED","lot_num":"OE18Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"18-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":58,"floats":0,"nett":58,"wet_parch":17,"dry_parch":9,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":15.52,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"31","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE20Nov23MIXED1","lot_type":"Special","round":"Fly","date":"20-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":2020,"floats":79,"nett":1941,"wet_parch":0,"dry_parch":563,"brix":14.76,"ph":4.0,"moisture":11.8,"outturn":29.01,"remarks":"","dispatch":"28-Dec-2023","storage":""},{"serial":"32","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE20Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"20-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":79,"floats":0,"nett":79,"wet_parch":24,"dry_parch":12,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":15.19,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"33","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE21Nov23MIXED1","lot_type":"Special","round":"Fly","date":"21-Nov-2023","method":"Naturals -  12 Hour Fermentation (Bag)","experiment":"Naturals -  12 Hour Fermentation (Bag)","ripe":1911,"floats":75,"nett":1836,"wet_parch":0,"dry_parch":510,"brix":16.38,"ph":4.0,"moisture":11.7,"outturn":27.78,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"34","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE21Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"21-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":75,"floats":0,"nett":75,"wet_parch":20,"dry_parch":10,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":13.33,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"35","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE22Nov23MIXED1","lot_type":"Special","round":"Fly","date":"22-Nov-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":375,"floats":17,"nett":358,"wet_parch":136,"dry_parch":65,"brix":13.59,"ph":0.0,"moisture":11.3,"outturn":18.16,"remarks":"","dispatch":"2-Jan-2024","storage":""},{"serial":"36","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE22Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"22-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":17,"floats":0,"nett":17,"wet_parch":4,"dry_parch":3,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":17.65,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"37","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE23Nov23MIXED1","lot_type":"Special","round":"Fly","date":"23-Nov-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":396,"floats":18,"nett":378,"wet_parch":144,"dry_parch":69,"brix":13.59,"ph":0.0,"moisture":11.3,"outturn":18.25,"remarks":"","dispatch":"2-Jan-2024","storage":""},{"serial":"38","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE23Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"23-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":18,"floats":0,"nett":18,"wet_parch":5,"dry_parch":3,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":16.67,"remarks":"","dispatch":"20-Dec-2023","storage":""},{"serial":"39","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE24Nov23MIXED1","lot_type":"Special","round":"Fly","date":"24-Nov-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":265,"floats":12,"nett":253,"wet_parch":96,"dry_parch":46,"brix":13.59,"ph":0.0,"moisture":11.3,"outturn":18.18,"remarks":"","dispatch":"2-Jan-2024","storage":""},{"serial":"40","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE24Nov23MIXED2","lot_type":"Regular","round":"Fly","date":"24-Nov-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":12,"floats":0,"nett":12,"wet_parch":4,"dry_parch":2,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":16.67,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"41","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE04Dec23MIXED1","lot_type":"Special","round":"Fly","date":"4-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":398,"floats":18,"nett":380,"wet_parch":141,"dry_parch":69,"brix":9.03,"ph":0.0,"moisture":11.7,"outturn":18.16,"remarks":"","dispatch":"28-Dec-2023","storage":""},{"serial":"42","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE04Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"4-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":18,"floats":0,"nett":18,"wet_parch":5,"dry_parch":2,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":11.11,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"43","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE05Dec23MIXED1","lot_type":"Special","round":"Fly","date":"5-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":2241,"floats":101,"nett":2140,"wet_parch":793,"dry_parch":389,"brix":9.03,"ph":0.0,"moisture":11.0,"outturn":18.18,"remarks":"","dispatch":"28-Dec-2023","storage":""},{"serial":"44","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE05Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"5-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":101,"floats":0,"nett":101,"wet_parch":40,"dry_parch":20,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":19.8,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"45","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE06Dec23MIXED1","lot_type":"Special","round":"Fly","date":"6-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":2490,"floats":113,"nett":2377,"wet_parch":858,"dry_parch":425,"brix":8.7,"ph":0.0,"moisture":11.9,"outturn":17.88,"remarks":"","dispatch":"2-Jan-2024","storage":""},{"serial":"46","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE06Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"6-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":113,"floats":0,"nett":113,"wet_parch":40,"dry_parch":20,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":17.7,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"47","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE07Dec23MIXED1","lot_type":"Special","round":"Fly","date":"7-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":1033,"floats":92,"nett":941,"wet_parch":364,"dry_parch":178,"brix":10.6,"ph":0.0,"moisture":11.7,"outturn":18.92,"remarks":"","dispatch":"2-Jan-2024","storage":""},{"serial":"48","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE07Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"7-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":92,"floats":0,"nett":92,"wet_parch":33,"dry_parch":16,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":17.39,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"49","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE08Dec23MIXED1","lot_type":"Special","round":"Fly","date":"8-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":1451,"floats":101,"nett":1350,"wet_parch":520,"dry_parch":260,"brix":9.36,"ph":0.0,"moisture":11.7,"outturn":19.26,"remarks":"","dispatch":"13-Jan-2024","storage":""},{"serial":"50","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE08Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"8-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":101,"floats":0,"nett":101,"wet_parch":40,"dry_parch":20,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":19.8,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"51","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE09Dec23MIXED1","lot_type":"Special","round":"Fly","date":"9-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":2100,"floats":147,"nett":1953,"wet_parch":782,"dry_parch":398,"brix":10.28,"ph":0.0,"moisture":11.8,"outturn":20.38,"remarks":"","dispatch":"2-Jan-2024","storage":""},{"serial":"52","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE09Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"9-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":147,"floats":0,"nett":147,"wet_parch":50,"dry_parch":25,"brix":0.0,"ph":0.0,"moisture":11.7,"outturn":17.01,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"53","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE11Dec23MIXED1","lot_type":"Special","round":"Fly","date":"11-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":2354,"floats":165,"nett":2189,"wet_parch":923,"dry_parch":455,"brix":10.59,"ph":0.0,"moisture":11.9,"outturn":20.79,"remarks":"","dispatch":"13-Jan-2024","storage":""},{"serial":"54","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE11Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"11-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":165,"floats":0,"nett":165,"wet_parch":62,"dry_parch":33,"brix":0.0,"ph":0.0,"moisture":11.4,"outturn":20.0,"remarks":"","dispatch":"13-Jan-2024","storage":""},{"serial":"55","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE23Dec23MIXED1","lot_type":"Special","round":"Fly","date":"23-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":405,"floats":28,"nett":377,"wet_parch":155,"dry_parch":80,"brix":13.04,"ph":0.0,"moisture":11.2,"outturn":21.22,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"56","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE23Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"23-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":28,"floats":0,"nett":28,"wet_parch":11,"dry_parch":6,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":21.43,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"57","field":"Bungalow View Point","varietal":"MIXED","lot_num":"OE29Dec23MIXED1","lot_type":"Special","round":"Fly","date":"29-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":736,"floats":59,"nett":677,"wet_parch":272,"dry_parch":141,"brix":12.53,"ph":0.0,"moisture":11.2,"outturn":20.83,"remarks":"","dispatch":"22-Jan-2024","storage":""},{"serial":"58","field":"Bungalow View Point","varietal":"MIXED","lot_num":"OE29Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"29-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":59,"floats":0,"nett":59,"wet_parch":23,"dry_parch":12,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":20.34,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"59","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE30Dec23MIXED1","lot_type":"Special","round":"Fly","date":"30-Dec-2023","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":475,"floats":38,"nett":437,"wet_parch":175,"dry_parch":91,"brix":13.78,"ph":0.0,"moisture":11.7,"outturn":20.82,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"60","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE30Dec23MIXED2","lot_type":"Regular","round":"Fly","date":"30-Dec-2023","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":38,"floats":0,"nett":38,"wet_parch":15,"dry_parch":8,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":21.05,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"61","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE01Jan24MIXED1","lot_type":"Special","round":"Fly","date":"1-Jan-2024","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":445,"floats":36,"nett":409,"wet_parch":166,"dry_parch":86,"brix":10.75,"ph":0.0,"moisture":11.5,"outturn":21.03,"remarks":"","dispatch":"22-Jan-2024","storage":""},{"serial":"62","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE01Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"1-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":36,"floats":0,"nett":36,"wet_parch":14,"dry_parch":7,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":19.44,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"63","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE02Jan24MIXED1","lot_type":"Special","round":"Fly","date":"2-Jan-2024","method":"MSP 90 + Special Natural","experiment":"MSP 90 + Special Natural","ripe":540,"floats":54,"nett":486,"wet_parch":0,"dry_parch":146,"brix":18.64,"ph":0.0,"moisture":11.7,"outturn":30.04,"remarks":"","dispatch":"8-Jan-2024","storage":""},{"serial":"64","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE02Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"2-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":54,"floats":0,"nett":54,"wet_parch":22,"dry_parch":12,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":22.22,"remarks":"","dispatch":"16-Jan-2024","storage":""},{"serial":"65","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE03Jan24MIXED1","lot_type":"Special","round":"Fly","date":"3-Jan-2024","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":2175,"floats":172,"nett":2003,"wet_parch":832,"dry_parch":433,"brix":9.85,"ph":0.0,"moisture":11.6,"outturn":21.62,"remarks":"","dispatch":"22-Jan-2024","storage":""},{"serial":"66","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE03Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"3-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":172,"floats":0,"nett":172,"wet_parch":68,"dry_parch":34,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":19.77,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"67","field":"Aathukadu","varietal":"MIXED","lot_num":"OE06Jan24MIXED1","lot_type":"Special","round":"Fly","date":"6-Jan-2024","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":362,"floats":29,"nett":333,"wet_parch":130,"dry_parch":69,"brix":11.35,"ph":0.0,"moisture":11.6,"outturn":20.72,"remarks":"","dispatch":"18-Jan-2024","storage":""},{"serial":"68","field":"Aathukadu","varietal":"MIXED","lot_num":"OE06Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"6-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":29,"floats":0,"nett":29,"wet_parch":11,"dry_parch":6,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":20.69,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"69","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE11Jan24MIXED1","lot_type":"Special","round":"Fly","date":"11-Jan-2024","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":315,"floats":28,"nett":287,"wet_parch":115,"dry_parch":60,"brix":10.64,"ph":0.0,"moisture":11.7,"outturn":20.91,"remarks":"","dispatch":"23-Jan-2024","storage":""},{"serial":"70","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE11Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"11-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":28,"floats":0,"nett":28,"wet_parch":11,"dry_parch":6,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":21.43,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"71","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE12Jan24MIXED1","lot_type":"Special","round":"Fly","date":"12-Jan-2024","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":706,"floats":75,"nett":631,"wet_parch":268,"dry_parch":139,"brix":10.64,"ph":0.0,"moisture":11.1,"outturn":22.03,"remarks":"","dispatch":"22-Jan-2024","storage":""},{"serial":"72","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE12Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"12-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":75,"floats":0,"nett":75,"wet_parch":29,"dry_parch":15,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":20.0,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"73","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE12Jan24MIXED1","lot_type":"90+ Project","round":"Fly","date":"12-Jan-2024","method":"MSP 90 + Special Natural","experiment":"MSP 90 + Special Natural","ripe":90,"floats":5,"nett":85,"wet_parch":0,"dry_parch":0,"brix":12.12,"ph":0.0,"moisture":0.0,"outturn":0.0,"remarks":"1128 hours bag and in freezer","dispatch":"","storage":""},{"serial":"74","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE12Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"12-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":5,"floats":0,"nett":5,"wet_parch":3,"dry_parch":1,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":20.0,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"75","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE13Jan24MIXED1","lot_type":"Special","round":"Fly","date":"13-Jan-2024","method":"MSP 90 + Special Washed","experiment":"MSP 90 + Special Washed","ripe":223,"floats":18,"nett":205,"wet_parch":84,"dry_parch":44,"brix":10.09,"ph":0.0,"moisture":11.4,"outturn":21.46,"remarks":"","dispatch":"22-Jan-2024","storage":""},{"serial":"76","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE13Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"13-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":18,"floats":0,"nett":18,"wet_parch":6,"dry_parch":2,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":11.11,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"77","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE13Jan24MIXED1","lot_type":"Special","round":"Fly","date":"13-Jan-2024","method":"MSP 90 + Special Natural","experiment":"MSP 90 + Special Natural","ripe":59,"floats":6,"nett":53,"wet_parch":0,"dry_parch":0,"brix":12.31,"ph":0.0,"moisture":0.0,"outturn":0.0,"remarks":"720 hours bag and barrel","dispatch":"","storage":""},{"serial":"78","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE13Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"13-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":6,"floats":0,"nett":6,"wet_parch":2,"dry_parch":1,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":16.67,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"79","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE31Jan24MIXED1","lot_type":"Special","round":"Fly","date":"31-Jan-2024","method":"MSP 90 + Special Natural","experiment":"MSP 90 + Special Natural","ripe":1082,"floats":80,"nett":1002,"wet_parch":0,"dry_parch":0,"brix":12.32,"ph":0.0,"moisture":0.0,"outturn":0.0,"remarks":"336 hours bag in barrel","dispatch":"","storage":""},{"serial":"80","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE31Jan24MIXED2","lot_type":"Regular","round":"Fly","date":"31-Jan-2024","method":"Washed - No Fermentation","experiment":"Washed - No Fermentation","ripe":80,"floats":0,"nett":80,"wet_parch":29,"dry_parch":11,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":13.75,"remarks":"","dispatch":"4-Feb-2024","storage":""},{"serial":"81","field":"All Fields","varietal":"MIXED","lot_num":"OE24Nov23MIXED3","lot_type":"Stripping","round":"Stripping","date":"24-Nov-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":25,"floats":0,"nett":25,"wet_parch":0,"dry_parch":7,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":28.0,"remarks":"","dispatch":"1-Jan-2024","storage":""},{"serial":"82","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE11Dec23MIXED3","lot_type":"Stripping","round":"Stripping","date":"11-Dec-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":35,"floats":0,"nett":35,"wet_parch":0,"dry_parch":13,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":37.14,"remarks":"","dispatch":"1-Feb-2024","storage":""},{"serial":"83","field":"Line Keel Thundu","varietal":"MIXED","lot_num":"OE23Dec23MIXED3","lot_type":"Stripping","round":"Stripping","date":"23-Dec-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":545,"floats":0,"nett":545,"wet_parch":0,"dry_parch":191,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":35.05,"remarks":"","dispatch":"1-Feb-2024","storage":""},{"serial":"84","field":"Bungalow View Point","varietal":"MIXED","lot_num":"OE29Dec23MIXED3","lot_type":"Stripping","round":"Stripping","date":"29-Dec-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":858,"floats":0,"nett":858,"wet_parch":0,"dry_parch":300,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":34.97,"remarks":"","dispatch":"1-Feb-2024","storage":""},{"serial":"85","field":"Camp Thundu","varietal":"MIXED","lot_num":"OE30Dec23MIXED3","lot_type":"Stripping","round":"Stripping","date":"30-Dec-2023","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":477,"floats":0,"nett":477,"wet_parch":0,"dry_parch":167,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":35.01,"remarks":"","dispatch":"1-Feb-2024","storage":""},{"serial":"86","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE01Jan24MIXED3","lot_type":"Stripping","round":"Stripping","date":"1-Jan-2024","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":530,"floats":0,"nett":530,"wet_parch":0,"dry_parch":185,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":34.91,"remarks":"","dispatch":"1-Feb-2024","storage":""},{"serial":"87","field":"Kali Kovil","varietal":"MIXED","lot_num":"OE02Jan24MIXED3","lot_type":"Stripping","round":"Stripping","date":"2-Jan-2024","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":680,"floats":0,"nett":680,"wet_parch":0,"dry_parch":238,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":35.0,"remarks":"","dispatch":"1-Feb-2024","storage":""},{"serial":"88","field":"Aathukadu","varietal":"MIXED","lot_num":"OE06Jan24MIXED3","lot_type":"Stripping","round":"Stripping","date":"6-Jan-2024","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":414,"floats":0,"nett":414,"wet_parch":0,"dry_parch":145,"brix":0.0,"ph":0.0,"moisture":11.6,"outturn":35.02,"remarks":"","dispatch":"2-Feb-2024","storage":""},{"serial":"89","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE11Jan24MIXED3","lot_type":"Stripping","round":"Stripping","date":"11-Jan-2024","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":287,"floats":0,"nett":287,"wet_parch":0,"dry_parch":100,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":34.84,"remarks":"","dispatch":"2-Feb-2024","storage":""},{"serial":"90","field":"Kamala Kadu","varietal":"MIXED","lot_num":"OE13Jan24MIXED3","lot_type":"Stripping","round":"Stripping","date":"13-Jan-2024","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":227,"floats":0,"nett":227,"wet_parch":0,"dry_parch":73,"brix":0.0,"ph":0.0,"moisture":11.2,"outturn":32.16,"remarks":"","dispatch":"2-Feb-2024","storage":""},{"serial":"91","field":"Vandimodakkam","varietal":"MIXED","lot_num":"OE31Jan24MIXED3","lot_type":"Stripping","round":"Stripping","date":"31-Jan-2024","method":"Naturals - No Fermentation","experiment":"Naturals - No Fermentation","ripe":1575,"floats":0,"nett":1575,"wet_parch":0,"dry_parch":502,"brix":0.0,"ph":0.0,"moisture":11.3,"outturn":31.87,"remarks":"","dispatch":"3-Feb-2024","storage":""}];
+const TOTAL = RAW.length;
+
+const EXP_COLORS = {"MSP 90 + Special Natural":"#c47c2b","MSP 90 + Special Washed":"#3090c0","MSP 90 + Special Honey":"#c8a020","Naturals - No Fermentation":"#608060","Washed - 10 Hour Wet Fermentation":"#2080c0","Washed - 12 Hour Dry Fermentation":"#3070b0","Washed - No Fermentation":"#508090","Naturals - 2017 Style - 24 Hour Fermentation - Bag":"#a06030","Naturals -  12 Hour Fermentation (Bag)":"#b07040","Naturals - 72 Hours Dry Fermentation":"#907050","Bag Natural": "#e09030", "Regular Natural": "#3090c0", "Regular Washed": "#a03060", "Watermelon Washed": "#b04040", "Black Honey": "#c8a020", "Watermelon Bag Natural": "#9050a0", "Pineapple Watermelon Natural": "#607030", "Sugarcane Washed": "#50a080", "Direct to Table Natural": "#30a0a0", "T Lime Natural": "#c06050", "Extra Long Water Fermentation": "#4080a0", "Grapefruit Natural": "#e060a0", "Kamala Fruit Natural": "#80a030", "Cinnamon Natural": "#a070d0", "Kamala Peel Natural": "#d04080", "Black Honey Cinnamon": "#4060c0", "Banana Fermentation Natural": "#a07030", "Kamala Powder Natural": "#7050b0", "Jasmine Fermentation": "#3090c0", "All Spice Natural": "#80a030", "Durian Freezer Natural": "#a060d0", "All Spice Honey": "#d04080", "Cinnamon Honey (Freezer 720h)": "#50b060", "Cinnamon Natural (Freezer 720h)": "#e06020"};
+const METH_COLORS = {"Washed - 10 Hour Wet Fermentation":"#2080c0","Washed - 12 Hour Dry Fermentation":"#3070b0","Washed - No Fermentation":"#508090","Naturals - 2017 Style - 24 Hour Fermentation - Bag":"#a06030","Naturals -  12 Hour Fermentation (Bag)":"#b07040","Naturals - 72 Hours Dry Fermentation":"#907050","MSP 90 + Special Natural": "#c47c2b", "MSP 90 + Special Washed": "#3090c0", "MSP 90 + Special Honey": "#c8a020", "Naturals - No Fermentation": "#606060"};
+const METH_SHORT = {"Washed - 10 Hour Wet Fermentation":"10h Wet","Washed - 12 Hour Dry Fermentation":"12h Dry","Washed - No Fermentation":"No-Ferm Washed","Naturals - 2017 Style - 24 Hour Fermentation - Bag":"24h Bag","Naturals -  12 Hour Fermentation (Bag)":"12h Bag","Naturals - 72 Hours Dry Fermentation":"72h Dry","MSP 90 + Special Natural": "Natural", "MSP 90 + Special Washed": "Washed", "MSP 90 + Special Honey": "Honey", "Naturals - No Fermentation": "No Fermentation"};
+const LOT_COLORS  = {'Special':'#e09030','Regular':'#909090','Stripping':'#5090c0','90+ Project':'#a060d0','Gleanings':'#60a060'};
+
+let filtered = [...RAW];
+let sortKey = null, sortAsc = true;
+let chartExp, chartLot, chartMethod;
+
+// ── Render table ──────────────────────────────────────────────────────────────
+function fmtN(v){return (v&&v!==0)?Number(v).toLocaleString():'—'}
+function fmtP(v){return (v&&v>0)?v.toFixed(1)+'%':'—'}
+function fmtF(v){return (v&&v>0)?v.toFixed(2):'—'}
+function badgeCls(lt){
+  if(lt==='Special') return 'b-Special';
+  if(lt==='Regular') return 'b-Regular';
+  if(lt==='Stripping') return 'b-Stripping';
+  if(lt==='90+ Project') return 'b-90';
+  if(lt==='Gleanings') return 'b-Gleanings';
+  return 'b-Regular';
+}
+function methDot(m){return METH_COLORS[m]||'#808080'}
+
+function renderTable(){
+  const tbody = document.getElementById('batchBody');
+  let rows = [...filtered];
+  if(sortKey){
+    rows.sort((a,b)=>{
+      let av=a[sortKey]??'', bv=b[sortKey]??'';
+      let cmp;
+      if(sortKey==='date'){const p=s=>{const[d,m,y]=s.split('-'),M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};return new Date(+y,M[m],+d).getTime();};cmp=p(av)-p(bv);}
+      else cmp=(typeof av==='number'&&typeof bv==='number')?av-bv:String(av).localeCompare(String(bv));
+      return sortAsc?cmp:-cmp;
+    });
+  }
+  tbody.innerHTML = rows.map(b=>{
+    const rem=b.remarks||'';
+    const remShort=rem.length>35?rem.slice(0,35)+'…':rem;
+    const remTd=rem?`<span title="${rem}">${remShort}</span>`:'<span style="color:#504030">—</span>';
+    return `<tr>
+      <td>${b.date||'—'}</td>
+      <td><span class="badge ${badgeCls(b.lot_type)}">${b.lot_type||'—'}</span></td>
+      <td style="font-size:.7rem;color:#a09070">${b.field||'—'}</td>
+      <td style="font-size:.68rem;color:#a09070;font-family:monospace">${b.lot_num||''}</td>
+      <td><span class="method-dot" style="background:${methDot(b.method)}"></span><span class="exp-chip">${b.experiment||'—'}</span></td>
+      <td class="num">${fmtN(b.ripe)}</td>
+      <td class="num">${fmtN(b.floats)}</td>
+      <td class="num">${fmtN(b.nett)}</td>
+      <td class="num" style="font-weight:700;color:#f0a835">${fmtN(b.dry_parch)}</td>
+      <td class="num">${fmtP(b.outturn)}</td>
+      <td class="num">${fmtF(b.brix)}</td>
+      <td class="num">${fmtF(b.ph)}</td>
+      <td class="num">${fmtP(b.moisture)}</td>
+      <td style="font-size:.7rem;color:#a09070;max-width:200px">${remTd}</td>
+    </tr>`;
+  }).join('');
+
+  const totR=filtered.reduce((s,b)=>s+(b.ripe||0),0);
+  const totN=filtered.reduce((s,b)=>s+(b.nett||0),0);
+  const totD=filtered.reduce((s,b)=>s+(b.dry_parch||0),0);
+  const specD=filtered.filter(b=>b.lot_type==='Special'||b.lot_type==='90+ Project').reduce((s,b)=>s+(b.dry_parch||0),0);
+  const outVals=filtered.filter(b=>b.outturn>0).map(b=>b.outturn);
+  const avgOut=outVals.length?outVals.reduce((a,b)=>a+b,0)/outVals.length:0;
+  const expSet=new Set(filtered.map(b=>b.experiment).filter(Boolean));
+
+  document.getElementById('kpi-count').textContent=filtered.length;
+  document.getElementById('kpi-ripe').textContent=totR.toLocaleString();
+  document.getElementById('kpi-dry').textContent=totD.toLocaleString();
+  document.getElementById('kpi-special').textContent=specD.toLocaleString();
+  document.getElementById('kpi-outturn').textContent=avgOut.toFixed(1)+'%';
+  document.getElementById('kpi-exps').textContent=expSet.size;
+  document.getElementById('batchCount').textContent=filtered.length+' batches';
+  document.getElementById('totRipe').textContent=totR.toLocaleString();
+  document.getElementById('totNett').textContent=totN.toLocaleString();
+  document.getElementById('totDry').textContent=totD.toLocaleString();
+
+  updateCharts(filtered);
+}
+
+// ── Charts ────────────────────────────────────────────────────────────────────
+function groupBy(arr,key,val){
+  const m={};
+  arr.forEach(b=>{const k=b[key]||'Unknown';m[k]=(m[k]||0)+(b[val]||0);});
+  return m;
+}
+function makeDonut(id,data,colors){
+  const labels=Object.keys(data),vals=Object.values(data);
+  const cols=labels.map(l=>colors[l]||'#808080');
+  return new Chart(document.getElementById(id),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:cols,borderColor:'#1a1208',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#c8b080',font:{size:11},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()} kg`}}}}
+  });
+}
+function makeBar(id,data,colors){
+  const labels=Object.keys(data).map(l=>METH_SHORT[l]||l),vals=Object.values(data);
+  const cols=Object.keys(data).map(m=>METH_COLORS[m]||'#c47c2b');
+  return new Chart(document.getElementById(id),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:cols,borderColor:cols,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toLocaleString()} kg`}}},
+      scales:{
+        x:{ticks:{color:'#a08060',font:{size:11}},grid:{color:'#3a2a14'}},
+        y:{ticks:{color:'#a08060'},grid:{color:'#3a2a14'}}
+      }
+    }
+  });
+}
+function updateCharts(data){
+  if(chartExp)chartExp.destroy();
+  if(chartLot)chartLot.destroy();
+  if(chartMethod)chartMethod.destroy();
+  const expData  = groupBy(data,'experiment','dry_parch');
+  const expSorted= Object.fromEntries(Object.entries(expData).sort((a,b)=>b[1]-a[1]));
+  const lotData  = groupBy(data,'lot_type','dry_parch');
+  const methData = groupBy(data,'method','dry_parch');
+  chartExp    = makeDonut('chartExp',   expSorted,   EXP_COLORS);
+  chartLot    = makeDonut('chartLot',   lotData,     LOT_COLORS);
+  chartMethod = makeBar('chartMethod',  methData,    METH_COLORS);
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function applyFilters(){
+  const lt  = document.getElementById('fLot').value;
+  const mth = document.getElementById('fMethod').value;
+  const exp = document.getElementById('fExp').value;
+  const fld = document.getElementById('fField').value;
+  const srch= document.getElementById('fSearch').value.toLowerCase();
+  const vrt = document.getElementById('fVarietal').value;
+  filtered = RAW.filter(b=>
+    (!lt  || b.lot_type   === lt)  &&
+    (!mth || b.method     === mth) &&
+    (!exp || b.experiment === exp) &&
+    (!fld || b.field      === fld) &&
+    (!vrt  || b.varietal === vrt) &&
+    (!srch|| JSON.stringify(b).toLowerCase().includes(srch))
+  );
+  renderTable();
+}
+function resetFilters(){
+  ['fLot','fMethod','fExp','fField','fVarietal'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fSearch').value='';
+  filtered=[...RAW];
+  renderTable();
+}
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
+function sortTable(th,key){
+  document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+  if(sortKey===key){sortAsc=!sortAsc;}else{sortKey=key;sortAsc=true;}
+  th.classList.add(sortAsc?'sort-asc':'sort-desc');
+  renderTable();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderTable();
+</script>
+</body></html>
