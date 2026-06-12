@@ -133,14 +133,19 @@ CREATE POLICY "auth_update_user_activity"
   USING (auth.role() = 'authenticated');
 
 -- ── 9. APP USERS ────────────────────────────────────────────────
+--  SELECT is also allowed for anon so the login page can fetch the
+--  user list (names only — no sensitive data except hashed PIN).
+--  WRITE (INSERT/UPDATE/DELETE) is restricted to authenticated only.
 ALTER TABLE app_users ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "auth_read_app_users"   ON app_users;
+DROP POLICY IF EXISTS "anon_read_app_users"   ON app_users;
 DROP POLICY IF EXISTS "auth_write_app_users"  ON app_users;
 
-CREATE POLICY "auth_read_app_users"
+-- Login page needs to read names/IDs without a session
+CREATE POLICY "anon_read_app_users"
   ON app_users FOR SELECT
-  USING (auth.role() = 'authenticated');
+  USING (true);
 
 -- Only authenticated users can manage app_users (admin UI)
 CREATE POLICY "auth_write_app_users"

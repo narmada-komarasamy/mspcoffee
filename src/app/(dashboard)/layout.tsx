@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useActivityTracker } from '@/lib/useActivityTracker';
+import { supabase } from '@/lib/supabase';
 import {
   CloudRain,
   Fuel,
@@ -124,13 +125,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const stored = localStorage.getItem('msp_user');
     if (!stored) { router.push('/login'); return; }
-    setUser(JSON.parse(stored));
+
+    const cached = JSON.parse(stored) as AppUser;
+
+    // Apply theme/font from localStorage (display prefs only)
     const t = localStorage.getItem('msp_theme') as ThemeKey | null;
     const f = localStorage.getItem('msp_font') as FontKey | null;
     if (t && THEMES[t]) setThemeKey(t);
     const validFont = (f && FONT_SIZES[f as FontKey]) ? f as FontKey : 'md';
     setFontKey(validFont);
     document.documentElement.style.fontSize = FONT_SIZES[validFont];
+
+    // Security: re-fetch role from database — never trust localStorage for access control
+    supabase
+      .from('app_users')
+      .select('id, name, role, estate')
+      .eq('id', cached.id)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          // DB unreachable — fall back to cached but still load the page
+          setUser(cached);
+          return;
+        }
+        // Use DB role, keep cached pin for display (pin not returned from select)
+        const verified: AppUser = { ...cached, role: data.role, name: data.name, estate: data.estate };
+        setUser(verified);
+        // Keep localStorage in sync so display is current
+        localStorage.setItem('msp_user', JSON.stringify({ ...cached, role: data.role, name: data.name, estate: data.estate }));
+      });
   }, [router]);
 
   useEffect(() => {
