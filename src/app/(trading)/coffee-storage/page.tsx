@@ -1874,7 +1874,7 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
 
       {(greenAvail.length > 0 || htAvail.length > 0) && (() => {
         // Combine all available lots and normalise process into a category
-        type AvailLot = { id: string; label: string; process: string };
+        type AvailLot = { id: string; label: string; process: string; rate: number };
         const getCat = (p: string) => {
           const lp = p.toLowerCase();
           if (lp.includes('natural')) return 'Natural';
@@ -1894,11 +1894,13 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
             id: g.id,
             label: `${g.lot} · ${g.field} · ${g.process} · ${Math.round(g.current_kg)} kg · ₹${n(g.rate_per_kg).toFixed(0)}/kg`,
             process: g.process,
+            rate: n(g.rate_per_kg),
           })),
           ...htAvail.map(h => ({
             id: h.id,
             label: `${h.lot} · ${h.supplier} · ${h.process} · ${Math.round(h.current_kg)} kg · ₹${n(h.rate_per_kg).toFixed(0)}/kg`,
             process: h.process,
+            rate: n(h.rate_per_kg),
           })),
         ];
         const grouped: Record<string, AvailLot[]> = {};
@@ -1906,6 +1908,10 @@ function BlendBuilderDrawer({ blend, greenLots, onClose, reload }: {
           const cat = getCat(lot.process);
           if (!grouped[cat]) grouped[cat] = [];
           grouped[cat].push(lot);
+        }
+        // Sort each category low → high price
+        for (const cat of CAT_ORDER) {
+          grouped[cat]?.sort((a, b) => a.rate - b.rate);
         }
         return (
           <div style={{ display:"flex", gap:8, marginTop:8 }}>
