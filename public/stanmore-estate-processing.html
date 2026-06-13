@@ -91,7 +91,7 @@ tfoot td.num{text-align:right}
 </div>
 
 <div class="kpi-bar">
-  <div class="kpi"><div class="kpi-label">Total Batches</div><div class="kpi-value" id="kpi-count">265</div><div class="kpi-unit">of 265 total</div></div>
+  <div class="kpi"><div class="kpi-label">Total Batches</div><div class="kpi-value" id="kpi-count">265</div><div class="kpi-unit" id="kpi-total">of 265 total</div></div>
   <div class="kpi"><div class="kpi-label">Ripe Cherry</div><div class="kpi-value" id="kpi-ripe">113,291</div><div class="kpi-unit">kg input</div></div>
   <div class="kpi"><div class="kpi-label">Dry Parchment</div><div class="kpi-value" id="kpi-dry">28,143</div><div class="kpi-unit">kg output</div></div>
   <div class="kpi"><div class="kpi-label">Special Lots</div><div class="kpi-value" id="kpi-special">22,692</div><div class="kpi-unit">kg dry parch</div></div>
@@ -355,7 +355,8 @@ function applyFilters(){
     (!vrt  || b.varietal === vrt) &&
     (!srch|| JSON.stringify(b).toLowerCase().includes(srch))
   );
-  renderTable();
+  document.getElementById('kpi-total').textContent='of '+TOTAL+' total';
+renderTable();
 }
 function resetFilters(){
   ['fLot','fMethod','fExp','fField','fVarietal'].forEach(id=>document.getElementById(id).value='');
@@ -373,6 +374,7 @@ function sortTable(th,key){
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('kpi-total').textContent='of '+TOTAL+' total';
 renderTable();
 </script>
 </body></html>
