@@ -218,6 +218,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       });
   }, [router]);
 
+  // Route-level guard: redirect if user navigates directly to a blocked page
+  useEffect(() => {
+    if (!user || user.role === 'admin' || allowedPages === null) return;
+    // Find the top-level nav item whose href matches the current path prefix
+    const matchedItem = navItems.find(item => pathname.startsWith(item.href));
+    if (!matchedItem) return; // unknown route — let it through
+    if (!allowedPages.has(matchedItem.href)) {
+      router.replace('/unauthorized');
+    }
+  }, [pathname, user, allowedPages, router]);
+
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handler);

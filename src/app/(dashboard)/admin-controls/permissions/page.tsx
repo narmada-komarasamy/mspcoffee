@@ -20,6 +20,7 @@ const PAGES = [
   { href: '/spraying-log',         label: 'Spraying Log',         defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/vehicle-log',          label: 'Vehicle Log',          defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/store-inventory',      label: 'Store Inventory',      defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/coffee-trading',       label: 'Coffee Trading / Green Store', defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/shopify-orders',       label: 'Shopify Orders',       defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
   { href: '/weather',              label: 'Weather',              defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
   { href: '/ai-insights',          label: 'AI Insights',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
