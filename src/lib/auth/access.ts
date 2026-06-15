@@ -28,11 +28,61 @@ export const NAV_ITEMS: NavItemDef[] = [
       {
         label: '2025–2026',
         children: [
-          { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
-          { label: 'Bison Valley Estate',   href: '/processing-dashboard/bve' },
-          { label: 'Moganad Estate',        href: '/processing-dashboard/moganad-estate' },
-          { label: 'Orchardale Estate',     href: '/processing-dashboard/orchardale-estate' },
-          { label: 'Hidden Falls Estate',   href: '/processing-dashboard/hidden-falls-estate' },
+          { label: 'Stanmore Estate',     href: '/processing-dashboard/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/bve' },
+          { label: 'Moganad Estate',      href: '/processing-dashboard/moganad-estate' },
+          { label: 'Orchardale Estate',   href: '/processing-dashboard/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/hidden-falls-estate' },
+        ],
+      },
+      {
+        label: '2024–2025',
+        children: [
+          { label: 'Stanmore Estate',     href: '/processing-dashboard/2024-2025/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/2024-2025/bve' },
+          { label: 'Moganad Estate',      href: '/processing-dashboard/2024-2025/moganad-estate' },
+          { label: 'Orchardale Estate',   href: '/processing-dashboard/2024-2025/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/2024-2025/hidden-falls-estate' },
+        ],
+      },
+      {
+        label: '2023–2024',
+        children: [
+          { label: 'Stanmore Estate',     href: '/processing-dashboard/2023-2024/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/2023-2024/bve' },
+          { label: 'Moganad Estate',      href: '/processing-dashboard/2023-2024/moganad-estate' },
+          { label: 'Orchardale Estate',   href: '/processing-dashboard/2023-2024/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/2023-2024/hidden-falls-estate' },
+        ],
+      },
+      {
+        label: '2022–2023',
+        children: [
+          { label: 'Stanmore Estate',     href: '/processing-dashboard/2022-2023/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/2022-2023/bve' },
+          { label: 'Moganad Estate',      href: '/processing-dashboard/2022-2023/moganad-estate' },
+          { label: 'Orchardale Estate',   href: '/processing-dashboard/2022-2023/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/2022-2023/hidden-falls-estate' },
+        ],
+      },
+      {
+        label: '2021–2022',
+        children: [
+          { label: 'Stanmore Estate',     href: '/processing-dashboard/2021-2022/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/2021-2022/bve' },
+          { label: 'Moganad Estate',      href: '/processing-dashboard/2021-2022/moganad-estate' },
+          { label: 'Orchardale Estate',   href: '/processing-dashboard/2021-2022/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/2021-2022/hidden-falls-estate' },
+        ],
+      },
+      {
+        label: '2020–2021',
+        children: [
+          { label: 'Stanmore Estate',     href: '/processing-dashboard/2020-2021/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/2020-2021/bve' },
+          { label: 'Moganad Estate',      href: '/processing-dashboard/2020-2021/moganad-estate' },
+          { label: 'Orchardale Estate',   href: '/processing-dashboard/2020-2021/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/2020-2021/hidden-falls-estate' },
         ],
       },
     ],

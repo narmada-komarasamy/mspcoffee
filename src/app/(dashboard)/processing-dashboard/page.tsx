@@ -41,7 +41,76 @@ const SEASONS: SeasonData[] = [
     honeyPsd: 143,
     robusta:   66,
   },
-  // Future seasons added here
+  {
+    label: '2024 – 2025',
+    estates: [
+      { name: 'Stanmore Estate',     code: 'SE · Yercaud',  icon: '🌿', href: '/processing-dashboard/2024-2025/stanmore-estate',     accent: '#1b5e20', batches: 199, ripeCherry:  95028, dryParchment: 24697, outturn: 26.0 },
+      { name: 'Moganad Estate',      code: 'ME · Yercaud',  icon: '☕', href: '/processing-dashboard/2024-2025/moganad-estate',      accent: '#1a237e', batches: 156, ripeCherry: 127316, dryParchment: 35079, outturn: 27.6 },
+      { name: 'Orchardale Estate',   code: 'OE · Yercaud',  icon: '🌱', href: '/processing-dashboard/2024-2025/orchardale-estate',   accent: '#4a148c', batches: 152, ripeCherry:  82242, dryParchment: 24805, outturn: 30.2 },
+      { name: 'Bison Valley Estate', code: 'BVE · Yercaud', icon: '🦬', href: '/processing-dashboard/2024-2025/bve',                accent: '#e65100', batches:  64, ripeCherry:  52371, dryParchment: 10573, outturn: 20.2 },
+      { name: 'Hidden Falls Estate', code: 'HFE · Yercaud', icon: '🌊', href: '/processing-dashboard/2024-2025/hidden-falls-estate', accent: '#006064', batches: 100, ripeCherry:  28822, dryParchment:  8214, outturn: 28.5 },
+    ],
+    naturals: 462,
+    washed:   167,
+    honeyPsd:  42,
+    robusta:    0,
+  },
+  {
+    label: '2023 – 2024',
+    estates: [
+      { name: 'Stanmore Estate',     code: 'SE · Yercaud',  icon: '🌿', href: '/processing-dashboard/2023-2024/stanmore-estate',     accent: '#1b5e20', batches: 120, ripeCherry:  71557, dryParchment: 18513, outturn: 25.9 },
+      { name: 'Moganad Estate',      code: 'ME · Yercaud',  icon: '☕', href: '/processing-dashboard/2023-2024/moganad-estate',      accent: '#1a237e', batches: 139, ripeCherry:  58953, dryParchment: 14027, outturn: 23.8 },
+      { name: 'Orchardale Estate',   code: 'OE · Yercaud',  icon: '🌱', href: '/processing-dashboard/2023-2024/orchardale-estate',   accent: '#4a148c', batches:  91, ripeCherry:  42808, dryParchment: 10583, outturn: 24.7 },
+      { name: 'Bison Valley Estate', code: 'BVE · Yercaud', icon: '🦬', href: '/processing-dashboard/2023-2024/bve',                accent: '#e65100', batches:  82, ripeCherry:  30326, dryParchment:  6179, outturn: 20.4 },
+      { name: 'Hidden Falls Estate', code: 'HFE · Yercaud', icon: '🌊', href: '/processing-dashboard/2023-2024/hidden-falls-estate', accent: '#006064', batches: 144, ripeCherry:  35310, dryParchment:  8134, outturn: 23.0 },
+    ],
+    naturals: 340,
+    washed:   230,
+    honeyPsd:   6,
+    robusta:    0,
+  },
+  {
+    label: '2022 – 2023',
+    estates: [
+      { name: 'Stanmore Estate',     code: 'SE · Yercaud',  icon: '🌿', href: '/processing-dashboard/2022-2023/stanmore-estate',     accent: '#1b5e20', batches: 167, ripeCherry:  99931, dryParchment: 27847, outturn: 27.9 },
+      { name: 'Moganad Estate',      code: 'ME · Yercaud',  icon: '☕', href: '/processing-dashboard/2022-2023/moganad-estate',      accent: '#1a237e', batches: 131, ripeCherry:  82963, dryParchment: 23178, outturn: 27.9 },
+      { name: 'Orchardale Estate',   code: 'OE · Yercaud',  icon: '🌱', href: '/processing-dashboard/2022-2023/orchardale-estate',   accent: '#4a148c', batches: 128, ripeCherry:  54037, dryParchment: 13863, outturn: 25.7 },
+      { name: 'Bison Valley Estate', code: 'BVE · Yercaud', icon: '🦬', href: '/processing-dashboard/2022-2023/bve',                accent: '#e65100', batches:  80, ripeCherry:  45041, dryParchment:  9990, outturn: 22.2 },
+      { name: 'Hidden Falls Estate', code: 'HFE · Yercaud', icon: '🌊', href: '/processing-dashboard/2022-2023/hidden-falls-estate', accent: '#006064', batches: 106, ripeCherry:  34769, dryParchment: 11347, outturn: 32.6 },
+    ],
+    naturals: 549,
+    washed:    45,
+    honeyPsd:  18,
+    robusta:    0,
+  },
+  {
+    label: '2021 – 2022',
+    estates: [
+      { name: 'Stanmore Estate',     code: 'SE · Yercaud',  icon: '🌿', href: '/processing-dashboard/2021-2022/stanmore-estate',     accent: '#1b5e20', batches: 168, ripeCherry:  72564, dryParchment: 18018, outturn: 24.8 },
+      { name: 'Moganad Estate',      code: 'ME · Yercaud',  icon: '☕', href: '/processing-dashboard/2021-2022/moganad-estate',      accent: '#1a237e', batches: 154, ripeCherry:  68612, dryParchment: 18888, outturn: 27.5 },
+      { name: 'Orchardale Estate',   code: 'OE · Yercaud',  icon: '🌱', href: '/processing-dashboard/2021-2022/orchardale-estate',   accent: '#4a148c', batches: 152, ripeCherry:  61490, dryParchment: 15557, outturn: 25.3 },
+      { name: 'Bison Valley Estate', code: 'BVE · Yercaud', icon: '🦬', href: '/processing-dashboard/2021-2022/bve',                accent: '#e65100', batches: 107, ripeCherry:  32431, dryParchment:  7098, outturn: 21.9 },
+      { name: 'Hidden Falls Estate', code: 'HFE · Yercaud', icon: '🌊', href: '/processing-dashboard/2021-2022/hidden-falls-estate', accent: '#006064', batches: 191, ripeCherry:  41909, dryParchment: 10819, outturn: 25.8 },
+    ],
+    naturals: 740,
+    washed:     0,
+    honeyPsd:  32,
+    robusta:    0,
+  },
+  {
+    label: '2020 – 2021',
+    estates: [
+      { name: 'Stanmore Estate',     code: 'SE · Yercaud',  icon: '🌿', href: '/processing-dashboard/2020-2021/stanmore-estate',     accent: '#1b5e20', batches: 156, ripeCherry:  74658, dryParchment: 17620, outturn: 23.6 },
+      { name: 'Moganad Estate',      code: 'ME · Yercaud',  icon: '☕', href: '/processing-dashboard/2020-2021/moganad-estate',      accent: '#1a237e', batches: 304, ripeCherry:  67528, dryParchment: 15119, outturn: 22.4 },
+      { name: 'Orchardale Estate',   code: 'OE · Yercaud',  icon: '🌱', href: '/processing-dashboard/2020-2021/orchardale-estate',   accent: '#4a148c', batches: 129, ripeCherry:  39936, dryParchment: 10825, outturn: 27.1 },
+      { name: 'Bison Valley Estate', code: 'BVE · Yercaud', icon: '🦬', href: '/processing-dashboard/2020-2021/bve',                accent: '#e65100', batches: 155, ripeCherry:  36145, dryParchment: 11266, outturn: 31.2 },
+      { name: 'Hidden Falls Estate', code: 'HFE · Yercaud', icon: '🌊', href: '/processing-dashboard/2020-2021/hidden-falls-estate', accent: '#006064', batches: 147, ripeCherry:  37693, dryParchment:  9244, outturn: 24.5 },
+    ],
+    naturals: 746,
+    washed:    89,
+    honeyPsd:  56,
+    robusta:    0,
+  },
 ];
 
 function fmtIN(n: number) {
