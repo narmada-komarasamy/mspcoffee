@@ -1764,26 +1764,35 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       alert(`Only ${Math.round(selectedLot.current_kg)} kg available in this lot.`); return;
     }
     setSaving(true);
-    const { data: sale } = await supabase.from("coffee_sales").insert([{
+    const { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
       date, channel, customer: customer.trim(), green_lot_ids: [lotId],
       kg: n(kg), price_per_kg: n(price), currency: "INR",
       status: channel === "internal-roast" ? "transferred" : "pending",
       reference: ref || null, notes: notes || null,
     }]).select().single();
 
-    // Deduct from the correct table
+    if (saleError || !sale) {
+      setSaving(false);
+      alert(`Failed to record sale: ${saleError?.message ?? "Unknown error"}. No stock has been deducted. Please try again or contact your administrator.`);
+      return;
+    }
+
+    // Deduct from the correct table — only runs after a confirmed INSERT
     if (selectedLot) {
       const newKg = selectedLot.current_kg - n(kg);
       const table = selectedLot.source === "hilltiller" ? "hilltiller_stock" : "green_lots";
-      await supabase.from(table).update({
+      const { error: deductError } = await supabase.from(table).update({
         current_kg: newKg,
         status: newKg <= 0 ? "depleted" : "in-stock",
       }).eq("id", lotId);
+      if (deductError) {
+        // Sale was recorded but stock deduction failed — log it clearly
+        console.error("Stock deduction failed after sale was recorded:", deductError);
+        alert(`Sale recorded (${sale.id}) but stock deduction failed: ${deductError.message}. Please manually adjust the stock for lot ${selectedLot.lot}.`);
+      }
     }
-    if (sale) {
-      await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "sale-created",
-        entity: sale.id, before: null, after: `${kg}kg @ ₹${price}/kg → ${customer}`, note: channel });
-    }
+    await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "sale-created",
+      entity: sale.id, before: null, after: `${kg}kg @ ₹${price}/kg → ${customer}`, note: channel });
     setSaving(false);
     onClose();
     if (onSuccess) onSuccess(); else reload();
@@ -1952,8 +1961,26 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
     if (insufficient) { alert(`Maximum available from this blend is ${Math.floor(maxKg)} kg.`); return; }
     setSaving(true);
 
-    // Proportional deduction from each recipe lot
-    const lotIds: string[] = [];
+    // Collect lot IDs first (no deduction yet)
+    const lotIds: string[] = recipe.map(r => r.green_lot_id).filter(id => resolveLot(id));
+
+    // INSERT the sale record first — deductions only happen after confirmed
+    const { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
+      date, channel, customer: customer.trim(),
+      green_lot_ids: lotIds,
+      kg: saleKg, price_per_kg: n(price), currency: "INR",
+      status: channel === "internal-roast" ? "transferred" : "pending",
+      reference: ref || null,
+      notes: `Blend sale: ${blend.name}${notes ? ` — ${notes}` : ""}`,
+    }]).select().single();
+
+    if (saleError || !sale) {
+      setSaving(false);
+      alert(`Failed to record sale: ${saleError?.message ?? "Unknown error"}. No stock has been deducted. Please try again or contact your administrator.`);
+      return;
+    }
+
+    // Proportional deduction from each recipe lot — only after confirmed INSERT
     for (const r of recipe) {
       const lot = resolveLot(r.green_lot_id);
       if (!lot) continue;
@@ -1964,24 +1991,12 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
         current_kg: newKg,
         status: newKg <= 0 ? "depleted" : lot.status,
       }).eq("id", r.green_lot_id);
-      lotIds.push(r.green_lot_id);
     }
 
-    const { data: sale } = await supabase.from("coffee_sales").insert([{
-      date, channel, customer: customer.trim(),
-      green_lot_ids: lotIds,
-      kg: saleKg, price_per_kg: n(price), currency: "INR",
-      status: channel === "internal-roast" ? "transferred" : "pending",
-      reference: ref || null,
-      notes: `Blend sale: ${blend.name}${notes ? ` — ${notes}` : ""}`,
-    }]).select().single();
-
-    if (sale) {
-      await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "sale-created",
-        entity: sale.id, before: null,
-        after: `${saleKg} kg @ ₹${price}/kg → ${customer} (blend: ${blend.name})`,
-        note: channel });
-    }
+    await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "sale-created",
+      entity: sale.id, before: null,
+      after: `${saleKg} kg @ ₹${price}/kg → ${customer} (blend: ${blend.name})`,
+      note: channel });
 
     setSaving(false);
     onClose();
