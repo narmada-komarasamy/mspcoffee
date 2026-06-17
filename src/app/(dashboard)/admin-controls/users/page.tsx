@@ -44,7 +44,7 @@ const ACCESS_OPTS: { value: Access; label: string; color: string; bg: string; bo
   { value: 'edit', label: 'Edit',       color: 'var(--t-heading)', bg: '#dcfce7',    border: '#86efac' },
 ];
 
-const ROLES   = ['admin', 'supervisor', 'worker'];
+const ROLES   = ['admin', 'supervisor', 'ceo', 'worker'];
 const ESTATES = ['', 'NM', 'BV', 'MG', 'OR', 'HF', 'ST'];
 
 type Modal =
@@ -58,8 +58,9 @@ const blank: Omit<AppUser, 'id'> = { name: '', pin: '', role: 'worker', estate: 
 
 const roleColors: Record<string, { bg: string; color: string }> = {
   admin:      { bg: 'var(--t-heading)', color: 'white' },
-  supervisor: { bg: '#1a3a6e', color: 'white' },
-  worker:     { bg: '#6b3a1f', color: 'white' },
+  supervisor: { bg: '#1a3a6e',          color: 'white' },
+  ceo:        { bg: '#7c3aed',          color: 'white' },
+  worker:     { bg: '#6b3a1f',          color: 'white' },
 };
 
 // ── Style tokens ───────────────────────────────────────────────────────────

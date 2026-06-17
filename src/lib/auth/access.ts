@@ -4,7 +4,7 @@
  * Keep this file serializable — no React imports, no server-only imports.
  */
 
-export type Role = 'admin' | 'supervisor' | 'worker';
+export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo';
 
 export type NavLeafDef  = { label: string; href: string };
 export type NavGroupDef = { label: string; href?: never; children: NavLeafDef[] };
@@ -19,11 +19,11 @@ export type NavItemDef = {
 };
 
 export const NAV_ITEMS: NavItemDef[] = [
-  { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor'] },
-  { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor'] },
+  { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor', 'ceo'] },
   {
-    label: 'Processing Data', href: '/processing-dashboard', iconName: 'BarChart2', roles: ['admin', 'supervisor'],
+    label: 'Processing Data', href: '/processing-dashboard', iconName: 'BarChart2', roles: ['admin', 'supervisor', 'ceo'],
     children: [
       {
         label: '2025–2026',
@@ -88,13 +88,13 @@ export const NAV_ITEMS: NavItemDef[] = [
     ],
   },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
-  { label: 'Cup Score Catalogue', href: '/cup-scores',      iconName: 'Award',        roles: ['admin', 'supervisor'] },
-  { label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Harvest Yield',       href: '/harvest-yield',   iconName: 'Wheat',        roles: ['admin', 'supervisor'] },
-  { label: 'Nursery',             href: '/nursery',         iconName: 'Sprout',       roles: ['admin', 'supervisor'] },
-  { label: 'Spraying Log',        href: '/spraying-log',    iconName: 'SprayCan',     roles: ['admin', 'supervisor'] },
-  { label: 'Vehicle Log',         href: '/vehicle-log',     iconName: 'Truck',        roles: ['admin', 'supervisor'] },
+  { label: 'Cup Score Catalogue', href: '/cup-scores',      iconName: 'Award',        roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Harvest Yield',       href: '/harvest-yield',   iconName: 'Wheat',        roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Nursery',             href: '/nursery',         iconName: 'Sprout',       roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Spraying Log',        href: '/spraying-log',    iconName: 'SprayCan',     roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Vehicle Log',         href: '/vehicle-log',     iconName: 'Truck',        roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Store Inventory',     href: '/store-inventory', iconName: 'Package',      roles: ['admin'] },
   { label: 'Shopify Orders',      href: '/shopify-orders',  iconName: 'ShoppingCart', roles: ['admin'] },
   { label: 'Weather',             href: '/weather',         iconName: 'CloudSun',     roles: ['admin', 'worker'] },

@@ -69,11 +69,11 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor'] },
-  { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor'] },
+  { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
   {
-    label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor'],
+    label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor', 'ceo'],
     children: [
       {
         label: '2025–2026',
@@ -139,15 +139,15 @@ const navItems: NavItem[] = [
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
   {
-    label: 'Daily Report', href: '/daily-report', icon: FileText, roles: ['admin', 'supervisor', 'worker'],
+    label: 'Daily Report', href: '/daily-report', icon: FileText, roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
       { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },
     ],
   },
-  { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker'] },
-  { label: 'Harvest Yield',        href: '/harvest-yield',        icon: Wheat,        roles: ['admin', 'supervisor'] },
-  { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor'] },
-  { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker'] },
+  { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Harvest Yield',        href: '/harvest-yield',        icon: Wheat,        roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   {
     label: 'Admin Controls', href: '/admin-controls', icon: Shield, roles: ['admin'],
     children: [

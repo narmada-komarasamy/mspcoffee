@@ -157,6 +157,9 @@ function getUserRole(): string {
     return s ? JSON.parse(s)?.role ?? "worker" : "worker";
   } catch { return "worker"; }
 }
+function isViewOnly(): boolean {
+  return getUserRole() === "ceo";
+}
 function noteStamp(): string {
   const now = new Date();
   const d = now.toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -518,11 +521,13 @@ function YardTab({ batches, greenLots, reload }: { batches: ParchBatch[]; greenL
 
       {/* Actions + filters */}
       <div className={css.actionBar}>
-        <button className={css.btnNew} onClick={() => setDrawer("new")}><Plus size={13} /> New batch</button>
-        <button className={css.btnSecondary} onClick={() => { if (allOnYard.length) setDrawer("mill"); }}
-          style={{ opacity: allOnYard.length ? 1 : 0.4 }}>
-          <Send size={13} /> Send to mill ({allOnYard.length})
-        </button>
+        {!isViewOnly() && <button className={css.btnNew} onClick={() => setDrawer("new")}><Plus size={13} /> New batch</button>}
+        {!isViewOnly() && (
+          <button className={css.btnSecondary} onClick={() => { if (allOnYard.length) setDrawer("mill"); }}
+            style={{ opacity: allOnYard.length ? 1 : 0.4 }}>
+            <Send size={13} /> Send to mill ({allOnYard.length})
+          </button>
+        )}
         <button className={css.btnSecondary} onClick={() => { if (selArr.length) setDrawer("print"); }}
           style={{ opacity: selArr.length ? 1 : 0.4 }}>
           <Printer size={13} /> Print labels ({selArr.length})
@@ -981,9 +986,11 @@ function MillingTab({ batches, greenLots, reload }: { batches: ParchBatch[]; gre
                   </span>
                 )}
               </div>
-              <button className={css.btnPrimary} onClick={() => setReceiveGroup(g.batches)}>
-                <ArrowDownToLine size={13} /> Receive milled green
-              </button>
+              {!isViewOnly() && (
+                <button className={css.btnPrimary} onClick={() => setReceiveGroup(g.batches)}>
+                  <ArrowDownToLine size={13} /> Receive milled green
+                </button>
+              )}
             </div>
             <div className={css.tableWrap} style={{ maxHeight:280 }}>
               <table className={css.table}>
@@ -1382,7 +1389,7 @@ function GreenLotTable({ lots, onSell }: { lots: GreenLot[]; onSell: (g: GreenLo
                   <td className={css.tdMono}>{g.warehouse || "—"}</td>
                   <td><span className={statusBadgeClass(g.status)}>{g.status}</span></td>
                   <td>
-                    {g.status === "in-stock" && (
+                    {g.status === "in-stock" && !isViewOnly() && (
                       <button className={css.btnNew} style={{ padding:"4px 10px", fontSize:11 }} onClick={()=>onSell(g)}>
                         Sell
                       </button>
@@ -1459,9 +1466,11 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
 
       {/* Filters + Record sale */}
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
-        <button className={css.btnNew} onClick={() => setSaleDrawer(filtered.find(g=>g.status==="in-stock") ?? null)}>
-          <Plus size={13} /> Record sale ({activeSeason})
-        </button>
+        {!isViewOnly() && (
+          <button className={css.btnNew} onClick={() => setSaleDrawer(filtered.find(g=>g.status==="in-stock") ?? null)}>
+            <Plus size={13} /> Record sale ({activeSeason})
+          </button>
+        )}
         <button className={css.btnSecondary} onClick={() => setAddLotDrawer(true)}>
           <Plus size={13} /> Add lot ({activeSeason})
         </button>
@@ -1616,7 +1625,7 @@ function HillTillerTab() {
       </div>
 
       <div className={css.actionBar}>
-        <button className={css.btnNew} onClick={openAdd}><Plus size={13} /> Add Stock</button>
+        {!isViewOnly() && <button className={css.btnNew} onClick={openAdd}><Plus size={13} /> Add Stock</button>}
       </div>
 
       <div className={css.tableCard}>
@@ -1662,9 +1671,11 @@ function HillTillerTab() {
                     <td className={css.tdMono}>{l.warehouse || "—"}</td>
                     <td><span className={statusBadgeClass(l.status)}>{l.status}</span></td>
                     <td>
-                      <button className={css.btnNew} style={{ padding: "4px 10px", fontSize: 11 }} onClick={() => openEdit(l)}>
-                        Edit
-                      </button>
+                      {!isViewOnly() && (
+                        <button className={css.btnNew} style={{ padding: "4px 10px", fontSize: 11 }} onClick={() => openEdit(l)}>
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -2307,9 +2318,11 @@ function BlendsTab({ blends, greenLots, reload, setTab }: { blends: Blend[]; gre
   return (
     <div>
       <div className={css.actionBar}>
-        <button className={css.btnNew} onClick={() => { setEditBlend(null); setDrawer("builder"); }}>
-          <Plus size={13} /> New blend
-        </button>
+        {!isViewOnly() && (
+          <button className={css.btnNew} onClick={() => { setEditBlend(null); setDrawer("builder"); }}>
+            <Plus size={13} /> New blend
+          </button>
+        )}
       </div>
 
       {activeBlends.length === 0 ? (
@@ -2375,18 +2388,24 @@ function BlendsTab({ blends, greenLots, reload, setTab }: { blends: Blend[]; gre
                 </div>
 
                 <div className={css.blendCardActions}>
-                  <button className={css.btnSecondary} style={{ fontSize:12 }}
-                    onClick={() => { setEditBlend(b); setDrawer("builder"); }}>
-                    <Pencil size={11} /> Edit recipe
-                  </button>
-                  <button className={css.btnPrimary} style={{ fontSize:12 }}
-                    onClick={() => { setProduceBlend(b); setDrawer("produce"); }}>
-                    ▶ Produce batch
-                  </button>
-                  <button className={css.btnNew} style={{ fontSize:12 }}
-                    onClick={() => { setSellBlend(b); setDrawer("sell"); }}>
-                    🌍 Sell blend
-                  </button>
+                  {!isViewOnly() && (
+                    <button className={css.btnSecondary} style={{ fontSize:12 }}
+                      onClick={() => { setEditBlend(b); setDrawer("builder"); }}>
+                      <Pencil size={11} /> Edit recipe
+                    </button>
+                  )}
+                  {!isViewOnly() && (
+                    <button className={css.btnPrimary} style={{ fontSize:12 }}
+                      onClick={() => { setProduceBlend(b); setDrawer("produce"); }}>
+                      ▶ Produce batch
+                    </button>
+                  )}
+                  {!isViewOnly() && (
+                    <button className={css.btnNew} style={{ fontSize:12 }}
+                      onClick={() => { setSellBlend(b); setDrawer("sell"); }}>
+                      🌍 Sell blend
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -2843,9 +2862,11 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
             </button>
           ))}
         </div>
-        <button className={css.btnNew} onClick={()=>setSaleDrawer(true)}>
-          <Plus size={13} /> Record sale
-        </button>
+        {!isViewOnly() && (
+          <button className={css.btnNew} onClick={()=>setSaleDrawer(true)}>
+            <Plus size={13} /> Record sale
+          </button>
+        )}
       </div>
 
       <div className={css.tableCard}>
