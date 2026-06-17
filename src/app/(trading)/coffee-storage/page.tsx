@@ -42,6 +42,7 @@ type CoffeeSale = {
   green_lot_ids: string[]; kg: number; price_per_kg: number;
   currency: string; status: SaleStatus;
   incoterm: string | null; reference: string | null; notes: string | null;
+  invoice_url: string | null; customer_address: string | null;
 };
 type Blend = {
   id: string; name: string; description: string | null;
@@ -1739,6 +1740,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
 
   const [channel,   setChannel]   = useState<Channel>("exporter");
   const [customer,  setCustomer]  = useState("");
+  const [address,   setAddress]   = useState("");
   const [lotId,     setLotId]     = useState(defaultLot?.id ?? allLots[0]?.id ?? "");
   const [kg,        setKg]        = useState("");
   const [price,     setPrice]     = useState("");
@@ -1746,6 +1748,13 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
   const [ref,       setRef]       = useState("");
   const [notes,     setNotes]     = useState("");
   const [saving,    setSaving]    = useState(false);
+
+  // Invoice upload state
+  const [invoiceFile,    setInvoiceFile]    = useState<File | null>(null);
+  const [invoicePreview, setInvoicePreview] = useState<string | null>(null);
+  const [parsing,        setParsing]        = useState(false);
+  const [parseMsg,       setParseMsg]       = useState<string | null>(null);
+  const invoiceInputRef = useRef<HTMLInputElement>(null);
 
   // Set default lot once allLots loads
   useEffect(() => {
@@ -1756,6 +1765,67 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
   const revenue     = n(kg) * n(price);
   const margin      = (n(price) - n(selectedLot?.rate_per_kg ?? 0)) * n(kg);
 
+  // Handle invoice file selection + auto-parse
+  const handleInvoiceFile = async (file: File) => {
+    setInvoiceFile(file);
+    setParseMsg("Reading invoice…");
+    setParsing(true);
+
+    // Show image preview for images
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setInvoicePreview(url);
+    } else {
+      setInvoicePreview(null);
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const mediaType = file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
+
+      setParseMsg("Extracting invoice data with AI…");
+      const res = await fetch("/api/parse-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, mediaType }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        setParseMsg(`⚠ Could not parse invoice: ${err.error ?? "Unknown error"}`);
+        setParsing(false);
+        return;
+      }
+
+      const data = await res.json();
+
+      // Auto-populate fields (only if they are currently empty)
+      if (data.customer_name)  setCustomer(c  => c  || data.customer_name);
+      if (data.customer_address) setAddress(a  => a  || data.customer_address);
+      if (data.invoice_number) setRef(r  => r  || data.invoice_number);
+      if (data.quantity_kg)    setKg(k  => k  || String(data.quantity_kg));
+      if (data.price_per_kg)   setPrice(p  => p  || String(data.price_per_kg));
+
+      const populated = [
+        data.customer_name    && "customer",
+        data.customer_address && "address",
+        data.invoice_number   && "invoice #",
+        data.quantity_kg      && "qty",
+        data.price_per_kg     && "price",
+      ].filter(Boolean).join(", ");
+
+      setParseMsg(populated
+        ? `✓ Auto-filled: ${populated}. Review and adjust if needed.`
+        : "⚠ Uploaded — no fields could be extracted. Fill in manually."
+      );
+    } catch (err) {
+      setParseMsg(`⚠ Parse error: ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setParsing(false);
+    }
+  };
+
   const confirm = async () => {
     if (!customer.trim() || !lotId || !kg || !price || !date) {
       alert("Customer, lot, qty, price, and date are required."); return;
@@ -1764,11 +1834,31 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       alert(`Only ${Math.round(selectedLot.current_kg)} kg available in this lot.`); return;
     }
     setSaving(true);
+
+    // Upload invoice to Supabase Storage if one was chosen
+    let invoiceUrl: string | null = null;
+    if (invoiceFile) {
+      const ext  = invoiceFile.name.split(".").pop() ?? "bin";
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("invoices")
+        .upload(path, invoiceFile, { contentType: invoiceFile.type, upsert: false });
+      if (uploadErr) {
+        setSaving(false);
+        alert(`Invoice upload failed: ${uploadErr.message}. Sale not recorded.`);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("invoices").getPublicUrl(path);
+      invoiceUrl = urlData.publicUrl;
+    }
+
     const { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
       date, channel, customer: customer.trim(), green_lot_ids: [lotId],
       kg: n(kg), price_per_kg: n(price), currency: "INR",
       status: channel === "internal-roast" ? "transferred" : "pending",
       reference: ref || null, notes: notes || null,
+      invoice_url: invoiceUrl,
+      customer_address: address.trim() || null,
     }]).select().single();
 
     if (saleError || !sale) {
@@ -1786,7 +1876,6 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
         status: newKg <= 0 ? "depleted" : "in-stock",
       }).eq("id", lotId);
       if (deductError) {
-        // Sale was recorded but stock deduction failed — log it clearly
         console.error("Stock deduction failed after sale was recorded:", deductError);
         alert(`Sale recorded (${sale.id}) but stock deduction failed: ${deductError.message}. Please manually adjust the stock for lot ${selectedLot.lot}.`);
       }
@@ -1815,6 +1904,62 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
           </button>
         ))}
       </div>
+
+      {/* Invoice Upload */}
+      <div className={css.formGroup} style={{ marginBottom: 12 }}>
+        <label className={css.formLabel}>Upload Invoice (PDF or image) — optional</label>
+        <div
+          style={{
+            border: "2px dashed var(--t-border, #d1d5db)",
+            borderRadius: 8,
+            padding: "12px 16px",
+            cursor: "pointer",
+            background: "var(--t-surface, #f9fafb)",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+          onClick={() => invoiceInputRef.current?.click()}
+        >
+          <span style={{ fontSize: 22 }}>📎</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {invoiceFile
+              ? <span style={{ fontSize: 13, fontWeight: 600 }}>{invoiceFile.name}</span>
+              : <span style={{ fontSize: 13, color: "var(--t-muted, #6b7280)" }}>
+                  Click to attach invoice — AI will auto-fill customer, address, qty &amp; price
+                </span>
+            }
+          </div>
+          {invoiceFile && (
+            <button
+              style={{ fontSize: 11, color: "#e53e3e", border: "none", background: "none", cursor: "pointer", padding: "2px 6px" }}
+              onClick={e => { e.stopPropagation(); setInvoiceFile(null); setInvoicePreview(null); setParseMsg(null); }}
+            >✕ Remove</button>
+          )}
+        </div>
+        <input
+          ref={invoiceInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+          style={{ display: "none" }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleInvoiceFile(f); e.target.value = ""; }}
+        />
+        {parsing && (
+          <div style={{ marginTop: 6, fontSize: 12, color: "#4a90e2", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span>
+            {parseMsg}
+          </div>
+        )}
+        {!parsing && parseMsg && (
+          <div style={{ marginTop: 6, fontSize: 12, color: parseMsg.startsWith("✓") ? "#2d7a2d" : "#b45309" }}>
+            {parseMsg}
+          </div>
+        )}
+        {invoicePreview && (
+          <img src={invoicePreview} alt="Invoice preview" style={{ marginTop: 8, maxHeight: 120, maxWidth: "100%", borderRadius: 4, border: "1px solid var(--t-border, #e5e7eb)" }} />
+        )}
+      </div>
+
       <div className={css.formGrid2}>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Customer *</label>
@@ -1867,9 +2012,13 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
           <input type="date" className={css.formInput} value={date} onChange={e=>setDate(e.target.value)} />
         </div>
         <div className={css.formGroup}>
-          <label className={css.formLabel}>Reference</label>
-          <input className={css.formInput} placeholder="PO or contract #" value={ref} onChange={e=>setRef(e.target.value)} />
+          <label className={css.formLabel}>Reference / Invoice #</label>
+          <input className={css.formInput} placeholder="PO or invoice number" value={ref} onChange={e=>setRef(e.target.value)} />
         </div>
+      </div>
+      <div className={css.formGroup} style={{ marginTop:10 }}>
+        <label className={css.formLabel}>Customer Address</label>
+        <textarea className={css.formTextarea} rows={3} placeholder="Billing address" value={address} onChange={e=>setAddress(e.target.value)} />
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
