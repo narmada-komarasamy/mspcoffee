@@ -1836,9 +1836,13 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
         lotMatched            && `lot ${data.lot_number}`,
       ].filter(Boolean).join(", ");
 
+      const lotNote = data.lot_number && !lotMatched
+        ? ` (invoice says lot "${data.lot_number}" — not found in stock, please select manually)`
+        : "";
+
       setParseMsg(populated
-        ? `✓ Auto-filled: ${populated}. Review and adjust if needed.`
-        : "⚠ Uploaded — no fields could be extracted. Fill in manually."
+        ? `✓ Auto-filled: ${populated}.${lotNote} Review and adjust if needed.`
+        : `⚠ No fields extracted. Fill in manually.${data.lot_number ? ` Invoice lot: "${data.lot_number}"` : ""}`
       );
     } catch (err) {
       setParseMsg(`⚠ Parse error: ${err instanceof Error ? err.message : "Unknown"}`);

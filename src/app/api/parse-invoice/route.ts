@@ -55,14 +55,16 @@ export async function POST(req: NextRequest) {
             contentBlock,
             {
               type: 'text',
-              text: `Extract the following fields from this invoice and return ONLY valid JSON with these exact keys:
+              text: `This is a green coffee sales invoice from MSP Coffee (an Indian specialty coffee estate group based in Yercaud, Tamil Nadu).
+
+Extract the following fields and return ONLY valid JSON with these exact keys:
 {
-  "customer_name": "full company or person name of the buyer",
+  "customer_name": "full company or person name of the buyer (BILL TO / buyer party, NOT the seller MSP Coffee)",
   "customer_address": "full postal address of the buyer (multi-line as single string with \\n)",
-  "invoice_number": "invoice or order number",
-  "quantity_kg": <numeric kg sold, null if not found or unclear>,
-  "price_per_kg": <numeric INR price per kg, null if not found or unclear>,
-  "lot_number": "the green coffee lot number or lot ID referenced on the invoice (e.g. '48', 'LOT-48', 'G-048'), null if not found"
+  "invoice_number": "invoice or order reference number (e.g. MSP/SI/26/278)",
+  "quantity_kg": <numeric total kg of green coffee sold, null if not found>,
+  "price_per_kg": <numeric INR price per kg, null if not found>,
+  "lot_number": "the green coffee lot number from the product/item description line — this is typically a 2-4 digit number like '202' or '48' appearing next to the estate name (e.g. 'Moganad Estate', 'Stanmore Estate', 'Orchardale Estate', 'Bison Valley Estate', 'Hidden Falls Estate') and process type (Natural, Washed, etc.). Look in the line item description, NOT in addresses, page numbers, bag counts, or reference numbers. Return ONLY the numeric lot identifier. null if not found."
 }
 
 Rules:
@@ -70,9 +72,8 @@ Rules:
 - If a field cannot be found, use null.
 - quantity_kg and price_per_kg must be numbers (not strings).
 - If the invoice uses a different unit (e.g. grams, bags), convert to kg.
-- customer_name is the BUYER / BILL TO party, not the seller.
-- lot_number: look for terms like "Lot", "Lot No", "Lot #", "Lot Number", "Green Lot", "Batch", "Item Code" near the product description. Return only the numeric or alphanumeric identifier (e.g. "48" or "202"), not the full product description.
-- If the invoice is in a language other than English, translate the field values to English.`,
+- For lot_number: the product line will typically read something like "Green Coffee - Lot 202 - Moganad Estate - Natural" or "Green Coffee Beans, Lot No. 48, Orchardale Estate, Washed". Extract ONLY the lot number digits (e.g. "202" or "48"). Do NOT confuse with bag quantity, page numbers, HSN codes, or reference numbers.
+- If the invoice is in a language other than English, translate field values to English.`,
             },
           ],
         },
