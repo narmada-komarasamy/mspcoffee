@@ -16,7 +16,7 @@ import css from "./coffee-storage.module.css";
 type Process = "Bag Natural" | "Regular Washed" | "Watermelon Washed";
 type BatchStatus = "yard" | "at-mill" | "milled" | "depleted";
 type GreenStatus  = "in-stock" | "reserved" | "depleted";
-type SaleStatus   = "pending" | "shipped" | "transferred";
+type SaleStatus   = "pending" | "shipped" | "transferred" | "cancelled";
 type BlendStatus  = "draft" | "active" | "retired";
 type Channel      = "exporter" | "cafe" | "internal-roast" | "retail";
 type AuditAction  = "batch-created" | "sent-to-mill" | "milling-return" | "weight-adjust" | "transfer" | "sale-created" | "blend-created" | "blend-produced";
@@ -103,7 +103,7 @@ function statusBadgeClass(s: string) {
   const map: Record<string, string> = {
     yard: css.badgeYard, "at-mill": css.badgeAtMill, milled: css.badgeMilled, depleted: css.badgeDepleted,
     "in-stock": css.badgeInStock, reserved: css.badgeReserved,
-    pending: css.badgePending, shipped: css.badgeShipped, transferred: css.badgeTransferred,
+    pending: css.badgePending, shipped: css.badgeShipped, transferred: css.badgeTransferred, cancelled: css.badgeDepleted,
     draft: css.badgeDraft, active: css.badgeActive, retired: css.badgeRetired,
   };
   return `${css.badge} ${map[s] ?? ""}`;
@@ -150,6 +150,12 @@ function getUser() {
     const s = localStorage.getItem("msp_user");
     return s ? JSON.parse(s)?.name ?? "User" : "User";
   } catch { return "User"; }
+}
+function getUserRole(): string {
+  try {
+    const s = localStorage.getItem("msp_user");
+    return s ? JSON.parse(s)?.role ?? "worker" : "worker";
+  } catch { return "worker"; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2684,21 +2690,78 @@ function ProduceBlendDrawer({ blend, greenLots, onClose, reload }: {
 function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; greenLots: GreenLot[]; reload: () => void; setTab: (t: Tab) => void }) {
   const [channelFilter, setChannelFilter] = useState<Channel | "all">("all");
   const [saleDrawer, setSaleDrawer] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const isAdmin = getUserRole() === "admin";
 
   const channels: Channel[] = ["exporter", "cafe", "internal-roast", "retail"];
 
   const channelStats = useMemo(() => {
     return channels.map(ch => ({
       ch,
-      kg:       sales.filter(s=>s.channel===ch).reduce((a,s)=>a+n(s.kg),0),
-      orders:   sales.filter(s=>s.channel===ch).length,
-      revenue:  sales.filter(s=>s.channel===ch).reduce((a,s)=>a+n(s.kg)*n(s.price_per_kg),0),
+      kg:       sales.filter(s=>s.channel===ch && s.status!=="cancelled").reduce((a,s)=>a+n(s.kg),0),
+      orders:   sales.filter(s=>s.channel===ch && s.status!=="cancelled").length,
+      revenue:  sales.filter(s=>s.channel===ch && s.status!=="cancelled").reduce((a,s)=>a+n(s.kg)*n(s.price_per_kg),0),
     }));
   }, [sales]);
 
   const filtered = channelFilter === "all" ? sales : sales.filter(s=>s.channel===channelFilter);
 
   const chanLabel = (ch: string) => ({ exporter:"Exporter", cafe:"Local Café", "internal-roast":"Roastery", retail:"Retail" }[ch] ?? ch);
+
+  // Restore stock for a sale's lots back to green_lots (or hilltiller_stock)
+  const restoreStock = async (sale: CoffeeSale) => {
+    for (const lotId of sale.green_lot_ids) {
+      // Try green_lots first
+      const greenLot = greenLots.find(g => g.id === lotId);
+      if (greenLot) {
+        const restoredKg = greenLot.current_kg + n(sale.kg);
+        await supabase.from("green_lots").update({
+          current_kg: restoredKg,
+          status: "in-stock",
+        }).eq("id", lotId);
+      } else {
+        // Try hilltiller_stock
+        const { data: htLot } = await supabase.from("hilltiller_stock").select("current_kg").eq("id", lotId).single();
+        if (htLot) {
+          const restoredKg = n(htLot.current_kg) + n(sale.kg);
+          await supabase.from("hilltiller_stock").update({
+            current_kg: restoredKg,
+            status: "in-stock",
+          }).eq("id", lotId);
+        }
+      }
+    }
+  };
+
+  const handleCancel = async (sale: CoffeeSale) => {
+    if (sale.status === "cancelled") return;
+    if (!confirm(`Cancel sale ${sale.id} (${Math.round(n(sale.kg))} kg → ${sale.customer})?\n\nThis will restore the stock to the green store.`)) return;
+    setActionLoading(sale.id);
+    const { error } = await supabase.from("coffee_sales").update({ status: "cancelled" }).eq("id", sale.id);
+    if (error) { alert(`Failed to cancel: ${error.message}`); setActionLoading(null); return; }
+    await restoreStock(sale);
+    await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "weight-adjust",
+      entity: sale.id, before: sale.status, after: "cancelled",
+      note: `Cancelled by admin — ${Math.round(n(sale.kg))} kg restored to stock` });
+    setActionLoading(null);
+    reload();
+  };
+
+  const handleDelete = async (sale: CoffeeSale) => {
+    if (!confirm(`PERMANENTLY DELETE sale ${sale.id} (${Math.round(n(sale.kg))} kg → ${sale.customer})?\n\nThis cannot be undone. Stock will be restored if not already cancelled.`)) return;
+    setActionLoading(sale.id + "_del");
+    // Restore stock only if it wasn't already cancelled (cancelled already restored stock)
+    if (sale.status !== "cancelled") {
+      await restoreStock(sale);
+    }
+    const { error } = await supabase.from("coffee_sales").delete().eq("id", sale.id);
+    if (error) { alert(`Failed to delete: ${error.message}`); setActionLoading(null); return; }
+    await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "weight-adjust",
+      entity: sale.id, before: sale.status, after: "deleted",
+      note: `Deleted by admin — ${Math.round(n(sale.kg))} kg restored to stock` });
+    setActionLoading(null);
+    reload();
+  };
 
   return (
     <div>
@@ -2737,30 +2800,65 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
               <th>Lots</th><th className={css.tdRight}>Qty</th>
               <th className={css.tdRight}>Price/kg</th><th className={css.tdRight}>Total</th>
               <th>Ref</th><th>Status</th>
+              {isAdmin && <th style={{ textAlign:"center" }}>Actions</th>}
             </tr></thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={10} className={css.empty}>No sales found.</td></tr>
-              ) : filtered.map(s => (
-                <tr key={s.id}>
-                  <td className={css.tdMono} style={{ fontWeight:600 }}>{s.id}</td>
-                  <td className={css.tdMono}>{fmtDate(s.date)}</td>
-                  <td><span className={channelBadgeClass(s.channel)}>{channelLabel(s.channel)}</span></td>
-                  <td>{s.customer}</td>
-                  <td className={css.tdMono} style={{ fontSize:10 }}>
-                    {s.green_lot_ids.slice(0,2).map(id => {
-                      const lot = greenLots.find(g => g.id === id);
-                      return lot ? `${lot.lot} · ${lot.field} · ${lot.process}` : id;
-                    }).join(", ")}
-                    {s.green_lot_ids.length > 2 ? ` +${s.green_lot_ids.length - 2}` : ""}
-                  </td>
-                  <td className={css.tdNum}>{Math.round(n(s.kg)).toLocaleString("en-IN")} kg</td>
-                  <td className={css.tdNum}>₹{n(s.price_per_kg).toFixed(2)}</td>
-                  <td className={css.tdNum} style={{ color:"#f5a623" }}>{fmtINR(n(s.kg)*n(s.price_per_kg))}</td>
-                  <td className={css.tdMono} style={{ fontSize:10 }}>{s.reference ?? "—"}</td>
-                  <td><span className={statusBadgeClass(s.status)}>{s.status}</span></td>
-                </tr>
-              ))}
+                <tr><td colSpan={isAdmin ? 11 : 10} className={css.empty}>No sales found.</td></tr>
+              ) : filtered.map(s => {
+                const isCancelled = s.status === "cancelled";
+                const isLoading   = actionLoading === s.id || actionLoading === s.id + "_del";
+                return (
+                  <tr key={s.id} style={isCancelled ? { opacity: 0.5 } : undefined}>
+                    <td className={css.tdMono} style={{ fontWeight:600 }}>{s.id}</td>
+                    <td className={css.tdMono}>{fmtDate(s.date)}</td>
+                    <td><span className={channelBadgeClass(s.channel)}>{channelLabel(s.channel)}</span></td>
+                    <td style={isCancelled ? { textDecoration:"line-through" } : undefined}>{s.customer}</td>
+                    <td className={css.tdMono} style={{ fontSize:10 }}>
+                      {s.green_lot_ids.slice(0,2).map(id => {
+                        const lot = greenLots.find(g => g.id === id);
+                        return lot ? `${lot.lot} · ${lot.field} · ${lot.process}` : id;
+                      }).join(", ")}
+                      {s.green_lot_ids.length > 2 ? ` +${s.green_lot_ids.length - 2}` : ""}
+                    </td>
+                    <td className={css.tdNum}>{Math.round(n(s.kg)).toLocaleString("en-IN")} kg</td>
+                    <td className={css.tdNum}>₹{n(s.price_per_kg).toFixed(2)}</td>
+                    <td className={css.tdNum} style={{ color: isCancelled ? "#999" : "#f5a623" }}>{fmtINR(n(s.kg)*n(s.price_per_kg))}</td>
+                    <td className={css.tdMono} style={{ fontSize:10 }}>{s.reference ?? "—"}</td>
+                    <td><span className={statusBadgeClass(s.status)}>{s.status}</span></td>
+                    {isAdmin && (
+                      <td style={{ textAlign:"center", whiteSpace:"nowrap" }}>
+                        {!isCancelled && (
+                          <button
+                            disabled={isLoading}
+                            onClick={() => handleCancel(s)}
+                            style={{
+                              fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
+                              border: "1px solid #b45309", color: "#b45309", background: "transparent",
+                              cursor: "pointer", marginRight: 4, opacity: isLoading ? 0.5 : 1,
+                            }}
+                            title="Cancel sale and restore stock"
+                          >
+                            {actionLoading === s.id ? "…" : "Cancel"}
+                          </button>
+                        )}
+                        <button
+                          disabled={isLoading}
+                          onClick={() => handleDelete(s)}
+                          style={{
+                            fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
+                            border: "1px solid #e53e3e", color: "#e53e3e", background: "transparent",
+                            cursor: "pointer", opacity: isLoading ? 0.5 : 1,
+                          }}
+                          title="Permanently delete this sale"
+                        >
+                          {actionLoading === s.id + "_del" ? "…" : "Delete"}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
