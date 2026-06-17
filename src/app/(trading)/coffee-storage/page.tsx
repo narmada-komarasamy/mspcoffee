@@ -2598,7 +2598,13 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
                   <td className={css.tdMono}>{fmtDate(s.date)}</td>
                   <td><span className={channelBadgeClass(s.channel)}>{channelLabel(s.channel)}</span></td>
                   <td>{s.customer}</td>
-                  <td className={css.tdMono} style={{ fontSize:10 }}>{s.green_lot_ids.slice(0,2).join(", ")}{s.green_lot_ids.length>2?` +${s.green_lot_ids.length-2}`:""}</td>
+                  <td className={css.tdMono} style={{ fontSize:10 }}>
+                    {s.green_lot_ids.slice(0,2).map(id => {
+                      const lot = greenLots.find(g => g.id === id);
+                      return lot ? `${lot.lot} · ${lot.field}` : id;
+                    }).join(", ")}
+                    {s.green_lot_ids.length > 2 ? ` +${s.green_lot_ids.length - 2}` : ""}
+                  </td>
                   <td className={css.tdNum}>{Math.round(n(s.kg)).toLocaleString("en-IN")} kg</td>
                   <td className={css.tdNum}>₹{n(s.price_per_kg).toFixed(2)}</td>
                   <td className={css.tdNum} style={{ color:"#f5a623" }}>{fmtINR(n(s.kg)*n(s.price_per_kg))}</td>
