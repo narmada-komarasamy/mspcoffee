@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Stanmore Estate — Pepper Yield Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f0;color:#1a2e1a;min-height:100vh}
+
+  /* HEADER */
+  .header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(0,0,0,.35);print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .header-left h1{font-size:1.45rem;font-weight:700;letter-spacing:.3px}
+  .header-left p{font-size:.82rem;opacity:.8;margin-top:2px}
+  .season-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 14px;font-size:.78rem;font-weight:600;letter-spacing:.5px;margin-left:14px;vertical-align:middle}
+  .header-right{display:flex;gap:10px}
+  .btn{padding:8px 18px;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+  .btn-upload{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)}
+  .btn-upload:hover{background:rgba(255,255,255,.32)}
+  .btn-print{background:#c87941;color:#fff}
+  .btn-print:hover{background:#a8612f}
+
+  /* KPI BAR */
+  .kpi-bar{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;padding:18px 28px;background:#fff;border-bottom:2px solid #d4e4d4}
+  .kpi-card{background:#f7fbf7;border:1px solid #d0e8d0;border-radius:10px;padding:12px 14px;text-align:center}
+  .kpi-card.accent{background:#fdf5ee;border-color:#e8c49a}
+  .kpi-label{font-size:.68rem;font-weight:600;color:#4a7c4a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .kpi-card.accent .kpi-label{color:#c87941}
+  .kpi-value{font-size:1.35rem;font-weight:700;color:#1b4a1b}
+  .kpi-card.accent .kpi-value{color:#c87941}
+  .kpi-unit{font-size:.65rem;color:#6a8a6a;margin-top:1px}
+
+  /* MAIN CONTENT */
+  .main{padding:22px 28px}
+
+  /* CHARTS */
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:24px}
+  .chart-card{background:#fff;border:1px solid #d0e8d0;border-radius:12px;padding:18px;box-shadow:0 2px 6px rgba(27,74,27,.07)}
+  .chart-title{font-size:.82rem;font-weight:700;color:#1b4a1b;margin-bottom:12px;text-transform:uppercase;letter-spacing:.4px}
+  .chart-wrap{position:relative;height:220px}
+
+  /* TABLE */
+  .section-title{font-size:1rem;font-weight:700;color:#1b4a1b;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .table-controls{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .search-input{padding:7px 14px;border:1px solid #c0d8c0;border-radius:8px;font-size:.82rem;width:260px;outline:none}
+  .search-input:focus{border-color:#2d6e2d;box-shadow:0 0 0 2px rgba(45,110,45,.15)}
+  .table-wrap{overflow-x:auto;border-radius:12px;box-shadow:0 2px 8px rgba(27,74,27,.08)}
+  table{width:100%;border-collapse:collapse;background:#fff;font-size:.82rem}
+  th{background:#1b4a1b;color:#fff;padding:10px 12px;text-align:left;font-size:.73rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none}
+  th:hover{background:#2d6e2d}
+  th .sort-icon{margin-left:4px;opacity:.6}
+  td{padding:9px 12px;border-bottom:1px solid #e8f0e8;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f2f8f2}
+  .dry-actual-cell{cursor:pointer;color:#c87941;font-weight:600}
+  .dry-actual-cell:hover{text-decoration:underline}
+  .edit-inline{display:flex;align-items:center;gap:5px}
+  .edit-inline input{width:90px;padding:3px 7px;border:2px solid #c87941;border-radius:5px;font-size:.82rem;outline:none}
+  .btn-save-cell{padding:3px 8px;background:#c87941;color:#fff;border:none;border-radius:5px;font-size:.75rem;cursor:pointer}
+  .btn-cancel-cell{padding:3px 8px;background:#aaa;color:#fff;border:none;border-radius:5px;font-size:.75rem;cursor:pointer}
+  .field-badge{display:inline-block;background:#e8f5e8;border:1px solid #b0d4b0;border-radius:5px;padding:1px 7px;font-size:.72rem;color:#1b4a1b;font-weight:600}
+
+  /* PROGRESS CARDS */
+  .progress-section{margin-top:28px}
+  .progress-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:14px}
+  .progress-card{background:#fff;border:1px solid #d0e8d0;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(27,74,27,.06)}
+  .progress-card-name{font-size:.78rem;font-weight:700;color:#1b4a1b;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .progress-label{font-size:.67rem;color:#4a7c4a;margin-bottom:3px;font-weight:600}
+  .progress-bar-bg{height:8px;background:#e4f0e4;border-radius:4px;overflow:hidden;margin-bottom:8px}
+  .progress-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+  .progress-bar-fill.green{background:#2d6e2d}
+  .progress-bar-fill.dry{background:#c87941}
+  .progress-pct{font-size:.7rem;color:#666;text-align:right;margin-top:-6px;margin-bottom:6px}
+
+  /* DOCUMENT PANEL */
+  .doc-panel{background:#fff;border:1px solid #d0e8d0;border-radius:12px;margin-top:24px;overflow:hidden;box-shadow:0 2px 6px rgba(27,74,27,.07)}
+  .doc-panel-header{background:#f2f8f2;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid #d0e8d0}
+  .doc-panel-title{font-size:.88rem;font-weight:700;color:#1b4a1b}
+  .doc-panel-toggle{font-size:1rem;color:#2d6e2d;transition:transform .3s}
+  .doc-panel-body{padding:18px;display:none}
+  .doc-panel-body.open{display:block}
+  .drop-zone{border:2px dashed #b0d4b0;border-radius:10px;padding:28px;text-align:center;color:#4a7c4a;cursor:pointer;transition:all .2s;margin-bottom:14px}
+  .drop-zone:hover,.drop-zone.drag-over{border-color:#2d6e2d;background:#f2f8f2}
+  .drop-zone-icon{font-size:2rem;margin-bottom:6px}
+  .drop-zone p{font-size:.82rem}
+  .doc-meta{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .doc-meta select,.doc-meta input,.doc-meta textarea{padding:7px 10px;border:1px solid #c0d8c0;border-radius:7px;font-size:.8rem;outline:none}
+  .doc-meta select:focus,.doc-meta input:focus,.doc-meta textarea:focus{border-color:#2d6e2d}
+  .doc-meta textarea{resize:vertical;min-height:60px;flex:1}
+  .doc-tag-select{min-width:160px}
+  .file-list{margin-top:10px}
+  .file-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid #e0eee0;border-radius:8px;margin-bottom:7px;background:#f9fdf9}
+  .file-item-name{font-size:.8rem;color:#1b4a1b;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .file-item-tag{font-size:.7rem;padding:2px 8px;border-radius:10px;background:#e8f5e8;color:#2d6e2d;border:1px solid #b0d4b0;margin:0 8px;white-space:nowrap}
+  .file-item-tag.actual{background:#fdf5ee;color:#c87941;border-color:#e8c49a}
+  .file-item-tag.other{background:#f0f0fa;color:#5a5a9a;border-color:#c0c0e8}
+  .file-item-actions{display:flex;gap:6px}
+  .file-item-actions a,.file-item-actions button{padding:3px 9px;font-size:.72rem;border-radius:5px;border:none;cursor:pointer}
+  .btn-dl{background:#e8f5e8;color:#1b4a1b}
+  .btn-dl:hover{background:#c8e8c8}
+  .btn-del{background:#fdecea;color:#c0392b}
+  .btn-del:hover{background:#f5c6c2}
+  .file-notes{font-size:.72rem;color:#6a8a6a;margin-top:2px}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;right:24px;background:#1b4a1b;color:#fff;padding:11px 20px;border-radius:10px;font-size:.82rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transform:translateY(10px);transition:all .3s;z-index:9999;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+
+  /* FOOTER */
+  .footer{background:#1b4a1b;color:rgba(255,255,255,.7);text-align:center;padding:12px;font-size:.75rem;margin-top:32px}
+
+  @media print{
+    .btn,.table-controls,.doc-panel,.toast{display:none!important}
+    .header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .kpi-bar{grid-template-columns:repeat(4,1fr)}
+    .charts-grid{grid-template-columns:1fr 1fr}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Stanmore Estate — Pepper Yield Dashboard <span class="season-badge">2024–2025</span></h1>
+    <p>MSP Coffee · Season Harvest Tracking · 21 Fields · 170 Total Acres</p>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-upload" onclick="toggleDocPanel()">&#128196; Upload Docs</button>
+    <button class="btn btn-print" onclick="window.print()">&#128424; Print / PDF</button>
+  </div>
+</div>
+
+<!-- KPI BAR -->
+<div class="kpi-bar" id="kpiBar">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Acres</div>
+    <div class="kpi-value" id="kpiAcres">170</div>
+    <div class="kpi-unit">acres</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Yielding Vines</div>
+    <div class="kpi-value" id="kpiVines">0</div>
+    <div class="kpi-unit">vines</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Green Est</div>
+    <div class="kpi-value" id="kpiGreenEst">0</div>
+    <div class="kpi-unit">kg</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Green Actual</div>
+    <div class="kpi-value" id="kpiGreenAct">0</div>
+    <div class="kpi-unit">kg</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Achievement Green</div>
+    <div class="kpi-value" id="kpiAchGreen">—</div>
+    <div class="kpi-unit">% of estimate</div>
+  </div>
+  <div class="kpi-card accent">
+    <div class="kpi-label">Dry Est</div>
+    <div class="kpi-value" id="kpiDryEst">0</div>
+    <div class="kpi-unit">kg</div>
+  </div>
+  <div class="kpi-card accent">
+    <div class="kpi-label">Dry Actual</div>
+    <div class="kpi-value" id="kpiDryAct">0</div>
+    <div class="kpi-unit">kg</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">&#127807; Acres per Field</div>
+      <div class="chart-wrap"><canvas id="chartAcres"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">&#127807; Green Est vs Actual (kg)</div>
+      <div class="chart-wrap"><canvas id="chartGreen"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title" style="color:#c87941">&#9632; Dry Est vs Actual (kg)</div>
+      <div class="chart-wrap"><canvas id="chartDry"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="section-title">&#128203; Field-level Yield Data</div>
+  <div class="table-controls">
+    <input class="search-input" id="searchInput" type="text" placeholder="Search fields…" oninput="renderTable()"/>
+    <span style="font-size:.78rem;color:#6a8a6a">Click <b>Dry Actual</b> cell to enter data</span>
+  </div>
+  <div class="table-wrap">
+    <table id="yieldTable">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">S.No <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(1)">Field Name <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(2)">Acres <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(3)">Vines <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(4)">Green Est (kg) <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(5)">Dry Est (kg) <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(6)">Green Actual (kg) <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(7)">Dry Actual (kg) <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(8)">kg/Acre (Est) <span class="sort-icon">&#8645;</span></th>
+          <th onclick="sortTable(9)">Green % <span class="sort-icon">&#8645;</span></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- PROGRESS CARDS -->
+  <div class="progress-section">
+    <div class="section-title">&#128200; Field Progress Overview</div>
+    <div class="progress-grid" id="progressGrid"></div>
+  </div>
+
+  <!-- DOCUMENT PANEL -->
+  <div class="doc-panel" id="docPanel">
+    <div class="doc-panel-header" onclick="toggleDocPanel()">
+      <div class="doc-panel-title">&#128196; Document Upload &amp; Storage</div>
+      <div class="doc-panel-toggle" id="docToggleIcon">&#9660;</div>
+    </div>
+    <div class="doc-panel-body" id="docPanelBody">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="drop-zone-icon">&#128196;</div>
+        <p><b>Click or drag &amp; drop</b> to upload documents</p>
+        <p style="font-size:.73rem;margin-top:4px;color:#7a9c7a">PDF, Excel, Images, Word — any format accepted</p>
+      </div>
+      <input type="file" id="fileInput" style="display:none" multiple onchange="handleFiles(this.files)"/>
+      <div class="doc-meta">
+        <select id="docTag" class="doc-tag-select">
+          <option value="Estimate">Estimate</option>
+          <option value="Actual">Actual</option>
+          <option value="Other">Other</option>
+        </select>
+        <textarea id="docNotes" placeholder="Notes (optional)…"></textarea>
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer" id="mainFooter">
+  Stanmore Estate · MSP Coffee · Pepper Harvest 2024–2025 · Total Acres: 170 · Dry Actual: <span id="footerDryAct">0</span> kg
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const FIELDS = [
+  {sno:1,  name:'KEELISH',               acres:13 },
+  {sno:2,  name:'MELISH',                acres:13 },
+  {sno:3,  name:'THIRUDAN THUNDU',       acres:5  },
+  {sno:4,  name:'YERAKATHUPUTHU KADU',   acres:14 },
+  {sno:5,  name:'THANDI PADI',           acres:6  },
+  {sno:6,  name:'LEKLAR',                acres:13 },
+  {sno:7,  name:'PATTIPADIAN THUNDU',    acres:5  },
+  {sno:8,  name:'YERIPUDHU KADU',        acres:15 },
+  {sno:9,  name:'BUNGALOW THUNDU',       acres:5  },
+  {sno:10, name:'NAGALUR THUNDU',        acres:11 },
+  {sno:11, name:'PELAMARA THUNDU',       acres:7  },
+  {sno:12, name:'PIDARI KOIL',           acres:11 },
+  {sno:13, name:'VELLAMANIKADU',         acres:5  },
+  {sno:14, name:'SHAIB THUNDU',          acres:2  },
+  {sno:15, name:'KUDURA PATTI',          acres:6  },
+  {sno:16, name:'THEERTHAN THUNDU',      acres:8  },
+  {sno:17, name:'KERAMBU KADU',          acres:4  },
+  {sno:18, name:'VALA KADU',             acres:4  },
+  {sno:19, name:'PANJU KADU',            acres:9  },
+  {sno:20, name:'PATTI THUNDU',          acres:7  },
+  {sno:21, name:'VALAKODAVU',            acres:7  },
+];
+
+const LS_DRY  = 'stanmore_dry_actuals_2425';
+const LS_DOCS = 'stanmore_docs_2425';
+
+// all yield data fields are 0
+FIELDS.forEach(f => {
+  f.vines    = 0;
+  f.greenEst = 0;
+  f.dryEst   = 0;
+  f.greenAct = 0;
+});
+
+let dryActuals = {};
+try { dryActuals = JSON.parse(localStorage.getItem(LS_DRY) || '{}'); } catch(e){}
+
+let docs = [];
+try { docs = JSON.parse(localStorage.getItem(LS_DOCS) || '[]'); } catch(e){}
+
+// ─── SORT STATE ─────────────────────────────────────────────────────────────
+let sortCol = 0, sortDir = 1;
+
+function getData() {
+  return FIELDS.map(f => ({
+    ...f,
+    dryAct: parseFloat(dryActuals[f.sno] || 0),
+  }));
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  renderTable();
+}
+
+// ─── KPI ─────────────────────────────────────────────────────────────────────
+function updateKPI() {
+  const data = getData();
+  const totGreenEst = data.reduce((s,f) => s+f.greenEst, 0);
+  const totGreenAct = data.reduce((s,f) => s+f.greenAct, 0);
+  const totDryEst   = data.reduce((s,f) => s+f.dryEst, 0);
+  const totDryAct   = data.reduce((s,f) => s+f.dryAct, 0);
+  const totVines    = data.reduce((s,f) => s+f.vines, 0);
+
+  document.getElementById('kpiVines').textContent    = totVines.toLocaleString();
+  document.getElementById('kpiGreenEst').textContent = totGreenEst.toLocaleString();
+  document.getElementById('kpiGreenAct').textContent = totGreenAct.toLocaleString();
+  document.getElementById('kpiDryEst').textContent   = totDryEst.toLocaleString();
+  document.getElementById('kpiDryAct').textContent   = totDryAct.toLocaleString();
+  document.getElementById('kpiAchGreen').textContent = totGreenEst > 0
+    ? (totGreenAct/totGreenEst*100).toFixed(1)+'%'
+    : '—';
+  document.getElementById('footerDryAct').textContent = totDryAct.toLocaleString();
+}
+
+// ─── TABLE ───────────────────────────────────────────────────────────────────
+function renderTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let data = getData().filter(f => f.name.toLowerCase().includes(q) || String(f.sno).includes(q));
+
+  const colKeys = ['sno','name','acres','vines','greenEst','dryEst','greenAct','dryAct',
+    f => f.acres > 0 ? (f.dryEst/f.acres).toFixed(1) : '0',
+    f => f.greenEst > 0 ? (f.greenAct/f.greenEst*100).toFixed(1)+'%' : '—'
+  ];
+
+  data.sort((a,b) => {
+    const col = colKeys[sortCol];
+    const va = typeof col === 'function' ? parseFloat(col(a))||0 : a[col];
+    const vb = typeof col === 'function' ? parseFloat(col(b))||0 : b[col];
+    if (typeof va === 'string' && typeof vb === 'string') return va.localeCompare(vb)*sortDir;
+    return (va-vb)*sortDir;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  data.forEach(f => {
+    const kgAcre = f.acres > 0 ? (f.dryEst/f.acres).toFixed(1) : '0';
+    const greenPct = f.greenEst > 0 ? (f.greenAct/f.greenEst*100).toFixed(1)+'%' : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${f.sno}</td>
+      <td><span class="field-badge">${f.name}</span></td>
+      <td>${f.acres}</td>
+      <td>${f.vines.toLocaleString()}</td>
+      <td>${f.greenEst.toLocaleString()}</td>
+      <td>${f.dryEst.toLocaleString()}</td>
+      <td>${f.greenAct.toLocaleString()}</td>
+      <td class="dry-actual-cell" id="dryCell-${f.sno}" onclick="editDryActual(${f.sno})">${f.dryAct.toLocaleString()}</td>
+      <td>${kgAcre}</td>
+      <td>${greenPct}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function editDryActual(sno) {
+  const cell = document.getElementById('dryCell-'+sno);
+  const current = parseFloat(dryActuals[sno] || 0);
+  cell.innerHTML = `<div class="edit-inline">
+    <input type="number" id="editInput-${sno}" value="${current}" min="0" step="0.01"/>
+    <button class="btn-save-cell" onclick="saveDryActual(${sno})">Save</button>
+    <button class="btn-cancel-cell" onclick="renderTable()">Cancel</button>
+  </div>`;
+  const inp = document.getElementById('editInput-'+sno);
+  inp.focus();
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveDryActual(sno);
+    if (e.key === 'Escape') renderTable();
+  });
+}
+
+function saveDryActual(sno) {
+  const val = parseFloat(document.getElementById('editInput-'+sno).value) || 0;
+  dryActuals[sno] = val;
+  localStorage.setItem(LS_DRY, JSON.stringify(dryActuals));
+  updateKPI();
+  renderTable();
+  updateCharts();
+  renderProgress();
+  showToast('Dry Actual saved for field #'+sno);
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+let chartAcres, chartGreen, chartDry;
+
+const FIELD_LABELS = FIELDS.map(f => f.name.length > 14 ? f.name.slice(0,12)+'…' : f.name);
+const FULL_LABELS  = FIELDS.map(f => f.name);
+
+function initCharts() {
+  const data = getData();
+
+  const acresData  = data.map(f => f.acres);
+  const greenEstD  = data.map(f => f.greenEst);
+  const greenActD  = data.map(f => f.greenAct);
+  const dryEstD    = data.map(f => f.dryEst);
+  const dryActD    = data.map(f => f.dryAct);
+
+  const sharedOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>[FULL_LABELS[i[0].dataIndex]]}}},
+    scales:{
+      x:{ticks:{font:{size:8},maxRotation:90,color:'#4a7c4a'},grid:{display:false}},
+      y:{ticks:{font:{size:8},color:'#4a7c4a'},grid:{color:'#e8f0e8'}}
+    }
+  };
+
+  chartAcres = new Chart(document.getElementById('chartAcres'), {
+    type:'bar',
+    data:{
+      labels:FIELD_LABELS,
+      datasets:[{data:acresData,backgroundColor:'#2d6e2d99',borderColor:'#1b4a1b',borderWidth:1,borderRadius:3}]
+    },
+    options:{...sharedOpts, plugins:{...sharedOpts.plugins,legend:{display:false}}}
+  });
+
+  chartGreen = new Chart(document.getElementById('chartGreen'), {
+    type:'bar',
+    data:{
+      labels:FIELD_LABELS,
+      datasets:[
+        {label:'Est',data:greenEstD,backgroundColor:'#4a9a4a88',borderColor:'#2d6e2d',borderWidth:1,borderRadius:2},
+        {label:'Actual',data:greenActD,backgroundColor:'#1b4a1bcc',borderColor:'#1b4a1b',borderWidth:1,borderRadius:2}
+      ]
+    },
+    options:{...sharedOpts,plugins:{...sharedOpts.plugins,legend:{display:true,labels:{font:{size:10},color:'#1b4a1b'}}}}
+  });
+
+  chartDry = new Chart(document.getElementById('chartDry'), {
+    type:'bar',
+    data:{
+      labels:FIELD_LABELS,
+      datasets:[
+        {label:'Est',data:dryEstD,backgroundColor:'#e8c49a88',borderColor:'#c87941',borderWidth:1,borderRadius:2},
+        {label:'Actual',data:dryActD,backgroundColor:'#c87941cc',borderColor:'#a8612f',borderWidth:1,borderRadius:2}
+      ]
+    },
+    options:{...sharedOpts,plugins:{...sharedOpts.plugins,legend:{display:true,labels:{font:{size:10},color:'#c87941'}}}}
+  });
+}
+
+function updateCharts() {
+  const data = getData();
+  chartDry.data.datasets[1].data = data.map(f => f.dryAct);
+  chartGreen.data.datasets[1].data = data.map(f => f.greenAct);
+  chartDry.update();
+  chartGreen.update();
+}
+
+// ─── PROGRESS CARDS ─────────────────────────────────────────────────────────
+function renderProgress() {
+  const data = getData();
+  const grid = document.getElementById('progressGrid');
+  grid.innerHTML = '';
+  data.forEach(f => {
+    const greenPct = f.greenEst > 0 ? Math.min(100,(f.greenAct/f.greenEst*100)) : 0;
+    const dryPct   = f.dryEst   > 0 ? Math.min(100,(f.dryAct/f.dryEst*100))    : 0;
+    const div = document.createElement('div');
+    div.className = 'progress-card';
+    div.innerHTML = `
+      <div class="progress-card-name" title="${f.name}">${f.sno}. ${f.name}</div>
+      <div class="progress-label">Green Yield <span style="float:right;color:#1b4a1b">${f.greenAct}/${f.greenEst} kg</span></div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill green" style="width:${greenPct}%"></div></div>
+      <div class="progress-pct">${greenPct.toFixed(0)}%</div>
+      ${f.dryAct > 0 ? `
+      <div class="progress-label" style="color:#c87941">Dry Yield <span style="float:right;color:#c87941">${f.dryAct}/${f.dryEst} kg</span></div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill dry" style="width:${dryPct}%"></div></div>
+      <div class="progress-pct" style="color:#c87941">${dryPct.toFixed(0)}%</div>
+      ` : ''}
+    `;
+    grid.appendChild(div);
+  });
+}
+
+// ─── DOCUMENT PANEL ──────────────────────────────────────────────────────────
+let panelOpen = false;
+
+function toggleDocPanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('docPanelBody').classList.toggle('open', panelOpen);
+  document.getElementById('docToggleIcon').style.transform = panelOpen ? 'rotate(180deg)' : '';
+  if (panelOpen) renderFileList();
+}
+
+function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function onDragLeave(e) { document.getElementById('dropZone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+}
+
+function handleFiles(files) {
+  const tag   = document.getElementById('docTag').value;
+  const notes = document.getElementById('docNotes').value;
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      docs.push({
+        id: Date.now()+Math.random(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        tag,
+        notes,
+        dataUrl: e.target.result,
+        date: new Date().toLocaleString()
+      });
+      localStorage.setItem(LS_DOCS, JSON.stringify(docs));
+      renderFileList();
+      showToast('Document uploaded: '+file.name);
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('docNotes').value = '';
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = docs.length === 0
+    ? '<p style="font-size:.78rem;color:#9aaa9a;text-align:center;padding:10px">No documents uploaded yet.</p>'
+    : '';
+  docs.forEach((doc, idx) => {
+    const tagClass = doc.tag === 'Actual' ? 'actual' : doc.tag === 'Other' ? 'other' : '';
+    const sizeStr = doc.size > 1048576 ? (doc.size/1048576).toFixed(1)+' MB' : (doc.size/1024).toFixed(0)+' KB';
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div class="file-item-name" title="${doc.name}">&#128196; ${doc.name}</div>
+        ${doc.notes ? `<div class="file-notes">&#128203; ${doc.notes}</div>` : ''}
+        <div style="font-size:.68rem;color:#9aaa9a;margin-top:2px">${doc.date} · ${sizeStr}</div>
+      </div>
+      <span class="file-item-tag ${tagClass}">${doc.tag}</span>
+      <div class="file-item-actions">
+        <a class="btn-dl" href="${doc.dataUrl}" download="${doc.name}">&#11015; Download</a>
+        <button class="btn-del" onclick="deleteDoc(${idx})">&#128465; Delete</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function deleteDoc(idx) {
+  if (!confirm('Delete this document?')) return;
+  docs.splice(idx, 1);
+  localStorage.setItem(LS_DOCS, JSON.stringify(docs));
+  renderFileList();
+  showToast('Document deleted');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+updateKPI();
+renderTable();
+initCharts();
+renderProgress();
+</script>
+</body>
+</html>

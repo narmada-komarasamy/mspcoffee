@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moganad Estate — Pepper Yield Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --green-dark: #1b4a1b;
+    --green-mid: #2d6e2d;
+    --green-light: #3d8b3d;
+    --green-pale: #e8f5e9;
+    --accent: #c87941;
+    --accent-light: #f5e6d8;
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray-100); color: var(--gray-800); }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1b4a1b 0%, #2d6e2d 100%);
+    color: #fff;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.3px; }
+  .header-left p { font-size: 0.82rem; opacity: 0.8; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .season-badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+  }
+  .btn-outline {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.35);
+  }
+  .btn-outline:hover { background: rgba(255,255,255,0.22); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: #b5673a; }
+
+  /* MAIN */
+  .main { max-width: 1400px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* KPI BAR */
+  .kpi-bar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 1100px) { .kpi-bar { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 700px) { .kpi-bar { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-sm);
+    border-top: 3px solid var(--green-mid);
+  }
+  .kpi-card.accent-card { border-top-color: var(--accent); }
+  .kpi-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-400); margin-bottom: 4px; }
+  .kpi-value { font-size: 1.35rem; font-weight: 700; color: var(--gray-800); }
+  .kpi-card.accent-card .kpi-value { color: var(--accent); }
+  .kpi-sub { font-size: 0.7rem; color: var(--gray-400); margin-top: 2px; }
+
+  /* SECTION HEADERS */
+  .section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 18px;
+    background: var(--green-mid);
+    border-radius: 2px;
+  }
+
+  /* CHARTS */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 1000px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .chart-card h3 { font-size: 0.82rem; font-weight: 700; color: var(--gray-600); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .chart-wrap { position: relative; height: 240px; }
+
+  /* TABLE CONTROLS */
+  .table-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    padding: 7px 12px;
+    gap: 7px;
+    width: 260px;
+    box-shadow: var(--shadow-sm);
+  }
+  .search-box input { border: none; outline: none; font-size: 0.85rem; width: 100%; }
+  .sort-btn {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: var(--shadow-sm);
+  }
+  .sort-btn:hover { background: var(--gray-50); }
+
+  /* TABLE */
+  .table-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  thead th {
+    background: var(--green-dark);
+    color: #fff;
+    padding: 11px 12px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { background: var(--green-mid); }
+  thead th .sort-icon { margin-left: 4px; opacity: 0.6; }
+  tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.12s; }
+  tbody tr:hover { background: var(--green-pale); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 9px 12px; vertical-align: middle; white-space: nowrap; }
+  td.sno { color: var(--gray-400); font-size: 0.75rem; width: 40px; }
+  td.field-name { font-weight: 600; color: var(--gray-800); white-space: normal; max-width: 180px; }
+  td.num { text-align: right; }
+  td.editable-cell {
+    text-align: right;
+    cursor: pointer;
+    position: relative;
+  }
+  td.editable-cell:hover { background: var(--accent-light); }
+  .edit-icon { color: var(--accent); font-size: 0.7rem; margin-left: 4px; opacity: 0; transition: opacity 0.15s; }
+  td.editable-cell:hover .edit-icon { opacity: 1; }
+  .edit-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .edit-inline input {
+    width: 80px;
+    padding: 3px 6px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    text-align: right;
+    outline: none;
+  }
+  .edit-inline button {
+    padding: 3px 7px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .save-btn { background: var(--green-mid); color: #fff; }
+  .cancel-btn { background: var(--gray-200); color: var(--gray-700); }
+  .pct-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pct-track {
+    flex: 1;
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: 3px;
+    min-width: 50px;
+  }
+  .pct-fill { height: 100%; border-radius: 3px; background: var(--green-mid); transition: width 0.4s; }
+  .tfoot-row td { background: var(--green-pale); font-weight: 700; border-top: 2px solid var(--green-mid); color: var(--green-dark); }
+
+  /* PROGRESS CARDS */
+  .progress-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .progress-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 14px 14px 12px;
+    box-shadow: var(--shadow-sm);
+    border-left: 3px solid var(--green-mid);
+  }
+  .progress-card h4 { font-size: 0.72rem; font-weight: 700; color: var(--gray-600); margin-bottom: 8px; white-space: normal; line-height: 1.3; }
+  .prog-label { font-size: 0.68rem; color: var(--gray-400); margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .prog-track { height: 6px; background: var(--gray-200); border-radius: 3px; margin-bottom: 6px; }
+  .prog-fill-green { height: 100%; border-radius: 3px; background: var(--green-mid); transition: width 0.5s; }
+  .prog-fill-dry { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.5s; }
+
+  /* DOCUMENT PANEL */
+  .doc-panel {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+  .doc-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--green-pale);
+    border-bottom: 1px solid var(--gray-200);
+    cursor: pointer;
+    user-select: none;
+  }
+  .doc-panel-header h3 { font-size: 0.9rem; font-weight: 700; color: var(--green-dark); display: flex; align-items: center; gap: 8px; }
+  .doc-panel-body { padding: 18px; display: none; }
+  .doc-panel-body.open { display: block; }
+  .drop-zone {
+    border: 2px dashed var(--gray-300);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    color: var(--gray-400);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    margin-bottom: 14px;
+  }
+  .drop-zone.dragover { border-color: var(--green-mid); background: var(--green-pale); color: var(--green-dark); }
+  .drop-zone .drop-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+  .doc-meta { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .doc-meta select, .doc-meta input {
+    flex: 1;
+    min-width: 140px;
+    padding: 7px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    outline: none;
+  }
+  .doc-meta select:focus, .doc-meta input:focus { border-color: var(--green-mid); }
+  .doc-file-input { display: none; }
+  .doc-list { margin-top: 10px; }
+  .doc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--gray-50);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+  }
+  .doc-item-info { flex: 1; }
+  .doc-item-name { font-weight: 600; color: var(--gray-800); }
+  .doc-item-meta { color: var(--gray-400); font-size: 0.72rem; margin-top: 1px; }
+  .doc-item-tag {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .tag-estimate { background: #dbeafe; color: #1d4ed8; }
+  .tag-actual { background: #dcfce7; color: #15803d; }
+  .tag-other { background: var(--gray-200); color: var(--gray-600); }
+  .doc-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    transition: all 0.15s;
+  }
+  .doc-action-btn:hover { background: var(--gray-200); color: var(--gray-700); }
+  .doc-action-btn.del:hover { background: #fee2e2; color: #dc2626; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green-dark);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* PRINT */
+  @media print {
+    .header { position: static; }
+    .btn, .table-controls, .doc-panel, .toast { display: none !important; }
+    .charts-grid { grid-template-columns: 1fr 1fr; }
+    body { background: #fff; }
+    .chart-card, .table-card, .kpi-card, .progress-card { box-shadow: none; border: 1px solid var(--gray-200); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <h1>&#9749; Moganad Estate — Pepper Yield Dashboard</h1>
+    <p>Season harvest tracking &amp; field-level analytics</p>
+  </div>
+  <div class="header-right">
+    <span class="season-badge">2024–2025</span>
+    <button class="btn btn-outline" onclick="document.getElementById('docPanel').classList.toggle('open'); document.querySelector('.doc-panel-body').classList.toggle('open')">&#128196; Upload Docs</button>
+    <button class="btn btn-accent" onclick="window.print()">&#128438; Print / PDF</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- KPI BAR -->
+  <div class="kpi-bar" id="kpiBar">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Acres</div>
+      <div class="kpi-value" id="kpi-acres">267.36</div>
+      <div class="kpi-sub">33 fields</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Yielding Vines</div>
+      <div class="kpi-value" id="kpi-vines">0</div>
+      <div class="kpi-sub">total vines</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Green Est (kg)</div>
+      <div class="kpi-value" id="kpi-green-est">0</div>
+      <div class="kpi-sub">estimated</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Green Actual (kg)</div>
+      <div class="kpi-value" id="kpi-green-act">0</div>
+      <div class="kpi-sub">harvested</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Achievement %</div>
+      <div class="kpi-value" id="kpi-achievement">—</div>
+      <div class="kpi-sub">green actual / est</div>
+    </div>
+    <div class="kpi-card accent-card">
+      <div class="kpi-label">Dry Est (kg)</div>
+      <div class="kpi-value" id="kpi-dry-est">0</div>
+      <div class="kpi-sub">estimated</div>
+    </div>
+    <div class="kpi-card accent-card">
+      <div class="kpi-label">Dry Actual (kg)</div>
+      <div class="kpi-value" id="kpi-dry-act">0</div>
+      <div class="kpi-sub">click table to edit</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-title">Charts Overview</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Acres per Field</h3>
+      <div class="chart-wrap"><canvas id="chartAcres"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Green Est vs Actual (kg)</h3>
+      <div class="chart-wrap"><canvas id="chartGreen"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Dry Est vs Actual (kg)</h3>
+      <div class="chart-wrap"><canvas id="chartDry"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="section-title">Field-Level Data</div>
+  <div class="table-controls">
+    <div class="search-box">
+      <span>&#128269;</span>
+      <input type="text" id="searchInput" placeholder="Search field name…" oninput="filterTable()">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="sort-btn" onclick="sortTable('name')">Name &#8597;</button>
+      <button class="sort-btn" onclick="sortTable('acres')">Acres &#8597;</button>
+      <button class="sort-btn" onclick="sortTable('dryAct')">Dry Actual &#8597;</button>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-wrap">
+      <table id="yieldTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('sno')">S.No <span class="sort-icon">&#8597;</span></th>
+            <th onclick="sortTable('name')">Field Name <span class="sort-icon">&#8597;</span></th>
+            <th onclick="sortTable('acres')" style="text-align:right">Acres <span class="sort-icon">&#8597;</span></th>
+            <th style="text-align:right">Vines</th>
+            <th style="text-align:right">Green Est (kg)</th>
+            <th style="text-align:right">Dry Est (kg)</th>
+            <th style="text-align:right">Green Actual (kg)</th>
+            <th style="text-align:right">Dry Actual (kg) &#9998;</th>
+            <th style="text-align:right">kg/Acre (Est)</th>
+            <th style="text-align:right">Green %</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot id="tableFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- PROGRESS CARDS -->
+  <div class="section-title">Field Progress</div>
+  <div class="progress-grid" id="progressGrid"></div>
+
+  <!-- DOCUMENT PANEL -->
+  <div class="doc-panel" id="docPanel">
+    <div class="doc-panel-header" onclick="toggleDocPanel()">
+      <h3>&#128196; Document Upload &amp; Management</h3>
+      <span id="docToggleIcon">&#9660;</span>
+    </div>
+    <div class="doc-panel-body" id="docPanelBody">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <span class="drop-icon">&#128228;</span>
+        <strong>Click to browse or drag &amp; drop files here</strong>
+        <div style="margin-top:4px;font-size:0.75rem;">Supports PDF, Excel, images, and any document format</div>
+      </div>
+      <input type="file" id="fileInput" class="doc-file-input" multiple onchange="handleFiles(this.files)">
+      <div class="doc-meta">
+        <select id="docTag">
+          <option value="Estimate">Estimate</option>
+          <option value="Actual">Actual</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" id="docNotes" placeholder="Notes (optional)…">
+      </div>
+      <div class="doc-list" id="docList"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const ESTATE = 'moganad';
+const LS_DRY = 'moganad_dry_actuals_2425';
+const LS_DOCS = 'moganad_docs_2425';
+
+const fields = [
+  { sno:1,  name:'MARIAMMAN KOVIL',              acres:22.35, vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:2,  name:'ANDY MAISTRY KADU',            acres:6.45,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:3,  name:'KAMALAKADU',                   acres:11,    vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:4,  name:'TANK FIELD',                   acres:2,     vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:5,  name:'BUNGALOW FIELD',               acres:4.13,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:6,  name:'MANGO FIELD',                  acres:2.4,   vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:7,  name:'VALAKADU MANIAN & MATTUKARAN', acres:16.91, vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:8,  name:'LINE FIELD',                   acres:15.64, vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:9,  name:'KULLAN & KANDAN KADU',         acres:3.08,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:10, name:'NAYAGAN & AAYMMA KADU',        acres:2.57,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:11, name:'ALAVARAN KADU',                acres:4.94,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:12, name:'MSP SCHOOL FIELD',             acres:3.14,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:13, name:'MACADAMIA GOUNDAN KADU',       acres:3.12,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:14, name:'MSP VYAPURIKUTTAI MEL KADU',   acres:9.24,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:15, name:'VENGAPANAKADU',                acres:3.81,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:16, name:'MANGALAM ANDY KADU',           acres:1.77,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:17, name:'CHIDAMBARAM KADU',             acres:0.44,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:18, name:'ANNADURAI KADU',               acres:4,     vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:19, name:'KALIAMMA KADU',                acres:3.69,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:20, name:'SOLUR KADU',                   acres:10.83, vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:21, name:'MOOKAN KADU',                  acres:25.15, vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:22, name:'CHINNAN KADU',                 acres:1.6,   vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:23, name:'POOSARI VELLAYAN KADU',        acres:2.83,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:24, name:'KULLAVALAKADU',                acres:5,     vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:25, name:'24 ACRES',                     acres:24,    vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:26, name:'NADU LEVEL',                   acres:12,    vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:27, name:'APPLE KADU',                   acres:7,     vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:28, name:'OOTTU LEVEL',                  acres:7,     vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:29, name:'10 3/4 ACRES',                 acres:10,    vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:30, name:'ARUVAMPULPADI',                acres:12,    vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:31, name:'CATIMORE THUNDU',              acres:2,     vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:32, name:'NODICHEKAL ATHIMARATHUNDU',    acres:18,    vines:0, greenEst:0, dryEst:0, greenAct:0 },
+  { sno:33, name:'NODICHEKAL KARADITHUNDU',      acres:9.27,  vines:0, greenEst:0, dryEst:0, greenAct:0 },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let dryActuals = {};
+let docs = [];
+let sortKey = 'sno';
+let sortDir = 1;
+let searchQuery = '';
+let editingRow = null;
+
+// Charts
+let chartAcres, chartGreen, chartDry;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function loadStorage() {
+  try { dryActuals = JSON.parse(localStorage.getItem(LS_DRY) || '{}'); } catch(e) { dryActuals = {}; }
+  try { docs = JSON.parse(localStorage.getItem(LS_DOCS) || '[]'); } catch(e) { docs = []; }
+}
+
+function saveStorage() {
+  localStorage.setItem(LS_DRY, JSON.stringify(dryActuals));
+}
+
+function getDryAct(sno) { return dryActuals[sno] || 0; }
+
+function fmt(n) { return n === 0 ? '0' : n.toLocaleString('en-IN', {maximumFractionDigits:2}); }
+function fmtD(n) { return n.toFixed(2); }
+
+// ── KPI ───────────────────────────────────────────────────────────────────────
+function updateKPI() {
+  const totalAcres = fields.reduce((s,f)=>s+f.acres, 0);
+  const totalVines = fields.reduce((s,f)=>s+f.vines, 0);
+  const totalGreenEst = fields.reduce((s,f)=>s+f.greenEst, 0);
+  const totalGreenAct = fields.reduce((s,f)=>s+f.greenAct, 0);
+  const totalDryEst = fields.reduce((s,f)=>s+f.dryEst, 0);
+  const totalDryAct = fields.reduce((s,f)=>s+getDryAct(f.sno), 0);
+  const ach = totalGreenEst > 0 ? ((totalGreenAct/totalGreenEst)*100).toFixed(1)+'%' : '—';
+
+  document.getElementById('kpi-acres').textContent = fmtD(totalAcres);
+  document.getElementById('kpi-vines').textContent = fmt(totalVines);
+  document.getElementById('kpi-green-est').textContent = fmt(totalGreenEst);
+  document.getElementById('kpi-green-act').textContent = fmt(totalGreenAct);
+  document.getElementById('kpi-achievement').textContent = ach;
+  document.getElementById('kpi-dry-est').textContent = fmt(totalDryEst);
+  document.getElementById('kpi-dry-act').textContent = fmt(totalDryAct);
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+function getFilteredSorted() {
+  let data = fields.map(f=>({...f, dryAct: getDryAct(f.sno)}));
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    data = data.filter(f=>f.name.toLowerCase().includes(q));
+  }
+  data.sort((a,b)=>{
+    let va = a[sortKey], vb = b[sortKey];
+    if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+    return sortDir * (va - vb);
+  });
+  return data;
+}
+
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = 1; }
+  renderTable();
+}
+
+function filterTable() {
+  searchQuery = document.getElementById('searchInput').value;
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const tfoot = document.getElementById('tableFoot');
+  const data = getFilteredSorted();
+
+  let totAcres=0, totVines=0, totGreenEst=0, totDryEst=0, totGreenAct=0, totDryAct=0;
+  data.forEach(f=>{ totAcres+=f.acres; totVines+=f.vines; totGreenEst+=f.greenEst; totDryEst+=f.dryEst; totGreenAct+=f.greenAct; totDryAct+=f.dryAct; });
+
+  tbody.innerHTML = data.map(f=>{
+    const kgAcre = f.dryEst > 0 ? (f.dryEst/f.acres).toFixed(1) : '—';
+    const greenPct = f.greenEst > 0 ? ((f.greenAct/f.greenEst)*100).toFixed(1) : '—';
+    const pctNum = f.greenEst > 0 ? Math.min((f.greenAct/f.greenEst)*100, 100) : 0;
+
+    const dryCell = editingRow === f.sno
+      ? `<div class="edit-inline">
+           <input type="number" id="edit_${f.sno}" value="${f.dryAct}" min="0" step="0.1" onkeydown="handleEditKey(event,${f.sno})">
+           <button class="save-btn" onclick="saveEdit(${f.sno})">Save</button>
+           <button class="cancel-btn" onclick="cancelEdit()">✕</button>
+         </div>`
+      : `<span>${fmt(f.dryAct)}</span><span class="edit-icon">✎</span>`;
+
+    return `<tr data-sno="${f.sno}">
+      <td class="sno">${f.sno}</td>
+      <td class="field-name">${f.name}</td>
+      <td class="num">${fmtD(f.acres)}</td>
+      <td class="num">${fmt(f.vines)}</td>
+      <td class="num">${fmt(f.greenEst)}</td>
+      <td class="num">${fmt(f.dryEst)}</td>
+      <td class="num">${fmt(f.greenAct)}</td>
+      <td class="editable-cell" onclick="startEdit(${f.sno})">${dryCell}</td>
+      <td class="num">${kgAcre}</td>
+      <td class="num">
+        <div class="pct-bar">
+          <div class="pct-track"><div class="pct-fill" style="width:${pctNum}%"></div></div>
+          <span>${greenPct}${greenPct!=='—'?'%':''}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tfoot.innerHTML = `<tr class="tfoot-row">
+    <td></td>
+    <td class="field-name">TOTAL</td>
+    <td class="num">${fmtD(totAcres)}</td>
+    <td class="num">${fmt(totVines)}</td>
+    <td class="num">${fmt(totGreenEst)}</td>
+    <td class="num">${fmt(totDryEst)}</td>
+    <td class="num">${fmt(totGreenAct)}</td>
+    <td class="num">${fmt(totDryAct)}</td>
+    <td class="num">—</td>
+    <td class="num">—</td>
+  </tr>`;
+
+  if (editingRow !== null) {
+    const inp = document.getElementById('edit_'+editingRow);
+    if (inp) { inp.focus(); inp.select(); }
+  }
+}
+
+function startEdit(sno) {
+  if (editingRow === sno) return;
+  editingRow = sno;
+  renderTable();
+}
+
+function cancelEdit() {
+  editingRow = null;
+  renderTable();
+}
+
+function saveEdit(sno) {
+  const inp = document.getElementById('edit_'+sno);
+  if (!inp) return;
+  const val = parseFloat(inp.value) || 0;
+  dryActuals[sno] = val;
+  saveStorage();
+  editingRow = null;
+  renderTable();
+  updateKPI();
+  updateCharts();
+  renderProgressCards();
+  showToast('Dry actual saved for field #'+sno);
+}
+
+function handleEditKey(e, sno) {
+  if (e.key === 'Enter') saveEdit(sno);
+  if (e.key === 'Escape') cancelEdit();
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+const COLORS = {
+  green: 'rgba(45,110,45,0.82)',
+  greenBorder: '#2d6e2d',
+  greenAct: 'rgba(92,184,92,0.82)',
+  greenActBorder: '#5cb85c',
+  dry: 'rgba(200,121,65,0.82)',
+  dryBorder: '#c87941',
+  dryAct: 'rgba(230,165,110,0.82)',
+  dryActBorder: '#e6a56e',
+  accent2: 'rgba(27,74,27,0.75)',
+};
+
+function buildCharts() {
+  const names = fields.map(f=>f.name.length > 14 ? f.name.substring(0,13)+'…' : f.name);
+
+  const ctxA = document.getElementById('chartAcres').getContext('2d');
+  chartAcres = new Chart(ctxA, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{ label: 'Acres', data: fields.map(f=>f.acres), backgroundColor: COLORS.green, borderColor: COLORS.greenBorder, borderWidth: 1 }]
+    },
+    options: chartOpts('Acres')
+  });
+
+  const ctxG = document.getElementById('chartGreen').getContext('2d');
+  chartGreen = new Chart(ctxG, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [
+        { label: 'Green Est', data: fields.map(f=>f.greenEst), backgroundColor: COLORS.green, borderColor: COLORS.greenBorder, borderWidth: 1 },
+        { label: 'Green Actual', data: fields.map(f=>f.greenAct), backgroundColor: COLORS.greenAct, borderColor: COLORS.greenActBorder, borderWidth: 1 },
+      ]
+    },
+    options: chartOpts('kg')
+  });
+
+  const ctxD = document.getElementById('chartDry').getContext('2d');
+  chartDry = new Chart(ctxD, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [
+        { label: 'Dry Est', data: fields.map(f=>f.dryEst), backgroundColor: COLORS.dry, borderColor: COLORS.dryBorder, borderWidth: 1 },
+        { label: 'Dry Actual', data: fields.map(f=>getDryAct(f.sno)), backgroundColor: COLORS.dryAct, borderColor: COLORS.dryActBorder, borderWidth: 1 },
+      ]
+    },
+    options: chartOpts('kg')
+  });
+}
+
+function chartOpts(yLabel) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 12 } } },
+    scales: {
+      x: { ticks: { font: { size: 8 }, maxRotation: 55, autoSkip: true, maxTicksLimit: 16 } },
+      y: { beginAtZero: true, ticks: { font: { size: 9 } }, title: { display: true, text: yLabel, font: { size: 9 } } }
+    }
+  };
+}
+
+function updateCharts() {
+  chartDry.data.datasets[1].data = fields.map(f=>getDryAct(f.sno));
+  chartDry.update();
+}
+
+// ── PROGRESS CARDS ────────────────────────────────────────────────────────────
+function renderProgressCards() {
+  const grid = document.getElementById('progressGrid');
+  const maxGreen = Math.max(...fields.map(f=>Math.max(f.greenEst, f.greenAct)), 1);
+  const maxDry = Math.max(...fields.map(f=>Math.max(f.dryEst, getDryAct(f.sno))), 1);
+
+  grid.innerHTML = fields.map(f=>{
+    const dryAct = getDryAct(f.sno);
+    const greenPct = f.greenEst > 0 ? Math.min((f.greenAct/f.greenEst)*100,100) : 0;
+    const dryPct = f.dryEst > 0 ? Math.min((dryAct/f.dryEst)*100,100) : 0;
+
+    const dryBar = dryAct > 0
+      ? `<div class="prog-label"><span>Dry</span><span>${fmt(dryAct)} kg</span></div>
+         <div class="prog-track"><div class="prog-fill-dry" style="width:${dryPct}%"></div></div>`
+      : '';
+
+    return `<div class="progress-card">
+      <h4>${f.name}</h4>
+      <div class="prog-label"><span>${fmtD(f.acres)} ac</span><span>Green ${greenPct.toFixed(0)}%</span></div>
+      <div class="prog-track"><div class="prog-fill-green" style="width:${greenPct}%"></div></div>
+      ${dryBar}
+    </div>`;
+  }).join('');
+}
+
+// ── DOCUMENT PANEL ────────────────────────────────────────────────────────────
+function toggleDocPanel() {
+  const body = document.getElementById('docPanelBody');
+  const icon = document.getElementById('docToggleIcon');
+  body.classList.toggle('open');
+  icon.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+function renderDocs() {
+  const list = document.getElementById('docList');
+  if (!docs.length) { list.innerHTML = '<p style="color:var(--gray-400);font-size:0.8rem;text-align:center;padding:10px">No documents uploaded yet.</p>'; return; }
+  list.innerHTML = docs.map((d,i)=>`
+    <div class="doc-item">
+      <div class="doc-item-info">
+        <div class="doc-item-name">&#128196; ${d.name}</div>
+        <div class="doc-item-meta">${d.size} · ${d.date}${d.notes?' · '+d.notes:''}</div>
+      </div>
+      <span class="doc-item-tag tag-${d.tag.toLowerCase()}">${d.tag}</span>
+      <button class="doc-action-btn" title="Download" onclick="downloadDoc(${i})">&#8659;</button>
+      <button class="doc-action-btn del" title="Delete" onclick="deleteDoc(${i})">&#128465;</button>
+    </div>`).join('');
+}
+
+function handleFiles(files) {
+  const tag = document.getElementById('docTag').value;
+  const notes = document.getElementById('docNotes').value.trim();
+  Array.from(files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      docs.push({
+        name: file.name,
+        size: formatBytes(file.size),
+        date: new Date().toLocaleDateString('en-IN'),
+        tag,
+        notes,
+        data: e.target.result
+      });
+      localStorage.setItem(LS_DOCS, JSON.stringify(docs));
+      renderDocs();
+      showToast('Document "'+file.name+'" uploaded.');
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('fileInput').value = '';
+}
+
+function downloadDoc(i) {
+  const d = docs[i];
+  const a = document.createElement('a');
+  a.href = d.data;
+  a.download = d.name;
+  a.click();
+}
+
+function deleteDoc(i) {
+  if (!confirm('Delete "'+docs[i].name+'"?')) return;
+  docs.splice(i,1);
+  localStorage.setItem(LS_DOCS, JSON.stringify(docs));
+  renderDocs();
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b+'B';
+  if (b < 1048576) return (b/1024).toFixed(1)+'KB';
+  return (b/1048576).toFixed(1)+'MB';
+}
+
+// ── DRAG & DROP ───────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', ()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ '+msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+loadStorage();
+updateKPI();
+renderTable();
+buildCharts();
+renderProgressCards();
+renderDocs();
+</script>
+</body>
+</html>

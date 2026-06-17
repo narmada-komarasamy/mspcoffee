@@ -151,7 +151,11 @@ const navItems: NavItem[] = [
       {
         label: '2024–2025',
         children: [
+          { label: 'Moganad Estate',      href: '/harvest-yield/moganad-estate' },
+          { label: 'Stanmore Estate',     href: '/harvest-yield/stanmore-estate' },
           { label: 'Bison Valley Estate', href: '/harvest-yield/bison-valley' },
+          { label: 'Hidden Falls Estate', href: '/harvest-yield/hidden-falls-estate' },
+          { label: 'Orchardale Estate',   href: '/harvest-yield/orchardale-estate' },
         ],
       },
     ],
