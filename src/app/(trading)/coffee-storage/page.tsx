@@ -2601,7 +2601,7 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
                   <td className={css.tdMono} style={{ fontSize:10 }}>
                     {s.green_lot_ids.slice(0,2).map(id => {
                       const lot = greenLots.find(g => g.id === id);
-                      return lot ? `${lot.lot} · ${lot.field}` : id;
+                      return lot ? `${lot.lot} · ${lot.field} · ${lot.process}` : id;
                     }).join(", ")}
                     {s.green_lot_ids.length > 2 ? ` +${s.green_lot_ids.length - 2}` : ""}
                   </td>
