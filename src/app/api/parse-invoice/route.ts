@@ -21,6 +21,14 @@ export async function POST(req: NextRequest) {
     if (!base64 || !mediaType) {
       return NextResponse.json({ error: 'base64 and mediaType are required' }, { status: 400 });
     }
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (!ALLOWED_TYPES.includes(mediaType)) {
+      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+    }
+    // ~10 MB limit: base64 inflates by ~33%, so 10 MB file ≈ 13.6 MB base64
+    if (base64.length > 14 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large (max 10 MB)' }, { status: 413 });
+    }
 
     const client = new Anthropic();
 

@@ -163,6 +163,32 @@ function noteStamp(): string {
   const t = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
   return `[${d} ${t} – ${getUser()}] `;
 }
+// Hook: manages a notes textarea with auto timestamp+username prefix on focus.
+// The ref stores the exact stamp set on focus so the onBlur comparison is always accurate.
+function useNoteField(initial = "") {
+  const [notes, setNotes] = useState(initial);
+  const stampRef = useRef("");
+  const noteProps = {
+    className: css.formTextarea,
+    value: notes,
+    placeholder: "Click to add a timestamped note…",
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value),
+    onFocus: () => {
+      if (!notes.trim()) {
+        const s = noteStamp();
+        stampRef.current = s;
+        setNotes(s);
+      }
+    },
+    onBlur: () => {
+      if (stampRef.current && notes.trim() === stampRef.current.trim()) {
+        setNotes("");
+        stampRef.current = "";
+      }
+    },
+  };
+  return { notes, setNotes, noteProps };
+}
 
 /* ═══════════════════════════════════════════════════════════════
    DATA LAYER — Supabase
@@ -726,7 +752,7 @@ function EditBatchDrawer({ batch, onClose, reload }: { batch: ParchBatch; onClos
   const [bin,       setBin]       = useState(batch.bin ?? "");
   const [grade,     setGrade]     = useState(batch.grade ?? "");
   const [score,     setScore]     = useState(String(batch.score ?? ""));
-  const [notes,     setNotes]     = useState(batch.notes ?? "");
+  const { notes, setNotes, noteProps } = useNoteField(batch.notes ?? "");
   const [tasting,   setTasting]   = useState(batch.tasting_notes ?? "");
   const [saving,    setSaving]    = useState(false);
 
@@ -786,14 +812,7 @@ function EditBatchDrawer({ batch, onClose, reload }: { batch: ParchBatch; onClos
       </div>
       <div className={css.formGroup} style={{ marginTop:12 }}>
         <label className={css.formLabel}>Operational Notes</label>
-        <textarea
-          className={css.formTextarea}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
-          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
-          placeholder="Click to add a timestamped note…"
-        />
+        <textarea {...noteProps} />
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Tasting Notes</label>
@@ -1018,7 +1037,7 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
   const [grade,     setGrade]     = useState("AA");
   const [screen,    setScreen]    = useState("17/18");
   const [score,     setScore]     = useState("");
-  const [notes,     setNotes]     = useState("");
+  const { notes, setNotes, noteProps } = useNoteField();
   const [saving,    setSaving]    = useState(false);
 
   const actual     = n(actualKg);
@@ -1101,14 +1120,7 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea
-          className={css.formTextarea}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
-          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
-          placeholder="Click to add a timestamped note…"
-        />
+        <textarea {...noteProps} />
       </div>
       <div className={css.varianceCallout}>
         <div className={css.varianceItem}>
@@ -1168,7 +1180,7 @@ function AddLotDrawer({ season, onClose, reload }: { season: string; onClose: ()
   const [rate,       setRate]       = useState("");
   const [milledDate, setMilledDate] = useState(todayStr());
   const [warehouse,  setWarehouse]  = useState("Stanmore Godown");
-  const [notes,      setNotes]      = useState("");
+  const { notes, setNotes, noteProps } = useNoteField();
   const [saving,     setSaving]     = useState(false);
 
   const effectiveField = field === "__other__" ? fieldOther : field;
@@ -1256,14 +1268,7 @@ function AddLotDrawer({ season, onClose, reload }: { season: string; onClose: ()
       </div>
       <div className={css.formGroup} style={{ marginTop:8 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea
-          className={css.formTextarea}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
-          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
-          placeholder="Click to add a timestamped note…"
-        />
+        <textarea {...noteProps} />
       </div>
       {n(kgIn) > 0 && n(rate) > 0 && (
         <div className={css.computedStrip} style={{ marginTop:12 }}>
@@ -1779,7 +1784,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
   const [price,     setPrice]     = useState("");
   const [date,      setDate]      = useState(todayStr());
   const [ref,       setRef]       = useState("");
-  const [notes,     setNotes]     = useState("");
+  const { notes, setNotes, noteProps } = useNoteField();
   const [saving,    setSaving]    = useState(false);
 
   // Invoice upload state
@@ -1800,6 +1805,10 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
 
   // Handle invoice file selection + auto-parse
   const handleInvoiceFile = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      setParseMsg("⚠ File too large — maximum 10 MB. Please compress or crop the image and try again.");
+      return;
+    }
     setInvoiceFile(file);
     setParseMsg("Reading invoice…");
     setParsing(true);
@@ -2074,14 +2083,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea
-          className={css.formTextarea}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
-          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
-          placeholder="Click to add a timestamped note…"
-        />
+        <textarea {...noteProps} />
       </div>
       <div className={css.computedStrip}>
         <div className={css.computedItem}>
@@ -2120,7 +2122,7 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
   const [price,    setPrice]    = useState(String(blend.target_sell_price_per_kg || ""));
   const [date,     setDate]     = useState(todayStr());
   const [ref,      setRef]      = useState("");
-  const [notes,    setNotes]    = useState("");
+  const { notes, setNotes, noteProps } = useNoteField();
   const [saving,   setSaving]   = useState(false);
 
   useEffect(() => {
@@ -2270,14 +2272,7 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea
-          className={css.formTextarea}
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
-          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
-          placeholder="Click to add a timestamped note…"
-        />
+        <textarea {...noteProps} />
       </div>
 
       <div className={css.computedStrip}>
@@ -2771,21 +2766,21 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
   // Restore stock for a sale's lots back to green_lots (or hilltiller_stock)
   const restoreStock = async (sale: CoffeeSale) => {
     for (const lotId of sale.green_lot_ids) {
-      // Try green_lots first
-      const greenLot = greenLots.find(g => g.id === lotId);
-      if (greenLot) {
-        const restoredKg = greenLot.current_kg + n(sale.kg);
+      // Re-fetch live current_kg from DB to avoid stale-state race conditions
+      const { data: freshGreen } = await supabase
+        .from("green_lots").select("current_kg").eq("id", lotId).single();
+      if (freshGreen) {
         await supabase.from("green_lots").update({
-          current_kg: restoredKg,
+          current_kg: n(freshGreen.current_kg) + n(sale.kg),
           status: "in-stock",
         }).eq("id", lotId);
       } else {
         // Try hilltiller_stock
-        const { data: htLot } = await supabase.from("hilltiller_stock").select("current_kg").eq("id", lotId).single();
-        if (htLot) {
-          const restoredKg = n(htLot.current_kg) + n(sale.kg);
+        const { data: freshHt } = await supabase
+          .from("hilltiller_stock").select("current_kg").eq("id", lotId).single();
+        if (freshHt) {
           await supabase.from("hilltiller_stock").update({
-            current_kg: restoredKg,
+            current_kg: n(freshHt.current_kg) + n(sale.kg),
             status: "in-stock",
           }).eq("id", lotId);
         }
@@ -2810,12 +2805,13 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
   const handleDelete = async (sale: CoffeeSale) => {
     if (!confirm(`PERMANENTLY DELETE sale ${sale.id} (${Math.round(n(sale.kg))} kg → ${sale.customer})?\n\nThis cannot be undone. Stock will be restored if not already cancelled.`)) return;
     setActionLoading(sale.id + "_del");
+    // Delete the record first — only restore stock if delete succeeds
+    const { error } = await supabase.from("coffee_sales").delete().eq("id", sale.id);
+    if (error) { alert(`Failed to delete: ${error.message}`); setActionLoading(null); return; }
     // Restore stock only if it wasn't already cancelled (cancelled already restored stock)
     if (sale.status !== "cancelled") {
       await restoreStock(sale);
     }
-    const { error } = await supabase.from("coffee_sales").delete().eq("id", sale.id);
-    if (error) { alert(`Failed to delete: ${error.message}`); setActionLoading(null); return; }
     await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "weight-adjust",
       entity: sale.id, before: sale.status, after: "deleted",
       note: `Deleted by admin — ${Math.round(n(sale.kg))} kg restored to stock` });
