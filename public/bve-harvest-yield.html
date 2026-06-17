@@ -7,70 +7,129 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;color:#1a1a1a;min-height:100vh}
 
-.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);border-bottom:2px solid #4a9e4a;padding:20px 28px;display:flex;align-items:center;gap:16px}
+.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);border-bottom:2px solid #4a9e4a;padding:20px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .header-icon{font-size:2.2rem}
 .header-text h1{font-size:1.5rem;font-weight:700;color:#ffffff;letter-spacing:.03em}
 .header-text p{font-size:0.85rem;color:rgba(255,255,255,0.75);margin-top:2px}
-.season-badge{margin-left:auto;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;font-size:0.78rem;font-weight:700;color:#ffffff;letter-spacing:.06em}
-.pdf-btn{background:#e8c84a;border:none;border-radius:20px;padding:7px 18px;font-size:0.78rem;font-weight:700;color:#1b4a1b;cursor:pointer;margin-left:10px;letter-spacing:.04em}
-.pdf-btn:hover{background:#d4b030}
+.header-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.season-badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;font-size:0.78rem;font-weight:700;color:#ffffff;letter-spacing:.06em}
+.header-btn{border:none;border-radius:20px;padding:7px 18px;font-size:0.78rem;font-weight:700;cursor:pointer;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.btn-pdf{background:#e8c84a;color:#1b4a1b}
+.btn-pdf:hover{background:#d4b030}
+.btn-upload{background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4)!important}
+.btn-upload:hover{background:rgba(255,255,255,0.3)}
 
-.kpi-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:20px 28px;background:#f5eedc;border-bottom:1px solid #e5dfc8}
+.kpi-bar{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;padding:20px 28px;background:#f5eedc;border-bottom:1px solid #e5dfc8}
 .kpi{background:#ffffff;border:1px solid #e5dfc8;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#2d6e2d}
+.kpi.kpi-dry::before{background:#c87941}
 .kpi-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#374151;margin-bottom:6px}
-.kpi-value{font-size:1.75rem;font-weight:700;color:#1b4a1b;line-height:1}
+.kpi-value{font-size:1.6rem;font-weight:700;color:#1b4a1b;line-height:1}
+.kpi.kpi-dry .kpi-value{color:#8b4513}
 .kpi-unit{font-size:.7rem;color:#6b7280;margin-top:4px}
 
 .filters{background:#f5eedc;border-bottom:1px solid #e5dfc8;padding:14px 28px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
 .filter-group{display:flex;flex-direction:column;gap:4px}
 .filter-group label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151}
-.filter-group select,.filter-group input{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:6px;color:#1a1a1a;padding:7px 10px;font-size:.82rem;min-width:160px;cursor:pointer}
-.filter-group select:focus,.filter-group input:focus{outline:none;border-color:#4a9e4a}
-.filter-group input{min-width:200px}
-.filter-group input::placeholder{color:#9ca3af}
+.filter-group select,.filter-group input[type=text]{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:6px;color:#1a1a1a;padding:7px 10px;font-size:.82rem;min-width:160px;cursor:pointer}
+.filter-group select:focus,.filter-group input[type=text]:focus{outline:none;border-color:#4a9e4a}
+.filter-group input[type=text]{min-width:200px}
+.filter-group input[type=text]::placeholder{color:#9ca3af}
 .btn-reset{background:transparent;border:1.5px solid #e5dfc8;border-radius:6px;color:#6b7280;padding:7px 16px;cursor:pointer;font-size:.82rem;align-self:flex-end}
 .btn-reset:hover{border-color:#4a9e4a;color:#2d6e2d}
 
 .main{padding:20px 28px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
 .card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:20px 22px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
 .card-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;margin-bottom:14px}
 .chart-wrap{position:relative;height:260px}
 
+/* ── Table ────────────────────────────────────────────────────────────────── */
 .tbl-card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:16px 18px;margin-bottom:24px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
-.tbl-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tbl-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .tbl-header h2{font-size:.9rem;color:#1b4a1b;font-weight:700}
 .tbl-header .count{background:rgba(27,74,27,0.1);color:#2d6e2d;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700}
+.edit-hint{margin-left:auto;font-size:.68rem;color:#6b7280;display:flex;align-items:center;gap:5px}
+.edit-hint span{background:#fff8e1;border:1px solid #f0d080;border-radius:6px;padding:2px 8px;color:#92400e;font-weight:700}
 .tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:420px;border:1px solid #e5dfc8;border-radius:8px}
 .tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
 .tbl-wrap::-webkit-scrollbar-track{background:#f5eedc}
 .tbl-wrap::-webkit-scrollbar-thumb{background:#d4c9a8;border-radius:3px}
 table{width:100%;border-collapse:collapse;font-size:.78rem}
-thead th{position:sticky;top:0;background:#f5eedc;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#374151;padding:9px 10px;text-align:left;border-bottom:1px solid #e5dfc8;white-space:nowrap;cursor:pointer;user-select:none}
-thead th:hover{color:#1b4a1b}
-thead th.sort-asc::after{content:' ▲';color:#4a9e4a}
-thead th.sort-desc::after{content:' ▼';color:#4a9e4a}
+thead th{position:sticky;top:0;background:#f5eedc;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#374151;padding:9px 10px;text-align:left;border-bottom:1px solid #e5dfc8;white-space:nowrap}
+thead th.dry-col{background:#fdf3ec;color:#8b4513}
 tbody tr{border-bottom:1px solid #f0ead4;transition:background .1s}
 tbody tr:hover{background:#fdf5e6}
-tbody tr.hidden{display:none}
 tbody td{padding:8px 10px;color:#1a1a1a;vertical-align:middle;white-space:nowrap}
 tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
 tfoot td{position:sticky;bottom:0;background:#f5eedc;font-size:.7rem;font-weight:700;color:#1b4a1b;padding:9px 10px;border-top:2px solid #4a9e4a}
 tfoot td.num{text-align:right}
 
+/* Editable dry actual cell */
+.dry-actual-cell{position:relative;text-align:right}
+.dry-actual-display{display:flex;align-items:center;justify-content:flex-end;gap:6px;cursor:pointer;border-radius:5px;padding:2px 4px;transition:background .15s}
+.dry-actual-display:hover{background:#fff3e0}
+.dry-actual-display .pencil{opacity:0;font-size:.65rem;color:#c87941;transition:opacity .15s}
+.dry-actual-display:hover .pencil{opacity:1}
+.dry-actual-display.has-value{color:#8b4513;font-weight:700}
+.dry-edit-wrap{display:none;align-items:center;gap:4px}
+.dry-edit-wrap input{width:80px;padding:3px 6px;border:1.5px solid #c87941;border-radius:5px;font-size:.78rem;text-align:right;outline:none;background:#fff8f2}
+.dry-edit-wrap .save-btn{background:#c87941;color:#fff;border:none;border-radius:4px;padding:3px 7px;font-size:.7rem;cursor:pointer;font-weight:700}
+.dry-edit-wrap .save-btn:hover{background:#a8612e}
+.dry-edit-wrap .cancel-btn{background:transparent;color:#9ca3af;border:none;font-size:.75rem;cursor:pointer;padding:3px 5px}
+
+/* ── Upload / Documents panel ────────────────────────────────────────────── */
+.docs-card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:16px 20px;margin-bottom:24px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
+.docs-header{display:flex;align-items:center;gap:10px;margin-bottom:0;cursor:pointer;user-select:none}
+.docs-header h2{font-size:.9rem;color:#1b4a1b;font-weight:700;flex:1}
+.docs-toggle{font-size:.75rem;color:#6b7280;transition:transform .2s}
+.docs-toggle.open{transform:rotate(180deg)}
+.docs-body{margin-top:16px;display:none}
+.docs-body.open{display:block}
+
+.upload-zone{border:2px dashed #c8d9b8;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:#f9fdf5;margin-bottom:16px}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#4a9e4a;background:#ecf7ec}
+.upload-zone p{font-size:.82rem;color:#6b7280;margin-top:6px}
+.upload-zone strong{font-size:.85rem;color:#2d6e2d}
+.upload-zone input[type=file]{display:none}
+
+.upload-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
+.upload-meta .filter-group select,.upload-meta .filter-group input[type=text]{min-width:130px}
+.btn-do-upload{background:#2d6e2d;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:.82rem;font-weight:700;cursor:pointer;align-self:flex-end}
+.btn-do-upload:hover{background:#1b4a1b}
+.btn-do-upload:disabled{background:#9ca3af;cursor:not-allowed}
+
+.doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.doc-item{border:1px solid #e5dfc8;border-radius:8px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start;background:#fdfaf4}
+.doc-icon{font-size:1.6rem;line-height:1;flex-shrink:0;margin-top:2px}
+.doc-info{flex:1;min-width:0}
+.doc-name{font-size:.78rem;font-weight:700;color:#1b4a1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-meta{font-size:.65rem;color:#6b7280;margin-top:2px}
+.doc-tag{display:inline-block;padding:1px 7px;border-radius:8px;font-size:.62rem;font-weight:700;margin-top:4px}
+.tag-Estimate{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.tag-Actual{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+.tag-Other{background:#f3f4f6;border:1px solid #d1d5db;color:#374151}
+.doc-actions{display:flex;gap:6px;flex-shrink:0;margin-top:2px}
+.doc-actions button{background:none;border:none;cursor:pointer;font-size:.9rem;padding:2px;opacity:.6;transition:opacity .15s}
+.doc-actions button:hover{opacity:1}
+.no-docs{text-align:center;padding:24px;color:#9ca3af;font-size:.82rem}
+
+/* Progress cards */
 .progress-bar-wrap{background:#e5dfc8;border-radius:4px;height:7px;overflow:hidden;margin-top:4px}
 .progress-bar{height:7px;border-radius:4px;background:linear-gradient(90deg,#2d6e2d,#4a9e4a)}
+.progress-bar.dry{background:linear-gradient(90deg,#c87941,#e8a96a)}
 .pct-label{font-size:.65rem;color:#6b7280;margin-top:2px}
-
 .actuals-chip{display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:2px 8px;font-size:.65rem;font-weight:700;color:#065f46}
 .actuals-chip.pending{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:#1b4a1b;color:#fff;padding:10px 20px;border-radius:10px;font-size:.8rem;font-weight:700;z-index:999;opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
 
 @media print{
   @page{size:A4 landscape;margin:0}
   body{padding:14mm 12mm!important;background:#ffffff!important}
-  .filters,.pdf-btn{display:none!important}
+  .filters,.header-btn,.docs-card{display:none!important}
   .tbl-wrap{max-height:none!important;overflow:visible!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }
@@ -78,14 +137,18 @@ tfoot td.num{text-align:right}
 </head>
 <body>
 
+<!-- Header -->
 <div class="header">
   <div class="header-icon">🌿</div>
   <div class="header-text">
     <h1>Bison Valley Estate — Pepper Yield Dashboard</h1>
     <p>Field-wise yield tracking · Green &amp; Dry pepper estimates vs actuals</p>
   </div>
-  <div class="season-badge">2024 – 2025</div>
-  <button class="pdf-btn" onclick="window.print()">⬇ Print / PDF</button>
+  <div class="header-actions">
+    <div class="season-badge">2024 – 2025</div>
+    <button class="header-btn btn-upload" onclick="openUpload()">📎 Upload Documents</button>
+    <button class="header-btn btn-pdf" onclick="window.print()">⬇ Print / PDF</button>
+  </div>
 </div>
 
 <!-- KPI Bar -->
@@ -106,19 +169,24 @@ tfoot td.num{text-align:right}
     <div class="kpi-unit">kg estimated</div>
   </div>
   <div class="kpi">
-    <div class="kpi-label">Dry Est. 2024-25</div>
-    <div class="kpi-value">2,430</div>
-    <div class="kpi-unit">kg estimated</div>
-  </div>
-  <div class="kpi">
     <div class="kpi-label">Green Actual 2024-25</div>
     <div class="kpi-value">1,484</div>
     <div class="kpi-unit">kg collected so far</div>
   </div>
   <div class="kpi">
-    <div class="kpi-label">Achievement</div>
+    <div class="kpi-label">Achievement (Green)</div>
     <div class="kpi-value">20.4%</div>
     <div class="kpi-unit">of green estimate</div>
+  </div>
+  <div class="kpi kpi-dry">
+    <div class="kpi-label">Dry Est. 2024-25</div>
+    <div class="kpi-value">2,430</div>
+    <div class="kpi-unit">kg estimated</div>
+  </div>
+  <div class="kpi kpi-dry">
+    <div class="kpi-label">Dry Actual 2024-25</div>
+    <div class="kpi-value" id="kpiDryAct">—</div>
+    <div class="kpi-unit">kg collected so far</div>
   </div>
 </div>
 
@@ -136,6 +204,7 @@ tfoot td.num{text-align:right}
       <option value="acres-asc">Acres ↑</option>
       <option value="green-est-desc">Green Est ↓</option>
       <option value="green-actual-desc">Green Actual ↓</option>
+      <option value="dry-actual-desc">Dry Actual ↓</option>
       <option value="vines-desc">Vines ↓</option>
     </select>
   </div>
@@ -144,7 +213,7 @@ tfoot td.num{text-align:right}
 
 <div class="main">
 
-  <!-- Charts row -->
+  <!-- Charts -->
   <div class="grid-3">
     <div class="card">
       <div class="card-title">Acres per Field</div>
@@ -155,8 +224,8 @@ tfoot td.num{text-align:right}
       <div class="chart-wrap"><canvas id="greenChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Yield per Acre — Green Estimate (kg/acre)</div>
-      <div class="chart-wrap"><canvas id="ypaChart"></canvas></div>
+      <div class="card-title">Dry Pepper — Estimate vs Actual (2024-25)</div>
+      <div class="chart-wrap"><canvas id="dryChart"></canvas></div>
     </div>
   </div>
 
@@ -165,6 +234,7 @@ tfoot td.num{text-align:right}
     <div class="tbl-header">
       <h2>Field-wise Yield Data</h2>
       <span class="count" id="rowCount">9 fields</span>
+      <div class="edit-hint">✏️ Click <span>Dry Actual</span> cell to enter value</div>
     </div>
     <div class="tbl-wrap">
       <table id="mainTable">
@@ -173,18 +243,16 @@ tfoot td.num{text-align:right}
             <th>S.No</th>
             <th>Field Name</th>
             <th class="num">Acres</th>
-            <th class="num">Yielding Vines</th>
+            <th class="num">Vines</th>
             <th class="num">Green Est (kg)</th>
             <th class="num">Dry Est (kg)</th>
             <th class="num">Green Actual (kg)</th>
-            <th class="num">Dry Actual (kg)</th>
-            <th class="num">Yield/Acre Green (Est)</th>
-            <th class="num">Achievement</th>
+            <th class="num dry-col">Dry Actual (kg) ✏️</th>
+            <th class="num">kg/Acre (Est)</th>
+            <th class="num">Green %</th>
           </tr>
         </thead>
-        <tbody id="tableBody">
-          <!-- rows injected by JS -->
-        </tbody>
+        <tbody id="tableBody"></tbody>
         <tfoot>
           <tr>
             <td colspan="2">TOTAL</td>
@@ -202,34 +270,103 @@ tfoot td.num{text-align:right}
     </div>
   </div>
 
-  <!-- Progress cards per field -->
+  <!-- Documents panel -->
+  <div class="docs-card" id="docsCard">
+    <div class="docs-header" onclick="toggleDocs()">
+      <span style="font-size:1.1rem">📎</span>
+      <h2>Supporting Documents</h2>
+      <span class="count" id="docCount">0 files</span>
+      <span class="docs-toggle" id="docsToggle">▼</span>
+    </div>
+    <div class="docs-body" id="docsBody">
+      <!-- Upload zone -->
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
+               onchange="handleFileSelect(event)">
+        <div style="font-size:2rem">📂</div>
+        <strong>Click to browse or drag & drop files here</strong>
+        <p>PDF, Word, Excel, JPG, PNG — estimates, receipts, field records</p>
+      </div>
+      <div class="upload-meta" id="uploadMeta" style="display:none">
+        <div class="filter-group">
+          <label>Tag</label>
+          <select id="docTag">
+            <option value="Estimate">Estimate</option>
+            <option value="Actual">Actual</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Notes (optional)</label>
+          <input type="text" id="docNotes" placeholder="e.g. Field inspection, Oct 2024" style="min-width:220px">
+        </div>
+        <button class="btn-do-upload" id="uploadBtn" onclick="confirmUpload()">⬆ Save Document</button>
+        <button class="btn-reset" onclick="cancelUpload()">✕ Cancel</button>
+      </div>
+      <div id="pendingFilesInfo" style="font-size:.78rem;color:#6b7280;margin-bottom:10px;display:none"></div>
+      <!-- Doc list -->
+      <div class="doc-list" id="docList"></div>
+      <div class="no-docs" id="noDocs">No documents uploaded yet.</div>
+    </div>
+  </div>
+
+  <!-- Progress cards -->
   <div class="grid-3" id="progressCards"></div>
 
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
+// ── Data ──────────────────────────────────────────────────────────────────────
 const FIELDS = [
-  { sno:1,  name:'Chappakadan Thundu Middle Level', acres:6,  vines:440, greenEst:1990, dryEst:663,  greenAct:440, dryAct:null },
-  { sno:2,  name:'Chappakadan Thundu',              acres:12, vines:301, greenEst:1280, dryEst:427,  greenAct:301, dryAct:null },
-  { sno:3,  name:'Chitrodora Field',                acres:5,  vines:145, greenEst:550,  dryEst:183,  greenAct:145, dryAct:null },
-  { sno:4,  name:'BBTC Puthukadu',                  acres:5,  vines:119, greenEst:690,  dryEst:230,  greenAct:119, dryAct:null },
-  { sno:5,  name:'Pamandicholai Field',              acres:13, vines:281, greenEst:1400, dryEst:467,  greenAct:281, dryAct:null },
-  { sno:6,  name:'Keel Nodichikkal Field',           acres:16, vines:146, greenEst:700,  dryEst:233,  greenAct:70,  dryAct:null },
-  { sno:7,  name:'Mel Nodichikkal Field',            acres:2,  vines:0,   greenEst:0,    dryEst:0,    greenAct:76,  dryAct:null },
-  { sno:8,  name:'Churampulpadi Field',              acres:12, vines:63,  greenEst:290,  dryEst:97,   greenAct:63,  dryAct:null },
-  { sno:9,  name:'Bommidi Quarters',                 acres:10, vines:89,  greenEst:390,  dryEst:130,  greenAct:89,  dryAct:null },
+  { sno:1,  name:'Chappakadan Thundu Middle Level', acres:6,  vines:440, greenEst:1990, dryEst:663,  greenAct:440 },
+  { sno:2,  name:'Chappakadan Thundu',              acres:12, vines:301, greenEst:1280, dryEst:427,  greenAct:301 },
+  { sno:3,  name:'Chitrodora Field',                acres:5,  vines:145, greenEst:550,  dryEst:183,  greenAct:145 },
+  { sno:4,  name:'BBTC Puthukadu',                  acres:5,  vines:119, greenEst:690,  dryEst:230,  greenAct:119 },
+  { sno:5,  name:'Pamandicholai Field',              acres:13, vines:281, greenEst:1400, dryEst:467,  greenAct:281 },
+  { sno:6,  name:'Keel Nodichikkal Field',           acres:16, vines:146, greenEst:700,  dryEst:233,  greenAct:70  },
+  { sno:7,  name:'Mel Nodichikkal Field',            acres:2,  vines:0,   greenEst:0,    dryEst:0,    greenAct:76  },
+  { sno:8,  name:'Churampulpadi Field',              acres:12, vines:63,  greenEst:290,  dryEst:97,   greenAct:63  },
+  { sno:9,  name:'Bommidi Quarters',                 acres:10, vines:89,  greenEst:390,  dryEst:130,  greenAct:89  },
 ];
 
+// Load persisted dry actuals from localStorage
+const DRY_KEY = 'bve_dry_actuals_2425';
+function loadDryActuals(){
+  try{ return JSON.parse(localStorage.getItem(DRY_KEY) || '{}'); }catch(e){ return {}; }
+}
+function saveDryActual(sno, val){
+  const d = loadDryActuals();
+  if(val === null) delete d[sno]; else d[sno] = val;
+  localStorage.setItem(DRY_KEY, JSON.stringify(d));
+}
+function getDryActuals(){
+  const stored = loadDryActuals();
+  return FIELDS.map(f => stored[f.sno] != null ? stored[f.sno] : null);
+}
+
 let displayData = [...FIELDS];
+function fmt(n){ return n == null ? '—' : (+n).toLocaleString('en-IN'); }
+function pct(act, est){ if(!est || act == null) return null; return ((act/est)*100).toFixed(1); }
 
-function fmt(n){ return n == null ? '—' : n.toLocaleString('en-IN'); }
-function pct(act, est){ if(!est) return null; return ((act/est)*100).toFixed(1); }
+// ── KPI Dry Actual ──────────────────────────────────────────────────────────
+function refreshKpiDry(){
+  const stored = loadDryActuals();
+  const total = FIELDS.reduce((a,f)=> stored[f.sno] != null ? a + stored[f.sno] : a, 0);
+  const hasAny = Object.keys(stored).length > 0;
+  document.getElementById('kpiDryAct').textContent = hasAny ? fmt(total) : '—';
+}
 
+// ── Table ────────────────────────────────────────────────────────────────────
 function renderTable(){
+  const stored = loadDryActuals();
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
   let visCount = 0;
   displayData.forEach(f => {
+    const dryAct = stored[f.sno] != null ? stored[f.sno] : null;
     const achieve = pct(f.greenAct, f.greenEst);
     const ypa = f.acres ? (f.greenEst/f.acres).toFixed(1) : '—';
     const tr = document.createElement('tr');
@@ -241,27 +378,72 @@ function renderTable(){
       <td class="num">${fmt(f.greenEst)}</td>
       <td class="num">${fmt(f.dryEst)}</td>
       <td class="num">${fmt(f.greenAct)}</td>
-      <td class="num">—</td>
+      <td class="num dry-actual-cell" data-sno="${f.sno}">
+        <div class="dry-actual-display ${dryAct!=null?'has-value':''}" onclick="startEdit(this,${f.sno})">
+          <span class="val">${dryAct != null ? fmt(dryAct) : '—'}</span>
+          <span class="pencil">✏️</span>
+        </div>
+        <div class="dry-edit-wrap">
+          <input type="number" min="0" step="0.1" value="${dryAct != null ? dryAct : ''}" placeholder="0">
+          <button class="save-btn" onclick="saveEdit(this,${f.sno})">✓</button>
+          <button class="cancel-btn" onclick="cancelEdit(this)">✕</button>
+        </div>
+      </td>
       <td class="num">${ypa}</td>
       <td class="num">${achieve ? achieve+'%' : '—'}</td>
     `;
     tbody.appendChild(tr);
     visCount++;
   });
+  // keyboard support
+  tbody.querySelectorAll('.dry-edit-wrap input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if(e.key==='Enter') inp.nextElementSibling.click();
+      if(e.key==='Escape') inp.nextElementSibling.nextElementSibling.click();
+    });
+  });
   document.getElementById('rowCount').textContent = visCount + ' field' + (visCount!==1?'s':'');
-  renderFooter();
+  renderFooter(stored);
+  refreshKpiDry();
 }
 
-function renderFooter(){
+function renderFooter(stored){
   const sum = (key) => displayData.reduce((a,f)=>a+(f[key]||0),0);
   const totGreenEst = sum('greenEst');
   const totGreenAct = sum('greenAct');
+  const totDryAct   = displayData.reduce((a,f)=> stored[f.sno]!=null ? a+stored[f.sno] : a, 0);
+  const anyDry      = displayData.some(f => stored[f.sno]!=null);
   document.getElementById('ftAcres').textContent    = fmt(sum('acres'));
   document.getElementById('ftVines').textContent    = fmt(sum('vines'));
   document.getElementById('ftGreenEst').textContent = fmt(totGreenEst);
   document.getElementById('ftDryEst').textContent   = fmt(sum('dryEst'));
   document.getElementById('ftGreenAct').textContent = fmt(totGreenAct);
+  document.getElementById('ftDryAct').textContent   = anyDry ? fmt(totDryAct) : '—';
   document.getElementById('ftAchieve').textContent  = totGreenEst ? pct(totGreenAct,totGreenEst)+'%' : '—';
+}
+
+// Inline dry edit
+function startEdit(el, sno){
+  const cell = el.closest('.dry-actual-cell');
+  el.style.display = 'none';
+  const wrap = cell.querySelector('.dry-edit-wrap');
+  wrap.style.display = 'flex';
+  wrap.querySelector('input').focus();
+}
+function saveEdit(btn, sno){
+  const wrap = btn.closest('.dry-edit-wrap');
+  const val = wrap.querySelector('input').value.trim();
+  const num = val === '' ? null : parseFloat(val);
+  saveDryActual(sno, num);
+  renderTable();
+  updateDryChart();
+  renderProgressCards();
+  showToast('Dry actual saved ✓');
+}
+function cancelEdit(btn){
+  const cell = btn.closest('.dry-actual-cell');
+  cell.querySelector('.dry-edit-wrap').style.display = 'none';
+  cell.querySelector('.dry-actual-display').style.display = 'flex';
 }
 
 function filterTable(){
@@ -269,19 +451,19 @@ function filterTable(){
   displayData = FIELDS.filter(f => f.name.toLowerCase().includes(q));
   sortTable(true);
 }
-
 function sortTable(skipReset){
   const val = document.getElementById('sortSelect').value;
+  const stored = loadDryActuals();
   const d = [...displayData];
-  if(val==='acres-desc')       d.sort((a,b)=>b.acres-a.acres);
-  else if(val==='acres-asc')   d.sort((a,b)=>a.acres-b.acres);
+  if(val==='acres-desc')        d.sort((a,b)=>b.acres-a.acres);
+  else if(val==='acres-asc')    d.sort((a,b)=>a.acres-b.acres);
   else if(val==='green-est-desc') d.sort((a,b)=>b.greenEst-a.greenEst);
   else if(val==='green-actual-desc') d.sort((a,b)=>b.greenAct-a.greenAct);
-  else if(val==='vines-desc')  d.sort((a,b)=>b.vines-a.vines);
+  else if(val==='dry-actual-desc')   d.sort((a,b)=>(stored[b.sno]||0)-(stored[a.sno]||0));
+  else if(val==='vines-desc')   d.sort((a,b)=>b.vines-a.vines);
   displayData = d;
   renderTable();
 }
-
 function resetFilters(){
   document.getElementById('searchInput').value='';
   document.getElementById('sortSelect').value='';
@@ -289,69 +471,239 @@ function resetFilters(){
   renderTable();
 }
 
-// ── Charts ──────────────────────────────────────────────────────────────────
-const LABELS_SHORT = FIELDS.map(f => f.name.length>18 ? f.name.slice(0,16)+'…' : f.name);
-const GREEN  = '#2d6e2d';
-const GOLD   = '#e8c84a';
-const LIME   = '#4a9e4a';
-const BGGREEN = 'rgba(45,110,45,0.18)';
+// ── Charts ────────────────────────────────────────────────────────────────────
+const LABELS = FIELDS.map(f => f.name.length>16 ? f.name.slice(0,14)+'…' : f.name);
+const GREEN='#2d6e2d', GOLD='#e8c84a', LIME='#4a9e4a', BROWN='#c87941', BGGREEN='rgba(45,110,45,0.18)';
 
-// Acres bar
-new Chart(document.getElementById('acresChart'), {
+new Chart(document.getElementById('acresChart'),{
   type:'bar',
-  data:{ labels:LABELS_SHORT, datasets:[{ label:'Acres', data:FIELDS.map(f=>f.acres),
-    backgroundColor:FIELDS.map(()=>BGGREEN), borderColor:GREEN, borderWidth:1.5, borderRadius:4 }] },
-  options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:9},maxRotation:45}},y:{ticks:{font:{size:9}}}} }
+  data:{labels:LABELS,datasets:[{label:'Acres',data:FIELDS.map(f=>f.acres),
+    backgroundColor:FIELDS.map(()=>BGGREEN),borderColor:GREEN,borderWidth:1.5,borderRadius:4}]},
+  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:45}},y:{ticks:{font:{size:9}}}}}
 });
 
-// Green Est vs Actual grouped bar
-new Chart(document.getElementById('greenChart'), {
+new Chart(document.getElementById('greenChart'),{
   type:'bar',
-  data:{ labels:LABELS_SHORT, datasets:[
-    { label:'Estimate', data:FIELDS.map(f=>f.greenEst), backgroundColor:'rgba(45,110,45,0.25)', borderColor:GREEN, borderWidth:1.5, borderRadius:3 },
-    { label:'Actual',   data:FIELDS.map(f=>f.greenAct), backgroundColor:'rgba(232,200,74,0.6)',  borderColor:GOLD,  borderWidth:1.5, borderRadius:3 },
+  data:{labels:LABELS,datasets:[
+    {label:'Estimate',data:FIELDS.map(f=>f.greenEst),backgroundColor:'rgba(45,110,45,0.22)',borderColor:GREEN,borderWidth:1.5,borderRadius:3},
+    {label:'Actual',  data:FIELDS.map(f=>f.greenAct),backgroundColor:'rgba(232,200,74,0.6)', borderColor:GOLD, borderWidth:1.5,borderRadius:3},
   ]},
-  options:{ plugins:{legend:{labels:{font:{size:10}}}}, scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{font:{size:9}}}} }
+  options:{plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{font:{size:9}}}}}
 });
 
-// Yield per acre
-new Chart(document.getElementById('ypaChart'), {
-  type:'bar',
-  data:{ labels:LABELS_SHORT, datasets:[{ label:'kg/acre (est)',
-    data:FIELDS.map(f=>f.acres ? +(f.greenEst/f.acres).toFixed(1) : 0),
-    backgroundColor:FIELDS.map(()=>'rgba(74,158,74,0.25)'), borderColor:LIME, borderWidth:1.5, borderRadius:4 }] },
-  options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:9},maxRotation:45}},y:{ticks:{font:{size:9}}}} }
-});
+let dryChartInst = null;
+function buildDryChart(){
+  const stored = loadDryActuals();
+  const actuals = FIELDS.map(f => stored[f.sno] != null ? stored[f.sno] : 0);
+  dryChartInst = new Chart(document.getElementById('dryChart'),{
+    type:'bar',
+    data:{labels:LABELS,datasets:[
+      {label:'Estimate',data:FIELDS.map(f=>f.dryEst),  backgroundColor:'rgba(200,121,65,0.18)',borderColor:BROWN,borderWidth:1.5,borderRadius:3},
+      {label:'Actual',  data:actuals,                   backgroundColor:'rgba(200,121,65,0.55)',borderColor:BROWN,borderWidth:2,  borderRadius:3},
+    ]},
+    options:{plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{font:{size:9}}}}}
+  });
+}
+function updateDryChart(){
+  if(!dryChartInst) return;
+  const stored = loadDryActuals();
+  dryChartInst.data.datasets[1].data = FIELDS.map(f => stored[f.sno] != null ? stored[f.sno] : 0);
+  dryChartInst.update();
+}
+buildDryChart();
 
-// ── Progress Cards ────────────────────────────────────────────────────────
-const cards = document.getElementById('progressCards');
-FIELDS.forEach(f => {
-  const achieve = f.greenEst > 0 ? Math.min(100,(f.greenAct/f.greenEst*100)) : null;
-  const chip = achieve !== null
-    ? `<span class="actuals-chip">${(f.greenAct/f.greenEst*100).toFixed(0)}% achieved</span>`
-    : `<span class="actuals-chip pending">No estimate</span>`;
-  const bar = achieve !== null
-    ? `<div class="progress-bar-wrap"><div class="progress-bar" style="width:${achieve}%"></div></div>
-       <div class="pct-label">Green actual ${fmt(f.greenAct)} kg of ${fmt(f.greenEst)} kg est.</div>`
-    : `<div class="pct-label">Green actual ${fmt(f.greenAct)} kg</div>`;
-  const div = document.createElement('div');
-  div.className = 'card';
-  div.style.padding = '14px 18px';
-  div.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-      <div style="font-size:.75rem;font-weight:700;color:#1b4a1b">${f.name}</div>
-      ${chip}
-    </div>
-    <div style="display:flex;gap:16px;margin-bottom:8px">
-      <div><div style="font-size:.62rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Acres</div><div style="font-size:1.1rem;font-weight:700;color:#1b4a1b">${f.acres}</div></div>
-      <div><div style="font-size:.62rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Vines</div><div style="font-size:1.1rem;font-weight:700;color:#1b4a1b">${fmt(f.vines)}</div></div>
-      <div><div style="font-size:.62rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Dry Est</div><div style="font-size:1.1rem;font-weight:700;color:#1b4a1b">${fmt(f.dryEst)} kg</div></div>
-    </div>
-    ${bar}
-  `;
-  cards.appendChild(div);
-});
+// ── Progress Cards ────────────────────────────────────────────────────────────
+function renderProgressCards(){
+  const stored = loadDryActuals();
+  const cards = document.getElementById('progressCards');
+  cards.innerHTML = '';
+  FIELDS.forEach(f => {
+    const dryAct = stored[f.sno] != null ? stored[f.sno] : null;
+    const greenPct = f.greenEst > 0 ? Math.min(100,(f.greenAct/f.greenEst*100)) : null;
+    const dryPct   = f.dryEst > 0 && dryAct != null ? Math.min(100,(dryAct/f.dryEst*100)) : null;
+    const chip = greenPct !== null
+      ? `<span class="actuals-chip">${greenPct.toFixed(0)}% green</span>`
+      : `<span class="actuals-chip pending">No est.</span>`;
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.padding = '14px 18px';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="font-size:.75rem;font-weight:700;color:#1b4a1b">${f.name}</div>${chip}
+      </div>
+      <div style="display:flex;gap:16px;margin-bottom:10px">
+        <div><div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Acres</div><div style="font-size:1rem;font-weight:700;color:#1b4a1b">${f.acres}</div></div>
+        <div><div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Vines</div><div style="font-size:1rem;font-weight:700;color:#1b4a1b">${fmt(f.vines)}</div></div>
+        <div><div style="font-size:.6rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Dry Actual</div>
+          <div style="font-size:1rem;font-weight:700;color:${dryAct!=null?'#8b4513':'#9ca3af'}">${dryAct!=null?fmt(dryAct)+' kg':'—'}</div>
+        </div>
+      </div>
+      ${greenPct!==null?`<div class="progress-bar-wrap"><div class="progress-bar" style="width:${greenPct}%"></div></div>
+        <div class="pct-label">Green: ${fmt(f.greenAct)} kg actual of ${fmt(f.greenEst)} kg est.</div>`
+        :`<div class="pct-label">Green actual: ${fmt(f.greenAct)} kg</div>`}
+      ${dryPct!==null?`<div class="progress-bar-wrap" style="margin-top:6px"><div class="progress-bar dry" style="width:${dryPct}%"></div></div>
+        <div class="pct-label">Dry: ${fmt(dryAct)} kg actual of ${fmt(f.dryEst)} kg est.</div>`:''}
+    `;
+    cards.appendChild(div);
+  });
+}
 
+// ── Document Upload ───────────────────────────────────────────────────────────
+const DOCS_KEY = 'bve_docs_2425';
+function loadDocs(){ try{ return JSON.parse(localStorage.getItem(DOCS_KEY)||'[]'); }catch(e){ return []; } }
+function saveDocs(docs){ localStorage.setItem(DOCS_KEY, JSON.stringify(docs)); }
+
+let pendingFiles = [];
+
+function openUpload(){
+  const docsCard = document.getElementById('docsCard');
+  docsCard.scrollIntoView({behavior:'smooth',block:'start'});
+  const body = document.getElementById('docsBody');
+  body.classList.add('open');
+  document.getElementById('docsToggle').classList.add('open');
+  updateDocCount();
+}
+function toggleDocs(){
+  const body = document.getElementById('docsBody');
+  body.classList.toggle('open');
+  document.getElementById('docsToggle').classList.toggle('open');
+}
+function handleDragOver(e){ e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function handleDragLeave(){ document.getElementById('uploadZone').classList.remove('drag-over'); }
+function handleDrop(e){ e.preventDefault(); handleDragLeave(); processFiles(e.dataTransfer.files); }
+function handleFileSelect(e){ processFiles(e.target.files); e.target.value=''; }
+
+function processFiles(fileList){
+  pendingFiles = Array.from(fileList);
+  if(!pendingFiles.length) return;
+  document.getElementById('uploadMeta').style.display = 'flex';
+  document.getElementById('pendingFilesInfo').style.display = 'block';
+  document.getElementById('pendingFilesInfo').textContent =
+    `${pendingFiles.length} file(s) selected: ${pendingFiles.map(f=>f.name).join(', ')}`;
+}
+
+function confirmUpload(){
+  if(!pendingFiles.length) return;
+  const tag   = document.getElementById('docTag').value;
+  const notes = document.getElementById('docNotes').value.trim();
+  const btn   = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving…';
+
+  let done = 0;
+  const docs = loadDocs();
+
+  pendingFiles.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const sizeKb = (file.size/1024).toFixed(0);
+      if(file.size > 5*1024*1024){
+        // Too large for localStorage — store metadata only
+        docs.push({ id: Date.now()+Math.random(), name:file.name, type:file.type, sizeKb, tag, notes,
+          date: new Date().toLocaleDateString('en-IN'), dataUrl: null, tooLarge: true });
+      } else {
+        docs.push({ id: Date.now()+Math.random(), name:file.name, type:file.type, sizeKb, tag, notes,
+          date: new Date().toLocaleDateString('en-IN'), dataUrl: e.target.result, tooLarge: false });
+      }
+      done++;
+      if(done === pendingFiles.length){
+        try { saveDocs(docs); } catch(err){
+          // localStorage quota — save without dataUrl
+          const stripped = docs.map(d=>({...d, dataUrl:null, tooLarge:true}));
+          localStorage.setItem(DOCS_KEY, JSON.stringify(stripped));
+        }
+        cancelUpload();
+        renderDocList();
+        updateDocCount();
+        btn.disabled = false;
+        btn.textContent = '⬆ Save Document';
+        showToast(`${pendingFiles.length} document(s) saved ✓`);
+      }
+    };
+    if(file.size > 5*1024*1024) reader.readAsArrayBuffer(file); // triggers onload without reading all
+    else reader.readAsDataURL(file);
+  });
+}
+
+function cancelUpload(){
+  pendingFiles = [];
+  document.getElementById('uploadMeta').style.display = 'none';
+  document.getElementById('pendingFilesInfo').style.display = 'none';
+  document.getElementById('docNotes').value = '';
+}
+
+function deleteDoc(id){
+  const docs = loadDocs().filter(d => d.id !== id);
+  saveDocs(docs);
+  renderDocList();
+  updateDocCount();
+  showToast('Document removed');
+}
+
+function downloadDoc(id){
+  const doc = loadDocs().find(d => d.id === id);
+  if(!doc || !doc.dataUrl){ showToast('File data not available (too large to store)'); return; }
+  const a = document.createElement('a');
+  a.href = doc.dataUrl;
+  a.download = doc.name;
+  a.click();
+}
+
+function fileIcon(type){
+  if(!type) return '📄';
+  if(type.includes('pdf')) return '📕';
+  if(type.includes('image')) return '🖼️';
+  if(type.includes('spreadsheet')||type.includes('excel')||type.includes('csv')) return '📊';
+  if(type.includes('word')||type.includes('document')) return '📝';
+  return '📄';
+}
+
+function renderDocList(){
+  const docs = loadDocs();
+  const list = document.getElementById('docList');
+  const none = document.getElementById('noDocs');
+  list.innerHTML = '';
+  if(!docs.length){ none.style.display='block'; return; }
+  none.style.display='none';
+  docs.slice().reverse().forEach(doc => {
+    const div = document.createElement('div');
+    div.className = 'doc-item';
+    div.innerHTML = `
+      <div class="doc-icon">${fileIcon(doc.type)}</div>
+      <div class="doc-info">
+        <div class="doc-name" title="${doc.name}">${doc.name}</div>
+        <div class="doc-meta">${doc.date} · ${doc.sizeKb} KB${doc.notes ? ' · '+doc.notes:''}</div>
+        <span class="doc-tag tag-${doc.tag}">${doc.tag}</span>
+        ${doc.tooLarge?'<span style="font-size:.6rem;color:#9ca3af;margin-left:6px">⚠ Not stored (>5 MB)</span>':''}
+      </div>
+      <div class="doc-actions">
+        ${!doc.tooLarge?`<button onclick="downloadDoc(${doc.id})" title="Download">⬇</button>`:''}
+        <button onclick="deleteDoc(${doc.id})" title="Remove">🗑</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function updateDocCount(){
+  const n = loadDocs().length;
+  document.getElementById('docCount').textContent = n + ' file' + (n!==1?'s':'');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 renderTable();
+renderProgressCards();
+renderDocList();
+updateDocCount();
 </script>
 </body></html>
