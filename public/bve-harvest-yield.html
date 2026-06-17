@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bison Valley Estate — Pepper Yield Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Exo 2',system-ui,-apple-system,sans-serif;background:#fdf8ee;color:#1a1a1a;min-height:100vh}
+
+.header{background:linear-gradient(135deg,#1b4a1b 0%,#2d6e2d 100%);border-bottom:2px solid #4a9e4a;padding:20px 28px;display:flex;align-items:center;gap:16px}
+.header-icon{font-size:2.2rem}
+.header-text h1{font-size:1.5rem;font-weight:700;color:#ffffff;letter-spacing:.03em}
+.header-text p{font-size:0.85rem;color:rgba(255,255,255,0.75);margin-top:2px}
+.season-badge{margin-left:auto;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;font-size:0.78rem;font-weight:700;color:#ffffff;letter-spacing:.06em}
+.pdf-btn{background:#e8c84a;border:none;border-radius:20px;padding:7px 18px;font-size:0.78rem;font-weight:700;color:#1b4a1b;cursor:pointer;margin-left:10px;letter-spacing:.04em}
+.pdf-btn:hover{background:#d4b030}
+
+.kpi-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:20px 28px;background:#f5eedc;border-bottom:1px solid #e5dfc8}
+.kpi{background:#ffffff;border:1px solid #e5dfc8;border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#2d6e2d}
+.kpi-label{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#374151;margin-bottom:6px}
+.kpi-value{font-size:1.75rem;font-weight:700;color:#1b4a1b;line-height:1}
+.kpi-unit{font-size:.7rem;color:#6b7280;margin-top:4px}
+
+.filters{background:#f5eedc;border-bottom:1px solid #e5dfc8;padding:14px 28px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151}
+.filter-group select,.filter-group input{background:#ffffff;border:1.5px solid #e5dfc8;border-radius:6px;color:#1a1a1a;padding:7px 10px;font-size:.82rem;min-width:160px;cursor:pointer}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:#4a9e4a}
+.filter-group input{min-width:200px}
+.filter-group input::placeholder{color:#9ca3af}
+.btn-reset{background:transparent;border:1.5px solid #e5dfc8;border-radius:6px;color:#6b7280;padding:7px 16px;cursor:pointer;font-size:.82rem;align-self:flex-end}
+.btn-reset:hover{border-color:#4a9e4a;color:#2d6e2d}
+
+.main{padding:20px 28px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:20px 22px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
+.card-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;margin-bottom:14px}
+.chart-wrap{position:relative;height:260px}
+
+.tbl-card{background:#ffffff;border:1px solid #e5dfc8;border-radius:12px;padding:16px 18px;margin-bottom:24px;box-shadow:0 2px 14px rgba(27,74,27,0.08)}
+.tbl-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tbl-header h2{font-size:.9rem;color:#1b4a1b;font-weight:700}
+.tbl-header .count{background:rgba(27,74,27,0.1);color:#2d6e2d;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700}
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:420px;border:1px solid #e5dfc8;border-radius:8px}
+.tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
+.tbl-wrap::-webkit-scrollbar-track{background:#f5eedc}
+.tbl-wrap::-webkit-scrollbar-thumb{background:#d4c9a8;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+thead th{position:sticky;top:0;background:#f5eedc;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#374151;padding:9px 10px;text-align:left;border-bottom:1px solid #e5dfc8;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:#1b4a1b}
+thead th.sort-asc::after{content:' ▲';color:#4a9e4a}
+thead th.sort-desc::after{content:' ▼';color:#4a9e4a}
+tbody tr{border-bottom:1px solid #f0ead4;transition:background .1s}
+tbody tr:hover{background:#fdf5e6}
+tbody tr.hidden{display:none}
+tbody td{padding:8px 10px;color:#1a1a1a;vertical-align:middle;white-space:nowrap}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{position:sticky;bottom:0;background:#f5eedc;font-size:.7rem;font-weight:700;color:#1b4a1b;padding:9px 10px;border-top:2px solid #4a9e4a}
+tfoot td.num{text-align:right}
+
+.progress-bar-wrap{background:#e5dfc8;border-radius:4px;height:7px;overflow:hidden;margin-top:4px}
+.progress-bar{height:7px;border-radius:4px;background:linear-gradient(90deg,#2d6e2d,#4a9e4a)}
+.pct-label{font-size:.65rem;color:#6b7280;margin-top:2px}
+
+.actuals-chip{display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:2px 8px;font-size:.65rem;font-weight:700;color:#065f46}
+.actuals-chip.pending{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+
+@media print{
+  @page{size:A4 landscape;margin:0}
+  body{padding:14mm 12mm!important;background:#ffffff!important}
+  .filters,.pdf-btn{display:none!important}
+  .tbl-wrap{max-height:none!important;overflow:visible!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🌿</div>
+  <div class="header-text">
+    <h1>Bison Valley Estate — Pepper Yield Dashboard</h1>
+    <p>Field-wise yield tracking · Green &amp; Dry pepper estimates vs actuals</p>
+  </div>
+  <div class="season-badge">2024 – 2025</div>
+  <button class="pdf-btn" onclick="window.print()">⬇ Print / PDF</button>
+</div>
+
+<!-- KPI Bar -->
+<div class="kpi-bar">
+  <div class="kpi">
+    <div class="kpi-label">Total Acres</div>
+    <div class="kpi-value">81</div>
+    <div class="kpi-unit">hectares under pepper</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Yielding Vines</div>
+    <div class="kpi-value">1,584</div>
+    <div class="kpi-unit">active vines</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Green Est. 2024-25</div>
+    <div class="kpi-value">7,290</div>
+    <div class="kpi-unit">kg estimated</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Dry Est. 2024-25</div>
+    <div class="kpi-value">2,430</div>
+    <div class="kpi-unit">kg estimated</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Green Actual 2024-25</div>
+    <div class="kpi-value">1,484</div>
+    <div class="kpi-unit">kg collected so far</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Achievement</div>
+    <div class="kpi-value">20.4%</div>
+    <div class="kpi-unit">of green estimate</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+  <div class="filter-group">
+    <label>Search Field</label>
+    <input type="text" id="searchInput" placeholder="Type field name…" oninput="filterTable()">
+  </div>
+  <div class="filter-group">
+    <label>Sort By</label>
+    <select id="sortSelect" onchange="sortTable()">
+      <option value="">— Default —</option>
+      <option value="acres-desc">Acres ↓</option>
+      <option value="acres-asc">Acres ↑</option>
+      <option value="green-est-desc">Green Est ↓</option>
+      <option value="green-actual-desc">Green Actual ↓</option>
+      <option value="vines-desc">Vines ↓</option>
+    </select>
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
+</div>
+
+<div class="main">
+
+  <!-- Charts row -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Acres per Field</div>
+      <div class="chart-wrap"><canvas id="acresChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Green Pepper — Estimate vs Actual (2024-25)</div>
+      <div class="chart-wrap"><canvas id="greenChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Yield per Acre — Green Estimate (kg/acre)</div>
+      <div class="chart-wrap"><canvas id="ypaChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="tbl-card">
+    <div class="tbl-header">
+      <h2>Field-wise Yield Data</h2>
+      <span class="count" id="rowCount">9 fields</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Field Name</th>
+            <th class="num">Acres</th>
+            <th class="num">Yielding Vines</th>
+            <th class="num">Green Est (kg)</th>
+            <th class="num">Dry Est (kg)</th>
+            <th class="num">Green Actual (kg)</th>
+            <th class="num">Dry Actual (kg)</th>
+            <th class="num">Yield/Acre Green (Est)</th>
+            <th class="num">Achievement</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- rows injected by JS -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">TOTAL</td>
+            <td class="num" id="ftAcres"></td>
+            <td class="num" id="ftVines"></td>
+            <td class="num" id="ftGreenEst"></td>
+            <td class="num" id="ftDryEst"></td>
+            <td class="num" id="ftGreenAct"></td>
+            <td class="num" id="ftDryAct">—</td>
+            <td class="num">—</td>
+            <td class="num" id="ftAchieve"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Progress cards per field -->
+  <div class="grid-3" id="progressCards"></div>
+
+</div>
+
+<script>
+const FIELDS = [
+  { sno:1,  name:'Chappakadan Thundu Middle Level', acres:6,  vines:440, greenEst:1990, dryEst:663,  greenAct:440, dryAct:null },
+  { sno:2,  name:'Chappakadan Thundu',              acres:12, vines:301, greenEst:1280, dryEst:427,  greenAct:301, dryAct:null },
+  { sno:3,  name:'Chitrodora Field',                acres:5,  vines:145, greenEst:550,  dryEst:183,  greenAct:145, dryAct:null },
+  { sno:4,  name:'BBTC Puthukadu',                  acres:5,  vines:119, greenEst:690,  dryEst:230,  greenAct:119, dryAct:null },
+  { sno:5,  name:'Pamandicholai Field',              acres:13, vines:281, greenEst:1400, dryEst:467,  greenAct:281, dryAct:null },
+  { sno:6,  name:'Keel Nodichikkal Field',           acres:16, vines:146, greenEst:700,  dryEst:233,  greenAct:70,  dryAct:null },
+  { sno:7,  name:'Mel Nodichikkal Field',            acres:2,  vines:0,   greenEst:0,    dryEst:0,    greenAct:76,  dryAct:null },
+  { sno:8,  name:'Churampulpadi Field',              acres:12, vines:63,  greenEst:290,  dryEst:97,   greenAct:63,  dryAct:null },
+  { sno:9,  name:'Bommidi Quarters',                 acres:10, vines:89,  greenEst:390,  dryEst:130,  greenAct:89,  dryAct:null },
+];
+
+let displayData = [...FIELDS];
+
+function fmt(n){ return n == null ? '—' : n.toLocaleString('en-IN'); }
+function pct(act, est){ if(!est) return null; return ((act/est)*100).toFixed(1); }
+
+function renderTable(){
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  let visCount = 0;
+  displayData.forEach(f => {
+    const achieve = pct(f.greenAct, f.greenEst);
+    const ypa = f.acres ? (f.greenEst/f.acres).toFixed(1) : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${f.sno}</td>
+      <td>${f.name}</td>
+      <td class="num">${fmt(f.acres)}</td>
+      <td class="num">${fmt(f.vines)}</td>
+      <td class="num">${fmt(f.greenEst)}</td>
+      <td class="num">${fmt(f.dryEst)}</td>
+      <td class="num">${fmt(f.greenAct)}</td>
+      <td class="num">—</td>
+      <td class="num">${ypa}</td>
+      <td class="num">${achieve ? achieve+'%' : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+    visCount++;
+  });
+  document.getElementById('rowCount').textContent = visCount + ' field' + (visCount!==1?'s':'');
+  renderFooter();
+}
+
+function renderFooter(){
+  const sum = (key) => displayData.reduce((a,f)=>a+(f[key]||0),0);
+  const totGreenEst = sum('greenEst');
+  const totGreenAct = sum('greenAct');
+  document.getElementById('ftAcres').textContent    = fmt(sum('acres'));
+  document.getElementById('ftVines').textContent    = fmt(sum('vines'));
+  document.getElementById('ftGreenEst').textContent = fmt(totGreenEst);
+  document.getElementById('ftDryEst').textContent   = fmt(sum('dryEst'));
+  document.getElementById('ftGreenAct').textContent = fmt(totGreenAct);
+  document.getElementById('ftAchieve').textContent  = totGreenEst ? pct(totGreenAct,totGreenEst)+'%' : '—';
+}
+
+function filterTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  displayData = FIELDS.filter(f => f.name.toLowerCase().includes(q));
+  sortTable(true);
+}
+
+function sortTable(skipReset){
+  const val = document.getElementById('sortSelect').value;
+  const d = [...displayData];
+  if(val==='acres-desc')       d.sort((a,b)=>b.acres-a.acres);
+  else if(val==='acres-asc')   d.sort((a,b)=>a.acres-b.acres);
+  else if(val==='green-est-desc') d.sort((a,b)=>b.greenEst-a.greenEst);
+  else if(val==='green-actual-desc') d.sort((a,b)=>b.greenAct-a.greenAct);
+  else if(val==='vines-desc')  d.sort((a,b)=>b.vines-a.vines);
+  displayData = d;
+  renderTable();
+}
+
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('sortSelect').value='';
+  displayData = [...FIELDS];
+  renderTable();
+}
+
+// ── Charts ──────────────────────────────────────────────────────────────────
+const LABELS_SHORT = FIELDS.map(f => f.name.length>18 ? f.name.slice(0,16)+'…' : f.name);
+const GREEN  = '#2d6e2d';
+const GOLD   = '#e8c84a';
+const LIME   = '#4a9e4a';
+const BGGREEN = 'rgba(45,110,45,0.18)';
+
+// Acres bar
+new Chart(document.getElementById('acresChart'), {
+  type:'bar',
+  data:{ labels:LABELS_SHORT, datasets:[{ label:'Acres', data:FIELDS.map(f=>f.acres),
+    backgroundColor:FIELDS.map(()=>BGGREEN), borderColor:GREEN, borderWidth:1.5, borderRadius:4 }] },
+  options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:9},maxRotation:45}},y:{ticks:{font:{size:9}}}} }
+});
+
+// Green Est vs Actual grouped bar
+new Chart(document.getElementById('greenChart'), {
+  type:'bar',
+  data:{ labels:LABELS_SHORT, datasets:[
+    { label:'Estimate', data:FIELDS.map(f=>f.greenEst), backgroundColor:'rgba(45,110,45,0.25)', borderColor:GREEN, borderWidth:1.5, borderRadius:3 },
+    { label:'Actual',   data:FIELDS.map(f=>f.greenAct), backgroundColor:'rgba(232,200,74,0.6)',  borderColor:GOLD,  borderWidth:1.5, borderRadius:3 },
+  ]},
+  options:{ plugins:{legend:{labels:{font:{size:10}}}}, scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{font:{size:9}}}} }
+});
+
+// Yield per acre
+new Chart(document.getElementById('ypaChart'), {
+  type:'bar',
+  data:{ labels:LABELS_SHORT, datasets:[{ label:'kg/acre (est)',
+    data:FIELDS.map(f=>f.acres ? +(f.greenEst/f.acres).toFixed(1) : 0),
+    backgroundColor:FIELDS.map(()=>'rgba(74,158,74,0.25)'), borderColor:LIME, borderWidth:1.5, borderRadius:4 }] },
+  options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{size:9},maxRotation:45}},y:{ticks:{font:{size:9}}}} }
+});
+
+// ── Progress Cards ────────────────────────────────────────────────────────
+const cards = document.getElementById('progressCards');
+FIELDS.forEach(f => {
+  const achieve = f.greenEst > 0 ? Math.min(100,(f.greenAct/f.greenEst*100)) : null;
+  const chip = achieve !== null
+    ? `<span class="actuals-chip">${(f.greenAct/f.greenEst*100).toFixed(0)}% achieved</span>`
+    : `<span class="actuals-chip pending">No estimate</span>`;
+  const bar = achieve !== null
+    ? `<div class="progress-bar-wrap"><div class="progress-bar" style="width:${achieve}%"></div></div>
+       <div class="pct-label">Green actual ${fmt(f.greenAct)} kg of ${fmt(f.greenEst)} kg est.</div>`
+    : `<div class="pct-label">Green actual ${fmt(f.greenAct)} kg</div>`;
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.style.padding = '14px 18px';
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div style="font-size:.75rem;font-weight:700;color:#1b4a1b">${f.name}</div>
+      ${chip}
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:8px">
+      <div><div style="font-size:.62rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Acres</div><div style="font-size:1.1rem;font-weight:700;color:#1b4a1b">${f.acres}</div></div>
+      <div><div style="font-size:.62rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Vines</div><div style="font-size:1.1rem;font-weight:700;color:#1b4a1b">${fmt(f.vines)}</div></div>
+      <div><div style="font-size:.62rem;color:#6b7280;text-transform:uppercase;letter-spacing:.07em">Dry Est</div><div style="font-size:1.1rem;font-weight:700;color:#1b4a1b">${fmt(f.dryEst)} kg</div></div>
+    </div>
+    ${bar}
+  `;
+  cards.appendChild(div);
+});
+
+renderTable();
+</script>
+</body></html>

@@ -145,7 +145,12 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
-  { label: 'Harvest Yield',        href: '/harvest-yield',        icon: Wheat,        roles: ['admin', 'supervisor', 'ceo'] },
+  {
+    label: 'Harvest Yield', href: '/harvest-yield', icon: Wheat, roles: ['admin', 'supervisor', 'ceo'],
+    children: [
+      { label: 'Bison Valley Estate', href: '/harvest-yield/bison-valley' },
+    ],
+  },
   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   {
