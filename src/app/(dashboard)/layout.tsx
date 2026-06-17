@@ -148,7 +148,12 @@ const navItems: NavItem[] = [
   {
     label: 'Harvest Yield', href: '/harvest-yield', icon: Wheat, roles: ['admin', 'supervisor', 'ceo'],
     children: [
-      { label: 'Bison Valley Estate', href: '/harvest-yield/bison-valley' },
+      {
+        label: '2024–2025',
+        children: [
+          { label: 'Bison Valley Estate', href: '/harvest-yield/bison-valley' },
+        ],
+      },
     ],
   },
   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
