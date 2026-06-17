@@ -1807,11 +1807,25 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       const data = await res.json();
 
       // Auto-populate fields (only if they are currently empty)
-      if (data.customer_name)  setCustomer(c  => c  || data.customer_name);
-      if (data.customer_address) setAddress(a  => a  || data.customer_address);
-      if (data.invoice_number) setRef(r  => r  || data.invoice_number);
-      if (data.quantity_kg)    setKg(k  => k  || String(data.quantity_kg));
-      if (data.price_per_kg)   setPrice(p  => p  || String(data.price_per_kg));
+      if (data.customer_name)    setCustomer(c => c || data.customer_name);
+      if (data.customer_address) setAddress(a  => a || data.customer_address);
+      if (data.invoice_number)   setRef(r      => r || data.invoice_number);
+      if (data.quantity_kg)      setKg(k       => k || String(data.quantity_kg));
+      if (data.price_per_kg)     setPrice(p    => p || String(data.price_per_kg));
+
+      // Auto-select lot: match extracted lot_number against allLots
+      let lotMatched = false;
+      if (data.lot_number) {
+        const rawLot = String(data.lot_number).trim().replace(/^(lot[-\s#]*|g[-\s]*)/i, "");
+        const match = allLots.find(l =>
+          l.lot.trim().replace(/^(lot[-\s#]*|g[-\s]*)/i, "") === rawLot ||
+          l.lot.trim() === data.lot_number.trim()
+        );
+        if (match) {
+          setLotId(match.id);
+          lotMatched = true;
+        }
+      }
 
       const populated = [
         data.customer_name    && "customer",
@@ -1819,6 +1833,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
         data.invoice_number   && "invoice #",
         data.quantity_kg      && "qty",
         data.price_per_kg     && "price",
+        lotMatched            && `lot ${data.lot_number}`,
       ].filter(Boolean).join(", ");
 
       setParseMsg(populated

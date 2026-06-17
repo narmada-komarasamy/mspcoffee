@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
   "customer_address": "full postal address of the buyer (multi-line as single string with \\n)",
   "invoice_number": "invoice or order number",
   "quantity_kg": <numeric kg sold, null if not found or unclear>,
-  "price_per_kg": <numeric INR price per kg, null if not found or unclear>
+  "price_per_kg": <numeric INR price per kg, null if not found or unclear>,
+  "lot_number": "the green coffee lot number or lot ID referenced on the invoice (e.g. '48', 'LOT-48', 'G-048'), null if not found"
 }
 
 Rules:
@@ -70,6 +71,7 @@ Rules:
 - quantity_kg and price_per_kg must be numbers (not strings).
 - If the invoice uses a different unit (e.g. grams, bags), convert to kg.
 - customer_name is the BUYER / BILL TO party, not the seller.
+- lot_number: look for terms like "Lot", "Lot No", "Lot #", "Lot Number", "Green Lot", "Batch", "Item Code" near the product description. Return only the numeric or alphanumeric identifier (e.g. "48" or "202"), not the full product description.
 - If the invoice is in a language other than English, translate the field values to English.`,
             },
           ],
@@ -93,6 +95,7 @@ Rules:
       invoice_number: parsed.invoice_number ?? null,
       quantity_kg: parsed.quantity_kg ?? null,
       price_per_kg: parsed.price_per_kg ?? null,
+      lot_number: parsed.lot_number ?? null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
