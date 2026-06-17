@@ -157,6 +157,12 @@ function getUserRole(): string {
     return s ? JSON.parse(s)?.role ?? "worker" : "worker";
   } catch { return "worker"; }
 }
+function noteStamp(): string {
+  const now = new Date();
+  const d = now.toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const t = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return `[${d} ${t} – ${getUser()}] `;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    DATA LAYER — Supabase
@@ -780,7 +786,14 @@ function EditBatchDrawer({ batch, onClose, reload }: { batch: ParchBatch; onClos
       </div>
       <div className={css.formGroup} style={{ marginTop:12 }}>
         <label className={css.formLabel}>Operational Notes</label>
-        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+        <textarea
+          className={css.formTextarea}
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
+          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
+          placeholder="Click to add a timestamped note…"
+        />
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Tasting Notes</label>
@@ -1088,7 +1101,14 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+        <textarea
+          className={css.formTextarea}
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
+          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
+          placeholder="Click to add a timestamped note…"
+        />
       </div>
       <div className={css.varianceCallout}>
         <div className={css.varianceItem}>
@@ -1236,7 +1256,14 @@ function AddLotDrawer({ season, onClose, reload }: { season: string; onClose: ()
       </div>
       <div className={css.formGroup} style={{ marginTop:8 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+        <textarea
+          className={css.formTextarea}
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
+          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
+          placeholder="Click to add a timestamped note…"
+        />
       </div>
       {n(kgIn) > 0 && n(rate) > 0 && (
         <div className={css.computedStrip} style={{ marginTop:12 }}>
@@ -2047,7 +2074,14 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+        <textarea
+          className={css.formTextarea}
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
+          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
+          placeholder="Click to add a timestamped note…"
+        />
       </div>
       <div className={css.computedStrip}>
         <div className={css.computedItem}>
@@ -2236,7 +2270,14 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Notes</label>
-        <textarea className={css.formTextarea} value={notes} onChange={e=>setNotes(e.target.value)} />
+        <textarea
+          className={css.formTextarea}
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          onFocus={() => { if (!notes.trim()) setNotes(noteStamp()); }}
+          onBlur={() => { if (notes.trim() === noteStamp().trim()) setNotes(""); }}
+          placeholder="Click to add a timestamped note…"
+        />
       </div>
 
       <div className={css.computedStrip}>
