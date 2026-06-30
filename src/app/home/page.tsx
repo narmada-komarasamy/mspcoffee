@@ -26,8 +26,8 @@ const CARDS = [
     photoBg: '#1a120a',
     objectFit: 'contain' as const,
     sub: 'Family and Personal',
-    href: null,
-    active: false,
+    href: '/family',
+    active: true,
   },
   {
     id: 'trading',
