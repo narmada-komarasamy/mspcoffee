@@ -19,6 +19,17 @@ const CARDS = [
     active: true,
   },
   {
+    id: 'family',
+    company: 'MSP Coffee Family',
+    abbr: 'MSP',
+    photo: '/MSP ESTATE.png',
+    photoBg: '#1a120a',
+    objectFit: 'contain' as const,
+    sub: 'Family and Personal',
+    href: null,
+    active: false,
+  },
+  {
     id: 'trading',
     company: 'MSP (P) Ltd',
     abbr: 'MSP',
@@ -105,7 +116,7 @@ export default function HomePage() {
         </div>
 
         {/* ── Cards ── */}
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-5xl">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 w-full max-w-7xl">
           {CARDS.map(card => (
             <div
               key={card.id}
