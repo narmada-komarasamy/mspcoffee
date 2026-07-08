@@ -10,6 +10,7 @@ const EVENT_RATE = 250;
 
 type Employee = { id: string; name: string };
 type Location = { id: string; name: string };
+type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
 type Entry = {
   id: string;
   entry_date: string;
@@ -56,6 +57,7 @@ export default function TravelAllowancePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
 
@@ -116,6 +118,33 @@ export default function TravelAllowancePage() {
     return () => window.clearTimeout(timer);
   }, [loadData]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = localStorage.getItem('msp_user');
+      if (!stored) return;
+
+      try {
+        const cached = JSON.parse(stored) as AppUser;
+        setCurrentUser(cached);
+        supabase
+          .from('app_users')
+          .select('id, name, role, estate')
+          .eq('id', cached.id)
+          .single()
+          .then(({ data }) => {
+            if (!data) return;
+            const verified = { ...cached, role: data.role, name: data.name, estate: data.estate };
+            setCurrentUser(verified);
+            localStorage.setItem('msp_user', JSON.stringify(verified));
+          });
+      } catch {
+        setCurrentUser(null);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const addEntry = async () => {
     if (!entryDate || !employeeId || !locationId) {
       showToast('Fill in date, employee, and location');
@@ -167,14 +196,30 @@ export default function TravelAllowancePage() {
   };
 
   const deleteEntry = async (id: string) => {
-    const { error } = await supabase.from('travel_allowance_entries').delete().eq('id', id);
-    if (error) {
-      showToast(error.message);
+    if (currentUser?.role !== 'admin') {
+      showToast('Only admins can delete entries');
       return;
     }
+
+    const response = await fetch(`/api/travel-allowance/entries/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-msp-user-id': currentUser.id,
+        'x-msp-user-pin': currentUser.pin,
+      },
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({ error: 'Could not remove entry' }));
+      showToast(result.error ?? 'Could not remove entry');
+      return;
+    }
+
     setEntries(prev => prev.filter(entry => entry.id !== id));
     showToast('Entry removed');
   };
+
+  const isAdmin = currentUser?.role === 'admin';
 
   const removeEmployee = async (id: string) => {
     const { error } = await supabase.from('travel_allowance_employees').delete().eq('id', id);
@@ -321,7 +366,7 @@ export default function TravelAllowancePage() {
             </div>
           </section>
 
-          <EntryTable entries={entries} loading={loading} onDelete={deleteEntry} />
+          <EntryTable entries={entries} loading={loading} onDelete={deleteEntry} canDelete={isAdmin} />
         </div>
       )}
 
@@ -371,7 +416,7 @@ export default function TravelAllowancePage() {
             <Breakdown title="By location" rows={report.locationRows} />
           </div>
 
-          <EntryTable entries={filteredReportEntries} loading={loading} onDelete={deleteEntry} compact />
+          <EntryTable entries={filteredReportEntries} loading={loading} onDelete={deleteEntry} canDelete={isAdmin} compact />
         </section>
       )}
 
@@ -481,18 +526,20 @@ function Breakdown({ title, rows }: { title: string; rows: [string, number][] })
   );
 }
 
-function EntryTable({ entries, loading, onDelete, compact = false }: { entries: Entry[]; loading: boolean; onDelete: (id: string) => void; compact?: boolean }) {
+function EntryTable({ entries, loading, onDelete, canDelete, compact = false }: { entries: Entry[]; loading: boolean; onDelete: (id: string) => void; canDelete: boolean; compact?: boolean }) {
+  const colSpan = canDelete ? 6 : 5;
+
   return (
     <section className="rounded-xl border overflow-hidden" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
       {!compact && <div className="px-4 py-3 text-sm font-bold" style={{ color: 'var(--t-text)' }}>All entries <span style={{ color: 'var(--t-muted)' }}>({entries.length} total)</span></div>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead style={{ background: 'var(--t-bg)', color: 'var(--t-muted)' }}>
-            <tr><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Employee</th><th className="px-4 py-2 text-left">Location</th><th className="px-4 py-2 text-left">Events</th><th className="px-4 py-2 text-left">Amount</th><th className="ta-no-print px-4 py-2 text-left"></th></tr>
+            <tr><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Employee</th><th className="px-4 py-2 text-left">Location</th><th className="px-4 py-2 text-left">Events</th><th className="px-4 py-2 text-left">Amount</th>{canDelete && <th className="ta-no-print px-4 py-2 text-left"></th>}</tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="px-4 py-8 text-center" colSpan={6} style={{ color: 'var(--t-muted)' }}>Loading travel allowance data...</td></tr>
+              <tr><td className="px-4 py-8 text-center" colSpan={colSpan} style={{ color: 'var(--t-muted)' }}>Loading travel allowance data...</td></tr>
             ) : entries.length ? entries.map(entry => (
               <tr key={entry.id} className="border-t" style={{ borderColor: 'var(--t-border)' }}>
                 <td className="px-4 py-2">{entry.entry_date}</td>
@@ -500,15 +547,17 @@ function EntryTable({ entries, loading, onDelete, compact = false }: { entries: 
                 <td className="px-4 py-2">{safeName(entry.location?.name)}</td>
                 <td className="px-4 py-2">{entry.times}</td>
                 <td className="px-4 py-2">₹{(entry.times * EVENT_RATE).toLocaleString('en-IN')}</td>
-                <td className="ta-no-print px-4 py-2 text-right">
-                  <button onClick={() => onDelete(entry.id)} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold" style={{ borderColor: '#f0997b', color: '#993c1d' }}>
-                    <Trash2 className="h-3 w-3" />
-                    Remove
-                  </button>
-                </td>
+                {canDelete && (
+                  <td className="ta-no-print px-4 py-2 text-right">
+                    <button onClick={() => onDelete(entry.id)} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold" style={{ borderColor: '#f0997b', color: '#993c1d' }}>
+                      <Trash2 className="h-3 w-3" />
+                      Remove
+                    </button>
+                  </td>
+                )}
               </tr>
             )) : (
-              <tr><td className="px-4 py-8 text-center" colSpan={6} style={{ color: 'var(--t-muted)' }}>No entries yet. Add your first one above.</td></tr>
+              <tr><td className="px-4 py-8 text-center" colSpan={colSpan} style={{ color: 'var(--t-muted)' }}>No entries yet. Add your first one above.</td></tr>
             )}
           </tbody>
         </table>
