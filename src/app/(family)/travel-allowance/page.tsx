@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Mail, Plus, Trash2 } from 'lucide-react';
+import { Mail, Plus, Printer, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type Tab = 'entry' | 'reports' | 'manage';
@@ -71,6 +71,8 @@ export default function TravelAllowancePage() {
   const [reportWeek, setReportWeek] = useState(weekStartKey);
   const [reportMonth, setReportMonth] = useState(monthKey);
   const [reportEmployee, setReportEmployee] = useState('');
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -108,7 +110,10 @@ export default function TravelAllowancePage() {
   }, [showToast]);
 
   useEffect(() => {
-    loadData();
+    const timer = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadData]);
 
   const addEntry = async () => {
@@ -190,16 +195,28 @@ export default function TravelAllowancePage() {
   };
 
   const filteredReportEntries = useMemo(() => {
+    let reportEntries: Entry[];
     if (reportType === 'week') {
-      if (!reportWeek) return [];
-      const { start, end } = getWeekRange(reportWeek);
-      return entries.filter(entry => dateInRange(entry.entry_date, start, end));
+      if (!reportWeek) reportEntries = [];
+      else {
+        const { start, end } = getWeekRange(reportWeek);
+        reportEntries = entries.filter(entry => dateInRange(entry.entry_date, start, end));
+      }
+    } else if (reportType === 'month') {
+      reportEntries = entries.filter(entry => entry.entry_date.startsWith(reportMonth));
+    } else {
+      reportEntries = entries.filter(entry => entry.employee_id === reportEmployee);
     }
-    if (reportType === 'month') {
-      return entries.filter(entry => entry.entry_date.startsWith(reportMonth));
+
+    if (reportStartDate) {
+      reportEntries = reportEntries.filter(entry => entry.entry_date >= reportStartDate);
     }
-    return entries.filter(entry => entry.employee_id === reportEmployee);
-  }, [entries, reportEmployee, reportMonth, reportType, reportWeek]);
+    if (reportEndDate) {
+      reportEntries = reportEntries.filter(entry => entry.entry_date <= reportEndDate);
+    }
+
+    return reportEntries;
+  }, [entries, reportEmployee, reportEndDate, reportMonth, reportStartDate, reportType, reportWeek]);
 
   const report = useMemo(() => {
     const byEmployee = new Map<string, number>();
@@ -215,6 +232,20 @@ export default function TravelAllowancePage() {
     };
   }, [filteredReportEntries]);
 
+  const reportTitle = useMemo(() => {
+    if (reportType === 'week') return `Weekly report - ${reportWeek || 'No week selected'}`;
+    if (reportType === 'month') return `Monthly report - ${reportMonth || 'No month selected'}`;
+    const employee = employees.find(item => item.id === reportEmployee);
+    return `Employee report - ${safeName(employee?.name)}`;
+  }, [employees, reportEmployee, reportMonth, reportType, reportWeek]);
+
+  const reportDateLabel = useMemo(() => {
+    if (reportStartDate && reportEndDate) return `${reportStartDate} to ${reportEndDate}`;
+    if (reportStartDate) return `From ${reportStartDate}`;
+    if (reportEndDate) return `Until ${reportEndDate}`;
+    return 'All dates in selected report';
+  }, [reportEndDate, reportStartDate]);
+
   const emailMonthlyReport = () => {
     const monthlyEntries = entries.filter(entry => entry.entry_date.startsWith(reportMonth));
     const lines = monthlyEntries
@@ -226,8 +257,8 @@ export default function TravelAllowancePage() {
       `Travel Allowance Report - ${reportMonth}`,
       '',
       `Total entries: ${monthlyEntries.length}`,
-    `Total events: ${total}`,
-    `Amount payable: Rs. ${(total * EVENT_RATE).toLocaleString('en-IN')}`,
+      `Total events: ${total}`,
+      `Amount payable: Rs. ${(total * EVENT_RATE).toLocaleString('en-IN')}`,
       '',
       ...lines,
     ].join('\n');
@@ -235,9 +266,13 @@ export default function TravelAllowancePage() {
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
+  const printReport = () => {
+    window.print();
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="ta-no-print flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--t-muted)' }}>Family and Personal</p>
           <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--t-text)' }}>Travel Allowance</h1>
@@ -249,7 +284,7 @@ export default function TravelAllowancePage() {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b" style={{ borderColor: 'var(--t-border)' }}>
+      <div className="ta-no-print flex flex-wrap gap-2 border-b" style={{ borderColor: 'var(--t-border)' }}>
         {[
           ['entry', 'Add entry'],
           ['reports', 'Reports'],
@@ -291,24 +326,37 @@ export default function TravelAllowancePage() {
       )}
 
       {tab === 'reports' && (
-        <section className="rounded-xl border p-4 space-y-4" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <Field label="Report type">
-              <select value={reportType} onChange={e => setReportType(e.target.value as ReportType)} className="ta-input">
-                <option value="week">Weekly</option>
-                <option value="month">Monthly</option>
-                <option value="employee">By employee</option>
-              </select>
-            </Field>
-            {reportType === 'week' && <Field label="Week starting"><input type="date" value={reportWeek} onChange={e => setReportWeek(e.target.value)} className="ta-input" /></Field>}
-            {reportType === 'month' && <Field label="Month"><input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="ta-input" /></Field>}
-            {reportType === 'employee' && (
-              <Field label="Employee">
-                <select value={reportEmployee} onChange={e => setReportEmployee(e.target.value)} className="ta-input">
-                  {employees.map(employee => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
+        <section className="ta-print-area rounded-xl border p-4 space-y-4" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
+          <div className="ta-print-only">
+            <h1 className="text-2xl font-black" style={{ color: 'var(--t-text)' }}>Travel Allowance</h1>
+            <p className="text-sm font-semibold" style={{ color: 'var(--t-muted)' }}>{reportTitle}</p>
+            <p className="text-sm" style={{ color: 'var(--t-muted)' }}>Date filter: {reportDateLabel}</p>
+          </div>
+          <div className="ta-no-print flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <div className="grid flex-1 grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+              <Field label="Report type">
+                <select value={reportType} onChange={e => setReportType(e.target.value as ReportType)} className="ta-input">
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly</option>
+                  <option value="employee">By employee</option>
                 </select>
               </Field>
-            )}
+              {reportType === 'week' && <Field label="Week starting"><input type="date" value={reportWeek} onChange={e => setReportWeek(e.target.value)} className="ta-input" /></Field>}
+              {reportType === 'month' && <Field label="Month"><input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="ta-input" /></Field>}
+              {reportType === 'employee' && (
+                <Field label="Employee">
+                  <select value={reportEmployee} onChange={e => setReportEmployee(e.target.value)} className="ta-input">
+                    {employees.map(employee => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
+                  </select>
+                </Field>
+              )}
+              <Field label="From date"><input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} className="ta-input" /></Field>
+              <Field label="To date"><input type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} className="ta-input" /></Field>
+            </div>
+            <button onClick={printReport} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold transition active:scale-95" style={{ borderColor: 'var(--t-border)', color: 'var(--t-text)', background: 'var(--t-card)' }}>
+              <Printer className="h-4 w-4" />
+              Print
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -355,6 +403,34 @@ export default function TravelAllowancePage() {
           outline: none;
           border-color: #1b4a1b;
           box-shadow: 0 0 0 3px rgba(27, 74, 27, 0.14);
+        }
+        .ta-print-only {
+          display: none;
+        }
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .ta-print-area,
+          .ta-print-area * {
+            visibility: visible;
+          }
+          .ta-print-area {
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: white !important;
+            color: #111 !important;
+            box-shadow: none !important;
+          }
+          .ta-no-print {
+            display: none !important;
+          }
+          .ta-print-only {
+            display: block !important;
+          }
         }
       `}</style>
     </div>
@@ -412,7 +488,7 @@ function EntryTable({ entries, loading, onDelete, compact = false }: { entries: 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead style={{ background: 'var(--t-bg)', color: 'var(--t-muted)' }}>
-            <tr><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Employee</th><th className="px-4 py-2 text-left">Location</th><th className="px-4 py-2 text-left">Events</th><th className="px-4 py-2 text-left">Amount</th><th className="px-4 py-2 text-left"></th></tr>
+            <tr><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Employee</th><th className="px-4 py-2 text-left">Location</th><th className="px-4 py-2 text-left">Events</th><th className="px-4 py-2 text-left">Amount</th><th className="ta-no-print px-4 py-2 text-left"></th></tr>
           </thead>
           <tbody>
             {loading ? (
@@ -424,7 +500,7 @@ function EntryTable({ entries, loading, onDelete, compact = false }: { entries: 
                 <td className="px-4 py-2">{safeName(entry.location?.name)}</td>
                 <td className="px-4 py-2">{entry.times}</td>
                 <td className="px-4 py-2">₹{(entry.times * EVENT_RATE).toLocaleString('en-IN')}</td>
-                <td className="px-4 py-2 text-right">
+                <td className="ta-no-print px-4 py-2 text-right">
                   <button onClick={() => onDelete(entry.id)} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold" style={{ borderColor: '#f0997b', color: '#993c1d' }}>
                     <Trash2 className="h-3 w-3" />
                     Remove
