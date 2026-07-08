@@ -23,15 +23,8 @@ type AppUser = { id: string; name: string; pin: string; role: string; estate: st
 type NavItem = { label: string; href: string; icon: React.ElementType; roles: string[]; children?: NavItem[] };
 
 const navItems: NavItem[] = [
-  {
-    label: 'Cup Score Catalogue',
-    href: '/cup-scores-catalogue',
-    icon: Award,
-    roles: ['admin', 'supervisor', 'ceo'],
-    children: [
-      { label: 'Board Meetings', href: '/board-meetings', icon: ClipboardList, roles: ['admin', 'supervisor', 'ceo'] },
-    ],
-  },
+  { label: 'Cup Score Catalogue',   href: '/cup-scores-catalogue', icon: Award,         roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Board Meetings',        href: '/board-meetings',       icon: ClipboardList, roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'B2B Trading Hub',       href: '/trading-dashboard',    icon: BarChart2,  roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Export Operations',     href: '/export-operations',    icon: Globe,      roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Coffee Storage Central', href: '/coffee-storage',      icon: Warehouse,  roles: ['admin', 'supervisor', 'ceo'] },
