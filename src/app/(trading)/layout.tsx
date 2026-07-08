@@ -29,7 +29,7 @@ const navItems: NavItem[] = [
     icon: Award,
     roles: ['admin', 'supervisor', 'ceo'],
     children: [
-      { label: 'Board Meetings', href: '/board-meetings', icon: ClipboardList, roles: ['admin', 'ceo'] },
+      { label: 'Board Meetings', href: '/board-meetings', icon: ClipboardList, roles: ['admin', 'supervisor', 'ceo'] },
     ],
   },
   { label: 'B2B Trading Hub',       href: '/trading-dashboard',    icon: BarChart2,  roles: ['admin', 'supervisor', 'ceo'] },

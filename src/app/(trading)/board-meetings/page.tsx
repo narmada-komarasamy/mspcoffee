@@ -461,12 +461,12 @@ export default function BoardMeetingsPage() {
 
   const selectedActions = selected?.board_meeting_actions ?? [];
   const selectedFiles = selected?.board_meeting_files ?? [];
-  const canEdit = user?.role === "admin" || user?.role === "ceo";
+  const canEdit = user?.role === "admin" || user?.role === "supervisor" || user?.role === "ceo";
 
   if (user && !canEdit) {
     return (
       <div className={css.panel}>
-        <div className={css.empty}>Board Meetings is available to CEO and admin users.</div>
+        <div className={css.empty}>Board Meetings is available to CEO, admin and supervisor users.</div>
       </div>
     );
   }
