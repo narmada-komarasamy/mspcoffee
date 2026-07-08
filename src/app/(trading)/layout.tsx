@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee, Warehouse, Maximize2, Minimize2 } from 'lucide-react';
+import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee, Warehouse, Maximize2, Minimize2, ClipboardList } from 'lucide-react';
 import { useActivityTracker } from '@/lib/useActivityTracker';
 import { supabase } from '@/lib/supabase';
 
@@ -23,7 +23,15 @@ type AppUser = { id: string; name: string; pin: string; role: string; estate: st
 type NavItem = { label: string; href: string; icon: React.ElementType; roles: string[]; children?: NavItem[] };
 
 const navItems: NavItem[] = [
-  { label: 'Cup Score Catalogue',   href: '/cup-scores-catalogue', icon: Award,      roles: ['admin', 'supervisor', 'ceo'] },
+  {
+    label: 'Cup Score Catalogue',
+    href: '/cup-scores-catalogue',
+    icon: Award,
+    roles: ['admin', 'supervisor', 'ceo'],
+    children: [
+      { label: 'Board Meetings', href: '/board-meetings', icon: ClipboardList, roles: ['admin', 'ceo'] },
+    ],
+  },
   { label: 'B2B Trading Hub',       href: '/trading-dashboard',    icon: BarChart2,  roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Export Operations',     href: '/export-operations',    icon: Globe,      roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Coffee Storage Central', href: '/coffee-storage',      icon: Warehouse,  roles: ['admin', 'supervisor', 'ceo'] },
