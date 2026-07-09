@@ -11,6 +11,7 @@ const PAGES = [
   { href: '/rainfall',             label: 'Rain Gauge',           defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
   { href: '/fuel-expenses',        label: 'Fleet Fuel Expenses',  defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/ho-fuel',              label: 'HO Fuel',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
+  { href: '/estate-management',    label: 'Estate Management',    defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/processing-dashboard', label: 'Processing Dashboard', defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/labour-costs',         label: 'Labour Costs',         defaults: { supervisor: 'none' as Access, worker: 'none' as Access } },
   { href: '/daily-report',         label: 'Daily Report',         defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },

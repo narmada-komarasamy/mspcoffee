@@ -226,11 +226,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const { data: perms } = await supabase
           .from('role_permissions')
           .select('page_href, access')
-          .eq('role', verifiedRole)
-          .neq('access', 'none');
+          .eq('role', verifiedRole);
 
         if (perms) {
-          setAllowedPages(new Set(perms.map(p => p.page_href)));
+          const configuredPages = new Set<string>();
+          const visiblePages = new Set<string>();
+
+          for (const p of perms) {
+            configuredPages.add(p.page_href);
+            if (p.access !== 'none') visiblePages.add(p.page_href);
+          }
+
+          for (const item of navItems) {
+            if (!configuredPages.has(item.href) && item.roles.includes(verifiedRole)) {
+              visiblePages.add(item.href);
+            }
+          }
+
+          setAllowedPages(visiblePages);
         } else {
           // Table not yet created — fall back to static role array
           setAllowedPages(null);
