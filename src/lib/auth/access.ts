@@ -26,6 +26,12 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Processing Data', href: '/processing-dashboard', iconName: 'BarChart2', roles: ['admin', 'supervisor', 'ceo'],
     children: [
       {
+        label: 'Estate Management',
+        children: [
+          { label: 'Estate Staff Meetings', href: '/processing-dashboard/estate-management/staff-meetings' },
+        ],
+      },
+      {
         label: '2025–2026',
         children: [
           { label: 'Stanmore Estate',     href: '/processing-dashboard/stanmore-estate' },

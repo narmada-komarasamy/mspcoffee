@@ -76,6 +76,12 @@ const navItems: NavItem[] = [
     label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor', 'ceo'],
     children: [
       {
+        label: 'Estate Management',
+        children: [
+          { label: 'Estate Staff Meetings', href: '/processing-dashboard/estate-management/staff-meetings' },
+        ],
+      },
+      {
         label: '2025–2026',
         children: [
           { label: 'Stanmore Estate',       href: '/processing-dashboard/stanmore-estate' },
