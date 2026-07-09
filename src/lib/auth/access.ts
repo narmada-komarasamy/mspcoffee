@@ -23,14 +23,14 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor', 'ceo'] },
   {
+    label: 'Estate Management', href: '/estate-management', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'],
+    children: [
+      { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
+    ],
+  },
+  {
     label: 'Processing Data', href: '/processing-dashboard', iconName: 'BarChart2', roles: ['admin', 'supervisor', 'ceo'],
     children: [
-      {
-        label: 'Estate Management',
-        children: [
-          { label: 'Estate Staff Meetings', href: '/processing-dashboard/estate-management/staff-meetings' },
-        ],
-      },
       {
         label: '2025–2026',
         children: [

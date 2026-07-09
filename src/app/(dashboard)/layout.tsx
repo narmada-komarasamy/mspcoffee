@@ -73,14 +73,14 @@ const navItems: NavItem[] = [
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
   {
+    label: 'Estate Management', href: '/estate-management', icon: Users, roles: ['admin', 'supervisor', 'ceo'],
+    children: [
+      { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
+    ],
+  },
+  {
     label: 'Processing Dashboard', href: '/processing-dashboard', icon: BarChart2, roles: ['admin', 'supervisor', 'ceo'],
     children: [
-      {
-        label: 'Estate Management',
-        children: [
-          { label: 'Estate Staff Meetings', href: '/processing-dashboard/estate-management/staff-meetings' },
-        ],
-      },
       {
         label: '2025–2026',
         children: [
