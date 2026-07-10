@@ -13,6 +13,7 @@ import {
   Upload,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { MeetingPrintPreview } from "@/components/MeetingPrintPreview";
 import css from "./estate-staff-meetings.module.css";
 
 type Participant = {
@@ -492,6 +493,16 @@ export default function EstateStaffMeetingsPage() {
           <button className={`${css.btn} ${css.btnPrimary}`} onClick={saveMeeting} disabled={saving}>
             {saving ? <Loader2 size={15} /> : <Save size={15} />} Save
           </button>
+          <MeetingPrintPreview
+            registerName="Estate Staff Meetings"
+            eyebrow="Governance Register"
+            triggerClassName={css.btn}
+            meeting={form}
+            participants={participants}
+            agenda={agenda}
+            actions={selectedActions}
+            files={selectedFiles}
+          />
         </div>
       </section>
 
