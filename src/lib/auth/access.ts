@@ -21,7 +21,17 @@ export type NavItemDef = {
 export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
-  { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor', 'ceo'] },
+  {
+    label: 'HO Fuel', href: '/ho-fuel', iconName: 'Droplets', roles: ['admin', 'supervisor', 'ceo'],
+    children: [
+      {
+        label: 'Recurring Bills',
+        children: [
+          { label: 'Phone Bills', href: '/ho-fuel/recurring-bills/phone-bills' },
+        ],
+      },
+    ],
+  },
   {
     label: 'Estate Management', href: '/estate-management', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'],
     children: [
