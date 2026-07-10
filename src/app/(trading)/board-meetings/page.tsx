@@ -741,9 +741,21 @@ export default function BoardMeetingsPage() {
               <div className={css.sectionTitle}>Minutes and Decisions</div>
               <div className={css.muted} style={{ marginTop: 6 }}>{minutesStamp}</div>
               <div className={css.formGrid} style={{ marginTop: 10 }}>
-                <div className={`${css.field} ${css.full}`}><label className={css.label}>Agenda Summary</label><textarea className={css.textarea} value={form.agenda_summary ?? ""} onChange={(e) => updateCommentField("agenda_summary", e.target.value)} /></div>
-                <div className={`${css.field} ${css.full}`}><label className={css.label}>Minutes Draft To Be Passed</label><textarea className={css.textarea} value={form.minutes_draft ?? ""} onChange={(e) => updateCommentField("minutes_draft", e.target.value)} /></div>
-                <div className={`${css.field} ${css.full}`}><label className={css.label}>Decision / Resolution Log</label><textarea className={css.textarea} value={form.decisions ?? ""} onChange={(e) => updateCommentField("decisions", e.target.value)} /></div>
+                <div className={`${css.field} ${css.full}`}>
+                  <label className={css.label}>Agenda Summary</label>
+                  <textarea className={css.textarea} value={form.agenda_summary ?? ""} onChange={(e) => updateCommentField("agenda_summary", e.target.value)} />
+                  <div className={css.muted}>{minutesStamp}</div>
+                </div>
+                <div className={`${css.field} ${css.full}`}>
+                  <label className={css.label}>Minutes Draft To Be Passed</label>
+                  <textarea className={css.textarea} value={form.minutes_draft ?? ""} onChange={(e) => updateCommentField("minutes_draft", e.target.value)} />
+                  <div className={css.muted}>{minutesStamp}</div>
+                </div>
+                <div className={`${css.field} ${css.full}`}>
+                  <label className={css.label}>Decision / Resolution Log</label>
+                  <textarea className={css.textarea} value={form.decisions ?? ""} onChange={(e) => updateCommentField("decisions", e.target.value)} />
+                  <div className={css.muted}>{minutesStamp}</div>
+                </div>
                 <div className={css.field}><label className={css.label}>Approval Status</label><select className={css.select} value={form.approval_status} onChange={(e) => updateForm("approval_status", e.target.value as Meeting["approval_status"])}><option value="draft">Draft</option><option value="in-review">In review</option><option value="approved">Approved</option><option value="signed">Signed</option></select></div>
                 <div className={css.field}><label className={css.label}>Approval Date</label><input className={css.input} type="date" value={form.approval_date ?? ""} onChange={(e) => updateForm("approval_date", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Minute Owner</label><input className={css.input} value={form.minute_owner ?? ""} onChange={(e) => updateForm("minute_owner", e.target.value)} /></div>
