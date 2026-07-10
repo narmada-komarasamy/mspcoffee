@@ -56,6 +56,8 @@ type PrintMeeting = {
   next_meeting_time: string | null;
   next_meeting_location: string | null;
   next_meeting_agenda: string | null;
+  minutes_updated_by?: string | null;
+  minutes_updated_at?: string | null;
 };
 
 type MeetingPrintPreviewProps = {
@@ -79,6 +81,17 @@ function fmtTime(value: string | null | undefined) {
   return value ? value.slice(0, 5) : "-";
 }
 
+function fmtTimestamp(value: string | null | undefined) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function clean(value: string | null | undefined) {
   return value?.trim() || "-";
 }
@@ -97,6 +110,7 @@ function emailBody(
     `Time: ${fmtTime(meeting.start_time)} to ${fmtTime(meeting.end_time)}`,
     `Location: ${clean(meeting.location)}`,
     `Status: ${meeting.approval_status}`,
+    `Minutes / comments last updated by: ${clean(meeting.minutes_updated_by)} at ${fmtTimestamp(meeting.minutes_updated_at)}`,
     "",
     "Agenda Summary",
     clean(meeting.agenda_summary),
@@ -193,6 +207,8 @@ export function MeetingPrintPreview({
                   <div><span>Type</span><strong>{meeting.meeting_type}</strong></div>
                   <div><span>Quorum</span><strong>{meeting.quorum_status}</strong></div>
                   <div><span>Confidentiality</span><strong>{meeting.confidentiality}</strong></div>
+                  <div><span>Comments Updated By</span><strong>{clean(meeting.minutes_updated_by)}</strong></div>
+                  <div><span>Comments Updated At</span><strong>{fmtTimestamp(meeting.minutes_updated_at)}</strong></div>
                 </section>
 
                 <section className={css.block}>

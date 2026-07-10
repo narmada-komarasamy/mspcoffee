@@ -85,6 +85,8 @@ type Meeting = {
   next_meeting_time: string | null;
   next_meeting_location: string | null;
   next_meeting_agenda: string | null;
+  minutes_updated_by: string | null;
+  minutes_updated_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -121,6 +123,8 @@ const blankForm = (userName = ""): MeetingForm => ({
   next_meeting_time: null,
   next_meeting_location: "",
   next_meeting_agenda: "",
+  minutes_updated_by: null,
+  minutes_updated_at: null,
   created_by: userName || null,
 });
 
@@ -140,6 +144,17 @@ function fmtDate(s: string | null | undefined) {
 
 function displayTime(s: string | null | undefined) {
   return s ? s.slice(0, 5) : "-";
+}
+
+function fmtTimestamp(s: string | null | undefined) {
+  if (!s) return "No comment timestamp yet";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(s));
 }
 
 function statusClass(status: Meeting["approval_status"] | MeetingAction["status"]) {
@@ -248,6 +263,8 @@ export default function EstateStaffMeetingsPage() {
       next_meeting_time: selected.next_meeting_time?.slice(0, 5) ?? "",
       next_meeting_location: selected.next_meeting_location ?? "",
       next_meeting_agenda: selected.next_meeting_agenda ?? "",
+      minutes_updated_by: selected.minutes_updated_by ?? null,
+      minutes_updated_at: selected.minutes_updated_at ?? null,
       created_by: selected.created_by,
     });
     setParticipants(selected.estate_staff_meeting_participants?.length ? selected.estate_staff_meeting_participants : blankParticipants());
@@ -294,6 +311,15 @@ export default function EstateStaffMeetingsPage() {
 
   const updateForm = <K extends keyof MeetingForm>(key: K, value: MeetingForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const updateCommentField = (key: "agenda_summary" | "minutes_draft" | "decisions", value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+      minutes_updated_by: user?.name ?? prev.minutes_updated_by ?? "Unknown user",
+      minutes_updated_at: new Date().toISOString(),
+    }));
   };
 
   const startNewMeeting = () => {
@@ -349,9 +375,18 @@ export default function EstateStaffMeetingsPage() {
       created_by: form.created_by || user?.name || null,
     };
 
-    const meetingResult = selectedId
+    let meetingResult = selectedId
       ? await supabase.from("estate_staff_meetings").update(payload).eq("id", selectedId).select().single()
       : await supabase.from("estate_staff_meetings").insert([payload]).select().single();
+
+    if (meetingResult.error?.message.includes("minutes_updated")) {
+      const { minutes_updated_by, minutes_updated_at, ...legacyPayload } = payload;
+      void minutes_updated_by;
+      void minutes_updated_at;
+      meetingResult = selectedId
+        ? await supabase.from("estate_staff_meetings").update(legacyPayload).eq("id", selectedId).select().single()
+        : await supabase.from("estate_staff_meetings").insert([legacyPayload]).select().single();
+    }
 
     if (meetingResult.error || !meetingResult.data) {
       setSaving(false);
@@ -462,6 +497,9 @@ export default function EstateStaffMeetingsPage() {
 
   const selectedActions = selected?.estate_staff_meeting_actions ?? [];
   const selectedFiles = selected?.estate_staff_meeting_files ?? [];
+  const minutesStamp = form.minutes_updated_by
+    ? `Last comment by ${form.minutes_updated_by} on ${fmtTimestamp(form.minutes_updated_at)}`
+    : "No comments entered yet";
   const canEdit = user?.role === "admin" || user?.role === "supervisor" || user?.role === "ceo";
 
   if (user && !canEdit) {
@@ -701,10 +739,11 @@ export default function EstateStaffMeetingsPage() {
 
             <div className={css.section}>
               <div className={css.sectionTitle}>Minutes and Decisions</div>
+              <div className={css.muted} style={{ marginTop: 6 }}>{minutesStamp}</div>
               <div className={css.formGrid} style={{ marginTop: 10 }}>
-                <div className={`${css.field} ${css.full}`}><label className={css.label}>Agenda Summary</label><textarea className={css.textarea} value={form.agenda_summary ?? ""} onChange={(e) => updateForm("agenda_summary", e.target.value)} /></div>
-                <div className={`${css.field} ${css.full}`}><label className={css.label}>Minutes Draft To Be Passed</label><textarea className={css.textarea} value={form.minutes_draft ?? ""} onChange={(e) => updateForm("minutes_draft", e.target.value)} /></div>
-                <div className={`${css.field} ${css.full}`}><label className={css.label}>Decision / Resolution Log</label><textarea className={css.textarea} value={form.decisions ?? ""} onChange={(e) => updateForm("decisions", e.target.value)} /></div>
+                <div className={`${css.field} ${css.full}`}><label className={css.label}>Agenda Summary</label><textarea className={css.textarea} value={form.agenda_summary ?? ""} onChange={(e) => updateCommentField("agenda_summary", e.target.value)} /></div>
+                <div className={`${css.field} ${css.full}`}><label className={css.label}>Minutes Draft To Be Passed</label><textarea className={css.textarea} value={form.minutes_draft ?? ""} onChange={(e) => updateCommentField("minutes_draft", e.target.value)} /></div>
+                <div className={`${css.field} ${css.full}`}><label className={css.label}>Decision / Resolution Log</label><textarea className={css.textarea} value={form.decisions ?? ""} onChange={(e) => updateCommentField("decisions", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Approval Status</label><select className={css.select} value={form.approval_status} onChange={(e) => updateForm("approval_status", e.target.value as Meeting["approval_status"])}><option value="draft">Draft</option><option value="in-review">In review</option><option value="approved">Approved</option><option value="signed">Signed</option></select></div>
                 <div className={css.field}><label className={css.label}>Approval Date</label><input className={css.input} type="date" value={form.approval_date ?? ""} onChange={(e) => updateForm("approval_date", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Minute Owner</label><input className={css.input} value={form.minute_owner ?? ""} onChange={(e) => updateForm("minute_owner", e.target.value)} /></div>
