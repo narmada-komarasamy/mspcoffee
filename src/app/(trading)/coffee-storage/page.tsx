@@ -37,9 +37,11 @@ type GreenLot = {
   score: number | null; milled_date: string; warehouse: string;
   status: GreenStatus; notes: string | null; season: string;
 };
+type SaleLotAllocation = { green_lot_id: string; kg: number };
 type CoffeeSale = {
   id: string; date: string; channel: Channel; customer: string;
   green_lot_ids: string[]; kg: number; price_per_kg: number;
+  lot_allocations?: SaleLotAllocation[] | null;
   currency: string; status: SaleStatus;
   incoterm: string | null; reference: string | null; notes: string | null;
   invoice_url: string | null; customer_address: string | null;
@@ -70,6 +72,7 @@ type Tab = "overview" | "yard" | "milling" | "green" | "hilltiller" | "blends" |
    HELPERS
 ═══════════════════════════════════════════════════════════════ */
 const n = (v: unknown) => Number(v) || 0;
+const LOT_ALLOCATION_MARKER = "[[lot_allocations:";
 
 function fmtKg(v: number) {
   if (v >= 1000) return `${(v / 1000).toFixed(2)}t`;
@@ -87,6 +90,30 @@ function fmtDate(s: string | null | undefined) {
   if (!s) return "—";
   const [y, m, d] = s.split("-");
   return `${d}/${m}/${y}`;
+}
+
+function isMissingLotAllocationsColumn(error: unknown) {
+  const message = String((error as { message?: unknown } | null)?.message ?? error ?? "").toLowerCase();
+  return message.includes("lot_allocations") || message.includes("schema cache");
+}
+
+function appendLotAllocationFallback(notes: string | null, allocations: SaleLotAllocation[]) {
+  const cleanNotes = notes?.trim() ?? "";
+  const marker = `${LOT_ALLOCATION_MARKER}${encodeURIComponent(JSON.stringify(allocations))}]]`;
+  return cleanNotes ? `${cleanNotes}\n\n${marker}` : marker;
+}
+
+function parseLotAllocationFallback(notes: string | null | undefined): SaleLotAllocation[] {
+  const match = notes?.match(/\[\[lot_allocations:(.*?)\]\]/);
+  if (!match) return [];
+  try {
+    const parsed = JSON.parse(decodeURIComponent(match[1])) as SaleLotAllocation[];
+    return Array.isArray(parsed)
+      ? parsed.filter(row => row && typeof row.green_lot_id === "string" && n(row.kg) > 0)
+      : [];
+  } catch {
+    return [];
+  }
 }
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function processSlug(p: string) {
@@ -1760,6 +1787,7 @@ function HillTillerTab() {
 /* ─── Record Sale Drawer ──────────────────────────────────── */
 // Unified lot row used in the dropdown
 type UnifiedLot = { id: string; lot: string; current_kg: number; rate_per_kg: number; label: string; source: "green" | "hilltiller" };
+type SaleLotRow = { key: string; lotId: string; kg: string };
 
 function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }: {
   greenLots: GreenLot[]; defaultLot: GreenLot | null; onClose: () => void; reload: () => void; onSuccess?: () => void;
@@ -1790,8 +1818,9 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
   const [channel,   setChannel]   = useState<Channel>("exporter");
   const [customer,  setCustomer]  = useState("");
   const [address,   setAddress]   = useState("");
-  const [lotId,     setLotId]     = useState(defaultLot?.id ?? allLots[0]?.id ?? "");
-  const [kg,        setKg]        = useState("");
+  const [lotRows,   setLotRows]   = useState<SaleLotRow[]>([
+    { key: "sale-lot-1", lotId: defaultLot?.id ?? "", kg: "" },
+  ]);
   const [price,     setPrice]     = useState("");
   const [date,      setDate]      = useState(todayStr());
   const [ref,       setRef]       = useState("");
@@ -1807,12 +1836,41 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
 
   // Set default lot once allLots loads
   useEffect(() => {
-    if (!lotId && allLots.length > 0) setLotId(allLots[0].id);
+    setLotRows(rows => rows.map((row, index) => (
+      index === 0 && !row.lotId && allLots.length > 0 ? { ...row, lotId: allLots[0].id } : row
+    )));
   }, [allLots.length]); // eslint-disable-line
 
-  const selectedLot = allLots.find(l => l.id === lotId);
-  const revenue     = n(kg) * n(price);
-  const margin      = (n(price) - n(selectedLot?.rate_per_kg ?? 0)) * n(kg);
+  const saleAllocations = lotRows
+    .map(row => {
+      const lot = allLots.find(l => l.id === row.lotId);
+      return lot && n(row.kg) > 0 ? { row, lot, kg: n(row.kg) } : null;
+    })
+    .filter((row): row is { row: SaleLotRow; lot: UnifiedLot; kg: number } => Boolean(row));
+  const saleKg       = saleAllocations.reduce((sum, row) => sum + row.kg, 0);
+  const weightedCost = saleKg > 0
+    ? saleAllocations.reduce((sum, row) => sum + row.kg * n(row.lot.rate_per_kg), 0) / saleKg
+    : 0;
+  const revenue      = saleKg * n(price);
+  const margin       = (n(price) - weightedCost) * saleKg;
+  const usedLotIds   = lotRows.map(row => row.lotId).filter(Boolean);
+
+  const updateLotRow = (key: string, patch: Partial<SaleLotRow>) => {
+    setLotRows(rows => rows.map(row => row.key === key ? { ...row, ...patch } : row));
+  };
+
+  const addLotRow = () => {
+    const nextLot = allLots.find(lot => !usedLotIds.includes(lot.id));
+    setLotRows(rows => [...rows, {
+      key: `sale-lot-${Date.now()}-${rows.length}`,
+      lotId: nextLot?.id ?? "",
+      kg: "",
+    }]);
+  };
+
+  const removeLotRow = (key: string) => {
+    setLotRows(rows => rows.length > 1 ? rows.filter(row => row.key !== key) : rows);
+  };
 
   // Handle invoice file selection + auto-parse
   const handleInvoiceFile = async (file: File) => {
@@ -1857,7 +1915,11 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       if (data.customer_name)    setCustomer(c => c || data.customer_name);
       if (data.customer_address) setAddress(a  => a || data.customer_address);
       if (data.invoice_number)   setRef(r      => r || data.invoice_number);
-      if (data.quantity_kg)      setKg(k       => k || String(data.quantity_kg));
+      if (data.quantity_kg) {
+        setLotRows(rows => rows.map((row, index) => (
+          index === 0 && !row.kg ? { ...row, kg: String(data.quantity_kg) } : row
+        )));
+      }
       if (data.price_per_kg)     setPrice(p    => p || String(data.price_per_kg));
 
       // Auto-select lot: match extracted lot_number against allLots
@@ -1869,7 +1931,9 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
           l.lot.trim() === data.lot_number.trim()
         );
         if (match) {
-          setLotId(match.id);
+          setLotRows(rows => rows.map((row, index) => (
+            index === 0 ? { ...row, lotId: match.id } : row
+          )));
           lotMatched = true;
         }
       }
@@ -1899,11 +1963,20 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
   };
 
   const confirm = async () => {
-    if (!customer.trim() || !lotId || !kg || !price || !date) {
-      alert("Customer, lot, qty, price, and date are required."); return;
+    if (!customer.trim() || saleAllocations.length === 0 || !price || !date) {
+      alert("Customer, at least one lot with qty, price, and date are required."); return;
     }
-    if (selectedLot && n(kg) > selectedLot.current_kg) {
-      alert(`Only ${Math.round(selectedLot.current_kg)} kg available in this lot.`); return;
+    const incompleteRow = lotRows.find(row => !row.lotId || n(row.kg) <= 0);
+    if (incompleteRow) {
+      alert("Each lot row must have a lot selected and a quantity above 0 kg."); return;
+    }
+    const duplicateLot = usedLotIds.find((id, index) => usedLotIds.indexOf(id) !== index);
+    if (duplicateLot) {
+      alert("Each lot can only be selected once. Combine the kg into one row for that lot."); return;
+    }
+    const overdrawn = saleAllocations.find(row => row.kg > row.lot.current_kg);
+    if (overdrawn) {
+      alert(`Only ${Math.round(overdrawn.lot.current_kg)} kg available in lot ${overdrawn.lot.lot}.`); return;
     }
     setSaving(true);
 
@@ -1924,14 +1997,25 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
       invoiceUrl = urlData.publicUrl;
     }
 
-    const { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
-      date, channel, customer: customer.trim(), green_lot_ids: [lotId],
-      kg: n(kg), price_per_kg: n(price), currency: "INR",
+    const allocationPayload: SaleLotAllocation[] = saleAllocations.map(row => ({ green_lot_id: row.lot.id, kg: row.kg }));
+    const salePayload = {
+      date, channel, customer: customer.trim(), green_lot_ids: saleAllocations.map(row => row.lot.id),
+      lot_allocations: allocationPayload,
+      kg: saleKg, price_per_kg: n(price), currency: "INR",
       status: channel === "internal-roast" ? "transferred" : "pending",
       reference: ref || null, notes: notes || null,
       invoice_url: invoiceUrl,
       customer_address: address.trim() || null,
-    }]).select().single();
+    };
+
+    let { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([salePayload]).select().single();
+    if (saleError && isMissingLotAllocationsColumn(saleError)) {
+      const { lot_allocations: _ignored, ...fallbackPayload } = salePayload;
+      ({ data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
+        ...fallbackPayload,
+        notes: appendLotAllocationFallback(fallbackPayload.notes, allocationPayload),
+      }]).select().single());
+    }
 
     if (saleError || !sale) {
       setSaving(false);
@@ -1940,20 +2024,22 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
     }
 
     // Deduct from the correct table — only runs after a confirmed INSERT
-    if (selectedLot) {
-      const newKg = selectedLot.current_kg - n(kg);
-      const table = selectedLot.source === "hilltiller" ? "hilltiller_stock" : "green_lots";
+    for (const allocation of saleAllocations) {
+      const newKg = allocation.lot.current_kg - allocation.kg;
+      const table = allocation.lot.source === "hilltiller" ? "hilltiller_stock" : "green_lots";
       const { error: deductError } = await supabase.from(table).update({
         current_kg: newKg,
         status: newKg <= 0 ? "depleted" : "in-stock",
-      }).eq("id", lotId);
+      }).eq("id", allocation.lot.id);
       if (deductError) {
         console.error("Stock deduction failed after sale was recorded:", deductError);
-        alert(`Sale recorded (${sale.id}) but stock deduction failed: ${deductError.message}. Please manually adjust the stock for lot ${selectedLot.lot}.`);
+        alert(`Sale recorded (${sale.id}) but stock deduction failed: ${deductError.message}. Please manually adjust the stock for lot ${allocation.lot.lot}.`);
       }
     }
     await writeAudit({ ts: new Date().toISOString(), actor: getUser(), action: "sale-created",
-      entity: sale.id, before: null, after: `${kg}kg @ ₹${price}/kg → ${customer}`, note: channel });
+      entity: sale.id, before: null,
+      after: `${saleKg}kg from ${saleAllocations.length} lot(s) @ ₹${price}/kg → ${customer}`,
+      note: channel });
     setSaving(false);
     onClose();
     if (onSuccess) onSuccess(); else reload();
@@ -2038,44 +2124,6 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
           <input className={css.formInput} placeholder="e.g. Starbucks India" value={customer} onChange={e=>setCustomer(e.target.value)} />
         </div>
         <div className={css.formGroup}>
-          <label className={css.formLabel}>Green Lot *</label>
-          <select className={css.formSelect} value={lotId} onChange={e=>setLotId(e.target.value)}>
-            {SEASONS.map(s => {
-              const sLots = greenAvailable.filter(g => (g.season ?? "2024-2025") === s);
-              if (sLots.length === 0) return null;
-              return (
-                <optgroup key={s} label={`☕ Green Store ${s}`}>
-                  {sLots.map(g => (
-                    <option key={g.id} value={g.id}>
-                      {g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg
-                    </option>
-                  ))}
-                </optgroup>
-              );
-            })}
-            {htLots.length > 0 && (
-              <optgroup label="🌱 HillTiller Green Stock">
-                {htLots.map(h => (
-                  <option key={h.id} value={h.id}>
-                    {h.lot} · {h.supplier} · {h.process} · {Math.round(h.current_kg)} kg · ₹{n(h.rate_per_kg).toFixed(0)}/kg
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {allLots.length === 0 && <option value="">No stock available</option>}
-          </select>
-          {selectedLot && (
-            <span style={{ fontSize:10, color:"#7a90b0", marginTop:2, display:"block" }}>
-              Available: {Math.round(selectedLot.current_kg)} kg
-              {selectedLot.source === "hilltiller" && " · HillTiller stock"}
-            </span>
-          )}
-        </div>
-        <div className={css.formGroup}>
-          <label className={css.formLabel}>Quantity (kg) *</label>
-          <input type="number" className={css.formInput} min="0" step="0.1" value={kg} onChange={e=>setKg(e.target.value)} />
-        </div>
-        <div className={css.formGroup}>
           <label className={css.formLabel}>Sale Price ₹/kg *</label>
           <input type="number" className={css.formInput} min="0" step="0.01" value={price} onChange={e=>setPrice(e.target.value)} />
         </div>
@@ -2087,6 +2135,78 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
           <label className={css.formLabel}>Reference / Invoice #</label>
           <input className={css.formInput} placeholder="PO or invoice number" value={ref} onChange={e=>setRef(e.target.value)} />
         </div>
+      </div>
+      <div className={css.formSectionTitle} style={{ marginTop:14 }}>Green Lots Used</div>
+      <div style={{ display:"grid", gap:8 }}>
+        {lotRows.map((row, index) => {
+          const selected = allLots.find(lot => lot.id === row.lotId);
+          return (
+            <div key={row.key} className={css.recipeRow}>
+              <div className={css.recipeRowLot}>
+                <select className={css.formSelect} value={row.lotId} onChange={e=>updateLotRow(row.key, { lotId: e.target.value })}>
+                  {SEASONS.map(s => {
+                    const sLots = greenAvailable.filter(g => (g.season ?? "2024-2025") === s);
+                    if (sLots.length === 0) return null;
+                    return (
+                      <optgroup key={s} label={`Green Store ${s}`}>
+                        {sLots.map(g => (
+                          <option key={g.id} value={g.id}>
+                            {g.lot} · {g.field} · {g.process} · {Math.round(g.current_kg)} kg · ₹{n(g.rate_per_kg).toFixed(0)}/kg
+                          </option>
+                        ))}
+                      </optgroup>
+                    );
+                  })}
+                  {htLots.length > 0 && (
+                    <optgroup label="HillTiller Green Stock">
+                      {htLots.map(h => (
+                        <option key={h.id} value={h.id}>
+                          {h.lot} · {h.supplier} · {h.process} · {Math.round(h.current_kg)} kg · ₹{n(h.rate_per_kg).toFixed(0)}/kg
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {allLots.length === 0 && <option value="">No stock available</option>}
+                </select>
+                {selected && (
+                  <div style={{ fontSize:10, color:"#7a90b0", marginTop:3 }}>
+                    Available: {Math.round(selected.current_kg)} kg
+                    {selected.source === "hilltiller" && " · HillTiller stock"}
+                  </div>
+                )}
+              </div>
+              <input
+                type="number"
+                className={css.recipeKgInput}
+                min="0"
+                step="0.1"
+                placeholder="kg"
+                value={row.kg}
+                onChange={e=>updateLotRow(row.key, { kg: e.target.value })}
+              />
+              <button
+                type="button"
+                aria-label="Remove lot"
+                title="Remove lot"
+                style={{ background:"transparent", border:"none", color:index === 0 && lotRows.length === 1 ? "#c7bfa9" : "#e8524a", cursor:index === 0 && lotRows.length === 1 ? "default" : "pointer", fontSize:18 }}
+                onClick={()=>removeLotRow(row.key)}
+                disabled={index === 0 && lotRows.length === 1}
+              >×</button>
+            </div>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        className={css.pageBtn}
+        style={{ marginTop:10, display:"inline-flex", alignItems:"center", gap:6 }}
+        onClick={addLotRow}
+        disabled={allLots.length === 0 || usedLotIds.length >= allLots.length}
+      >
+        <Plus size={14} /> Add another lot
+      </button>
+      <div style={{ fontSize:12, color:"#6b7280", marginTop:8 }}>
+        Total quantity: <strong>{fmtKg(saleKg)}</strong> from {saleAllocations.length} lot{saleAllocations.length === 1 ? "" : "s"}
       </div>
       <div className={css.formGroup} style={{ marginTop:10 }}>
         <label className={css.formLabel}>Customer Address</label>
@@ -2104,7 +2224,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
         <div className={css.computedItem}>
           <span className={css.computedLabel}>Margin/kg</span>
           <span className={`${css.computedValue} ${margin>=0?css.computedValueGreen:css.computedValueRed}`}>
-            ₹{(n(price)-n(selectedLot?.rate_per_kg??0)).toFixed(2)}
+            ₹{(n(price)-weightedCost).toFixed(2)}
           </span>
         </div>
         <div className={css.computedItem}>
@@ -2182,18 +2302,34 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
     if (insufficient) { alert(`Maximum available from this blend is ${Math.floor(maxKg)} kg.`); return; }
     setSaving(true);
 
-    // Collect lot IDs first (no deduction yet)
-    const lotIds: string[] = recipe.map(r => r.green_lot_id).filter(id => resolveLot(id));
+    // Collect lot IDs and allocations first (no deduction yet)
+    const blendAllocations: SaleLotAllocation[] = recipe
+      .map(r => {
+        const lot = resolveLot(r.green_lot_id);
+        if (!lot) return null;
+        return { green_lot_id: r.green_lot_id, kg: (n(r.kg) / recipeTotal) * saleKg };
+      })
+      .filter((row): row is SaleLotAllocation => Boolean(row));
+    const lotIds: string[] = blendAllocations.map(row => row.green_lot_id);
 
     // INSERT the sale record first — deductions only happen after confirmed
-    const { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
+    const salePayload = {
       date, channel, customer: customer.trim(),
       green_lot_ids: lotIds,
+      lot_allocations: blendAllocations,
       kg: saleKg, price_per_kg: n(price), currency: "INR",
       status: channel === "internal-roast" ? "transferred" : "pending",
       reference: ref || null,
       notes: `Blend sale: ${blend.name}${notes ? ` — ${notes}` : ""}`,
-    }]).select().single();
+    };
+    let { data: sale, error: saleError } = await supabase.from("coffee_sales").insert([salePayload]).select().single();
+    if (saleError && isMissingLotAllocationsColumn(saleError)) {
+      const { lot_allocations: _ignored, ...fallbackPayload } = salePayload;
+      ({ data: sale, error: saleError } = await supabase.from("coffee_sales").insert([{
+        ...fallbackPayload,
+        notes: appendLotAllocationFallback(fallbackPayload.notes, blendAllocations),
+      }]).select().single());
+    }
 
     if (saleError || !sale) {
       setSaving(false);
@@ -2784,13 +2920,22 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
 
   // Restore stock for a sale's lots back to green_lots (or hilltiller_stock)
   const restoreStock = async (sale: CoffeeSale) => {
-    for (const lotId of sale.green_lot_ids) {
+    const fallbackAllocations = parseLotAllocationFallback(sale.notes);
+    const allocations = Array.isArray(sale.lot_allocations) && sale.lot_allocations.length > 0
+      ? sale.lot_allocations
+      : fallbackAllocations.length > 0
+        ? fallbackAllocations
+        : sale.green_lot_ids.map(lotId => ({ green_lot_id: lotId, kg: n(sale.kg) }));
+
+    for (const allocation of allocations) {
+      const lotId = allocation.green_lot_id;
+      const restoreKg = n(allocation.kg);
       // Re-fetch live current_kg from DB to avoid stale-state race conditions
       const { data: freshGreen } = await supabase
         .from("green_lots").select("current_kg").eq("id", lotId).single();
       if (freshGreen) {
         await supabase.from("green_lots").update({
-          current_kg: n(freshGreen.current_kg) + n(sale.kg),
+          current_kg: n(freshGreen.current_kg) + restoreKg,
           status: "in-stock",
         }).eq("id", lotId);
       } else {
@@ -2799,7 +2944,7 @@ function SalesTab({ sales, greenLots, reload, setTab }: { sales: CoffeeSale[]; g
           .from("hilltiller_stock").select("current_kg").eq("id", lotId).single();
         if (freshHt) {
           await supabase.from("hilltiller_stock").update({
-            current_kg: n(freshHt.current_kg) + n(sale.kg),
+            current_kg: n(freshHt.current_kg) + restoreKg,
             status: "in-stock",
           }).eq("id", lotId);
         }
