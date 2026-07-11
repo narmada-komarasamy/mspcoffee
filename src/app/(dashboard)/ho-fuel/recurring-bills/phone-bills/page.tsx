@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Loader2, Mail, Plus, RefreshCw } from "lucide-react";
+import { Download, Loader2, Mail, Plus, Printer, RefreshCw } from "lucide-react";
 import css from "./phone-bills.module.css";
 
 type PhoneBillRow = {
@@ -138,6 +138,7 @@ export default function PhoneBillsPage() {
   const [page, setPage] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [draft, setDraft] = useState<PhoneBillRow>(blankEntry);
+  const [printMode, setPrintMode] = useState(false);
 
   const rows = useMemo(() => [...baseRows, ...manualRows], [baseRows, manualRows]);
 
@@ -235,6 +236,7 @@ export default function PhoneBillsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const visibleRows = printMode ? filtered : pageRows;
 
   const exportCsv = (records = filtered) => {
     const header = ["Month", "Year", "Bill Type", "Estate/Location", "User", "Phone", "Account No", "Due Date", "Amount", "Remarks"];
@@ -261,17 +263,34 @@ export default function PhoneBillsPage() {
 
   const emailView = () => {
     exportCsv();
-    const subject = `Phone Bill Reimbursement - ${filtered.length} records`;
+    const transferLines = transferSummary.map(([label, amount]) => `${label}: ${money(amount)}`);
+    const subject = `Phone Bill Reimbursement Report - ${filtered.length} records`;
     const body = [
-      "Phone & Internet Bill Reimbursement - filtered view",
+      "Phone & Internet Bill Reimbursement Report",
       `Records: ${filtered.length}`,
       `Total: ${money(stats.totalAmount)}`,
       `Filters: ${activeNote}`,
+      "",
+      "Transfer summary:",
+      ...(transferLines.length ? transferLines : ["No transfer summary available."]),
       "",
       "A CSV of this filtered view has just been downloaded. Please attach it to the email.",
     ].join("\n");
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
+
+  const printReport = () => {
+    setPrintMode(true);
+    window.setTimeout(() => {
+      window.print();
+    }, 100);
+  };
+
+  useEffect(() => {
+    const finishPrint = () => setPrintMode(false);
+    window.addEventListener("afterprint", finishPrint);
+    return () => window.removeEventListener("afterprint", finishPrint);
+  }, []);
 
   const clearFilters = () => {
     setPhoneQuery("");
@@ -356,8 +375,11 @@ export default function PhoneBillsPage() {
         <button className={`${css.actionBtn} ${css.actionBtnPrimary}`} onClick={() => setShowAddForm((value) => !value)}>
           <Plus size={14} /> Add entry for a new month
         </button>
+        <button className={css.actionBtn} onClick={printReport} disabled={!filtered.length}>
+          <Printer size={14} /> Print chosen report
+        </button>
         <button className={css.actionBtn} onClick={emailView} disabled={!filtered.length}>
-          <Mail size={14} /> Email this view
+          <Mail size={14} /> Email chosen report
         </button>
         <button className={css.actionBtn} onClick={() => exportCsv()} disabled={!filtered.length}>
           <Download size={14} /> Download CSV
@@ -407,10 +429,10 @@ export default function PhoneBillsPage() {
             </tr>
           </thead>
           <tbody>
-            {!loading && pageRows.length === 0 && (
+            {!loading && visibleRows.length === 0 && (
               <tr className={css.emptyRow}><td colSpan={9}>No phone bills match the selected filters.</td></tr>
             )}
-            {pageRows.map((row, index) => (
+            {visibleRows.map((row, index) => (
               <tr key={`${row.month}-${row.year}-${row.billType}-${row.phone}-${row.accountNo}-${index}`}>
                 <td className={css.mono}>{row.month} {row.year}</td>
                 <td>
