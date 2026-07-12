@@ -52,6 +52,20 @@ function safeName(name?: string | null) {
   return name?.trim() || 'Unknown';
 }
 
+function travelAuthHeaders(user: AppUser | null) {
+  if (!user?.id || !user?.pin) return null;
+  return {
+    'Content-Type': 'application/json',
+    'x-msp-user-id': user.id,
+    'x-msp-user-pin': user.pin,
+  };
+}
+
+async function readApiError(response: Response, fallback: string) {
+  const result = await response.json().catch(() => null) as { error?: string } | null;
+  return result?.error ?? fallback;
+}
+
 export default function TravelAllowancePage() {
   const [tab, setTab] = useState<Tab>('entry');
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -75,6 +89,7 @@ export default function TravelAllowancePage() {
   const [reportEmployee, setReportEmployee] = useState('');
   const [reportStartDate, setReportStartDate] = useState('');
   const [reportEndDate, setReportEndDate] = useState('');
+  const isAdmin = currentUser?.role === 'admin';
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -150,16 +165,29 @@ export default function TravelAllowancePage() {
       showToast('Fill in date, employee, and location');
       return;
     }
-    const { error } = await supabase.from('travel_allowance_entries').insert({
-      entry_date: entryDate,
-      employee_id: employeeId,
-      location_id: locationId,
-      times: Math.max(1, times || 1),
-    });
-    if (error) {
-      showToast(error.message);
+
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before adding entries');
       return;
     }
+
+    const response = await fetch('/api/travel-allowance/entries', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        entry_date: entryDate,
+        employee_id: employeeId,
+        location_id: locationId,
+        times: Math.max(1, times || 1),
+      }),
+    });
+
+    if (!response.ok) {
+      showToast(await readApiError(response, 'Could not add entry'));
+      return;
+    }
+
     setTimes(1);
     await loadData();
     showToast('Entry added');
@@ -172,11 +200,28 @@ export default function TravelAllowancePage() {
       showToast('Maximum 10 employees reached');
       return;
     }
-    const { error } = await supabase.from('travel_allowance_employees').insert({ name });
-    if (error) {
-      showToast(error.message);
+    if (!isAdmin) {
+      showToast('Only admins can manage employees');
       return;
     }
+
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before adding employees');
+      return;
+    }
+
+    const response = await fetch('/api/travel-allowance/employees', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name }),
+    });
+
+    if (!response.ok) {
+      showToast(await readApiError(response, 'Could not add employee'));
+      return;
+    }
+
     setNewEmployee('');
     await loadData();
     showToast('Employee added');
@@ -185,11 +230,28 @@ export default function TravelAllowancePage() {
   const addLocation = async () => {
     const name = newLocation.trim();
     if (!name) return;
-    const { error } = await supabase.from('travel_allowance_locations').insert({ name });
-    if (error) {
-      showToast(error.message);
+    if (!isAdmin) {
+      showToast('Only admins can manage locations');
       return;
     }
+
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before adding locations');
+      return;
+    }
+
+    const response = await fetch('/api/travel-allowance/locations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name }),
+    });
+
+    if (!response.ok) {
+      showToast(await readApiError(response, 'Could not add location'));
+      return;
+    }
+
     setNewLocation('');
     await loadData();
     showToast('Location added');
@@ -201,17 +263,19 @@ export default function TravelAllowancePage() {
       return;
     }
 
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before removing entries');
+      return;
+    }
+
     const response = await fetch(`/api/travel-allowance/entries/${id}`, {
       method: 'DELETE',
-      headers: {
-        'x-msp-user-id': currentUser.id,
-        'x-msp-user-pin': currentUser.pin,
-      },
+      headers,
     });
 
     if (!response.ok) {
-      const result = await response.json().catch(() => ({ error: 'Could not remove entry' }));
-      showToast(result.error ?? 'Could not remove entry');
+      showToast(await readApiError(response, 'Could not remove entry'));
       return;
     }
 
@@ -219,23 +283,53 @@ export default function TravelAllowancePage() {
     showToast('Entry removed');
   };
 
-  const isAdmin = currentUser?.role === 'admin';
-
   const removeEmployee = async (id: string) => {
-    const { error } = await supabase.from('travel_allowance_employees').delete().eq('id', id);
-    if (error) {
-      showToast(error.message);
+    if (!isAdmin) {
+      showToast('Only admins can manage employees');
       return;
     }
+
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before removing employees');
+      return;
+    }
+
+    const response = await fetch(`/api/travel-allowance/employees/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    if (!response.ok) {
+      showToast(await readApiError(response, 'Could not remove employee'));
+      return;
+    }
+
     await loadData();
   };
 
   const removeLocation = async (id: string) => {
-    const { error } = await supabase.from('travel_allowance_locations').delete().eq('id', id);
-    if (error) {
-      showToast(error.message);
+    if (!isAdmin) {
+      showToast('Only admins can manage locations');
       return;
     }
+
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before removing locations');
+      return;
+    }
+
+    const response = await fetch(`/api/travel-allowance/locations/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    if (!response.ok) {
+      showToast(await readApiError(response, 'Could not remove location'));
+      return;
+    }
+
     await loadData();
   };
 

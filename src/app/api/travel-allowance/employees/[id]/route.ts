@@ -4,14 +4,14 @@ import { UUID_RE, requireTravelAllowanceUser } from '../../_auth';
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!UUID_RE.test(id)) {
-    return NextResponse.json({ error: 'Invalid entry id' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid employee id' }, { status: 400 });
   }
 
   const auth = await requireTravelAllowanceUser(request, ['admin']);
   if ('error' in auth) return auth.error;
 
   const { error } = await auth.supabase
-    .from('travel_allowance_entries')
+    .from('travel_allowance_employees')
     .delete()
     .eq('id', id);
 
