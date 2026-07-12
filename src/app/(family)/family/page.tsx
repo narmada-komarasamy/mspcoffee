@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plane } from 'lucide-react';
+import { Plane, Vote } from 'lucide-react';
 
 export default function FamilyPage() {
   return (
@@ -10,6 +10,22 @@ export default function FamilyPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <Link
+          href="/family-decisions"
+          className="group rounded-xl border p-5 transition active:scale-[0.99]"
+          style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)', boxShadow: '0 8px 26px rgba(0,0,0,0.08)' }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full" style={{ background: '#e8c84a', color: '#1b4a1b' }}>
+              <Vote className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold" style={{ color: 'var(--t-text)' }}>Family Decisions</h2>
+              <p className="text-sm" style={{ color: 'var(--t-muted)' }}>Ask a question, vote, resolve objections, assign owner and timeline.</p>
+            </div>
+          </div>
+        </Link>
+
         <Link
           href="/travel-allowance"
           className="group rounded-xl border p-5 transition active:scale-[0.99]"

@@ -18,7 +18,8 @@ const PUBLIC_ROUTES = [
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublic = PUBLIC_ROUTES.some(r => pathname.startsWith(r));
+  const isLocalFamilyDecisionPreview = process.env.NODE_ENV === 'development' && pathname === '/family-decisions';
+  const isPublic = isLocalFamilyDecisionPreview || PUBLIC_ROUTES.some(r => pathname.startsWith(r));
   const isStatic = pathname.startsWith('/api/') ||
                    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|m4a|woff2?)$/.test(pathname);
 

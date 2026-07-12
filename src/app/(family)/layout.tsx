@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Coffee, Home, LogOut, Maximize2, Menu, Minimize2, Plane, X } from 'lucide-react';
+import { Coffee, Home, LogOut, Maximize2, Menu, Minimize2, Plane, Vote, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const THEMES = {
@@ -17,7 +17,11 @@ const THEMES = {
 type ThemeKey = keyof typeof THEMES;
 type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
 
+const PREVIEW_USER: AppUser = { id: 'family-decisions-preview', name: 'Preview', pin: '0000', role: 'preview', estate: null };
+const isLocalPreview = process.env.NODE_ENV === 'development';
+
 const navItems = [
+  { label: 'Family Decisions', href: '/family-decisions', icon: Vote },
   { label: 'Travel Allowance', href: '/travel-allowance', icon: Plane },
 ];
 
@@ -32,31 +36,39 @@ export default function FamilyLayout({ children }: { children: React.ReactNode }
   const theme = THEMES[themeKey];
 
   useEffect(() => {
-    const stored = localStorage.getItem('msp_user');
-    if (!stored) {
-      router.push('/login');
-      return;
-    }
-
-    const cached = JSON.parse(stored) as AppUser;
-    const storedTheme = localStorage.getItem('msp_theme') as ThemeKey | null;
-    if (storedTheme && THEMES[storedTheme]) setThemeKey(storedTheme);
-
-    supabase
-      .from('app_users')
-      .select('id, name, role, estate')
-      .eq('id', cached.id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setUser(cached);
+    const timer = window.setTimeout(() => {
+      const stored = localStorage.getItem('msp_user');
+      if (!stored) {
+        if (isLocalPreview && pathname === '/family-decisions') {
+          setUser(PREVIEW_USER);
           return;
         }
-        const verified = { ...cached, role: data.role, name: data.name, estate: data.estate };
-        setUser(verified);
-        localStorage.setItem('msp_user', JSON.stringify(verified));
-      });
-  }, [router]);
+        router.push('/login');
+        return;
+      }
+
+      const cached = JSON.parse(stored) as AppUser;
+      const storedTheme = localStorage.getItem('msp_theme') as ThemeKey | null;
+      if (storedTheme && THEMES[storedTheme]) setThemeKey(storedTheme);
+
+      supabase
+        .from('app_users')
+        .select('id, name, role, estate')
+        .eq('id', cached.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error || !data) {
+            setUser(cached);
+            return;
+          }
+          const verified = { ...cached, role: data.role, name: data.name, estate: data.estate };
+          setUser(verified);
+          localStorage.setItem('msp_user', JSON.stringify(verified));
+        });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [pathname, router]);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
