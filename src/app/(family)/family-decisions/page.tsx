@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import {
   CalendarDays,
   CheckCircle2,
@@ -16,7 +18,25 @@ import {
   XCircle,
 } from 'lucide-react';
 
-const votes = [
+type VoteStatus = 'Yes' | 'No' | 'Pending';
+
+type MemberVote = {
+  name: string;
+  vote: VoteStatus;
+  note: string;
+};
+
+type Decision = {
+  question: string;
+  cost: string;
+  lead: string;
+  timeline: string;
+  rule: string;
+};
+
+const familyMembers = ['Ashok', 'Meera', 'Rohan', 'Anika'];
+
+const initialVotes: MemberVote[] = [
   { name: 'Ashok', vote: 'Yes', note: 'Use the shorter name if the domain is clean.' },
   { name: 'Meera', vote: 'Yes', note: 'Works for family and estate updates.' },
   { name: 'Rohan', vote: 'No', note: 'Concerned the name sounds too formal.' },
@@ -49,37 +69,69 @@ const decisionSteps = [
   { label: 'Decision locked', date: '15 Jul', done: false },
 ];
 
-const decisionQuestion = 'Should we name the new family website "MSP Family Circle"?';
-const estimatedCost = 'Rs 35,000';
-const projectLead = 'Ashok';
-const timeline = '15 Jul - 31 Jul';
-const emailSubject = `Family decision needed: ${decisionQuestion}`;
-const emailBody = [
-  'Dear family,',
-  '',
-  'Please vote on this decision:',
-  decisionQuestion,
-  '',
-  'Reply with:',
-  '1. Yes or No',
-  '2. Any objection that must be resolved',
-  '3. Any better suggestion',
-  '',
-  'Project details:',
-  `Estimated cost: ${estimatedCost}`,
-  `Project lead: ${projectLead}`,
-  `Timeline: ${timeline}`,
-  '',
-  'Decision rule: passes with 3 yes votes and no unresolved major objections.',
-].join('\n');
-const emailHref = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+const initialDecision: Decision = {
+  question: 'Should we name the new family website "MSP Family Circle"?',
+  cost: '₹35,000',
+  lead: 'Ashok',
+  timeline: '15 Jul - 31 Jul',
+  rule: 'Passes with 3 yes votes and no unresolved major objections.',
+};
 
 export default function FamilyDecisionsPage() {
-  const yesVotes = votes.filter(vote => vote.vote === 'Yes').length;
-  const noVotes = votes.filter(vote => vote.vote === 'No').length;
-  const pendingVotes = votes.filter(vote => vote.vote === 'Pending').length;
+  const [decision, setDecision] = useState<Decision>(initialDecision);
+  const [draft, setDraft] = useState<Decision>(initialDecision);
+  const [activeVotes, setActiveVotes] = useState<MemberVote[]>(initialVotes);
+  const [activeSuggestions, setActiveSuggestions] = useState(suggestions);
+  const [newSuggestion, setNewSuggestion] = useState('');
+  const [composerOpen, setComposerOpen] = useState(false);
+
+  const yesVotes = activeVotes.filter(vote => vote.vote === 'Yes').length;
+  const noVotes = activeVotes.filter(vote => vote.vote === 'No').length;
+  const pendingVotes = activeVotes.filter(vote => vote.vote === 'Pending').length;
   const totalCast = yesVotes + noVotes;
   const yesPercent = totalCast ? Math.round((yesVotes / totalCast) * 100) : 0;
+  const emailHref = useMemo(() => {
+    const subject = `Family decision needed: ${decision.question}`;
+    const body = [
+      'Dear family,',
+      '',
+      'Please vote on this decision:',
+      decision.question,
+      '',
+      'Reply with:',
+      '1. Yes or No',
+      '2. Any objection that must be resolved',
+      '3. Any better suggestion',
+      '',
+      'Project details:',
+      `Estimated cost: ${decision.cost}`,
+      `Project lead: ${decision.lead}`,
+      `Timeline: ${decision.timeline}`,
+      '',
+      `Decision rule: ${decision.rule}`,
+    ].join('\n');
+
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }, [decision]);
+
+  const saveQuestion = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextDecision = {
+      question: draft.question.trim(),
+      cost: draft.cost.trim() || 'Not set',
+      lead: draft.lead.trim() || 'Not assigned',
+      timeline: draft.timeline.trim() || 'Not set',
+      rule: draft.rule.trim() || initialDecision.rule,
+    };
+
+    if (!nextDecision.question) return;
+
+    setDecision(nextDecision);
+    setActiveVotes(familyMembers.map(name => ({ name, vote: 'Pending', note: 'Waiting for response.' })));
+    setActiveSuggestions(newSuggestion.trim() ? [newSuggestion.trim()] : []);
+    setNewSuggestion('');
+    setComposerOpen(false);
+  };
 
   return (
     <div id="family-decision-print" className="mx-auto max-w-7xl space-y-5">
@@ -107,7 +159,7 @@ export default function FamilyDecisionsPage() {
           </p>
         </div>
         <div className="family-decision-no-print grid grid-cols-1 gap-2 sm:grid-cols-3 lg:min-w-[430px]">
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold text-white transition active:scale-[0.99]" style={{ background: 'var(--t-green)' }}>
+          <button type="button" onClick={() => setComposerOpen(current => !current)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold text-white transition active:scale-[0.99]" style={{ background: 'var(--t-green)' }}>
             <Plus className="h-4 w-4" />
             New question
           </button>
@@ -122,6 +174,56 @@ export default function FamilyDecisionsPage() {
         </div>
       </section>
 
+      {composerOpen && (
+        <section className="family-decision-no-print rounded-xl border p-5" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)', boxShadow: '0 8px 26px rgba(27,74,27,0.08)' }}>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--t-muted)' }}>New decision question</p>
+            <h2 className="text-xl font-black" style={{ color: 'var(--t-heading)' }}>Create the next vote</h2>
+          </div>
+
+          <form onSubmit={saveQuestion} className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <label className="lg:col-span-2">
+              <span className="text-xs font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--t-label)' }}>Question</span>
+              <textarea
+                required
+                value={draft.question}
+                onChange={event => setDraft(current => ({ ...current, question: event.target.value }))}
+                className="mt-2 min-h-24 w-full resize-none rounded-lg border p-3 text-sm outline-none"
+                style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }}
+                placeholder="Should we start the new project?"
+              />
+            </label>
+
+            <DecisionInput label="Estimated cost" value={draft.cost} placeholder="₹35,000" onChange={value => setDraft(current => ({ ...current, cost: value }))} />
+            <DecisionInput label="Project lead" value={draft.lead} placeholder="Ashok" onChange={value => setDraft(current => ({ ...current, lead: value }))} />
+            <DecisionInput label="Timeline" value={draft.timeline} placeholder="15 Jul - 31 Jul" onChange={value => setDraft(current => ({ ...current, timeline: value }))} />
+            <DecisionInput label="Opening suggestion" value={newSuggestion} placeholder="Alternative name or approach" onChange={setNewSuggestion} />
+
+            <label className="lg:col-span-2">
+              <span className="text-xs font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--t-label)' }}>Decision rule</span>
+              <input
+                value={draft.rule}
+                onChange={event => setDraft(current => ({ ...current, rule: event.target.value }))}
+                className="mt-2 h-11 w-full rounded-lg border px-3 text-sm outline-none"
+                style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }}
+                placeholder="Passes with 3 yes votes and no unresolved major objections."
+              />
+            </label>
+
+            <div className="flex flex-col gap-2 sm:flex-row lg:col-span-2">
+              <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>
+                <CheckCircle2 className="h-4 w-4" />
+                Save question
+              </button>
+              <button type="button" onClick={() => { setDraft(decision); setNewSuggestion(''); setComposerOpen(false); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)', color: 'var(--t-heading)' }}>
+                <XCircle className="h-4 w-4" />
+                Cancel
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.45fr_0.9fr]">
         <div className="rounded-xl border p-5" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)', boxShadow: '0 8px 26px rgba(27,74,27,0.08)' }}>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -131,7 +233,7 @@ export default function FamilyDecisionsPage() {
                 Active vote
               </div>
               <h2 className="mt-3 text-2xl font-black leading-tight" style={{ color: 'var(--t-text)' }}>
-                {decisionQuestion}
+                {decision.question}
               </h2>
               <p className="mt-2 text-sm leading-6" style={{ color: 'var(--t-muted)' }}>
                 Decision closes once objections are answered and at least 3 family members vote yes.
@@ -194,15 +296,15 @@ export default function FamilyDecisionsPage() {
         <aside className="rounded-xl border p-5" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)', boxShadow: '0 8px 26px rgba(27,74,27,0.08)' }}>
           <h2 className="text-sm font-black uppercase tracking-[0.1em]" style={{ color: 'var(--t-heading)' }}>Project details</h2>
           <div className="mt-4 space-y-3">
-            <DetailRow icon={IndianRupee} label="Estimated cost" value="₹35,000" note="Domain, design, setup" />
-            <DetailRow icon={UserRound} label="Project lead" value={projectLead} note="Responsible after approval" />
-            <DetailRow icon={CalendarDays} label="Timeline" value={timeline} note="Two-week first version" />
+            <DetailRow icon={IndianRupee} label="Estimated cost" value={decision.cost} note="Budget or expected spend" />
+            <DetailRow icon={UserRound} label="Project lead" value={decision.lead} note="Responsible after approval" />
+            <DetailRow icon={CalendarDays} label="Timeline" value={decision.timeline} note="Target window" />
           </div>
 
           <div className="mt-5 rounded-lg border p-4" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)' }}>
             <p className="text-xs font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--t-label)' }}>Decision rule</p>
             <p className="mt-2 text-sm leading-6" style={{ color: 'var(--t-text)' }}>
-              Passes with 3 yes votes and no unresolved major objections.
+              {decision.rule}
             </p>
           </div>
 
@@ -242,7 +344,12 @@ export default function FamilyDecisionsPage() {
             Suggestions
           </h2>
           <div className="mt-4 space-y-2">
-            {suggestions.map(suggestion => (
+            {activeSuggestions.length === 0 && (
+              <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)', color: 'var(--t-muted)' }}>
+                No suggestions yet.
+              </div>
+            )}
+            {activeSuggestions.map(suggestion => (
               <div key={suggestion} className="flex items-center justify-between rounded-lg border px-4 py-3" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)' }}>
                 <span className="text-sm font-bold" style={{ color: 'var(--t-text)' }}>{suggestion}</span>
                 <button className="rounded-md border px-3 py-1 text-xs font-bold" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-heading)' }}>Use</button>
@@ -282,7 +389,7 @@ export default function FamilyDecisionsPage() {
               </tr>
             </thead>
             <tbody>
-              {votes.map(vote => (
+              {activeVotes.map(vote => (
                 <tr key={vote.name}>
                   <td className="border-b px-3 py-3 font-bold" style={{ borderColor: 'var(--t-border)', color: 'var(--t-text)' }}>{vote.name}</td>
                   <td className="border-b px-3 py-3" style={{ borderColor: 'var(--t-border)' }}>
@@ -296,6 +403,21 @@ export default function FamilyDecisionsPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function DecisionInput({ label, value, placeholder, onChange }: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
+  return (
+    <label>
+      <span className="text-xs font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--t-label)' }}>{label}</span>
+      <input
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        className="mt-2 h-11 w-full rounded-lg border px-3 text-sm outline-none"
+        style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }}
+        placeholder={placeholder}
+      />
+    </label>
   );
 }
 
