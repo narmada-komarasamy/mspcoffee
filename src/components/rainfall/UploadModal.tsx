@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { supabase } from "@/lib/supabase";
 import { CloudUpload, X, CheckCircle, AlertCircle, Loader2, FileSpreadsheet } from "lucide-react";
 
 type ParsedRow = {
@@ -15,11 +14,17 @@ type ParsedRow = {
 const VALID_ESTATES = ["Gowri", "Hidden Falls", "Moganad", "Orchardale", "Stanmore", "Vyapurikuttai"];
 
 interface Props {
+  authHeaders: Record<string, string> | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function UploadModal({ onClose, onSuccess }: Props) {
+async function readApiError(response: Response, fallback: string) {
+  const result = await response.json().catch(() => null) as { error?: string } | null;
+  return result?.error ?? fallback;
+}
+
+export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -88,20 +93,36 @@ export function UploadModal({ onClose, onSuccess }: Props) {
   };
 
   const handleUpload = async () => {
+    if (!authHeaders) {
+      setErrors((prev) => [...prev, "Sign in again before uploading rainfall data"]);
+      return;
+    }
+
     setStep("uploading");
     const BATCH = 500;
     let count = 0;
     for (let i = 0; i < rows.length; i += BATCH) {
       const batch = rows.slice(i, i + BATCH);
-      await supabase.from("rainfall").upsert(
-        batch.map((r) => ({
-          date: r.date,
-          estate: r.estate,
-          rainfall_mm: r.rainfall_mm,
-          inches: r.inches,
-        })),
-        { onConflict: "date,estate" }
-      );
+      const response = await fetch("/api/rainfall/bulk", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          rows: batch.map((r) => ({
+            date: r.date,
+            estate: r.estate,
+            rainfall_mm: r.rainfall_mm,
+            inches: r.inches,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        const message = await readApiError(response, "Could not upload rainfall data");
+        setErrors((prev) => [...prev, message]);
+        setStep("preview");
+        return;
+      }
+
       count += batch.length;
       setUploadedCount(count);
     }

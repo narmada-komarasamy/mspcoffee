@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { X, Trash2, Save, Loader2 } from "lucide-react";
 
 const ESTATES = ["Gowri", "Hidden Falls", "Moganad", "Orchardale", "Stanmore", "Vyapurikuttai"];
@@ -16,11 +15,18 @@ export type RainfallRecord = {
 
 interface Props {
   record: RainfallRecord | null; // null = new record
+  authHeaders: Record<string, string> | null;
+  canDelete: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function RecordModal({ record, onClose, onSuccess }: Props) {
+async function readApiError(response: Response, fallback: string) {
+  const result = await response.json().catch(() => null) as { error?: string } | null;
+  return result?.error ?? fallback;
+}
+
+export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess }: Props) {
   const isEdit = record?.id != null;
   const [form, setForm] = useState<RainfallRecord>(
     record ?? { date: new Date().toISOString().slice(0, 10), estate: "Gowri", rainfall_mm: 0, inches: 0 }
@@ -46,22 +52,33 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
   const handleSave = async () => {
     setError("");
     if (!form.date || !form.estate) { setError("Date and estate are required"); return; }
+    if (!authHeaders) { setError("Sign in again before saving rainfall records"); return; }
+
     setSaving(true);
     const payload = { date: form.date, estate: form.estate, rainfall_mm: form.rainfall_mm, inches: form.inches };
-    const { error: err } = isEdit
-      ? await supabase.from("rainfall").update(payload).eq("id", record!.id!)
-      : await supabase.from("rainfall").insert(payload);
+    const response = await fetch(isEdit ? `/api/rainfall/${record!.id!}` : "/api/rainfall", {
+      method: isEdit ? "PATCH" : "POST",
+      headers: authHeaders,
+      body: JSON.stringify(payload),
+    });
     setSaving(false);
-    if (err) { setError(err.message); return; }
+    if (!response.ok) { setError(await readApiError(response, "Could not save rainfall record")); return; }
     onSuccess();
     onClose();
   };
 
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
+    if (!authHeaders) { setError("Sign in again before deleting rainfall records"); return; }
+    if (!canDelete) { setError("You do not have permission to delete rainfall records"); return; }
+
     setDeleting(true);
-    await supabase.from("rainfall").delete().eq("id", record!.id!);
+    const response = await fetch(`/api/rainfall/${record!.id!}`, {
+      method: "DELETE",
+      headers: authHeaders,
+    });
     setDeleting(false);
+    if (!response.ok) { setError(await readApiError(response, "Could not delete rainfall record")); return; }
     onSuccess();
     onClose();
   };
@@ -133,7 +150,7 @@ export function RecordModal({ record, onClose, onSuccess }: Props) {
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
-            {isEdit && (
+            {isEdit && canDelete && (
               <button
                 onClick={handleDelete}
                 disabled={deleting}

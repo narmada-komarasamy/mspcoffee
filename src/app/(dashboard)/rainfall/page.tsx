@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, RefreshCw, Palette, Maximize2, Minimize2 } from "lucide-react";
+import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, Palette, Maximize2, Minimize2 } from "lucide-react";
 import { UploadModal } from "@/components/rainfall/UploadModal";
 import { RecordModal, type RainfallRecord } from "@/components/rainfall/RecordModal";
 import s from "./rainfall.module.css";
@@ -110,6 +110,7 @@ function WIcon({ icon, size = 32 }: { icon: string; size?: number }) {
 type Row = { id: number; date: string; estate: string; rainfall_mm: number; inches: number; year: number; month: number; };
 type Grouping = "daily" | "monthly" | "yearly";
 type Unit = "mm" | "in";
+type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -117,11 +118,22 @@ const daysBetween = (a: string, b: string) =>
   Math.floor((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 const fmtDate = (d: string) =>
   new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const rainfallAuthHeaders = (user: AppUser | null) => {
+  if (!user?.id || !user?.pin) return null;
+  return {
+    "Content-Type": "application/json",
+    "x-msp-user-id": user.id,
+    "x-msp-user-pin": user.pin,
+  };
+};
+const canDeleteRainfall = (user: AppUser | null) =>
+  user?.role === "admin" || user?.role === "supervisor" || user?.role === "ceo";
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function RainfallPage() {
   const [data, setData]     = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [clock, setClock]   = useState("");
   const [dateStr, setDateStr] = useState("");
 
@@ -163,6 +175,36 @@ export default function RainfallPage() {
   // Fullscreen
   const pageRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const authHeaders = rainfallAuthHeaders(currentUser);
+  const canDeleteRecords = canDeleteRainfall(currentUser);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = localStorage.getItem("msp_user");
+      if (!stored) return;
+
+      try {
+        const cached = JSON.parse(stored) as AppUser;
+        setCurrentUser(cached);
+        supabase
+          .from("app_users")
+          .select("id, name, role, estate")
+          .eq("id", cached.id)
+          .single()
+          .then(({ data: user }) => {
+            if (!user) return;
+            const verified = { ...cached, role: user.role, name: user.name, estate: user.estate };
+            setCurrentUser(verified);
+            localStorage.setItem("msp_user", JSON.stringify(verified));
+          });
+      } catch {
+        setCurrentUser(null);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
@@ -258,9 +300,14 @@ export default function RainfallPage() {
   }, []);
 
   useEffect(() => {
-    fetchWeather();
+    const timer = window.setTimeout(() => {
+      fetchWeather();
+    }, 0);
     const id = setInterval(fetchWeather, 10 * 60 * 1000); // refresh every 10 min
-    return () => clearInterval(id);
+    return () => {
+      window.clearTimeout(timer);
+      clearInterval(id);
+    };
   }, [fetchWeather]);
 
   // ─── Load data (paginated — Supabase caps at 1000 rows by default) ──────────
@@ -295,10 +342,15 @@ export default function RainfallPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
 
   // ─── Computed ──────────────────────────────────────────────────────────────
-  const val = (r: Row) => unit === "mm" ? r.rainfall_mm : r.inches;
+  const val = useCallback((r: Row) => unit === "mm" ? r.rainfall_mm : r.inches, [unit]);
   const unitStr = unit === "mm" ? "mm" : "in";
 
   const years = useMemo(
@@ -336,7 +388,7 @@ export default function RainfallPage() {
     const lastRain = allRainy[allRainy.length - 1];
     const dslr     = lastRain ? daysBetween(lastRain, new Date().toISOString().slice(0, 10)) : null;
     return { total, maxRow, rtd, curYear: rtdYear, rainyDays: rainyDates.size, dslr, lastRain };
-  }, [filtered, data, unit, year, estateFilter]);
+  }, [filtered, data, val, year, estateFilter]);
 
   // ─── Year-over-Year helpers ────────────────────────────────────────────────
   const priorYearNum = year !== "all" ? Number(year) - 1 : null;
@@ -348,7 +400,7 @@ export default function RainfallPage() {
   );
 
   // ─── Chart ─────────────────────────────────────────────────────────────────
-  const activeEstates = compareEstates.length > 0 ? compareEstates : ESTATES;
+  const activeEstates = useMemo(() => compareEstates.length > 0 ? compareEstates : ESTATES, [compareEstates]);
 
   const chartData = useMemo(() => {
     const src = filteredNoEstate.filter((r) => activeEstates.includes(r.estate));
@@ -396,7 +448,7 @@ export default function RainfallPage() {
     });
     return Object.entries(map).sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([yr, v]) => ({ name: yr, ...v }));
-  }, [filteredNoEstate, data, compareEstates, grouping, unit, showYoY, year, priorYearData]);
+  }, [filteredNoEstate, data, activeEstates, grouping, val, yoyEnabled, priorYearData]);
 
   // ─── Top 10 events ─────────────────────────────────────────────────────────
   const topEvents = useMemo(() =>
@@ -427,7 +479,7 @@ export default function RainfallPage() {
       const rank     = allTotals.findIndex((x) => x.estate === estate) + 1;
       return { estate, total, maxEvent, rainyDays, avg, dslr, lastRain, rtdE, rank };
     });
-  }, [compareEstates, filteredNoEstate, data, unit]);
+  }, [compareEstates, filteredNoEstate, data, val]);
 
   // ─── YoY delta summary ─────────────────────────────────────────────────────
   const yoyDelta = useMemo(() => {
@@ -439,7 +491,7 @@ export default function RainfallPage() {
       const pct     = prior > 0 ? r1(((current - prior) / prior) * 100) : null;
       return { estate: e, current, prior, delta, pct };
     });
-  }, [yoyEnabled, priorYearNum, data, priorYearData, year, unit, compareEstates]);
+  }, [yoyEnabled, priorYearNum, activeEstates, data, priorYearData, year, val]);
 
   // ─── Toggle compare ────────────────────────────────────────────────────────
   const toggleCompare = (estate: string) => {
@@ -457,7 +509,7 @@ export default function RainfallPage() {
   // ─── Dynamic KPI accents from theme ──────────────────────────────────────
   const kpiAccents = useMemo(
     () => ['var(--t-accent)', 'var(--t-gold)', '#e8524a', 'var(--t-green)', '#9b59b6'],
-    [theme]
+    []
   );
 
   // ─── Tooltip style ─────────────────────────────────────────────────────────
@@ -907,8 +959,8 @@ export default function RainfallPage() {
       </div>
 
       {/* ─── Modals ──────────────────────────────────────────────────────── */}
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData} />}
-      {editRecord !== undefined && <RecordModal record={editRecord} onClose={() => setEditRecord(undefined)} onSuccess={loadData} />}
+      {showUpload && <UploadModal authHeaders={authHeaders} onClose={() => setShowUpload(false)} onSuccess={loadData} />}
+      {editRecord !== undefined && <RecordModal record={editRecord} authHeaders={authHeaders} canDelete={canDeleteRecords} onClose={() => setEditRecord(undefined)} onSuccess={loadData} />}
 
       {/* ─── Colour Customiser Panel ─────────────────────────────────────── */}
       {showPalettePanel && (
