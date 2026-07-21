@@ -308,6 +308,123 @@
   border-color: #b8863b;
 }
 
+.documentPanel {
+  padding: 18px 36px 20px;
+  border-bottom: 1px solid #dbd0b4;
+  background: #faf6ec;
+}
+
+.documentHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.documentTitle {
+  margin: 0;
+  color: #2f4a3a;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.documentCopy {
+  margin: 4px 0 0;
+  color: #635a48;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.documentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.documentRow {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dbd0b4;
+  border-radius: 6px;
+  background: #fffefb;
+}
+
+.documentLabel {
+  display: block;
+  color: #2b2620;
+  font-size: 12.5px;
+  line-height: 1.25;
+}
+
+.documentLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.documentLink {
+  display: inline-flex;
+  max-width: 210px;
+  align-items: center;
+  gap: 5px;
+  color: #2f4a3a;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.documentLink:hover {
+  color: #b8863b;
+}
+
+.documentLink,
+.documentMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documentMeta {
+  display: block;
+  max-width: 220px;
+  margin-top: 6px;
+  color: #7a705d;
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+.documentUploadBtn {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #2f4a3a;
+  border-radius: 6px;
+  background: #fffefb;
+  color: #2f4a3a;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.documentUploadBtn:hover {
+  background: #f2ebd9;
+}
+
+.documentUploadBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .btnPrimary {
   background: #2f4a3a;
   color: #fffefb;
@@ -690,6 +807,7 @@
 @media (max-width: 780px) {
   .letterhead,
   .toolbar,
+  .documentPanel,
   .content,
   .note {
     padding-left: 18px;
@@ -698,6 +816,10 @@
 
   .grid,
   .cols3 {
+    grid-template-columns: 1fr;
+  }
+
+  .documentGrid {
     grid-template-columns: 1fr;
   }
 
@@ -730,7 +852,8 @@
   }
 
   .registryPanel,
-  .toolbar {
+  .toolbar,
+  .documentPanel {
     display: none;
   }
 

@@ -103,6 +103,7 @@ type EmployeeRow = {
   application_form_uploaded_at: string | null;
   updated_at: string;
   estate_employee_family_members?: FamilyRow[];
+  estate_employee_documents?: EmployeeDocument[];
 };
 
 type FamilyRow = {
@@ -114,6 +115,38 @@ type FamilyRow = {
   age: number | null;
   aadhaar_number: string | null;
 };
+
+type EmployeeDocumentType =
+  | "aadhaar"
+  | "pan"
+  | "bank-account-check"
+  | "other-document"
+  | "short-term-break-letter"
+  | "long-term-break-letter"
+  | "other-letter-record";
+
+type EmployeeDocument = {
+  id: string;
+  employee_id: string;
+  document_type: EmployeeDocumentType;
+  file_name: string;
+  file_path: string;
+  public_url: string;
+  content_type: string | null;
+  file_size: number | null;
+  uploaded_at: string;
+  uploaded_by: string | null;
+};
+
+const employeeDocumentTypes: { type: EmployeeDocumentType; label: string }[] = [
+  { type: "aadhaar", label: "Aadhaar Number" },
+  { type: "pan", label: "PAN (if any)" },
+  { type: "bank-account-check", label: "Check for Bank account" },
+  { type: "other-document", label: "Other documents" },
+  { type: "short-term-break-letter", label: "Short term break letters" },
+  { type: "long-term-break-letter", label: "Long term break letters" },
+  { type: "other-letter-record", label: "Other letters and records" },
+];
 
 const initialForm: FormState = {
   estateName: "Stanmore Estate",
@@ -172,6 +205,12 @@ const toNullableNumber = (value: string) => {
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 };
+
+const missingEmployeeDocumentsRelation = (message: string) =>
+  message.includes("estate_employee_documents") &&
+  (message.includes("relationship") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist"));
 
 const formFromEmployee = (employee: EmployeeRow): FormState => ({
   estateName: employee.estate_name || "Stanmore Estate",
@@ -521,7 +560,10 @@ export default function EmployeeCenterPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingForm, setUploadingForm] = useState(false);
+  const [uploadingDocumentType, setUploadingDocumentType] = useState<EmployeeDocumentType | null>(null);
   const filledFormInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
+  const selectedDocumentTypeRef = useRef<EmployeeDocumentType | null>(null);
 
   const flash = useCallback((message: string) => {
     setStatus(message);
@@ -536,6 +578,11 @@ export default function EmployeeCenterPage() {
   const selectedEmployee = useMemo(
     () => employees.find((employee) => employee.id === selectedId) ?? null,
     [employees, selectedId]
+  );
+
+  const selectedEmployeeDocuments = useMemo(
+    () => selectedEmployee?.estate_employee_documents ?? [],
+    [selectedEmployee]
   );
 
   const filteredEmployees = useMemo(() => {
@@ -559,24 +606,38 @@ export default function EmployeeCenterPage() {
 
   const loadEmployees = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let result = await supabase
       .from("estate_employees")
       .select(`
         *,
-        estate_employee_family_members (*)
+        estate_employee_family_members (*),
+        estate_employee_documents (*)
       `)
       .order("updated_at", { ascending: false });
 
-    if (error) {
-      flash(`Failed to load employees: ${error.message}`);
+    if (result.error && missingEmployeeDocumentsRelation(result.error.message)) {
+      result = await supabase
+        .from("estate_employees")
+        .select(`
+          *,
+          estate_employee_family_members (*)
+        `)
+        .order("updated_at", { ascending: false });
+    }
+
+    if (result.error) {
+      flash(`Failed to load employees: ${result.error.message}`);
       setLoading(false);
       return;
     }
 
-    const rows = (data ?? []).map((employee) => ({
+    const rows = (result.data ?? []).map((employee) => ({
       ...employee,
       estate_employee_family_members: [...(employee.estate_employee_family_members ?? [])].sort(
         (a, b) => a.sort_order - b.sort_order
+      ),
+      estate_employee_documents: [...(employee.estate_employee_documents ?? [])].sort(
+        (a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
       ),
     })) as EmployeeRow[];
 
@@ -844,6 +905,71 @@ export default function EmployeeCenterPage() {
     flash(populatedFromFile ? importMessage : "Filled form uploaded");
   };
 
+  const openDocumentUpload = (documentType: EmployeeDocumentType) => {
+    selectedDocumentTypeRef.current = documentType;
+    documentInputRef.current?.click();
+  };
+
+  const uploadEmployeeDocument = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    const documentType = selectedDocumentTypeRef.current;
+    selectedDocumentTypeRef.current = null;
+
+    if (!file || !documentType) return;
+
+    setUploadingDocumentType(documentType);
+
+    let employeeId = selectedId;
+    if (!employeeId) {
+      const savedId = await saveEmployee(false);
+      if (!savedId) {
+        setUploadingDocumentType(null);
+        return;
+      }
+      employeeId = savedId;
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${employeeId}/documents/${documentType}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("employee-center")
+      .upload(path, file, {
+        contentType: file.type || undefined,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      setUploadingDocumentType(null);
+      flash(`Document upload failed: ${uploadError.message}`);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
+    const { error: insertError } = await supabase.from("estate_employee_documents").insert({
+      employee_id: employeeId,
+      document_type: documentType,
+      file_name: file.name,
+      file_path: path,
+      public_url: urlData.publicUrl,
+      content_type: file.type || null,
+      file_size: file.size,
+      uploaded_by: null,
+    });
+
+    if (insertError) {
+      setUploadingDocumentType(null);
+      flash(`Uploaded file, but document registry update failed: ${insertError.message}`);
+      return;
+    }
+
+    await loadEmployees();
+    setUploadingDocumentType(null);
+    const documentLabel = employeeDocumentTypes.find((item) => item.type === documentType)?.label ?? "Document";
+    flash(`${documentLabel} uploaded`);
+  };
+
   const updateEmployeeStatus = async (nextStatus: EmployeeRow["status"]) => {
     if (!selectedId) {
       flash("Select or save an employee before changing status");
@@ -1065,6 +1191,65 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
           </div>
           <span className={css.status}>{status}</span>
         </div>
+
+        <section className={css.documentPanel}>
+          <input
+            ref={documentInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/*"
+            className={css.hiddenInput}
+            onChange={uploadEmployeeDocument}
+          />
+          <div className={css.documentHead}>
+            <div>
+              <h2 className={css.documentTitle}>Employee Documents</h2>
+              <p className={css.documentCopy}>Upload identity, bank and employee record files against this registry entry.</p>
+            </div>
+          </div>
+          <div className={css.documentGrid}>
+            {employeeDocumentTypes.map((item) => {
+              const documents = selectedEmployeeDocuments.filter((document) => document.document_type === item.type);
+              const isUploading = uploadingDocumentType === item.type;
+
+              return (
+                <div className={css.documentRow} key={item.type}>
+                  <div>
+                    <strong className={css.documentLabel}>{item.label}</strong>
+                    {documents.length ? (
+                      <div className={css.documentLinks}>
+                        {documents.slice(0, 2).map((document) => (
+                          <a
+                            key={document.id}
+                            className={css.documentLink}
+                            href={document.public_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={document.file_name}
+                          >
+                            <ExternalLink size={13} />
+                            {document.file_name}
+                          </a>
+                        ))}
+                        {documents.length > 2 && <span className={css.documentMeta}>+{documents.length - 2} more</span>}
+                      </div>
+                    ) : (
+                      <span className={css.documentMeta}>No file uploaded</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className={css.documentUploadBtn}
+                    onClick={() => openDocumentUpload(item.type)}
+                    disabled={saving || uploadingDocumentType !== null}
+                  >
+                    {isUploading ? <Loader2 size={14} className={css.spin} /> : <Upload size={14} />}
+                    Upload
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <form className={css.content} onSubmit={(event) => event.preventDefault()}>
           <section className={css.block}>
