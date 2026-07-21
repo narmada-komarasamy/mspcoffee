@@ -434,6 +434,16 @@
   background: #213629;
 }
 
+.btnDanger {
+  border-color: #9f2d20;
+  background: #fff7f4;
+  color: #9f2d20;
+}
+
+.btnDanger:hover {
+  background: #f8dfd9;
+}
+
 .spin {
   animation: spin 0.8s linear infinite;
 }

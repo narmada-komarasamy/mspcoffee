@@ -1,9 +1,12 @@
 "use client";
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, ExternalLink, Loader2, Plus, Printer, RotateCcw, Save, Search, Trash2, Upload, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Download, ExternalLink, IdCard, Loader2, Plus, Printer, RotateCcw, Save, Search, Trash2, Upload, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import css from "./employee-center.module.css";
+
+type AppUser = { id: string; name: string; role: string; estate: string | null };
 
 type FamilyMember = {
   id: number;
@@ -549,9 +552,21 @@ function FieldLabel({ en, ta }: { en: string; ta: string }) {
 }
 
 export default function EmployeeCenterPage() {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(initialForm);
   const [family, setFamily] = useState<FamilyMember[]>(() => [blankFamily(1)]);
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [currentUser] = useState<AppUser | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem("msp_user");
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw) as AppUser;
+    } catch {
+      return null;
+    }
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [photo, setPhoto] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -584,6 +599,8 @@ export default function EmployeeCenterPage() {
     () => selectedEmployee?.estate_employee_documents ?? [],
     [selectedEmployee]
   );
+
+  const isAdmin = currentUser?.role === "admin";
 
   const filteredEmployees = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -993,6 +1010,51 @@ export default function EmployeeCenterPage() {
     flash(`Employee marked ${nextStatus}`);
   };
 
+  const moveToIdCenter = async () => {
+    const employeeId = await saveEmployee(false);
+    if (!employeeId) return;
+
+    router.push(`/estate-management/muster-roll/employee-center/id-center?employee=${employeeId}`);
+  };
+
+  const deleteEmployeeRecord = async () => {
+    if (!isAdmin) {
+      flash("Only admins can delete employee records");
+      return;
+    }
+
+    if (!selectedId || !selectedEmployee) {
+      flash("Select an employee before deleting");
+      return;
+    }
+
+    const ok = window.confirm(
+      `Delete ${selectedEmployee.full_name} from the employee registry? This will remove the employee record, family rows and document registry links.`
+    );
+    if (!ok) return;
+
+    setSaving(true);
+    const { error } = await supabase
+      .from("estate_employees")
+      .delete()
+      .eq("id", selectedId);
+
+    if (error) {
+      setSaving(false);
+      flash(`Delete failed: ${error.message}`);
+      return;
+    }
+
+    setForm(initialForm);
+    setFamily([blankFamily(1)]);
+    setSelectedId(null);
+    setPhoto("");
+    setPhotoFile(null);
+    await loadEmployees();
+    setSaving(false);
+    flash("Employee record deleted");
+  };
+
   const downloadHtml = () => {
     const familyRows = family
       .map(
@@ -1140,6 +1202,9 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
             {saving ? <Loader2 size={15} className={css.spin} /> : <Save size={15} />}
             {selectedId ? "Update registry" : "Save to registry"}
           </button>
+          <button type="button" className={css.btn} onClick={() => void moveToIdCenter()} disabled={saving || !form.fullName.trim()}>
+            <IdCard size={15} /> Move to ID Center
+          </button>
           <button type="button" className={`${css.btn} ${css.btnPrimary}`} onClick={downloadHtml}>
             <Download size={15} /> Save filled form (.html)
           </button>
@@ -1176,6 +1241,11 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
           <button type="button" className={css.btn} onClick={resetForm}>
             <RotateCcw size={15} /> Clear form
           </button>
+          {isAdmin && selectedId && (
+            <button type="button" className={`${css.btn} ${css.btnDanger}`} onClick={() => void deleteEmployeeRecord()} disabled={saving}>
+              <Trash2 size={15} /> Delete record
+            </button>
+          )}
           <div className={css.statusControls}>
             {(["applicant", "active", "inactive", "left"] as EmployeeRow["status"][]).map((item) => (
               <button
