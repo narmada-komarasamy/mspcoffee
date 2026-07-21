@@ -1,7 +1,8 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
-import { Download, Plus, Printer, RotateCcw, Trash2 } from "lucide-react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Download, ExternalLink, Loader2, Plus, Printer, RotateCcw, Save, Search, Trash2, Upload, UserPlus } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import css from "./employee-center.module.css";
 
 type FamilyMember = {
@@ -50,6 +51,66 @@ type FormState = {
   mdSigDate: string;
 };
 
+type EmployeeRow = {
+  id: string;
+  estate_name: string;
+  employee_code: string | null;
+  status: "applicant" | "active" | "inactive" | "left";
+  full_name: string;
+  parent_spouse_name: string | null;
+  date_of_birth: string | null;
+  age: number | null;
+  gender: string | null;
+  marital_status: string | null;
+  aadhaar_number: string | null;
+  pan_number: string | null;
+  mobile_number: string | null;
+  alternate_contact: string | null;
+  reference_name: string | null;
+  permanent_address: string | null;
+  current_address: string | null;
+  date_of_joining: string | null;
+  job_role: string | null;
+  section_division: string | null;
+  daily_wage: number | null;
+  wage_text: string | null;
+  payment_mode: string | null;
+  bank_account_number: string | null;
+  ifsc_code: string | null;
+  previous_experience_years: number | null;
+  experience_text: string | null;
+  education_level: string | null;
+  epf_uan: string | null;
+  esi_number: string | null;
+  emergency_contact_name_relation: string | null;
+  emergency_contact_number: string | null;
+  blood_group: string | null;
+  medical_conditions: string | null;
+  nominee_name: string | null;
+  nominee_relation: string | null;
+  employee_signature_date: string | null;
+  hr_signature_date: string | null;
+  md_signature_date: string | null;
+  photo_path: string | null;
+  photo_public_url: string | null;
+  application_form_path: string | null;
+  application_form_public_url: string | null;
+  application_form_file_name: string | null;
+  application_form_uploaded_at: string | null;
+  updated_at: string;
+  estate_employee_family_members?: FamilyRow[];
+};
+
+type FamilyRow = {
+  id: string;
+  employee_id: string;
+  sort_order: number;
+  name: string | null;
+  relationship: string | null;
+  age: number | null;
+  aadhaar_number: string | null;
+};
+
 const initialForm: FormState = {
   estateName: "Stanmore Estate",
   fullName: "",
@@ -96,6 +157,98 @@ const blankFamily = (id: number): FamilyMember => ({
   aadhaar: "",
 });
 
+const toNullable = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+};
+
+const toNullableNumber = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formFromEmployee = (employee: EmployeeRow): FormState => ({
+  estateName: employee.estate_name || "Stanmore Estate",
+  fullName: employee.full_name || "",
+  parentSpouseName: employee.parent_spouse_name || "",
+  dob: employee.date_of_birth || "",
+  age: employee.age?.toString() || "",
+  gender: employee.gender || "",
+  maritalStatus: employee.marital_status || "",
+  aadhaar: employee.aadhaar_number || "",
+  pan: employee.pan_number || "",
+  mobile: employee.mobile_number || "",
+  altContact: employee.alternate_contact || "",
+  reference: employee.reference_name || "",
+  permAddress: employee.permanent_address || "",
+  currAddress: employee.current_address || "",
+  empId: employee.employee_code || "",
+  doj: employee.date_of_joining || "",
+  jobRole: employee.job_role || "",
+  section: employee.section_division || "",
+  wage: employee.wage_text || employee.daily_wage?.toString() || "",
+  payMode: employee.payment_mode || "",
+  bankAcc: employee.bank_account_number || "",
+  ifsc: employee.ifsc_code || "",
+  experience: employee.experience_text || employee.previous_experience_years?.toString() || "",
+  education: employee.education_level || "",
+  epf: employee.epf_uan || "",
+  esi: employee.esi_number || "",
+  emName: employee.emergency_contact_name_relation || "",
+  emNumber: employee.emergency_contact_number || "",
+  bloodGroup: employee.blood_group || "",
+  medical: employee.medical_conditions || "",
+  nomineeName: employee.nominee_name || "",
+  nomineeRel: employee.nominee_relation || "",
+  empSigDate: employee.employee_signature_date || "",
+  hrSigDate: employee.hr_signature_date || "",
+  mdSigDate: employee.md_signature_date || "",
+});
+
+const payloadFromForm = (form: FormState, photoUrl: string | null, photoPath: string | null) => ({
+  estate_name: form.estateName.trim() || "Stanmore Estate",
+  employee_code: toNullable(form.empId),
+  full_name: form.fullName.trim(),
+  parent_spouse_name: toNullable(form.parentSpouseName),
+  date_of_birth: toNullable(form.dob),
+  age: toNullableNumber(form.age),
+  gender: toNullable(form.gender),
+  marital_status: toNullable(form.maritalStatus),
+  aadhaar_number: toNullable(form.aadhaar),
+  pan_number: toNullable(form.pan),
+  mobile_number: toNullable(form.mobile),
+  alternate_contact: toNullable(form.altContact),
+  reference_name: toNullable(form.reference),
+  permanent_address: toNullable(form.permAddress),
+  current_address: toNullable(form.currAddress),
+  date_of_joining: toNullable(form.doj),
+  job_role: toNullable(form.jobRole),
+  section_division: toNullable(form.section),
+  daily_wage: toNullableNumber(form.wage),
+  wage_text: toNullable(form.wage),
+  payment_mode: toNullable(form.payMode),
+  bank_account_number: toNullable(form.bankAcc),
+  ifsc_code: toNullable(form.ifsc),
+  previous_experience_years: toNullableNumber(form.experience),
+  experience_text: toNullable(form.experience),
+  education_level: toNullable(form.education),
+  epf_uan: toNullable(form.epf),
+  esi_number: toNullable(form.esi),
+  emergency_contact_name_relation: toNullable(form.emName),
+  emergency_contact_number: toNullable(form.emNumber),
+  blood_group: toNullable(form.bloodGroup),
+  medical_conditions: toNullable(form.medical),
+  nominee_name: toNullable(form.nomineeName),
+  nominee_relation: toNullable(form.nomineeRel),
+  employee_signature_date: toNullable(form.empSigDate),
+  hr_signature_date: toNullable(form.hrSigDate),
+  md_signature_date: toNullable(form.mdSigDate),
+  photo_public_url: photoUrl,
+  photo_path: photoPath,
+});
+
 const escapeHtml = (value: string) =>
   value
     .replaceAll("&", "&amp;")
@@ -116,18 +269,84 @@ function FieldLabel({ en, ta }: { en: string; ta: string }) {
 export default function EmployeeCenterPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [family, setFamily] = useState<FamilyMember[]>(() => [blankFamily(1)]);
+  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [photo, setPhoto] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadingForm, setUploadingForm] = useState(false);
+  const filledFormInputRef = useRef<HTMLInputElement>(null);
+
+  const flash = useCallback((message: string) => {
+    setStatus(message);
+    window.setTimeout(() => setStatus((current) => (current === message ? "" : current)), 3500);
+  }, []);
 
   const nextFamilyId = useMemo(
     () => Math.max(0, ...family.map((row) => row.id)) + 1,
     [family]
   );
 
-  const flash = (message: string) => {
-    setStatus(message);
-    window.setTimeout(() => setStatus((current) => (current === message ? "" : current)), 3500);
-  };
+  const selectedEmployee = useMemo(
+    () => employees.find((employee) => employee.id === selectedId) ?? null,
+    [employees, selectedId]
+  );
+
+  const filteredEmployees = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return employees;
+    return employees.filter((employee) =>
+      [
+        employee.full_name,
+        employee.employee_code,
+        employee.estate_name,
+        employee.mobile_number,
+        employee.job_role,
+        employee.section_division,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle))
+    );
+  }, [employees, search]);
+
+  const activeCount = employees.filter((employee) => employee.status === "active").length;
+
+  const loadEmployees = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("estate_employees")
+      .select(`
+        *,
+        estate_employee_family_members (*)
+      `)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      flash(`Failed to load employees: ${error.message}`);
+      setLoading(false);
+      return;
+    }
+
+    const rows = (data ?? []).map((employee) => ({
+      ...employee,
+      estate_employee_family_members: [...(employee.estate_employee_family_members ?? [])].sort(
+        (a, b) => a.sort_order - b.sort_order
+      ),
+    })) as EmployeeRow[];
+
+    setEmployees(rows);
+    setLoading(false);
+  }, [flash]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadEmployees();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadEmployees]);
 
   const update = (key: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -149,17 +368,204 @@ export default function EmployeeCenterPage() {
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => setPhoto(String(reader.result ?? ""));
     reader.readAsDataURL(file);
   };
 
-  const resetForm = () => {
-    if (!window.confirm("Clear all entered data on this form? This cannot be undone.")) return;
+  const startNew = () => {
     setForm(initialForm);
     setFamily([blankFamily(1)]);
+    setSelectedId(null);
     setPhoto("");
+    setPhotoFile(null);
+    flash("Ready for a new employee");
+  };
+
+  const resetForm = () => {
+    if (!window.confirm("Clear all entered data on this form? This cannot be undone.")) return;
+    startNew();
     flash("Form cleared");
+  };
+
+  const selectEmployee = (employee: EmployeeRow) => {
+    setSelectedId(employee.id);
+    setForm(formFromEmployee(employee));
+    const familyRows = employee.estate_employee_family_members ?? [];
+    setFamily(
+      familyRows.length
+        ? familyRows.map((row, index) => ({
+            id: index + 1,
+            name: row.name || "",
+            relationship: row.relationship || "",
+            age: row.age?.toString() || "",
+            aadhaar: row.aadhaar_number || "",
+          }))
+        : [blankFamily(1)]
+    );
+    setPhoto(employee.photo_public_url || "");
+    setPhotoFile(null);
+    flash(`Loaded ${employee.full_name}`);
+  };
+
+  const saveEmployee = async () => {
+    if (!form.fullName.trim()) {
+      flash("Full name is required before saving");
+      return;
+    }
+
+    setSaving(true);
+    let photoPath = selectedEmployee?.photo_path ?? null;
+    let photoUrl = selectedEmployee?.photo_public_url ?? null;
+
+    if (photoFile) {
+      const safeName = photoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${selectedId ?? crypto.randomUUID()}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("employee-center")
+        .upload(path, photoFile, { upsert: true });
+
+      if (uploadError) {
+        setSaving(false);
+        flash(`Photo upload failed: ${uploadError.message}`);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
+      photoPath = path;
+      photoUrl = urlData.publicUrl;
+    }
+
+    const payload = payloadFromForm(form, photoUrl, photoPath);
+    const { data: saved, error } = selectedId
+      ? await supabase
+          .from("estate_employees")
+          .update(payload)
+          .eq("id", selectedId)
+          .select()
+          .single()
+      : await supabase
+          .from("estate_employees")
+          .insert({ ...payload, status: "applicant" })
+          .select()
+          .single();
+
+    if (error) {
+      setSaving(false);
+      flash(`Save failed: ${error.message}`);
+      return;
+    }
+
+    const employeeId = saved.id as string;
+    const { error: deleteFamilyError } = await supabase
+      .from("estate_employee_family_members")
+      .delete()
+      .eq("employee_id", employeeId);
+
+    if (deleteFamilyError) {
+      setSaving(false);
+      flash(`Saved employee, but family sync failed: ${deleteFamilyError.message}`);
+      return;
+    }
+
+    const familyPayload = family
+      .map((row, index) => ({
+        employee_id: employeeId,
+        sort_order: index + 1,
+        name: toNullable(row.name),
+        relationship: toNullable(row.relationship),
+        age: toNullableNumber(row.age),
+        aadhaar_number: toNullable(row.aadhaar),
+      }))
+      .filter((row) => row.name || row.relationship || row.age !== null || row.aadhaar_number);
+
+    if (familyPayload.length) {
+      const { error: familyError } = await supabase
+        .from("estate_employee_family_members")
+        .insert(familyPayload);
+
+      if (familyError) {
+        setSaving(false);
+        flash(`Saved employee, but family sync failed: ${familyError.message}`);
+        return;
+      }
+    }
+
+    setSelectedId(employeeId);
+    setPhoto(photoUrl || "");
+    setPhotoFile(null);
+    await loadEmployees();
+    setSaving(false);
+    flash("Employee saved to registry");
+  };
+
+  const uploadFilledForm = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+    if (!selectedId) {
+      flash("Save or select an employee before uploading the filled form");
+      return;
+    }
+
+    setUploadingForm(true);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${selectedId}/filled-forms/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("employee-center")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      setUploadingForm(false);
+      flash(`Filled form upload failed: ${uploadError.message}`);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
+    const { error: updateError } = await supabase
+      .from("estate_employees")
+      .update({
+        application_form_path: path,
+        application_form_public_url: urlData.publicUrl,
+        application_form_file_name: file.name,
+        application_form_uploaded_at: new Date().toISOString(),
+      })
+      .eq("id", selectedId);
+
+    if (updateError) {
+      setUploadingForm(false);
+      flash(`Uploaded file, but registry update failed: ${updateError.message}`);
+      return;
+    }
+
+    await loadEmployees();
+    setUploadingForm(false);
+    flash("Filled form uploaded");
+  };
+
+  const updateEmployeeStatus = async (nextStatus: EmployeeRow["status"]) => {
+    if (!selectedId) {
+      flash("Select or save an employee before changing status");
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase
+      .from("estate_employees")
+      .update({ status: nextStatus })
+      .eq("id", selectedId);
+
+    if (error) {
+      setSaving(false);
+      flash(`Status update failed: ${error.message}`);
+      return;
+    }
+
+    await loadEmployees();
+    setSaving(false);
+    flash(`Employee marked ${nextStatus}`);
   };
 
   const downloadHtml = () => {
@@ -227,7 +633,65 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
 
   return (
     <div className={css.page}>
-      <div className={css.shell}>
+      <div className={css.registryLayout}>
+        <aside className={css.registryPanel}>
+          <div className={css.registryHead}>
+            <div>
+              <div className={css.registryEyebrow}>Muster Roll</div>
+              <h2 className={css.registryTitle}>Employee Registry</h2>
+            </div>
+            <button type="button" className={css.iconAction} onClick={startNew} title="New employee">
+              <UserPlus size={17} />
+            </button>
+          </div>
+
+          <div className={css.registryStats}>
+            <div>
+              <span>Total</span>
+              <strong>{employees.length}</strong>
+            </div>
+            <div>
+              <span>Active</span>
+              <strong>{activeCount}</strong>
+            </div>
+          </div>
+
+          <label className={css.searchBox}>
+            <Search size={15} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search name, code, mobile"
+            />
+          </label>
+
+          <div className={css.employeeList}>
+            {loading ? (
+              <div className={css.emptyState}>
+                <Loader2 size={16} className={css.spin} /> Loading employees
+              </div>
+            ) : filteredEmployees.length ? (
+              filteredEmployees.map((employee) => (
+                <button
+                  type="button"
+                  key={employee.id}
+                  className={`${css.employeeItem} ${selectedId === employee.id ? css.employeeItemActive : ""}`}
+                  onClick={() => selectEmployee(employee)}
+                >
+                  <span>
+                    <strong>{employee.full_name}</strong>
+                    <small>{employee.employee_code || "No employee code"} · {employee.estate_name}</small>
+                  </span>
+                  <em>{employee.status}</em>
+                </button>
+              ))
+            ) : (
+              <div className={css.emptyState}>No employees found</div>
+            )}
+          </div>
+        </aside>
+
+        <div className={css.shell}>
         <header className={css.letterhead}>
           <div className={css.seal} aria-hidden="true">
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
@@ -247,15 +711,59 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
         </header>
 
         <div className={css.toolbar}>
+          <button type="button" className={`${css.btn} ${css.btnPrimary}`} onClick={saveEmployee} disabled={saving}>
+            {saving ? <Loader2 size={15} className={css.spin} /> : <Save size={15} />}
+            {selectedId ? "Update registry" : "Save to registry"}
+          </button>
           <button type="button" className={`${css.btn} ${css.btnPrimary}`} onClick={downloadHtml}>
             <Download size={15} /> Save filled form (.html)
           </button>
+          <input
+            ref={filledFormInputRef}
+            type="file"
+            accept=".pdf,.html,.htm,image/*"
+            className={css.hiddenInput}
+            onChange={uploadFilledForm}
+          />
+          <button
+            type="button"
+            className={css.btn}
+            onClick={() => filledFormInputRef.current?.click()}
+            disabled={!selectedId || uploadingForm}
+          >
+            {uploadingForm ? <Loader2 size={15} className={css.spin} /> : <Upload size={15} />}
+            Upload filled form
+          </button>
+          {selectedEmployee?.application_form_public_url && (
+            <a
+              className={css.uploadedFormLink}
+              href={selectedEmployee.application_form_public_url}
+              target="_blank"
+              rel="noreferrer"
+              title={selectedEmployee.application_form_file_name || "Uploaded filled form"}
+            >
+              <ExternalLink size={14} /> View uploaded form
+            </a>
+          )}
           <button type="button" className={css.btn} onClick={() => window.print()}>
             <Printer size={15} /> Print / Save as PDF
           </button>
           <button type="button" className={css.btn} onClick={resetForm}>
             <RotateCcw size={15} /> Clear form
           </button>
+          <div className={css.statusControls}>
+            {(["applicant", "active", "inactive", "left"] as EmployeeRow["status"][]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`${css.statusPill} ${selectedEmployee?.status === item ? css.statusPillActive : ""}`}
+                onClick={() => updateEmployeeStatus(item)}
+                disabled={!selectedId || saving}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
           <span className={css.status}>{status}</span>
         </div>
 
@@ -499,6 +1007,7 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
           This form can be filled, saved, re-opened and edited any number of times - nothing is lost.{" "}
           <span className={css.tamil}>இப்படிவத்தை நிரப்பி, சேமித்து, மீண்டும் திறந்து திருத்தலாம் - எந்த தகவலும் இழக்கப்படாது.</span>
         </footer>
+        </div>
       </div>
     </div>
   );
