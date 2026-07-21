@@ -13,6 +13,10 @@ type FamilyMember = {
   aadhaar: string;
 };
 
+type ParsedEmployeeForm = Partial<FormState> & {
+  family?: Omit<FamilyMember, "id">[];
+};
+
 type FormState = {
   estateName: string;
   fullName: string;
@@ -330,49 +334,12 @@ const namedFormFields: Partial<Record<keyof FormState, string>> = {
   mdSigDate: "mdSigDate",
 };
 
-const pdfFieldOrder: (keyof FormState)[] = [
-  "estateName",
-  "fullName",
-  "parentSpouseName",
-  "dob",
-  "age",
-  "gender",
-  "maritalStatus",
-  "aadhaar",
-  "pan",
-  "mobile",
-  "altContact",
-  "reference",
-  "permAddress",
-  "currAddress",
-  "empId",
-  "doj",
-  "jobRole",
-  "section",
-  "wage",
-  "payMode",
-  "bankAcc",
-  "ifsc",
-  "experience",
-  "education",
-  "epf",
-  "esi",
-  "emName",
-  "emNumber",
-  "bloodGroup",
-  "medical",
-  "nomineeName",
-  "nomineeRel",
-];
-
 const familyNames = {
   name: "famName[]",
   relationship: "famRel[]",
   age: "famAge[]",
   aadhaar: "famAadhaar[]",
 };
-
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function textFromElement(element: Element | null) {
   return element?.textContent?.trim() ?? "";
@@ -473,59 +440,64 @@ function parseFilledHtml(html: string) {
   };
 }
 
-function countFilledFields(formState: FormState) {
-  return (Object.keys(formState) as (keyof FormState)[]).filter((key) => formState[key].trim()).length;
-}
-
-function valueAfterPdfLabel(text: string, labels: string[], followingLabels: string[]) {
-  for (const label of labels) {
-    const labelPattern = escapeRegExp(label).replace(/\\ /g, "\\s+").replace("/", "\\s*/\\s*");
-    const boundaryPattern = followingLabels
-      .map((item) => escapeRegExp(item).replace(/\\ /g, "\\s+").replace("/", "\\s*/\\s*"))
-      .join("|");
-    const regex = new RegExp(`${labelPattern}\\s*:?\\s*(.*?)\\s*(?=${boundaryPattern ? `(?:${boundaryPattern})\\s*:|` : ""}$)`, "i");
-    const match = text.match(regex);
-    const value = match?.[1]?.replace(/\s+/g, " ").trim() ?? "";
-    if (value && value !== ":" && !/^\[[\s/]*\]$/.test(value)) return value;
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
   }
-  return "";
+  return btoa(binary);
 }
 
-function parsePdfText(text: string) {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  const parsedForm = { ...initialForm };
+async function parseEmployeeFormWithAi(file: File): Promise<ParsedEmployeeForm> {
+  const mediaType = file.type || (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "");
+  const supported = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+  if (!supported.includes(mediaType)) {
+    throw new Error("Upload a PDF, JPG, PNG, GIF, WebP, or saved HTML form.");
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("File too large - maximum 10 MB.");
+  }
 
-  pdfFieldOrder.forEach((key, index) => {
-    const labels = fieldLabels[key];
-    if (!labels) return;
-    const followingLabels = pdfFieldOrder
-      .slice(index + 1)
-      .flatMap((nextKey) => fieldLabels[nextKey] ?? []);
-    const value = valueAfterPdfLabel(normalized, labels, followingLabels);
-    if (value) parsedForm[key] = value;
+  const base64 = arrayBufferToBase64(await file.arrayBuffer());
+  const response = await fetch("/api/parse-employee-form", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base64, mediaType }),
   });
 
-  return parsedForm;
-}
-
-async function extractPdfText(file: File) {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const data = new Uint8Array(await file.arrayBuffer());
-  const pdf = await pdfjs.getDocument({ data, disableWorker: true } as unknown as Parameters<typeof pdfjs.getDocument>[0]).promise;
-  const pages: string[] = [];
-
-  for (let pageNo = 1; pageNo <= pdf.numPages; pageNo += 1) {
-    const page = await pdf.getPage(pageNo);
-    const content = await page.getTextContent();
-    pages.push(
-      content.items
-        .map((item) => ("str" in item ? item.str : ""))
-        .filter(Boolean)
-        .join(" ")
-    );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Could not parse employee form");
   }
 
-  return pages.join(" ");
+  return data as ParsedEmployeeForm;
+}
+
+function applyParsedEmployeeForm(current: FormState, parsed: ParsedEmployeeForm) {
+  const next = { ...current };
+  (Object.keys(initialForm) as (keyof FormState)[]).forEach((key) => {
+    const value = parsed[key];
+    if (typeof value === "string" && value.trim()) next[key] = value.trim();
+  });
+
+  const familyRows = Array.isArray(parsed.family)
+    ? parsed.family
+        .map((row, index) => ({
+          id: index + 1,
+          name: row.name?.trim() ?? "",
+          relationship: row.relationship?.trim() ?? "",
+          age: row.age?.trim() ?? "",
+          aadhaar: row.aadhaar?.trim() ?? "",
+        }))
+        .filter((row) => row.name || row.relationship || row.age || row.aadhaar)
+    : [];
+
+  return {
+    form: next,
+    family: familyRows.length ? familyRows : undefined,
+  };
 }
 
 function FieldLabel({ en, ta }: { en: string; ta: string }) {
@@ -804,23 +776,22 @@ export default function EmployeeCenterPage() {
       }
       populatedFromFile = true;
       importMessage = "Filled form imported and uploaded";
-    } else if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-      const extractedText = await extractPdfText(file);
-      if (!extractedText.trim()) {
+    } else if (file.type === "application/pdf" || file.type.startsWith("image/") || file.name.toLowerCase().endsWith(".pdf")) {
+      try {
+        flash("Reading employee form with AI...");
+        const parsed = await parseEmployeeFormWithAi(file);
+        const applied = applyParsedEmployeeForm(form, parsed);
+        formForSave = applied.form;
+        familyForSave = applied.family ?? family;
+        setForm(applied.form);
+        if (applied.family) setFamily(applied.family);
+        populatedFromFile = true;
+        importMessage = "Employee form imported and uploaded";
+      } catch (error) {
         setUploadingForm(false);
-        flash("This PDF has no readable text. Upload the saved .html form, or a text-based PDF.");
+        flash(error instanceof Error ? error.message : "Could not read employee form");
         return;
       }
-      const parsedForm = parsePdfText(extractedText);
-      if (countFilledFields(parsedForm) <= countFilledFields(initialForm)) {
-        setUploadingForm(false);
-        flash("I could read the PDF text, but could not find filled fields to import.");
-        return;
-      }
-      formForSave = { ...form, ...parsedForm };
-      setForm(formForSave);
-      populatedFromFile = true;
-      importMessage = "PDF fields imported and uploaded";
     }
 
     let employeeId = selectedId;
