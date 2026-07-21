@@ -1,11 +1,10 @@
 /**
  * POST /api/parse-employee-form
  *
- * Accepts a base64-encoded employee application PDF/image and uses Claude vision
+ * Accepts a base64-encoded employee application PDF/image and uses OpenAI vision
  * to extract the fields used by Estate Management > Muster Roll > Employee Center.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +50,21 @@ function stringOrEmpty(value: unknown) {
   return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
 }
 
+function extractOutputText(payload: unknown) {
+  const response = payload as {
+    output_text?: unknown;
+    output?: { content?: { type?: string; text?: string }[] }[];
+  };
+
+  if (typeof response.output_text === 'string') return response.output_text;
+
+  return response.output
+    ?.flatMap((item) => item.content ?? [])
+    .map((content) => content.text ?? '')
+    .filter(Boolean)
+    .join('\n') ?? '{}';
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -72,37 +86,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File too large (max 10 MB)' }, { status: 413 });
     }
 
-    const client = new Anthropic();
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'OPENAI_API_KEY is not configured' }, { status: 500 });
+    }
+
     const isPdf = mediaType === 'application/pdf';
     const contentBlock = isPdf
       ? {
-          type: 'document' as const,
-          source: {
-            type: 'base64' as const,
-            media_type: 'application/pdf' as const,
-            data: base64,
-          },
+          type: 'input_file' as const,
+          filename: 'employee-application.pdf',
+          file_data: `data:application/pdf;base64,${base64}`,
         }
       : {
-          type: 'image' as const,
-          source: {
-            type: 'base64' as const,
-            media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-            data: base64,
-          },
+          type: 'input_image' as const,
+          image_url: `data:${mediaType};base64,${base64}`,
+          detail: 'high' as const,
         };
 
-    const msg = await client.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 2000,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            contentBlock,
-            {
-              type: 'text',
-              text: `This is an MSP Coffee estate employee application form for farm labor / plantation workers. It may be English, Tamil, handwritten, typed, scanned, or a PDF/image.
+    const prompt = `This is an MSP Coffee estate employee application form for farm labor / plantation workers. It may be English, Tamil, handwritten, typed, scanned, or a PDF/image.
 
 Extract the filled values and return ONLY valid JSON with these exact keys:
 {
@@ -154,14 +156,39 @@ Rules:
 - payMode should be "Cash" or "Bank" when marked.
 - Preserve Aadhaar, PAN, mobile, bank account and IFSC exactly as visible.
 - Translate Tamil field values to English only when helpful, but keep names, addresses, IDs and numbers exactly as written.
-- For family, include one object per filled family row; if no family row is filled, return an empty array.`,
-            },
-          ],
-        },
-      ],
+- For family, include one object per filled family row; if no family row is filled, return an empty array.`;
+
+    const aiResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_EMPLOYEE_FORM_MODEL ?? 'gpt-4.1',
+        max_output_tokens: 2000,
+        input: [
+          {
+            role: 'user',
+            content: [
+              contentBlock,
+              {
+                type: 'input_text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      }),
     });
 
-    const raw = msg.content[0].type === 'text' ? msg.content[0].text : '{}';
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      return NextResponse.json({ error: `OpenAI parse failed: ${errorText}` }, { status: 502 });
+    }
+
+    const aiPayload = await aiResponse.json();
+    const raw = extractOutputText(aiPayload);
     const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
 
     let parsed: Record<string, unknown> = {};
