@@ -330,12 +330,49 @@ const namedFormFields: Partial<Record<keyof FormState, string>> = {
   mdSigDate: "mdSigDate",
 };
 
+const pdfFieldOrder: (keyof FormState)[] = [
+  "estateName",
+  "fullName",
+  "parentSpouseName",
+  "dob",
+  "age",
+  "gender",
+  "maritalStatus",
+  "aadhaar",
+  "pan",
+  "mobile",
+  "altContact",
+  "reference",
+  "permAddress",
+  "currAddress",
+  "empId",
+  "doj",
+  "jobRole",
+  "section",
+  "wage",
+  "payMode",
+  "bankAcc",
+  "ifsc",
+  "experience",
+  "education",
+  "epf",
+  "esi",
+  "emName",
+  "emNumber",
+  "bloodGroup",
+  "medical",
+  "nomineeName",
+  "nomineeRel",
+];
+
 const familyNames = {
   name: "famName[]",
   relationship: "famRel[]",
   age: "famAge[]",
   aadhaar: "famAadhaar[]",
 };
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function textFromElement(element: Element | null) {
   return element?.textContent?.trim() ?? "";
@@ -434,6 +471,61 @@ function parseFilledHtml(html: string) {
     family: parsedFamily.length ? parsedFamily : [blankFamily(1)],
     photo: photoSrc.startsWith("data:image/") ? photoSrc : "",
   };
+}
+
+function countFilledFields(formState: FormState) {
+  return (Object.keys(formState) as (keyof FormState)[]).filter((key) => formState[key].trim()).length;
+}
+
+function valueAfterPdfLabel(text: string, labels: string[], followingLabels: string[]) {
+  for (const label of labels) {
+    const labelPattern = escapeRegExp(label).replace(/\\ /g, "\\s+").replace("/", "\\s*/\\s*");
+    const boundaryPattern = followingLabels
+      .map((item) => escapeRegExp(item).replace(/\\ /g, "\\s+").replace("/", "\\s*/\\s*"))
+      .join("|");
+    const regex = new RegExp(`${labelPattern}\\s*:?\\s*(.*?)\\s*(?=${boundaryPattern ? `(?:${boundaryPattern})\\s*:|` : ""}$)`, "i");
+    const match = text.match(regex);
+    const value = match?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+    if (value && value !== ":" && !/^\[[\s/]*\]$/.test(value)) return value;
+  }
+  return "";
+}
+
+function parsePdfText(text: string) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const parsedForm = { ...initialForm };
+
+  pdfFieldOrder.forEach((key, index) => {
+    const labels = fieldLabels[key];
+    if (!labels) return;
+    const followingLabels = pdfFieldOrder
+      .slice(index + 1)
+      .flatMap((nextKey) => fieldLabels[nextKey] ?? []);
+    const value = valueAfterPdfLabel(normalized, labels, followingLabels);
+    if (value) parsedForm[key] = value;
+  });
+
+  return parsedForm;
+}
+
+async function extractPdfText(file: File) {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const data = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjs.getDocument({ data, disableWorker: true } as unknown as Parameters<typeof pdfjs.getDocument>[0]).promise;
+  const pages: string[] = [];
+
+  for (let pageNo = 1; pageNo <= pdf.numPages; pageNo += 1) {
+    const page = await pdf.getPage(pageNo);
+    const content = await page.getTextContent();
+    pages.push(
+      content.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .filter(Boolean)
+        .join(" ")
+    );
+  }
+
+  return pages.join(" ");
 }
 
 function FieldLabel({ en, ta }: { en: string; ta: string }) {
@@ -696,6 +788,7 @@ export default function EmployeeCenterPage() {
     let familyForSave = family;
     let photoForSave = photo;
     let populatedFromFile = false;
+    let importMessage = "";
 
     if (file.type === "text/html" || file.name.toLowerCase().endsWith(".html") || file.name.toLowerCase().endsWith(".htm")) {
       const html = await file.text();
@@ -710,6 +803,24 @@ export default function EmployeeCenterPage() {
         setPhotoFile(null);
       }
       populatedFromFile = true;
+      importMessage = "Filled form imported and uploaded";
+    } else if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+      const extractedText = await extractPdfText(file);
+      if (!extractedText.trim()) {
+        setUploadingForm(false);
+        flash("This PDF has no readable text. Upload the saved .html form, or a text-based PDF.");
+        return;
+      }
+      const parsedForm = parsePdfText(extractedText);
+      if (countFilledFields(parsedForm) <= countFilledFields(initialForm)) {
+        setUploadingForm(false);
+        flash("I could read the PDF text, but could not find filled fields to import.");
+        return;
+      }
+      formForSave = { ...form, ...parsedForm };
+      setForm(formForSave);
+      populatedFromFile = true;
+      importMessage = "PDF fields imported and uploaded";
     }
 
     let employeeId = selectedId;
@@ -759,7 +870,7 @@ export default function EmployeeCenterPage() {
 
     await loadEmployees();
     setUploadingForm(false);
-    flash(populatedFromFile ? "Filled form imported and uploaded" : "Filled form uploaded");
+    flash(populatedFromFile ? importMessage : "Filled form uploaded");
   };
 
   const updateEmployeeStatus = async (nextStatus: EmployeeRow["status"]) => {
