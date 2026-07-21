@@ -257,6 +257,185 @@ const escapeHtml = (value: string) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
+const fieldLabels: Partial<Record<keyof FormState, string[]>> = {
+  estateName: ["Estate Name"],
+  fullName: ["Full Name", "Full Name (as per Aadhaar)"],
+  parentSpouseName: ["Father's / Husband's Name"],
+  dob: ["Date of Birth"],
+  age: ["Age"],
+  gender: ["Gender"],
+  maritalStatus: ["Marital Status"],
+  aadhaar: ["Aadhaar Number"],
+  pan: ["PAN", "PAN (if any)"],
+  mobile: ["Mobile", "Mobile Number"],
+  altContact: ["Alternate Contact"],
+  reference: ["Reference"],
+  permAddress: ["Permanent Address"],
+  currAddress: ["Current Address"],
+  empId: ["Employee ID / Code"],
+  doj: ["Date of Joining"],
+  jobRole: ["Job Role / Designation"],
+  section: ["Section / Division"],
+  wage: ["Daily Wage / Salary"],
+  payMode: ["Payment Mode"],
+  bankAcc: ["Bank Account Number"],
+  ifsc: ["IFSC Code"],
+  experience: ["Previous Experience", "Previous Experience (Years)"],
+  education: ["Education Level"],
+  epf: ["EPF/PF UAN / Member ID"],
+  esi: ["ESI Number", "ESI Number (if applicable)"],
+  emName: ["Emergency Contact Name & Relation"],
+  emNumber: ["Emergency Contact Number"],
+  bloodGroup: ["Blood Group"],
+  medical: ["Medical Conditions / Allergies"],
+  nomineeName: ["Nominee Name", "Nominee Name (for benefits)"],
+  nomineeRel: ["Relation"],
+};
+
+const namedFormFields: Partial<Record<keyof FormState, string>> = {
+  estateName: "estateName",
+  fullName: "fullName",
+  parentSpouseName: "parentSpouseName",
+  dob: "dob",
+  age: "age",
+  gender: "gender",
+  maritalStatus: "maritalStatus",
+  aadhaar: "aadhaar",
+  pan: "pan",
+  mobile: "mobile",
+  altContact: "altContact",
+  reference: "reference",
+  permAddress: "permAddress",
+  currAddress: "currAddress",
+  empId: "empId",
+  doj: "doj",
+  jobRole: "jobRole",
+  section: "section",
+  wage: "wage",
+  payMode: "payMode",
+  bankAcc: "bankAcc",
+  ifsc: "ifsc",
+  experience: "experience",
+  education: "education",
+  epf: "epf",
+  esi: "esi",
+  emName: "emName",
+  emNumber: "emNumber",
+  bloodGroup: "bloodGroup",
+  medical: "medical",
+  nomineeName: "nomineeName",
+  nomineeRel: "nomineeRel",
+  empSigDate: "empSigDate",
+  hrSigDate: "hrSigDate",
+  mdSigDate: "mdSigDate",
+};
+
+const familyNames = {
+  name: "famName[]",
+  relationship: "famRel[]",
+  age: "famAge[]",
+  aadhaar: "famAadhaar[]",
+};
+
+function textFromElement(element: Element | null) {
+  return element?.textContent?.trim() ?? "";
+}
+
+function valueFromNamedElement(element: Element) {
+  if (element instanceof HTMLInputElement) {
+    if ((element.type === "radio" || element.type === "checkbox") && !element.checked) return "";
+    return element.value || element.getAttribute("value") || "";
+  }
+  if (element instanceof HTMLTextAreaElement) {
+    return element.value || element.textContent || "";
+  }
+  if (element instanceof HTMLSelectElement) {
+    const selected = element.selectedOptions[0];
+    return selected?.value || selected?.textContent || element.value || "";
+  }
+  return textFromElement(element);
+}
+
+function valueByName(doc: Document, name: string) {
+  const elements = Array.from(doc.getElementsByName(name));
+  const checked = elements.find(
+    (element) => element instanceof HTMLInputElement && (element.type === "radio" || element.type === "checkbox") && element.checked
+  );
+  const element = checked ?? elements[0];
+  return element ? valueFromNamedElement(element).trim() : "";
+}
+
+function valueBySummaryLabel(doc: Document, labels: string[]) {
+  const fields = Array.from(doc.querySelectorAll(".field"));
+  for (const label of labels) {
+    const match = fields.find((field) => textFromElement(field.querySelector("strong")) === label);
+    const value = textFromElement(match?.querySelector("span") ?? null);
+    if (value) return value;
+  }
+  return "";
+}
+
+function parseFamilyRows(doc: Document) {
+  const namedRows = Array.from(doc.getElementsByName(familyNames.name));
+  if (namedRows.length) {
+    const valuesFor = (name: string) => Array.from(doc.getElementsByName(name)).map(valueFromNamedElement);
+    const names = valuesFor(familyNames.name);
+    const relationships = valuesFor(familyNames.relationship);
+    const ages = valuesFor(familyNames.age);
+    const aadhaars = valuesFor(familyNames.aadhaar);
+    return names
+      .map((name, index) => ({
+        id: index + 1,
+        name: name.trim(),
+        relationship: (relationships[index] ?? "").trim(),
+        age: (ages[index] ?? "").trim(),
+        aadhaar: (aadhaars[index] ?? "").trim(),
+      }))
+      .filter((row) => row.name || row.relationship || row.age || row.aadhaar);
+  }
+
+  const familyHeading = Array.from(doc.querySelectorAll("h3")).find((heading) =>
+    textFromElement(heading).toLowerCase().includes("family")
+  );
+  const table = familyHeading?.nextElementSibling?.tagName === "TABLE"
+    ? familyHeading.nextElementSibling
+    : familyHeading?.parentElement?.querySelector("table");
+  const rows = Array.from(table?.querySelectorAll("tbody tr") ?? []);
+  return rows
+    .map((row, index) => {
+      const cells = Array.from(row.querySelectorAll("td")).map(textFromElement);
+      return {
+        id: index + 1,
+        name: cells[1] ?? "",
+        relationship: cells[2] ?? "",
+        age: cells[3] ?? "",
+        aadhaar: cells[4] ?? "",
+      };
+    })
+    .filter((row) => row.name || row.relationship || row.age || row.aadhaar);
+}
+
+function parseFilledHtml(html: string) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const parsedForm = { ...initialForm };
+
+  (Object.keys(parsedForm) as (keyof FormState)[]).forEach((key) => {
+    const namedField = namedFormFields[key];
+    const namedValue = namedField ? valueByName(doc, namedField) : "";
+    const summaryValue = fieldLabels[key] ? valueBySummaryLabel(doc, fieldLabels[key]) : "";
+    parsedForm[key] = (namedValue || summaryValue || parsedForm[key]).trim();
+  });
+
+  const photoSrc = doc.querySelector<HTMLImageElement>("#photoImg, .photo img")?.src || "";
+  const parsedFamily = parseFamilyRows(doc);
+
+  return {
+    form: parsedForm,
+    family: parsedFamily.length ? parsedFamily : [blankFamily(1)],
+    photo: photoSrc.startsWith("data:image/") ? photoSrc : "",
+  };
+}
+
 function FieldLabel({ en, ta }: { en: string; ta: string }) {
   return (
     <span className={css.label}>
@@ -409,8 +588,13 @@ export default function EmployeeCenterPage() {
     flash(`Loaded ${employee.full_name}`);
   };
 
-  const saveEmployee = async (showMessage = true): Promise<string | null> => {
-    if (!form.fullName.trim()) {
+  const saveEmployee = async (
+    showMessage = true,
+    formToSave = form,
+    familyToSave = family,
+    photoToSave = photo,
+  ): Promise<string | null> => {
+    if (!formToSave.fullName.trim()) {
       flash("Full name is required before saving");
       return null;
     }
@@ -437,7 +621,7 @@ export default function EmployeeCenterPage() {
       photoUrl = urlData.publicUrl;
     }
 
-    const payload = payloadFromForm(form, photoUrl, photoPath);
+    const payload = payloadFromForm(formToSave, photoUrl, photoPath);
     const { data: saved, error } = selectedId
       ? await supabase
           .from("estate_employees")
@@ -469,7 +653,7 @@ export default function EmployeeCenterPage() {
       return null;
     }
 
-    const familyPayload = family
+    const familyPayload = familyToSave
       .map((row, index) => ({
         employee_id: employeeId,
         sort_order: index + 1,
@@ -493,7 +677,7 @@ export default function EmployeeCenterPage() {
     }
 
     setSelectedId(employeeId);
-    setPhoto(photoUrl || "");
+    setPhoto(photoUrl || photoToSave || "");
     setPhotoFile(null);
     await loadEmployees();
     setSaving(false);
@@ -508,9 +692,29 @@ export default function EmployeeCenterPage() {
     if (!file) return;
 
     setUploadingForm(true);
+    let formForSave = form;
+    let familyForSave = family;
+    let photoForSave = photo;
+    let populatedFromFile = false;
+
+    if (file.type === "text/html" || file.name.toLowerCase().endsWith(".html") || file.name.toLowerCase().endsWith(".htm")) {
+      const html = await file.text();
+      const parsed = parseFilledHtml(html);
+      formForSave = parsed.form;
+      familyForSave = parsed.family;
+      photoForSave = parsed.photo || photo;
+      setForm(parsed.form);
+      setFamily(parsed.family);
+      if (parsed.photo) {
+        setPhoto(parsed.photo);
+        setPhotoFile(null);
+      }
+      populatedFromFile = true;
+    }
+
     let employeeId = selectedId;
-    if (!employeeId) {
-      const savedId = await saveEmployee(false);
+    if (!employeeId || populatedFromFile) {
+      const savedId = await saveEmployee(false, formForSave, familyForSave, photoForSave);
       if (!savedId) {
         setUploadingForm(false);
         return;
@@ -555,7 +759,7 @@ export default function EmployeeCenterPage() {
 
     await loadEmployees();
     setUploadingForm(false);
-    flash("Filled form uploaded");
+    flash(populatedFromFile ? "Filled form imported and uploaded" : "Filled form uploaded");
   };
 
   const updateEmployeeStatus = async (nextStatus: EmployeeRow["status"]) => {
