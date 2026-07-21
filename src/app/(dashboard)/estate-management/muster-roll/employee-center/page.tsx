@@ -107,6 +107,7 @@ type EmployeeRow = {
   updated_at: string;
   estate_employee_family_members?: FamilyRow[];
   estate_employee_documents?: EmployeeDocument[];
+  estate_employee_document_notes?: EmployeeDocumentNote[];
 };
 
 type FamilyRow = {
@@ -139,6 +140,20 @@ type EmployeeDocument = {
   file_size: number | null;
   uploaded_at: string;
   uploaded_by: string | null;
+};
+
+type EmployeeDocumentNote = {
+  id: string;
+  employee_id: string;
+  note_text: string;
+  author_id: string | null;
+  author_name: string;
+  attachment_file_name: string | null;
+  attachment_file_path: string | null;
+  attachment_public_url: string | null;
+  attachment_content_type: string | null;
+  attachment_file_size: number | null;
+  created_at: string;
 };
 
 const employeeDocumentTypes: { type: EmployeeDocumentType; label: string }[] = [
@@ -209,11 +224,17 @@ const toNullableNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const missingEmployeeDocumentsRelation = (message: string) =>
-  message.includes("estate_employee_documents") &&
+const missingRelation = (message: string, relationName: string) =>
+  message.includes(relationName) &&
   (message.includes("relationship") ||
     message.includes("schema cache") ||
     message.includes("does not exist"));
+
+const formatDateTime = (value: string) =>
+  new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 
 const formFromEmployee = (employee: EmployeeRow): FormState => ({
   estateName: employee.estate_name || "Stanmore Estate",
@@ -576,6 +597,9 @@ export default function EmployeeCenterPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingForm, setUploadingForm] = useState(false);
   const [uploadingDocumentType, setUploadingDocumentType] = useState<EmployeeDocumentType | null>(null);
+  const [documentNote, setDocumentNote] = useState("");
+  const [documentNoteFile, setDocumentNoteFile] = useState<File | null>(null);
+  const [savingDocumentNote, setSavingDocumentNote] = useState(false);
   const filledFormInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const selectedDocumentTypeRef = useRef<EmployeeDocumentType | null>(null);
@@ -597,6 +621,11 @@ export default function EmployeeCenterPage() {
 
   const selectedEmployeeDocuments = useMemo(
     () => selectedEmployee?.estate_employee_documents ?? [],
+    [selectedEmployee]
+  );
+
+  const selectedEmployeeDocumentNotes = useMemo(
+    () => selectedEmployee?.estate_employee_document_notes ?? [],
     [selectedEmployee]
   );
 
@@ -628,11 +657,23 @@ export default function EmployeeCenterPage() {
       .select(`
         *,
         estate_employee_family_members (*),
-        estate_employee_documents (*)
+        estate_employee_documents (*),
+        estate_employee_document_notes (*)
       `)
       .order("updated_at", { ascending: false });
 
-    if (result.error && missingEmployeeDocumentsRelation(result.error.message)) {
+    if (result.error && missingRelation(result.error.message, "estate_employee_document_notes")) {
+      result = await supabase
+        .from("estate_employees")
+        .select(`
+          *,
+          estate_employee_family_members (*),
+          estate_employee_documents (*)
+        `)
+        .order("updated_at", { ascending: false });
+    }
+
+    if (result.error && missingRelation(result.error.message, "estate_employee_documents")) {
       result = await supabase
         .from("estate_employees")
         .select(`
@@ -655,6 +696,9 @@ export default function EmployeeCenterPage() {
       ),
       estate_employee_documents: [...(employee.estate_employee_documents ?? [])].sort(
         (a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+      ),
+      estate_employee_document_notes: [...(employee.estate_employee_document_notes ?? [])].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ),
     })) as EmployeeRow[];
 
@@ -985,6 +1029,74 @@ export default function EmployeeCenterPage() {
     setUploadingDocumentType(null);
     const documentLabel = employeeDocumentTypes.find((item) => item.type === documentType)?.label ?? "Document";
     flash(`${documentLabel} uploaded`);
+  };
+
+  const saveDocumentNote = async () => {
+    const noteText = documentNote.trim();
+    if (!noteText && !documentNoteFile) {
+      flash("Add a note or attach a document before saving");
+      return;
+    }
+
+    setSavingDocumentNote(true);
+
+    let employeeId = selectedId;
+    if (!employeeId) {
+      const savedId = await saveEmployee(false);
+      if (!savedId) {
+        setSavingDocumentNote(false);
+        return;
+      }
+      employeeId = savedId;
+    }
+
+    let attachmentPath: string | null = null;
+    let attachmentUrl: string | null = null;
+
+    if (documentNoteFile) {
+      const safeName = documentNoteFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${employeeId}/document-notes/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("employee-center")
+        .upload(path, documentNoteFile, {
+          contentType: documentNoteFile.type || undefined,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        setSavingDocumentNote(false);
+        flash(`Note attachment upload failed: ${uploadError.message}`);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
+      attachmentPath = path;
+      attachmentUrl = urlData.publicUrl;
+    }
+
+    const { error } = await supabase.from("estate_employee_document_notes").insert({
+      employee_id: employeeId,
+      note_text: noteText || "Attachment added",
+      author_id: currentUser?.id ?? null,
+      author_name: currentUser?.name || "Unknown user",
+      attachment_file_name: documentNoteFile?.name ?? null,
+      attachment_file_path: attachmentPath,
+      attachment_public_url: attachmentUrl,
+      attachment_content_type: documentNoteFile?.type || null,
+      attachment_file_size: documentNoteFile?.size ?? null,
+    });
+
+    if (error) {
+      setSavingDocumentNote(false);
+      flash(`Note save failed: ${error.message}`);
+      return;
+    }
+
+    setDocumentNote("");
+    setDocumentNoteFile(null);
+    await loadEmployees();
+    setSavingDocumentNote(false);
+    flash("Document note saved");
   };
 
   const updateEmployeeStatus = async (nextStatus: EmployeeRow["status"]) => {
@@ -1318,6 +1430,69 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
                 </div>
               );
             })}
+          </div>
+
+          <div className={css.documentNotesPanel}>
+            <div className={css.documentNotesHead}>
+              <div>
+                <h3 className={css.documentNotesTitle}>Comments and Notes</h3>
+                <p className={css.documentCopy}>Notes are saved with timestamp and user name. Attach a document when needed.</p>
+              </div>
+            </div>
+            <textarea
+              className={css.documentNoteInput}
+              value={documentNote}
+              onChange={(event) => setDocumentNote(event.target.value)}
+              placeholder="Leave a comment or note for this employee document file..."
+              rows={3}
+            />
+            <div className={css.documentNoteActions}>
+              <label className={css.documentNoteFile}>
+                <Upload size={14} />
+                <span>{documentNoteFile ? documentNoteFile.name : "Attach document if needed"}</span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/*"
+                  onChange={(event) => setDocumentNoteFile(event.target.files?.[0] ?? null)}
+                />
+              </label>
+              {documentNoteFile && (
+                <button type="button" className={css.documentNoteClear} onClick={() => setDocumentNoteFile(null)}>
+                  Remove attachment
+                </button>
+              )}
+              <button
+                type="button"
+                className={`${css.btn} ${css.btnPrimary}`}
+                onClick={() => void saveDocumentNote()}
+                disabled={savingDocumentNote || saving || (!documentNote.trim() && !documentNoteFile)}
+              >
+                {savingDocumentNote ? <Loader2 size={14} className={css.spin} /> : <Save size={14} />}
+                Save note
+              </button>
+            </div>
+
+            <div className={css.documentNotesList}>
+              {selectedEmployeeDocumentNotes.length ? (
+                selectedEmployeeDocumentNotes.map((note) => (
+                  <article className={css.documentNoteItem} key={note.id}>
+                    <div className={css.documentNoteMeta}>
+                      <strong>{note.author_name}</strong>
+                      <span>{formatDateTime(note.created_at)}</span>
+                    </div>
+                    <p>{note.note_text}</p>
+                    {note.attachment_public_url && (
+                      <a className={css.documentLink} href={note.attachment_public_url} target="_blank" rel="noreferrer">
+                        <ExternalLink size={13} />
+                        {note.attachment_file_name || "View attachment"}
+                      </a>
+                    )}
+                  </article>
+                ))
+              ) : (
+                <div className={css.documentNoteEmpty}>No comments or notes saved yet</div>
+              )}
+            </div>
           </div>
         </section>
 

@@ -425,6 +425,139 @@
   cursor: not-allowed;
 }
 
+.documentNotesPanel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #dbd0b4;
+  border-radius: 6px;
+  background: #fffefb;
+}
+
+.documentNotesHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.documentNotesTitle {
+  margin: 0;
+  color: #2f4a3a;
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.documentNoteInput {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  border: 1px solid #dbd0b4;
+  border-radius: 6px;
+  background: #faf6ec;
+  color: #2b2620;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.45;
+  padding: 10px;
+}
+
+.documentNoteInput:focus {
+  outline: 2px solid rgba(184, 134, 59, 0.25);
+  border-color: #b8863b;
+}
+
+.documentNoteActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.documentNoteFile {
+  display: inline-flex;
+  max-width: 360px;
+  height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px dashed #b8863b;
+  border-radius: 6px;
+  background: #fff7df;
+  color: #2f4a3a;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.documentNoteFile span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documentNoteFile input {
+  display: none;
+}
+
+.documentNoteClear {
+  border: 0;
+  background: transparent;
+  color: #9f2d20;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.documentNotesList {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.documentNoteItem {
+  padding: 10px;
+  border: 1px solid #e6dcc5;
+  border-radius: 6px;
+  background: #faf6ec;
+}
+
+.documentNoteMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  color: #7a705d;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.documentNoteMeta strong {
+  color: #2f4a3a;
+}
+
+.documentNoteItem p {
+  margin: 7px 0;
+  color: #2b2620;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.documentNoteEmpty {
+  padding: 10px;
+  border: 1px dashed #dbd0b4;
+  border-radius: 6px;
+  color: #7a705d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .btnPrimary {
   background: #2f4a3a;
   color: #fffefb;
