@@ -409,10 +409,10 @@ export default function EmployeeCenterPage() {
     flash(`Loaded ${employee.full_name}`);
   };
 
-  const saveEmployee = async () => {
+  const saveEmployee = async (showMessage = true): Promise<string | null> => {
     if (!form.fullName.trim()) {
       flash("Full name is required before saving");
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -429,7 +429,7 @@ export default function EmployeeCenterPage() {
       if (uploadError) {
         setSaving(false);
         flash(`Photo upload failed: ${uploadError.message}`);
-        return;
+        return null;
       }
 
       const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
@@ -454,7 +454,7 @@ export default function EmployeeCenterPage() {
     if (error) {
       setSaving(false);
       flash(`Save failed: ${error.message}`);
-      return;
+      return null;
     }
 
     const employeeId = saved.id as string;
@@ -466,7 +466,7 @@ export default function EmployeeCenterPage() {
     if (deleteFamilyError) {
       setSaving(false);
       flash(`Saved employee, but family sync failed: ${deleteFamilyError.message}`);
-      return;
+      return null;
     }
 
     const familyPayload = family
@@ -488,7 +488,7 @@ export default function EmployeeCenterPage() {
       if (familyError) {
         setSaving(false);
         flash(`Saved employee, but family sync failed: ${familyError.message}`);
-        return;
+        return null;
       }
     }
 
@@ -497,7 +497,8 @@ export default function EmployeeCenterPage() {
     setPhotoFile(null);
     await loadEmployees();
     setSaving(false);
-    flash("Employee saved to registry");
+    if (showMessage) flash("Employee saved to registry");
+    return employeeId;
   };
 
   const uploadFilledForm = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -505,14 +506,26 @@ export default function EmployeeCenterPage() {
     event.target.value = "";
 
     if (!file) return;
-    if (!selectedId) {
+
+    setUploadingForm(true);
+    let employeeId = selectedId;
+    if (!employeeId) {
+      const savedId = await saveEmployee(false);
+      if (!savedId) {
+        setUploadingForm(false);
+        return;
+      }
+      employeeId = savedId;
+    }
+
+    if (!employeeId) {
+      setUploadingForm(false);
       flash("Save or select an employee before uploading the filled form");
       return;
     }
 
-    setUploadingForm(true);
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `${selectedId}/filled-forms/${Date.now()}-${safeName}`;
+    const path = `${employeeId}/filled-forms/${Date.now()}-${safeName}`;
     const { error: uploadError } = await supabase.storage
       .from("employee-center")
       .upload(path, file, { upsert: true });
@@ -532,7 +545,7 @@ export default function EmployeeCenterPage() {
         application_form_file_name: file.name,
         application_form_uploaded_at: new Date().toISOString(),
       })
-      .eq("id", selectedId);
+      .eq("id", employeeId);
 
     if (updateError) {
       setUploadingForm(false);
@@ -711,7 +724,7 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
         </header>
 
         <div className={css.toolbar}>
-          <button type="button" className={`${css.btn} ${css.btnPrimary}`} onClick={saveEmployee} disabled={saving}>
+          <button type="button" className={`${css.btn} ${css.btnPrimary}`} onClick={() => void saveEmployee()} disabled={saving}>
             {saving ? <Loader2 size={15} className={css.spin} /> : <Save size={15} />}
             {selectedId ? "Update registry" : "Save to registry"}
           </button>
@@ -729,7 +742,7 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
             type="button"
             className={css.btn}
             onClick={() => filledFormInputRef.current?.click()}
-            disabled={!selectedId || uploadingForm}
+            disabled={saving || uploadingForm}
           >
             {uploadingForm ? <Loader2 size={15} className={css.spin} /> : <Upload size={15} />}
             Upload filled form
