@@ -165,7 +165,8 @@ Rules:
 - gender should be "M", "F", or "Other" when marked.
 - payMode should be "Cash" or "Bank" when marked.
 - Preserve Aadhaar, PAN, mobile, bank account and IFSC exactly as visible.
-- Translate Tamil field values to English only when helpful, but keep names, addresses, IDs and numbers exactly as written.
+- Preserve the language and script exactly as written. If the filled value is in Tamil, return it in Tamil; do NOT translate Tamil values to English.
+- Keep names, addresses, relationship values, medical notes, IDs and numbers exactly as written.
 - For family, include one object per filled family row; if no family row is filled, return an empty array.`;
 
     const aiResponse = await fetch('https://api.openai.com/v1/responses', {
