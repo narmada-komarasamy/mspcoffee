@@ -32,12 +32,6 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Estate Management', href: '/estate-management', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'],
     children: [
       { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
-      {
-        label: 'Muster Roll',
-        children: [
-          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
-        ],
-      },
     ],
   },
   {
@@ -107,7 +101,18 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
   { label: 'Cup Score Catalogue', href: '/cup-scores',      iconName: 'Award',        roles: ['admin', 'supervisor', 'ceo'] },
-  { label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  {
+    label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker', 'ceo'],
+    children: [
+      { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },
+      {
+        label: 'Muster Roll',
+        children: [
+          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+        ],
+      },
+    ],
+  },
   { label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   { label: 'Harvest Yield',       href: '/harvest-yield',   iconName: 'Wheat',        roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Nursery',             href: '/nursery',         iconName: 'Sprout',       roles: ['admin', 'supervisor', 'ceo'] },

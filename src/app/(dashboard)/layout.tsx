@@ -82,12 +82,6 @@ const navItems: NavItem[] = [
     label: 'Estate Management', href: '/estate-management', icon: Users, roles: ['admin', 'supervisor', 'ceo'],
     children: [
       { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
-      {
-        label: 'Muster Roll',
-        children: [
-          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
-        ],
-      },
     ],
   },
   {
@@ -160,6 +154,12 @@ const navItems: NavItem[] = [
     label: 'Daily Report', href: '/daily-report', icon: FileText, roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
       { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },
+      {
+        label: 'Muster Roll',
+        children: [
+          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+        ],
+      },
     ],
   },
   { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
