@@ -82,6 +82,12 @@ const navItems: NavItem[] = [
     label: 'Estate Management', href: '/estate-management', icon: Users, roles: ['admin', 'supervisor', 'ceo'],
     children: [
       { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
+      {
+        label: 'Muster Roll',
+        children: [
+          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+        ],
+      },
     ],
   },
   {

@@ -32,6 +32,12 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Estate Management', href: '/estate-management', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'],
     children: [
       { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
+      {
+        label: 'Muster Roll',
+        children: [
+          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+        ],
+      },
     ],
   },
   {
