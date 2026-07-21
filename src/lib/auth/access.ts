@@ -105,15 +105,14 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
       { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },
-      {
-        label: 'Muster Roll',
-        children: [
-          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
-        ],
-      },
     ],
   },
-  { label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  {
+    label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker', 'ceo'],
+    children: [
+      { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+    ],
+  },
   { label: 'Harvest Yield',       href: '/harvest-yield',   iconName: 'Wheat',        roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Nursery',             href: '/nursery',         iconName: 'Sprout',       roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Spraying Log',        href: '/spraying-log',    iconName: 'SprayCan',     roles: ['admin', 'supervisor', 'ceo'] },

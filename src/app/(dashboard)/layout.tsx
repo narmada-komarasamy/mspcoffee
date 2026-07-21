@@ -154,15 +154,14 @@ const navItems: NavItem[] = [
     label: 'Daily Report', href: '/daily-report', icon: FileText, roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
       { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },
-      {
-        label: 'Muster Roll',
-        children: [
-          { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
-        ],
-      },
     ],
   },
-  { label: 'Muster Roll',          href: '/muster-roll',          icon: Users,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  {
+    label: 'Muster Roll', href: '/muster-roll', icon: Users, roles: ['admin', 'supervisor', 'worker', 'ceo'],
+    children: [
+      { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+    ],
+  },
   {
     label: 'Harvest Yield', href: '/harvest-yield', icon: Wheat, roles: ['admin', 'supervisor', 'ceo'],
     children: [
