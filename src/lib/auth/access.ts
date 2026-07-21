@@ -110,7 +110,13 @@ export const NAV_ITEMS: NavItemDef[] = [
   {
     label: 'Muster Roll',         href: '/muster-roll',     iconName: 'Users',        roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
-      { label: 'Employee Center', href: '/estate-management/muster-roll/employee-center' },
+      {
+        label: 'Employee Center',
+        children: [
+          { label: 'Registry', href: '/estate-management/muster-roll/employee-center' },
+          { label: 'ID Center', href: '/estate-management/muster-roll/employee-center/id-center' },
+        ],
+      },
     ],
   },
   { label: 'Harvest Yield',       href: '/harvest-yield',   iconName: 'Wheat',        roles: ['admin', 'supervisor', 'ceo'] },
