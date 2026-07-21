@@ -86,9 +86,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File too large (max 10 MB)' }, { status: 413 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey =
+      process.env.OPENAI_API_KEY ||
+      process.env.OPENAI_EMPLOYEE_FORM_API_KEY ||
+      process.env.OPENAI_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY is not configured' }, { status: 500 });
+      return NextResponse.json({
+        error: 'OpenAI API key is not configured for this deployment',
+        details: {
+          expectedNames: ['OPENAI_API_KEY', 'OPENAI_EMPLOYEE_FORM_API_KEY', 'OPENAI_KEY'],
+          vercelEnv: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? 'unknown',
+          model: process.env.OPENAI_EMPLOYEE_FORM_MODEL ?? 'gpt-4.1',
+        },
+      }, { status: 500 });
     }
 
     const isPdf = mediaType === 'application/pdf';
