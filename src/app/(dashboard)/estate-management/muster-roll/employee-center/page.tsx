@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, InputHTMLAttributes, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, ExternalLink, IdCard, Loader2, Plus, Printer, RotateCcw, Save, Search, Trash2, Upload, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -569,6 +569,88 @@ function FieldLabel({ en, ta }: { en: string; ta: string }) {
       {en}
       <span className={`${css.ta} ${css.tamil}`}>{ta}</span>
     </span>
+  );
+}
+
+type TamilTextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> & {
+  value: string;
+  onValueChange: (value: string) => void;
+};
+
+function TamilTextInput({ value, onValueChange, ...props }: TamilTextInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const composingRef = useRef(false);
+
+  useEffect(() => {
+    if (composingRef.current || !inputRef.current || inputRef.current.value === value) return;
+    inputRef.current.value = value;
+  }, [value]);
+
+  return (
+    <input
+      {...props}
+      ref={inputRef}
+      lang="ta-IN"
+      inputMode={props.inputMode ?? "text"}
+      autoCorrect={props.autoCorrect ?? "on"}
+      spellCheck={props.spellCheck ?? true}
+      defaultValue={value}
+      onCompositionStart={(event) => {
+        composingRef.current = true;
+        props.onCompositionStart?.(event);
+      }}
+      onCompositionEnd={(event) => {
+        composingRef.current = false;
+        const nextValue = event.currentTarget.value;
+        onValueChange(nextValue);
+        props.onCompositionEnd?.(event);
+      }}
+      onChange={(event) => {
+        const nextValue = event.target.value;
+        if (!composingRef.current) onValueChange(nextValue);
+      }}
+    />
+  );
+}
+
+type TamilTextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "value"> & {
+  value: string;
+  onValueChange: (value: string) => void;
+};
+
+function TamilTextarea({ value, onValueChange, ...props }: TamilTextareaProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composingRef = useRef(false);
+
+  useEffect(() => {
+    if (composingRef.current || !textareaRef.current || textareaRef.current.value === value) return;
+    textareaRef.current.value = value;
+  }, [value]);
+
+  return (
+    <textarea
+      {...props}
+      ref={textareaRef}
+      lang="ta-IN"
+      inputMode={props.inputMode ?? "text"}
+      autoCorrect={props.autoCorrect ?? "on"}
+      spellCheck={props.spellCheck ?? true}
+      defaultValue={value}
+      onCompositionStart={(event) => {
+        composingRef.current = true;
+        props.onCompositionStart?.(event);
+      }}
+      onCompositionEnd={(event) => {
+        composingRef.current = false;
+        const nextValue = event.currentTarget.value;
+        onValueChange(nextValue);
+        props.onCompositionEnd?.(event);
+      }}
+      onChange={(event) => {
+        const nextValue = event.target.value;
+        if (!composingRef.current) onValueChange(nextValue);
+      }}
+    />
   );
 }
 
@@ -1173,16 +1255,21 @@ export default function EmployeeCenterPage() {
         (row, index) => `
           <tr>
             <td>${index + 1}</td>
-            <td>${escapeHtml(row.name)}</td>
-            <td>${escapeHtml(row.relationship)}</td>
-            <td>${escapeHtml(row.age)}</td>
-            <td>${escapeHtml(row.aadhaar)}</td>
+            <td><input name="${familyNames.name}" lang="ta-IN" value="${escapeHtml(row.name)}"></td>
+            <td><input name="${familyNames.relationship}" lang="ta-IN" value="${escapeHtml(row.relationship)}"></td>
+            <td><input name="${familyNames.age}" inputmode="numeric" value="${escapeHtml(row.age)}"></td>
+            <td><input name="${familyNames.aadhaar}" inputmode="numeric" value="${escapeHtml(row.aadhaar)}"></td>
           </tr>`
       )
       .join("");
 
-    const field = (label: string, value: string) => `
-      <div class="field"><strong>${label}</strong><span>${escapeHtml(value)}</span></div>`;
+    const field = (key: keyof FormState, label: string, value: string, multiline = false) => {
+      const name = namedFormFields[key] ?? key;
+      const escaped = escapeHtml(value);
+      return multiline
+        ? `<div class="field"><strong>${label}</strong><textarea name="${name}" lang="ta-IN">${escaped}</textarea></div>`
+        : `<div class="field"><strong>${label}</strong><input name="${name}" lang="ta-IN" value="${escaped}"></div>`;
+    };
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1196,7 +1283,7 @@ body{margin:0;background:#f2ebd9;color:#2b2620;font-family:Arial,sans-serif;padd
 .head{display:flex;gap:18px;align-items:center;background:#2f4a3a;color:#fffefb;padding:24px 32px;border-bottom:4px solid #b8863b}
 .photo{width:110px;height:128px;border:2px dashed #ddbd7e;display:flex;align-items:center;justify-content:center;background:#fffefb;color:#635a48;overflow:hidden}
 .photo img{width:100%;height:100%;object-fit:cover}.content{padding:24px 32px}.section{border-top:1px solid #dbd0b4;padding-top:18px;margin-top:18px}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}.field strong{display:block;font-size:12px;color:#635a48}.field span{font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}.field strong{display:block;font-size:12px;color:#635a48}.field input,.field textarea,td input{width:100%;box-sizing:border-box;border:1px solid #dbd0b4;border-radius:4px;background:#fffefb;color:#2b2620;font:14px Arial,'Noto Sans Tamil',sans-serif;padding:7px 8px}.field textarea{min-height:58px;resize:vertical}
 table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #dbd0b4;padding:7px;text-align:left;font-size:13px}th{background:#f2ebd9}
 .sig{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.line{height:44px;border-bottom:1px solid #635a48}
 @media(max-width:700px){.grid,.sig{grid-template-columns:1fr}.head{flex-direction:column;align-items:flex-start}}
@@ -1206,13 +1293,13 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 <div class="head"><div><h1>MSP Coffee (P) Ltd.</h1><p>Application Form - For Farm Labor</p><p>Stanmore Estate, Nagalur, Yercaud, Salem - 636602</p></div><div class="photo">${photo ? `<img src="${photo}" alt="Applicant photo">` : "Photo"}</div></div>
 <div class="content">
 <div class="section"><h2>Personal Details</h2><div class="grid">
-${field("Estate Name", form.estateName)}${field("Full Name", form.fullName)}${field("Father's / Husband's Name", form.parentSpouseName)}${field("Date of Birth", form.dob)}${field("Age", form.age)}${field("Gender", form.gender)}${field("Marital Status", form.maritalStatus)}${field("Aadhaar Number", form.aadhaar)}${field("PAN", form.pan)}${field("Mobile", form.mobile)}${field("Alternate Contact", form.altContact)}${field("Reference", form.reference)}${field("Permanent Address", form.permAddress)}${field("Current Address", form.currAddress)}
+${field("estateName", "Estate Name", form.estateName)}${field("fullName", "Full Name", form.fullName)}${field("parentSpouseName", "Father's / Husband's Name", form.parentSpouseName)}${field("dob", "Date of Birth", form.dob)}${field("age", "Age", form.age)}${field("gender", "Gender", form.gender)}${field("maritalStatus", "Marital Status", form.maritalStatus)}${field("aadhaar", "Aadhaar Number", form.aadhaar)}${field("pan", "PAN", form.pan)}${field("mobile", "Mobile", form.mobile)}${field("altContact", "Alternate Contact", form.altContact)}${field("reference", "Reference", form.reference)}${field("permAddress", "Permanent Address", form.permAddress, true)}${field("currAddress", "Current Address", form.currAddress, true)}
 </div><h3>Family Members</h3><table><thead><tr><th>S.No</th><th>Name</th><th>Relationship</th><th>Age</th><th>Aadhaar Number</th></tr></thead><tbody>${familyRows}</tbody></table></div>
 <div class="section"><h2>Employment Details</h2><div class="grid">
-${field("Employee ID / Code", form.empId)}${field("Date of Joining", form.doj)}${field("Job Role / Designation", form.jobRole)}${field("Section / Division", form.section)}${field("Daily Wage / Salary", form.wage)}${field("Payment Mode", form.payMode)}${field("Bank Account Number", form.bankAcc)}${field("IFSC Code", form.ifsc)}${field("Previous Experience", form.experience)}${field("Education Level", form.education)}${field("EPF/PF UAN / Member ID", form.epf)}${field("ESI Number", form.esi)}
+${field("empId", "Employee ID / Code", form.empId)}${field("doj", "Date of Joining", form.doj)}${field("jobRole", "Job Role / Designation", form.jobRole)}${field("section", "Section / Division", form.section)}${field("wage", "Daily Wage / Salary", form.wage)}${field("payMode", "Payment Mode", form.payMode)}${field("bankAcc", "Bank Account Number", form.bankAcc)}${field("ifsc", "IFSC Code", form.ifsc)}${field("experience", "Previous Experience", form.experience)}${field("education", "Education Level", form.education)}${field("epf", "EPF/PF UAN / Member ID", form.epf)}${field("esi", "ESI Number", form.esi)}
 </div></div>
 <div class="section"><h2>Other Information</h2><div class="grid">
-${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Contact Number", form.emNumber)}${field("Blood Group", form.bloodGroup)}${field("Medical Conditions / Allergies", form.medical)}${field("Nominee Name", form.nomineeName)}${field("Relation", form.nomineeRel)}
+${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emNumber", "Emergency Contact Number", form.emNumber)}${field("bloodGroup", "Blood Group", form.bloodGroup)}${field("medical", "Medical Conditions / Allergies", form.medical, true)}${field("nomineeName", "Nominee Name", form.nomineeName)}${field("nomineeRel", "Relation", form.nomineeRel)}
 </div></div>
 <div class="section"><p>I hereby declare that the above information is true to the best of my knowledge.</p><div class="sig"><div><div class="line"></div><strong>Signature of Employee</strong><p>Date: ${escapeHtml(form.empSigDate)}</p></div><div><div class="line"></div><strong>Signature of HR (Manager)</strong><p>Date: ${escapeHtml(form.hrSigDate)}</p></div><div><div class="line"></div><strong>Managing Director</strong><p>Date: ${escapeHtml(form.mdSigDate)}</p></div></div></div>
 </div></div></body></html>`;
@@ -1509,15 +1596,15 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
                 <div className={css.grid}>
                   <div className={css.field}>
                     <FieldLabel en="Estate Name" ta="தோட்டத்தின் பெயர்" />
-                    <input className={css.input} value={form.estateName} onChange={(e) => update("estateName", e.target.value)} />
+                    <TamilTextInput className={css.input} value={form.estateName} onValueChange={(value) => update("estateName", value)} />
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Full Name (as per Aadhaar)" ta="முழு பெயர் (ஆதார் அட்டையின்படி)" />
-                    <input className={css.input} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+                    <TamilTextInput className={css.input} value={form.fullName} onValueChange={(value) => update("fullName", value)} />
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Father's / Husband's Name" ta="தகப்பனார் / கணவர் பெயர்" />
-                    <input className={css.input} value={form.parentSpouseName} onChange={(e) => update("parentSpouseName", e.target.value)} />
+                    <TamilTextInput className={css.input} value={form.parentSpouseName} onValueChange={(value) => update("parentSpouseName", value)} />
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Date of Birth" ta="பிறந்த தேதி" />
@@ -1558,7 +1645,7 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="PAN (if any)" ta="பான் எண் (இருந்தால்)" />
-                    <input className={css.input} value={form.pan} onChange={(e) => update("pan", e.target.value)} />
+                    <TamilTextInput className={css.input} value={form.pan} onValueChange={(value) => update("pan", value)} />
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Mobile Number" ta="அலைபேசி எண்" />
@@ -1570,7 +1657,7 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Reference" ta="பரிந்துரைப்பவர்" />
-                    <input className={css.input} value={form.reference} onChange={(e) => update("reference", e.target.value)} />
+                    <TamilTextInput className={css.input} value={form.reference} onValueChange={(value) => update("reference", value)} />
                   </div>
                 </div>
               </div>
@@ -1600,11 +1687,11 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
             <div className={css.grid} style={{ marginTop: 16 }}>
               <div className={`${css.field} ${css.span2}`}>
                 <FieldLabel en="Permanent Address" ta="நிரந்தர முகவரி" />
-                <textarea className={css.textarea} value={form.permAddress} onChange={(e) => update("permAddress", e.target.value)} />
+                <TamilTextarea className={css.textarea} value={form.permAddress} onValueChange={(value) => update("permAddress", value)} />
               </div>
               <div className={`${css.field} ${css.span2}`}>
                 <FieldLabel en="Current Address" ta="தற்போதைய முகவரி" />
-                <textarea className={css.textarea} value={form.currAddress} onChange={(e) => update("currAddress", e.target.value)} />
+                <TamilTextarea className={css.textarea} value={form.currAddress} onValueChange={(value) => update("currAddress", value)} />
               </div>
             </div>
 
@@ -1628,8 +1715,8 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
                   {family.map((row, index) => (
                     <tr key={row.id}>
                       <td>{index + 1}</td>
-                      <td><input className={css.familyInput} value={row.name} onChange={(e) => updateFamily(row.id, "name", e.target.value)} /></td>
-                      <td><input className={css.familyInput} value={row.relationship} onChange={(e) => updateFamily(row.id, "relationship", e.target.value)} /></td>
+                      <td><TamilTextInput className={css.familyInput} value={row.name} onValueChange={(value) => updateFamily(row.id, "name", value)} /></td>
+                      <td><TamilTextInput className={css.familyInput} value={row.relationship} onValueChange={(value) => updateFamily(row.id, "relationship", value)} /></td>
                       <td><input className={css.familyInput} value={row.age} onChange={(e) => updateFamily(row.id, "age", e.target.value)} /></td>
                       <td><input className={css.familyInput} value={row.aadhaar} onChange={(e) => updateFamily(row.id, "aadhaar", e.target.value)} /></td>
                       <td className={css.removeCell}>
@@ -1656,9 +1743,9 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
             <div className={`${css.grid} ${css.cols3}`}>
               <div className={css.field}><FieldLabel en="Employee ID / Code" ta="பணியாளர் எண்" /><input className={css.input} placeholder="MSP / SE / HR / ____" value={form.empId} onChange={(e) => update("empId", e.target.value)} /></div>
               <div className={css.field}><FieldLabel en="Date of Joining" ta="பணியில் சேர்ந்த தேதி" /><input type="date" className={css.input} value={form.doj} onChange={(e) => update("doj", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Job Role / Designation" ta="பணி பதவி" /><input className={css.input} placeholder="e.g. Field Worker, Harvester" value={form.jobRole} onChange={(e) => update("jobRole", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Section / Division" ta="பிரிவு" /><input className={css.input} value={form.section} onChange={(e) => update("section", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Daily Wage / Salary" ta="தினசரி கூலி / சம்பளம்" /><input className={css.input} value={form.wage} onChange={(e) => update("wage", e.target.value)} /></div>
+              <div className={css.field}><FieldLabel en="Job Role / Designation" ta="பணி பதவி" /><TamilTextInput className={css.input} placeholder="e.g. Field Worker, Harvester" value={form.jobRole} onValueChange={(value) => update("jobRole", value)} /></div>
+              <div className={css.field}><FieldLabel en="Section / Division" ta="பிரிவு" /><TamilTextInput className={css.input} value={form.section} onValueChange={(value) => update("section", value)} /></div>
+              <div className={css.field}><FieldLabel en="Daily Wage / Salary" ta="தினசரி கூலி / சம்பளம்" /><TamilTextInput className={css.input} value={form.wage} onValueChange={(value) => update("wage", value)} /></div>
               <div className={css.field}>
                 <FieldLabel en="Payment Mode" ta="சம்பளம் வழங்கும் முறை" />
                 <div className={css.radioRow}>
@@ -1675,8 +1762,8 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
               </div>
               <div className={css.field}><FieldLabel en="Bank Account Number" ta="வங்கி கணக்கு எண்" /><input className={css.input} value={form.bankAcc} onChange={(e) => update("bankAcc", e.target.value)} /></div>
               <div className={css.field}><FieldLabel en="IFSC Code" ta="IFSC குறியீடு" /><input className={css.input} value={form.ifsc} onChange={(e) => update("ifsc", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Previous Experience (Years)" ta="முன் அனுபவம் (ஆண்டுகள்)" /><input className={css.input} value={form.experience} onChange={(e) => update("experience", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Education Level" ta="கல்வித் தகுதி" /><input className={css.input} value={form.education} onChange={(e) => update("education", e.target.value)} /></div>
+              <div className={css.field}><FieldLabel en="Previous Experience (Years)" ta="முன் அனுபவம் (ஆண்டுகள்)" /><TamilTextInput className={css.input} value={form.experience} onValueChange={(value) => update("experience", value)} /></div>
+              <div className={css.field}><FieldLabel en="Education Level" ta="கல்வித் தகுதி" /><TamilTextInput className={css.input} value={form.education} onValueChange={(value) => update("education", value)} /></div>
               <div className={css.field}><FieldLabel en="EPF/PF UAN / Member ID" ta="EPF/PF UAN எண்" /><input className={css.input} value={form.epf} onChange={(e) => update("epf", e.target.value)} /></div>
               <div className={css.field}><FieldLabel en="ESI Number (if applicable)" ta="ESI எண் (இருந்தால்)" /><input className={css.input} value={form.esi} onChange={(e) => update("esi", e.target.value)} /></div>
             </div>
@@ -1689,7 +1776,7 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
               <span className={`${css.blockTitleTa} ${css.tamil}`}>இதர தகவல்கள்</span>
             </div>
             <div className={`${css.grid} ${css.cols3}`}>
-              <div className={css.field}><FieldLabel en="Emergency Contact Name & Relation" ta="அவசரகால தொடர்பு பெயர் & உறவுமுறை" /><input className={css.input} value={form.emName} onChange={(e) => update("emName", e.target.value)} /></div>
+              <div className={css.field}><FieldLabel en="Emergency Contact Name & Relation" ta="அவசரகால தொடர்பு பெயர் & உறவுமுறை" /><TamilTextInput className={css.input} value={form.emName} onValueChange={(value) => update("emName", value)} /></div>
               <div className={css.field}><FieldLabel en="Emergency Contact Number" ta="அவசரகால தொடர்பு எண்" /><input type="tel" className={css.input} value={form.emNumber} onChange={(e) => update("emNumber", e.target.value)} /></div>
               <div className={css.field}>
                 <FieldLabel en="Blood Group" ta="இரத்த வகை" />
@@ -1698,9 +1785,9 @@ ${field("Emergency Contact Name & Relation", form.emName)}${field("Emergency Con
                   {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => <option key={group}>{group}</option>)}
                 </select>
               </div>
-              <div className={`${css.field} ${css.span3}`}><FieldLabel en="Medical Conditions / Allergies" ta="மருத்துவப் பிரச்சினைகள் / ஒவ்வாமை" /><textarea className={css.textarea} value={form.medical} onChange={(e) => update("medical", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Nominee Name (for benefits)" ta="வாரிசுதாரர் பெயர்" /><input className={css.input} value={form.nomineeName} onChange={(e) => update("nomineeName", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Relation" ta="உறவுமுறை" /><input className={css.input} value={form.nomineeRel} onChange={(e) => update("nomineeRel", e.target.value)} /></div>
+              <div className={`${css.field} ${css.span3}`}><FieldLabel en="Medical Conditions / Allergies" ta="மருத்துவப் பிரச்சினைகள் / ஒவ்வாமை" /><TamilTextarea className={css.textarea} value={form.medical} onValueChange={(value) => update("medical", value)} /></div>
+              <div className={css.field}><FieldLabel en="Nominee Name (for benefits)" ta="வாரிசுதாரர் பெயர்" /><TamilTextInput className={css.input} value={form.nomineeName} onValueChange={(value) => update("nomineeName", value)} /></div>
+              <div className={css.field}><FieldLabel en="Relation" ta="உறவுமுறை" /><TamilTextInput className={css.input} value={form.nomineeRel} onValueChange={(value) => update("nomineeRel", value)} /></div>
             </div>
           </section>
 
