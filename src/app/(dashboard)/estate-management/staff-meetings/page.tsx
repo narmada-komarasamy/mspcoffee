@@ -10,6 +10,7 @@ import {
   Loader2,
   Plus,
   Save,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -98,7 +99,7 @@ type Meeting = {
 
 type MeetingForm = Omit<Meeting, "id" | "created_at" | "updated_at" | "estate_staff_meeting_participants" | "estate_staff_meeting_agenda_items" | "estate_staff_meeting_actions" | "estate_staff_meeting_files">;
 
-type AppUser = { id: string; name: string; role: string; estate: string | null };
+type AppUser = { id: string; name: string; pin?: string; role: string; estate: string | null };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -110,7 +111,7 @@ const blankForm = (userName = ""): MeetingForm => ({
   end_time: null,
   location: "Estate Office",
   quorum_status: "pending",
-  confidentiality: "internal",
+  confidentiality: "restricted",
   agenda_summary: "",
   minutes_draft: "",
   decisions: "",
@@ -174,6 +175,20 @@ function fileFor(files: MeetingFile[] | undefined, fileType: MeetingFile["file_t
     .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
 }
 
+function authHeaders(user: AppUser | null) {
+  if (!user?.id || !user?.pin) return null;
+  return {
+    "Content-Type": "application/json",
+    "x-msp-user-id": user.id,
+    "x-msp-user-pin": user.pin,
+  };
+}
+
+async function readApiError(response: Response, fallback: string) {
+  const payload = await response.json().catch(() => null) as { error?: string } | null;
+  return payload?.error ?? fallback;
+}
+
 export default function EstateStaffMeetingsPage() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -222,7 +237,7 @@ export default function EstateStaffMeetingsPage() {
     })) as Meeting[];
 
     setMeetings(rows);
-    setSelectedId((current) => current ?? rows[0]?.id ?? null);
+    setSelectedId((current) => rows.some((row) => row.id === current) ? current : rows[0]?.id ?? null);
     setLoading(false);
   }, []);
 
@@ -335,83 +350,34 @@ export default function EstateStaffMeetingsPage() {
       setMessage({ type: "error", text: "Meeting title and date are required." });
       return;
     }
-
-    const cleanParticipants = participants.filter((p) => p.name.trim()).map((p) => ({
-      name: p.name.trim(),
-      role: p.role?.trim() || null,
-      attendance_status: p.attendance_status,
-      conflict_declared: p.conflict_declared,
-    }));
-    const cleanAgenda = agenda.filter((a) => a.topic.trim()).map((a, idx) => ({
-      item_no: idx + 1,
-      topic: a.topic.trim(),
-      presenter: a.presenter?.trim() || null,
-      time_minutes: Number(a.time_minutes) || null,
-      status: a.status,
-      notes: a.notes?.trim() || null,
-    }));
+    const headers = authHeaders(user);
+    if (!headers) {
+      setMessage({ type: "error", text: "Please log in again before saving estate staff meeting changes." });
+      return;
+    }
 
     setSaving(true);
     setMessage(null);
 
-    const payload = {
-      ...form,
-      title: form.title.trim(),
-      meeting_type: form.meeting_type.trim() || "Estate Staff Meeting",
-      start_time: form.start_time || null,
-      end_time: form.end_time || null,
-      location: form.location?.trim() || null,
-      agenda_summary: form.agenda_summary?.trim() || null,
-      minutes_draft: form.minutes_draft?.trim() || null,
-      decisions: form.decisions?.trim() || null,
-      minute_owner: form.minute_owner?.trim() || null,
-      reviewer: form.reviewer?.trim() || null,
-      approver: form.approver?.trim() || null,
-      approval_date: form.approval_date || null,
-      next_meeting_date: form.next_meeting_date || null,
-      next_meeting_time: form.next_meeting_time || null,
-      next_meeting_location: form.next_meeting_location?.trim() || null,
-      next_meeting_agenda: form.next_meeting_agenda?.trim() || null,
-      created_by: form.created_by || user?.name || null,
-    };
+    const response = await fetch("/api/estate-staff-meetings", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        meetingId: selectedId,
+        form,
+        participants,
+        agenda,
+        userName: user?.name ?? null,
+      }),
+    });
 
-    let meetingResult = selectedId
-      ? await supabase.from("estate_staff_meetings").update(payload).eq("id", selectedId).select().single()
-      : await supabase.from("estate_staff_meetings").insert([payload]).select().single();
-
-    if (meetingResult.error?.message.includes("minutes_updated")) {
-      const { minutes_updated_by, minutes_updated_at, ...legacyPayload } = payload;
-      void minutes_updated_by;
-      void minutes_updated_at;
-      meetingResult = selectedId
-        ? await supabase.from("estate_staff_meetings").update(legacyPayload).eq("id", selectedId).select().single()
-        : await supabase.from("estate_staff_meetings").insert([legacyPayload]).select().single();
-    }
-
-    if (meetingResult.error || !meetingResult.data) {
+    if (!response.ok) {
       setSaving(false);
-      setMessage({ type: "error", text: `Failed to save meeting: ${meetingResult.error?.message ?? "Unknown error"}` });
+      setMessage({ type: "error", text: await readApiError(response, "Failed to save estate staff meeting") });
       return;
     }
 
-    const meetingId = meetingResult.data.id as string;
-    await supabase.from("estate_staff_meeting_participants").delete().eq("meeting_id", meetingId);
-    await supabase.from("estate_staff_meeting_agenda_items").delete().eq("meeting_id", meetingId);
-
-    if (cleanParticipants.length) {
-      const { error } = await supabase.from("estate_staff_meeting_participants").insert(
-        cleanParticipants.map((p) => ({ ...p, meeting_id: meetingId }))
-      );
-      if (error) setMessage({ type: "error", text: `Meeting saved, but participants failed: ${error.message}` });
-    }
-
-    if (cleanAgenda.length) {
-      const { error } = await supabase.from("estate_staff_meeting_agenda_items").insert(
-        cleanAgenda.map((a) => ({ ...a, meeting_id: meetingId }))
-      );
-      if (error) setMessage({ type: "error", text: `Meeting saved, but agenda failed: ${error.message}` });
-    }
-
+    const { meetingId } = await response.json() as { meetingId: string };
     setSelectedId(meetingId);
     await loadMeetings();
     setSaving(false);
@@ -427,19 +393,23 @@ export default function EstateStaffMeetingsPage() {
       setMessage({ type: "error", text: "Action and assigned owner are required." });
       return;
     }
-    const { error } = await supabase.from("estate_staff_meeting_actions").insert([{
-      meeting_id: selectedId,
-      action_text: newAction.action_text.trim(),
-      assigned_to: newAction.assigned_to.trim(),
-      due_date: newAction.due_date || null,
-      priority: newAction.priority,
-      status: "open",
-      progress: 0,
-    }]);
-    if (error) {
-      setMessage({ type: "error", text: `Failed to add action: ${error.message}` });
+    const headers = authHeaders(user);
+    if (!headers) {
+      setMessage({ type: "error", text: "Please log in again before adding actions." });
       return;
     }
+
+    const response = await fetch("/api/estate-staff-meetings/actions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ meetingId: selectedId, ...newAction }),
+    });
+
+    if (!response.ok) {
+      setMessage({ type: "error", text: await readApiError(response, "Failed to add action") });
+      return;
+    }
+
     setNewAction({ action_text: "", assigned_to: "", due_date: "", priority: "medium" });
     await loadMeetings();
     setMessage({ type: "ok", text: "Follow-up action added." });
@@ -447,12 +417,20 @@ export default function EstateStaffMeetingsPage() {
 
   const updateActionStatus = async (action: MeetingAction, status: MeetingAction["status"]) => {
     const progress = status === "completed" ? 100 : status === "in-progress" ? Math.max(action.progress, 40) : action.progress;
-    const { error } = await supabase
-      .from("estate_staff_meeting_actions")
-      .update({ status, progress })
-      .eq("id", action.id);
-    if (error) {
-      setMessage({ type: "error", text: `Failed to update action: ${error.message}` });
+    const headers = authHeaders(user);
+    if (!headers) {
+      setMessage({ type: "error", text: "Please log in again before updating actions." });
+      return;
+    }
+
+    const response = await fetch(`/api/estate-staff-meetings/actions/${action.id}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ status, progress }),
+    });
+
+    if (!response.ok) {
+      setMessage({ type: "error", text: await readApiError(response, "Failed to update action") });
       return;
     }
     await loadMeetings();
@@ -460,35 +438,29 @@ export default function EstateStaffMeetingsPage() {
 
   const uploadFile = async (fileType: MeetingFile["file_type"], file: File | null) => {
     if (!file || !selectedId) return;
-    setUploading(fileType);
-    const ext = file.name.split(".").pop() ?? "bin";
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const path = `${selectedId}/${fileType}/${new Date().getTime()}-${safeName || `file.${ext}`}`;
-    const { error: uploadError } = await supabase.storage
-      .from("estate-staff-meetings")
-      .upload(path, file, { contentType: file.type || undefined, upsert: false });
-
-    if (uploadError) {
-      setUploading(null);
-      setMessage({ type: "error", text: `Upload failed: ${uploadError.message}` });
+    if (!user?.id || !user?.pin) {
+      setMessage({ type: "error", text: "Please log in again before uploading files." });
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("estate-staff-meetings").getPublicUrl(path);
-    const { error: fileError } = await supabase.from("estate_staff_meeting_files").insert([{
-      meeting_id: selectedId,
-      file_type: fileType,
-      file_name: file.name,
-      file_path: path,
-      public_url: urlData.publicUrl,
-      content_type: file.type || null,
-      file_size: file.size,
-      uploaded_by: user?.name ?? null,
-    }]);
+    setUploading(fileType);
+    const formData = new FormData();
+    formData.append("meetingId", selectedId);
+    formData.append("fileType", fileType);
+    formData.append("uploadedBy", user.name);
+    formData.append("file", file);
+    const response = await fetch("/api/estate-staff-meetings/files", {
+      method: "POST",
+      headers: {
+        "x-msp-user-id": user.id,
+        "x-msp-user-pin": user.pin,
+      },
+      body: formData,
+    });
 
     setUploading(null);
-    if (fileError) {
-      setMessage({ type: "error", text: `File uploaded, but record save failed: ${fileError.message}` });
+    if (!response.ok) {
+      setMessage({ type: "error", text: await readApiError(response, "File upload failed") });
       return;
     }
     await loadMeetings();
@@ -501,11 +473,39 @@ export default function EstateStaffMeetingsPage() {
     ? `Last comment by ${form.minutes_updated_by} on ${fmtTimestamp(form.minutes_updated_at)}`
     : "No comments entered yet";
   const canEdit = user?.role === "admin" || user?.role === "supervisor" || user?.role === "ceo";
+  const isAdmin = user?.role === "admin";
+
+  const deleteMeeting = async () => {
+    if (!selectedId || !selected) {
+      setMessage({ type: "error", text: "Select a meeting before deleting." });
+      return;
+    }
+    const headers = authHeaders(user);
+    if (!headers) {
+      setMessage({ type: "error", text: "Please log in again before deleting meetings." });
+      return;
+    }
+    if (!window.confirm(`Delete "${selected.title}" from ${fmtDate(selected.meeting_date)}? This cannot be undone.`)) return;
+
+    const response = await fetch(`/api/estate-staff-meetings/${selectedId}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      setMessage({ type: "error", text: await readApiError(response, "Failed to delete estate staff meeting") });
+      return;
+    }
+
+    startNewMeeting();
+    await loadMeetings();
+    setMessage({ type: "ok", text: "Estate staff meeting deleted." });
+  };
 
   if (user && !canEdit) {
     return (
       <div className={css.panel}>
-        <div className={css.empty}>Estate Staff Meetings is available to admin, supervisor and CEO users.</div>
+        <div className={css.empty}>Estate Staff Meetings is available to CEO, admin and supervisor users.</div>
       </div>
     );
   }
@@ -531,6 +531,11 @@ export default function EstateStaffMeetingsPage() {
           <button className={`${css.btn} ${css.btnPrimary}`} onClick={saveMeeting} disabled={saving}>
             {saving ? <Loader2 size={15} /> : <Save size={15} />} Save
           </button>
+          {isAdmin && selectedId && (
+            <button className={`${css.btn} ${css.btnDanger}`} onClick={deleteMeeting}>
+              <Trash2 size={15} /> Delete
+            </button>
+          )}
           <MeetingPrintPreview
             registerName="Estate Staff Meetings"
             eyebrow="Governance Register"
@@ -578,12 +583,12 @@ export default function EstateStaffMeetingsPage() {
         </div>
       </section>
 
-      <section className={css.mainGrid}>
-        <div className={css.panel}>
+      <section className={css.workbench}>
+        <div className={`${css.panel} ${css.registerPanel}`}>
           <div className={css.panelHead}>
             <div>
               <div className={css.panelTitle}>Meeting Register</div>
-              <div className={css.panelSub}>Click any row to open the meeting workspace</div>
+              <div className={css.panelSub}>Select a record to edit the complete meeting file</div>
             </div>
             {loading && <Loader2 size={18} />}
           </div>
@@ -610,73 +615,70 @@ export default function EstateStaffMeetingsPage() {
               </select>
             </div>
           </div>
-          <div className={css.tableWrap}>
-            <table className={css.table}>
-              <thead>
-                <tr>
-                  <th>Date / Type</th>
-                  <th>Agenda</th>
-                  <th>Participants</th>
-                  <th>Minutes</th>
-                  <th>Files</th>
-                  <th>Follow Up</th>
-                  <th>Next Meeting</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMeetings.map((m) => {
-                  const actions = m.estate_staff_meeting_actions ?? [];
-                  const overdue = actions.filter(actionIsOverdue).length;
-                  const files = m.estate_staff_meeting_files ?? [];
-                  return (
-                    <tr key={m.id} className={m.id === selectedId ? css.selectedRow : ""} onClick={() => setSelectedId(m.id)}>
-                      <td>
-                        <div className={css.recordTitle}>{fmtDate(m.meeting_date)}</div>
-                        <div className={css.muted}>{m.meeting_type}</div>
-                        <div className={css.muted}>Quorum: {m.quorum_status}</div>
-                      </td>
-                      <td>
-                        {m.agenda_summary || "-"}
-                        <div className={css.muted}>{m.estate_staff_meeting_agenda_items?.length ?? 0} agenda items</div>
-                      </td>
-                      <td>
-                        {(m.estate_staff_meeting_participants ?? []).slice(0, 3).map((p) => p.name).join(", ") || "-"}
-                        {(m.estate_staff_meeting_participants?.length ?? 0) > 3 && <div className={css.muted}>+{(m.estate_staff_meeting_participants?.length ?? 0) - 3} more</div>}
-                      </td>
-                      <td>
-                        <span className={`${css.badge} ${statusClass(m.approval_status)}`}>{m.approval_status}</span>
-                        <div className={css.muted}>Owner: {m.minute_owner || "-"}</div>
-                      </td>
-                      <td>
-                        <div className={css.muted}>Signed: {fileFor(files, "signed-minutes") ? "yes" : "pending"}</div>
-                        <div className={css.muted}>Audio: {fileFor(files, "audio") ? "yes" : "pending"}</div>
-                      </td>
-                      <td>
-                        <span className={`${css.badge} ${overdue ? css.badgeRisk : css.badgeNeutral}`}>
-                          {overdue ? `${overdue} overdue` : `${actions.filter((a) => a.status !== "completed").length} open`}
-                        </span>
-                      </td>
-                      <td>
-                        {fmtDate(m.next_meeting_date)}
-                        <div className={css.muted}>{displayTime(m.next_meeting_time)} {m.next_meeting_location || ""}</div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className={css.meetingList}>
+            {filteredMeetings.map((m) => {
+              const actions = m.estate_staff_meeting_actions ?? [];
+              const overdue = actions.filter(actionIsOverdue).length;
+              const files = m.estate_staff_meeting_files ?? [];
+              return (
+                <button
+                  type="button"
+                  key={m.id}
+                  className={`${css.meetingCard} ${m.id === selectedId ? css.meetingCardActive : ""}`}
+                  onClick={() => setSelectedId(m.id)}
+                >
+                  <div className={css.meetingCardTop}>
+                    <div>
+                      <div className={css.recordTitle}>{m.title}</div>
+                      <div className={css.muted}>{fmtDate(m.meeting_date)} | {displayTime(m.start_time)} | {m.meeting_type}</div>
+                    </div>
+                    <span className={`${css.badge} ${statusClass(m.approval_status)}`}>{m.approval_status}</span>
+                  </div>
+                  <div className={css.cardSummary}>{m.agenda_summary || "No agenda summary entered"}</div>
+                  <div className={css.cardMetaGrid}>
+                    <span>People: {m.estate_staff_meeting_participants?.length ?? 0}</span>
+                    <span>Agenda: {m.estate_staff_meeting_agenda_items?.length ?? 0}</span>
+                    <span>Files: {files.length}</span>
+                    <span>{overdue ? `${overdue} overdue` : `${actions.filter((a) => a.status !== "completed").length} open`}</span>
+                  </div>
+                  <div className={css.cardFooter}>
+                    <span>Quorum: {m.quorum_status}</span>
+                    <span>Next: {fmtDate(m.next_meeting_date)}</span>
+                  </div>
+                </button>
+              );
+            })}
             {!loading && filteredMeetings.length === 0 && <div className={css.empty}>No estate staff meetings found.</div>}
           </div>
         </div>
 
-        <div className={css.panel}>
-          <div className={css.panelHead}>
+        <div className={`${css.panel} ${css.editorPanel}`}>
+          <div className={`${css.panelHead} ${css.editorHead}`}>
             <div>
               <div className={css.panelTitle}>{selectedId ? "Meeting Workspace" : "New Meeting"}</div>
               <div className={css.panelSub}>{selectedId ? "Edit minutes, files, approvals and next meeting" : "Save once before adding files or actions"}</div>
             </div>
+            <div className={css.editorActions}>
+              <button className={`${css.btn} ${css.btnGold}`} onClick={startNewMeeting}>
+                <CalendarPlus size={15} /> New
+              </button>
+              <button className={`${css.btn} ${css.btnPrimary}`} onClick={saveMeeting} disabled={saving}>
+                {saving ? <Loader2 size={15} /> : <Save size={15} />} Save
+              </button>
+              {isAdmin && selectedId && (
+                <button className={`${css.btn} ${css.btnDanger}`} onClick={deleteMeeting}>
+                  <Trash2 size={15} /> Delete
+                </button>
+              )}
+            </div>
           </div>
           <div className={css.detailBody}>
+            <div className={css.summaryStrip}>
+              <div><span>Date</span><strong>{fmtDate(form.meeting_date)}</strong></div>
+              <div><span>Status</span><strong>{form.approval_status}</strong></div>
+              <div><span>Owner</span><strong>{form.minute_owner || "-"}</strong></div>
+              <div><span>Next</span><strong>{fmtDate(form.next_meeting_date)}</strong></div>
+            </div>
             <div className={css.section}>
               <div className={css.sectionHead}>
                 <div className={css.sectionTitle}>Meeting Details</div>

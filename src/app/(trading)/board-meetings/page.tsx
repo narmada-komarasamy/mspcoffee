@@ -10,6 +10,7 @@ import {
   Loader2,
   Plus,
   Save,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -236,7 +237,7 @@ export default function BoardMeetingsPage() {
     })) as Meeting[];
 
     setMeetings(rows);
-    setSelectedId((current) => current ?? rows[0]?.id ?? null);
+    setSelectedId((current) => rows.some((row) => row.id === current) ? current : rows[0]?.id ?? null);
     setLoading(false);
   }, []);
 
@@ -472,6 +473,34 @@ export default function BoardMeetingsPage() {
     ? `Last comment by ${form.minutes_updated_by} on ${fmtTimestamp(form.minutes_updated_at)}`
     : "No comments entered yet";
   const canEdit = user?.role === "admin" || user?.role === "supervisor" || user?.role === "ceo";
+  const isAdmin = user?.role === "admin";
+
+  const deleteMeeting = async () => {
+    if (!selectedId || !selected) {
+      setMessage({ type: "error", text: "Select a meeting before deleting." });
+      return;
+    }
+    const headers = authHeaders(user);
+    if (!headers) {
+      setMessage({ type: "error", text: "Please log in again before deleting meetings." });
+      return;
+    }
+    if (!window.confirm(`Delete "${selected.title}" from ${fmtDate(selected.meeting_date)}? This cannot be undone.`)) return;
+
+    const response = await fetch(`/api/board-meetings/${selectedId}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      setMessage({ type: "error", text: await readApiError(response, "Failed to delete board meeting") });
+      return;
+    }
+
+    startNewMeeting();
+    await loadMeetings();
+    setMessage({ type: "ok", text: "Board meeting deleted." });
+  };
 
   if (user && !canEdit) {
     return (
@@ -502,6 +531,11 @@ export default function BoardMeetingsPage() {
           <button className={`${css.btn} ${css.btnPrimary}`} onClick={saveMeeting} disabled={saving}>
             {saving ? <Loader2 size={15} /> : <Save size={15} />} Save
           </button>
+          {isAdmin && selectedId && (
+            <button className={`${css.btn} ${css.btnDanger}`} onClick={deleteMeeting}>
+              <Trash2 size={15} /> Delete
+            </button>
+          )}
           <MeetingPrintPreview
             registerName="Board Meetings"
             eyebrow="Board Governance Register"
@@ -631,6 +665,11 @@ export default function BoardMeetingsPage() {
               <button className={`${css.btn} ${css.btnPrimary}`} onClick={saveMeeting} disabled={saving}>
                 {saving ? <Loader2 size={15} /> : <Save size={15} />} Save
               </button>
+              {isAdmin && selectedId && (
+                <button className={`${css.btn} ${css.btnDanger}`} onClick={deleteMeeting}>
+                  <Trash2 size={15} /> Delete
+                </button>
+              )}
             </div>
           </div>
           <div className={css.detailBody}>

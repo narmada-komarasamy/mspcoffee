@@ -80,6 +80,13 @@
 }
 .btnGold:hover { color: #173f28; background: #c9a231; }
 
+.btnDanger {
+  border-color: #be3a34;
+  background: #be3a34;
+  color: #ffffff;
+}
+.btnDanger:hover { background: #9f2f2a; color: #ffffff; }
+
 .stats {
   display: grid;
   grid-template-columns: repeat(5, minmax(150px, 1fr));
