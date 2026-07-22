@@ -572,12 +572,137 @@ function FieldLabel({ en, ta }: { en: string; ta: string }) {
   );
 }
 
+const tamilIndependentVowels: Record<string, string> = {
+  au: "ஔ",
+  ai: "ஐ",
+  aa: "ஆ",
+  ii: "ஈ",
+  ee: "ஈ",
+  uu: "ஊ",
+  oo: "ஊ",
+  a: "அ",
+  i: "இ",
+  u: "உ",
+  e: "எ",
+  o: "ஒ",
+};
+
+const tamilVowelMarks: Record<string, string> = {
+  au: "ௌ",
+  ai: "ை",
+  aa: "ா",
+  ii: "ீ",
+  ee: "ீ",
+  uu: "ூ",
+  oo: "ூ",
+  a: "",
+  i: "ி",
+  u: "ு",
+  e: "ெ",
+  o: "ொ",
+};
+
+const tamilConsonants: Record<string, string> = {
+  ng: "ங",
+  nj: "ஞ",
+  zh: "ழ",
+  sh: "ஷ",
+  ch: "ச",
+  th: "த",
+  dh: "த",
+  kh: "க",
+  gh: "க",
+  ph: "ப",
+  bh: "ப",
+  tt: "ட்ட",
+  dd: "ட்ட",
+  pp: "ப்ப",
+  bb: "ப்ப",
+  kk: "க்க",
+  gg: "க்க",
+  mm: "ம்ம",
+  nn: "ன்ன",
+  ll: "ல்ல",
+  rr: "ற்ற",
+  k: "க",
+  g: "க",
+  c: "க",
+  s: "ஸ",
+  j: "ஜ",
+  t: "த",
+  d: "ட",
+  n: "ந",
+  p: "ப",
+  b: "ப",
+  m: "ம",
+  y: "ய",
+  r: "ர",
+  l: "ல",
+  v: "வ",
+  w: "வ",
+  h: "ஹ",
+  f: "ஃப",
+  z: "ஜ",
+};
+
+const tamilVowelKeys = Object.keys(tamilIndependentVowels).sort((a, b) => b.length - a.length);
+const tamilConsonantKeys = Object.keys(tamilConsonants).sort((a, b) => b.length - a.length);
+
+function readTamilToken(source: string, index: number, tokens: string[]) {
+  const remaining = source.slice(index).toLowerCase();
+  return tokens.find((token) => remaining.startsWith(token)) ?? "";
+}
+
+function transliterateRomanTamilWord(word: string, finalizeEnd: boolean) {
+  let output = "";
+  let index = 0;
+
+  while (index < word.length) {
+    const consonant = readTamilToken(word, index, tamilConsonantKeys);
+    if (consonant) {
+      const afterConsonant = index + consonant.length;
+      const vowel = readTamilToken(word, afterConsonant, tamilVowelKeys);
+      if (vowel) {
+        output += tamilConsonants[consonant] + tamilVowelMarks[vowel];
+        index = afterConsonant + vowel.length;
+      } else if (afterConsonant === word.length && !finalizeEnd) {
+        output += word.slice(index);
+        index = word.length;
+      } else {
+        output += tamilConsonants[consonant] + "்";
+        index = afterConsonant;
+      }
+      continue;
+    }
+
+    const vowel = readTamilToken(word, index, tamilVowelKeys);
+    if (vowel) {
+      output += tamilIndependentVowels[vowel];
+      index += vowel.length;
+      continue;
+    }
+
+    output += word[index];
+    index += 1;
+  }
+
+  return output;
+}
+
+function transliterateRomanTamil(value: string, finalizeEnd = false) {
+  return value.replace(/[A-Za-z]+/g, (word, offset) => {
+    const wordEndsAtInputEnd = offset + word.length === value.length;
+    return transliterateRomanTamilWord(word, finalizeEnd || !wordEndsAtInputEnd);
+  });
+}
+
 type TamilTextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> & {
   value: string;
   onValueChange: (value: string) => void;
+  transliterate?: boolean;
 };
 
-function TamilTextInput({ value, onValueChange, ...props }: TamilTextInputProps) {
+function TamilTextInput({ value, onValueChange, transliterate = true, ...props }: TamilTextInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const composingRef = useRef(false);
 
@@ -601,13 +726,29 @@ function TamilTextInput({ value, onValueChange, ...props }: TamilTextInputProps)
       }}
       onCompositionEnd={(event) => {
         composingRef.current = false;
-        const nextValue = event.currentTarget.value;
+        const nextValue = transliterate ? transliterateRomanTamil(event.currentTarget.value) : event.currentTarget.value;
+        event.currentTarget.value = nextValue;
         onValueChange(nextValue);
         props.onCompositionEnd?.(event);
       }}
       onChange={(event) => {
-        const nextValue = event.target.value;
+        const rawValue = event.target.value;
+        const nextValue = transliterate ? transliterateRomanTamil(rawValue) : rawValue;
+        if (nextValue !== rawValue) {
+          const caret = event.target.selectionStart ?? rawValue.length;
+          event.target.value = nextValue;
+          const nextCaret = transliterateRomanTamil(rawValue.slice(0, caret)).length;
+          window.requestAnimationFrame(() => event.target.setSelectionRange(nextCaret, nextCaret));
+        }
         if (!composingRef.current) onValueChange(nextValue);
+      }}
+      onBlur={(event) => {
+        if (transliterate) {
+          const nextValue = transliterateRomanTamil(event.currentTarget.value, true);
+          event.currentTarget.value = nextValue;
+          onValueChange(nextValue);
+        }
+        props.onBlur?.(event);
       }}
     />
   );
@@ -616,9 +757,10 @@ function TamilTextInput({ value, onValueChange, ...props }: TamilTextInputProps)
 type TamilTextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "value"> & {
   value: string;
   onValueChange: (value: string) => void;
+  transliterate?: boolean;
 };
 
-function TamilTextarea({ value, onValueChange, ...props }: TamilTextareaProps) {
+function TamilTextarea({ value, onValueChange, transliterate = true, ...props }: TamilTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composingRef = useRef(false);
 
@@ -642,13 +784,29 @@ function TamilTextarea({ value, onValueChange, ...props }: TamilTextareaProps) {
       }}
       onCompositionEnd={(event) => {
         composingRef.current = false;
-        const nextValue = event.currentTarget.value;
+        const nextValue = transliterate ? transliterateRomanTamil(event.currentTarget.value) : event.currentTarget.value;
+        event.currentTarget.value = nextValue;
         onValueChange(nextValue);
         props.onCompositionEnd?.(event);
       }}
       onChange={(event) => {
-        const nextValue = event.target.value;
+        const rawValue = event.target.value;
+        const nextValue = transliterate ? transliterateRomanTamil(rawValue) : rawValue;
+        if (nextValue !== rawValue) {
+          const caret = event.target.selectionStart ?? rawValue.length;
+          event.target.value = nextValue;
+          const nextCaret = transliterateRomanTamil(rawValue.slice(0, caret)).length;
+          window.requestAnimationFrame(() => event.target.setSelectionRange(nextCaret, nextCaret));
+        }
         if (!composingRef.current) onValueChange(nextValue);
+      }}
+      onBlur={(event) => {
+        if (transliterate) {
+          const nextValue = transliterateRomanTamil(event.currentTarget.value, true);
+          event.currentTarget.value = nextValue;
+          onValueChange(nextValue);
+        }
+        props.onBlur?.(event);
       }}
     />
   );
@@ -1645,7 +1803,7 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="PAN (if any)" ta="பான் எண் (இருந்தால்)" />
-                    <TamilTextInput className={css.input} value={form.pan} onValueChange={(value) => update("pan", value)} />
+                    <TamilTextInput className={css.input} value={form.pan} onValueChange={(value) => update("pan", value)} transliterate={false} />
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Mobile Number" ta="அலைபேசி எண்" />
