@@ -202,16 +202,23 @@
   border-bottom: 4px solid #b8863b;
 }
 
-.seal {
+.logoMark {
   flex: 0 0 auto;
-  width: 64px;
-  height: 64px;
+  width: 86px;
+  height: 86px;
   border: 2px solid #ddbd7e;
-  border-radius: 50%;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: #050505;
+  padding: 6px;
+}
+
+.logoMark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .title {

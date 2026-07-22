@@ -404,6 +404,9 @@ const familyNames = {
   aadhaar: "famAadhaar[]",
 };
 
+const companyAddress = "369/2, Moganad Estate, Semmanatham, Yercaud, Tamil Nadu - 636602.";
+const mspLogoPath = "/msp-logo.png";
+
 function textFromElement(element: Element | null) {
   return element?.textContent?.trim() ?? "";
 }
@@ -1439,6 +1442,7 @@ export default function EmployeeCenterPage() {
 body{margin:0;background:#f2ebd9;color:#2b2620;font-family:Arial,sans-serif;padding:24px}
 .sheet{max-width:900px;margin:0 auto;background:#faf6ec;border:1px solid #dbd0b4}
 .head{display:flex;gap:18px;align-items:center;background:#2f4a3a;color:#fffefb;padding:24px 32px;border-bottom:4px solid #b8863b}
+.brand-logo{width:96px;height:96px;object-fit:contain;border:1px solid #ddbd7e;background:#050505;padding:6px}
 .photo{width:110px;height:128px;border:2px dashed #ddbd7e;display:flex;align-items:center;justify-content:center;background:#fffefb;color:#635a48;overflow:hidden}
 .photo img{width:100%;height:100%;object-fit:cover}.content{padding:24px 32px}.section{border-top:1px solid #dbd0b4;padding-top:18px;margin-top:18px}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}.field strong{display:block;font-size:12px;color:#635a48}.field input,.field textarea,td input{width:100%;box-sizing:border-box;border:1px solid #dbd0b4;border-radius:4px;background:#fffefb;color:#2b2620;font:14px Arial,'Noto Sans Tamil',sans-serif;padding:7px 8px}.field textarea{min-height:58px;resize:vertical}
@@ -1448,7 +1452,7 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 </style>
 </head>
 <body><div class="sheet">
-<div class="head"><div><h1>MSP Coffee (P) Ltd.</h1><p>Application Form - For Farm Labor</p><p>Stanmore Estate, Nagalur, Yercaud, Salem - 636602</p></div><div class="photo">${photo ? `<img src="${photo}" alt="Applicant photo">` : "Photo"}</div></div>
+<div class="head"><img class="brand-logo" src="${mspLogoPath}" alt="MSP Coffee logo"><div><h1>MSP Coffee (P) Ltd.</h1><p>Application Form - For Farm Labor</p><p>${escapeHtml(companyAddress)}</p></div><div class="photo">${photo ? `<img src="${photo}" alt="Applicant photo">` : "Photo"}</div></div>
 <div class="content">
 <div class="section"><h2>Personal Details</h2><div class="grid">
 ${field("estateName", "Estate Name", form.estateName)}${field("fullName", "Full Name", form.fullName)}${field("parentSpouseName", "Father's / Husband's Name", form.parentSpouseName)}${field("dob", "Date of Birth", form.dob)}${field("age", "Age", form.age)}${field("gender", "Gender", form.gender)}${field("maritalStatus", "Marital Status", form.maritalStatus)}${field("aadhaar", "Aadhaar Number", form.aadhaar)}${field("pan", "PAN", form.pan)}${field("mobile", "Mobile", form.mobile)}${field("altContact", "Alternate Contact", form.altContact)}${field("reference", "Reference", form.reference)}${field("permAddress", "Permanent Address", form.permAddress, true)}${field("currAddress", "Current Address", form.currAddress, true)}
@@ -1537,16 +1541,13 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
 
         <div className={css.shell}>
         <header className={css.letterhead}>
-          <div className={css.seal} aria-hidden="true">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-              <ellipse cx="12" cy="12" rx="8" ry="10" stroke="#DDBD7E" strokeWidth="1.4" />
-              <path d="M12 2 C 12 7, 12 17, 12 22" stroke="#DDBD7E" strokeWidth="1.4" />
-            </svg>
+          <div className={css.logoMark}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mspLogoPath} alt="MSP Coffee logo" />
           </div>
           <div>
             <h1 className={css.title}>MSP Coffee (P) Ltd.</h1>
-            <p className={css.sub}>Stanmore Estate, Nagalur, Yercaud, Salem - 636602</p>
-            <p className={`${css.sub} ${css.tamil}`}>ஸ்டான்மோர் எஸ்டேட், நாகலூர், ஏற்காடு, சேலம் - 636602</p>
+            <p className={css.sub}>{companyAddress}</p>
             <div className={css.formTitle}>
               Application Form - For Farm Labor{" "}
               <span className={css.tamil}>| விண்ணப்பப் படிவம் - தோட்டத் தொழிலாளர்களுக்கான</span>
