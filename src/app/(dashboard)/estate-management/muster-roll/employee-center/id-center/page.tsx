@@ -32,6 +32,12 @@ type CardForm = {
   address: string;
 };
 
+type IdCenterPrefill = {
+  employeeId: string;
+  photo: string;
+  form: CardForm;
+};
+
 const initialForm: CardForm = {
   fullName: "Arjun Menon",
   designation: "Field Supervisor",
@@ -44,6 +50,7 @@ const initialForm: CardForm = {
 };
 
 const logoPath = "/msp-id-logo.png";
+const idCenterPrefillStorageKey = "msp-id-center-prefill";
 
 const splitEstateName = (estateName: string) => {
   const clean = estateName.trim() || "Moganad Estate";
@@ -73,6 +80,19 @@ const cardFormFromEmployee = (employee: EmployeeIdRecord): CardForm => {
   };
 };
 
+const readIdCenterPrefill = (employeeId: string): IdCenterPrefill | null => {
+  const raw = window.sessionStorage.getItem(idCenterPrefillStorageKey);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as IdCenterPrefill;
+    return parsed.employeeId === employeeId ? parsed : null;
+  } catch {
+    window.sessionStorage.removeItem(idCenterPrefillStorageKey);
+    return null;
+  }
+};
+
 export default function EmployeeIdCenterPage() {
   const [form, setForm] = useState<CardForm>(initialForm);
   const [employee, setEmployee] = useState<EmployeeIdRecord | null>(null);
@@ -94,6 +114,12 @@ export default function EmployeeIdCenterPage() {
 
     let cancelled = false;
     const timer = window.setTimeout(() => {
+      const prefill = readIdCenterPrefill(employeeId);
+      if (prefill) {
+        setForm(prefill.form);
+        setPhoto(prefill.photo);
+      }
+
       setLoading(true);
 
       supabase
@@ -113,8 +139,9 @@ export default function EmployeeIdCenterPage() {
             const selected = data as EmployeeIdRecord;
             setEmployee(selected);
             setForm(cardFormFromEmployee(selected));
-            setPhoto(selected.photo_public_url || "");
+            setPhoto((currentPhoto) => selected.photo_public_url || currentPhoto || "");
             setMessage("");
+            window.sessionStorage.removeItem(idCenterPrefillStorageKey);
           }
 
           setLoading(false);

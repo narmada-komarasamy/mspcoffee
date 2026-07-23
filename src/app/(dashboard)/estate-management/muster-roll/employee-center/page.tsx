@@ -316,6 +316,38 @@ const payloadFromForm = (form: FormState, photoUrl: string | null, photoPath: st
   photo_path: photoPath,
 });
 
+const splitEstateNameForIdCard = (estateName: string) => {
+  const clean = estateName.trim() || "Moganad Estate";
+  return clean.toLowerCase().endsWith(" estate")
+    ? [clean.slice(0, -7), "Estate"]
+    : [clean, "Estate"];
+};
+
+const formatMobileForIdCard = (mobile: string) => {
+  const clean = mobile.trim();
+  if (!clean) return "";
+  return clean.startsWith("+") ? clean : `+91 ${clean}`;
+};
+
+const idCardPrefillFromForm = (form: FormState, photo: string, employeeId: string) => {
+  const [estateLine1, estateLine2] = splitEstateNameForIdCard(form.estateName);
+
+  return {
+    employeeId,
+    photo,
+    form: {
+      fullName: form.fullName,
+      designation: form.jobRole || form.section,
+      place: form.section || estateLine1,
+      estateLine1,
+      estateLine2,
+      bloodGroup: form.bloodGroup,
+      mobile: formatMobileForIdCard(form.mobile),
+      address: form.currAddress || form.permAddress,
+    },
+  };
+};
+
 const escapeHtml = (value: string) =>
   value
     .replaceAll("&", "&amp;")
@@ -406,6 +438,7 @@ const familyNames = {
 
 const companyAddress = "369/2, Moganad Estate, Semmanatham, Yercaud, Tamil Nadu - 636602.";
 const mspLogoPath = "/msp-logo.png";
+const idCenterPrefillStorageKey = "msp-id-center-prefill";
 
 function textFromElement(element: Element | null) {
   return element?.textContent?.trim() ?? "";
@@ -1369,6 +1402,10 @@ export default function EmployeeCenterPage() {
     const employeeId = await saveEmployee(false);
     if (!employeeId) return;
 
+    window.sessionStorage.setItem(
+      idCenterPrefillStorageKey,
+      JSON.stringify(idCardPrefillFromForm(form, photo, employeeId))
+    );
     router.push(`/estate-management/muster-roll/employee-center/id-center?employee=${employeeId}`);
   };
 
