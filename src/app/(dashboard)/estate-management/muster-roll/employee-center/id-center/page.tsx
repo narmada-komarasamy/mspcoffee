@@ -43,7 +43,7 @@ const initialForm: CardForm = {
   address: "123 Coffee Lane, Brewsville, Grounds 12345",
 };
 
-const logoPath = "/msp-logo.png";
+const logoPath = "/msp-id-logo.png";
 
 const splitEstateName = (estateName: string) => {
   const clean = estateName.trim() || "Moganad Estate";
@@ -312,7 +312,7 @@ function IdCardFront({
 }) {
   return (
     <article className={`${css.card} ${css.cardFront}`}>
-      <CardBackground />
+      <FrontBackground />
       <div className={css.frontContent}>
         <img className={css.frontLogo} src={logoPath} alt="MSP Coffee logo" />
 
@@ -335,7 +335,7 @@ function IdCardFront({
         <div className={css.sigRow}>
           <div>
             {signature ? <img className={css.signatureImage} src={signature} alt="" /> : null}
-            <span>Holder Signature</span>
+            <span>Authority Signature</span>
           </div>
           <img className={css.miniLogo} src={logoPath} alt="" />
         </div>
@@ -347,7 +347,7 @@ function IdCardFront({
 function IdCardBack({ form, signature }: { form: CardForm; signature: string }) {
   return (
     <article className={`${css.card} ${css.cardBack}`}>
-      <CardBackground />
+      <BackBackground />
       <div className={css.backContent}>
         <img className={css.backLogo} src={logoPath} alt="MSP Coffee logo" />
         <div className={`${css.goldText} ${css.backTitle}`}>MSP COFFEE</div>
@@ -378,7 +378,7 @@ function IdCardBack({ form, signature }: { form: CardForm; signature: string }) 
   );
 }
 
-function CardBackground() {
+function FrontBackground() {
   return (
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
       <defs>
@@ -393,22 +393,59 @@ function CardBackground() {
         </linearGradient>
       </defs>
       <path
-        d="M-15,-10 C55,55 -20,110 45,175 C90,225 15,270 55,340 L15,340 C-25,270 50,225 5,175 C-60,110 15,55 -55,-10 Z"
+        d="M-34,-16 C48,62 18,114 50,168 C80,218 12,263 35,366 L10,366 C-22,270 44,220 9,172 C-44,100 5,50 -62,-16 Z"
         fill="url(#idGoldGrad)"
       />
       <path
-        d="M20,-10 C90,60 25,125 90,190 C130,235 65,275 100,340 L75,340 C40,275 105,235 65,190 C0,125 65,60 -5,-10 Z"
+        d="M15,-16 C78,58 36,125 91,184 C132,228 76,275 109,366 L84,366 C47,281 101,234 63,190 C4,122 50,56 -12,-16 Z"
         fill="url(#idGoldGrad2)"
         opacity=".85"
       />
-      <g fill="none" stroke="#e3c777" strokeWidth="1.4" opacity=".42" transform="translate(116 205)">
-        <path d="M10,110 C10,70 25,40 55,15" />
-        <path d="M25,95 C25,75 40,60 60,50 C48,60 40,72 35,90 Z" />
-        <path d="M40,75 C45,55 60,42 82,35 C68,42 58,55 55,72 Z" />
-        <path d="M60,55 C68,38 85,28 105,25 C90,32 78,42 73,58 Z" />
-        <circle cx="30" cy="98" r="4" fill="#e3c777" stroke="none" />
-        <circle cx="38" cy="90" r="4" fill="#e3c777" stroke="none" />
-        <circle cx="95" cy="30" r="4" fill="#e3c777" stroke="none" />
+      <path
+        d="M51,158 C97,174 145,167 234,71 L234,104 C156,187 91,205 42,182 Z"
+        fill="url(#idGoldGrad)"
+        opacity=".9"
+      />
+      <path
+        d="M230,-12 C218,46 209,89 177,129 C145,170 116,181 76,181 L66,165 C111,157 143,139 165,102 C189,62 199,21 206,-12 Z"
+        fill="#031c14"
+        opacity=".62"
+      />
+      <path
+        d="M-8,270 C4,311 21,336 48,365 L20,365 C-5,330 -17,296 -20,257 Z"
+        fill="#05291f"
+        opacity=".55"
+      />
+    </svg>
+  );
+}
+
+function BackBackground() {
+  return (
+    <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
+      <rect width="225" height="350" fill="#05291f" />
+      <radialGradient id="backGlow" cx="50%" cy="45%" r="70%">
+        <stop offset="0%" stopColor="#0b3a2b" />
+        <stop offset="100%" stopColor="#031c14" />
+      </radialGradient>
+      <rect width="225" height="350" fill="url(#backGlow)" opacity=".85" />
+      <g fill="none" stroke="#87ad77" strokeWidth="1.1" opacity=".22">
+        <path d="M-6,26 C22,2 48,-2 78,18" />
+        <path d="M12,14 C21,37 39,53 72,66" />
+        <path d="M17,18 C34,20 48,31 61,52" />
+        <path d="M31,8 C41,24 52,34 76,42" />
+        <path d="M178,-2 C200,18 210,48 207,78" />
+        <path d="M204,16 C185,27 169,45 156,72" />
+        <path d="M198,34 C181,43 170,57 164,82" />
+        <path d="M3,235 C28,243 48,260 60,296" />
+        <path d="M14,327 C38,303 58,287 91,284" />
+        <path d="M176,260 C196,278 211,304 227,341" />
+        <path d="M221,255 C197,267 181,286 171,318" />
+      </g>
+      <g fill="none" stroke="#87ad77" strokeWidth=".9" opacity=".18">
+        <circle cx="7" cy="68" r="14" />
+        <circle cx="218" cy="36" r="13" />
+        <circle cx="17" cy="311" r="15" />
       </g>
     </svg>
   );
