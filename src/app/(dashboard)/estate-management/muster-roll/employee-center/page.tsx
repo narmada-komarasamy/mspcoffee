@@ -1406,8 +1406,12 @@ export default function EmployeeCenterPage() {
   };
 
   const moveToIdCenter = async () => {
-    const employeeId = await saveEmployee(false);
-    if (!employeeId) return;
+    const selectedEmployeeId = selectedId;
+    const employeeId = selectedEmployeeId || await saveEmployee(false);
+    if (!employeeId) {
+      flash("Save or select an employee before moving to ID Center");
+      return;
+    }
 
     const prefillPhoto = photo.startsWith("data:") ? "" : photo;
 
@@ -1421,7 +1425,13 @@ export default function EmployeeCenterPage() {
       }
     }
 
-    router.push(`/estate-management/muster-roll/employee-center/id-center?employee=${employeeId}`);
+    const idCenterPath = `/estate-management/muster-roll/employee-center/id-center?employee=${employeeId}`;
+    router.push(idCenterPath);
+    window.setTimeout(() => {
+      if (!window.location.pathname.endsWith("/estate-management/muster-roll/employee-center/id-center")) {
+        window.location.assign(idCenterPath);
+      }
+    }, 250);
   };
 
   const deleteEmployeeRecord = async () => {

@@ -115,6 +115,7 @@ export default function EmployeeIdCenterPage() {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       const prefill = readIdCenterPrefill(employeeId);
+      const hasPrefill = Boolean(prefill);
       if (prefill) {
         setForm(prefill.form);
         setPhoto(prefill.photo);
@@ -138,7 +139,7 @@ export default function EmployeeIdCenterPage() {
           } else {
             const selected = data as EmployeeIdRecord;
             setEmployee(selected);
-            setForm(cardFormFromEmployee(selected));
+            if (!hasPrefill) setForm(cardFormFromEmployee(selected));
             setPhoto((currentPhoto) => selected.photo_public_url || currentPhoto || "");
             setMessage("");
             window.sessionStorage.removeItem(idCenterPrefillStorageKey);
