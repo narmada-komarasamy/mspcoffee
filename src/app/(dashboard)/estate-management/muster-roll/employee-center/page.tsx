@@ -348,6 +348,13 @@ const idCardPrefillFromForm = (form: FormState, photo: string, employeeId: strin
   };
 };
 
+const storeIdCardPrefill = (form: FormState, photo: string, employeeId: string, includePhoto = true) => {
+  window.sessionStorage.setItem(
+    idCenterPrefillStorageKey,
+    JSON.stringify(idCardPrefillFromForm(form, includePhoto ? photo : "", employeeId))
+  );
+};
+
 const escapeHtml = (value: string) =>
   value
     .replaceAll("&", "&amp;")
@@ -1402,10 +1409,18 @@ export default function EmployeeCenterPage() {
     const employeeId = await saveEmployee(false);
     if (!employeeId) return;
 
-    window.sessionStorage.setItem(
-      idCenterPrefillStorageKey,
-      JSON.stringify(idCardPrefillFromForm(form, photo, employeeId))
-    );
+    const prefillPhoto = photo.startsWith("data:") ? "" : photo;
+
+    try {
+      storeIdCardPrefill(form, prefillPhoto, employeeId);
+    } catch {
+      try {
+        storeIdCardPrefill(form, prefillPhoto, employeeId, false);
+      } catch {
+        window.sessionStorage.removeItem(idCenterPrefillStorageKey);
+      }
+    }
+
     router.push(`/estate-management/muster-roll/employee-center/id-center?employee=${employeeId}`);
   };
 
