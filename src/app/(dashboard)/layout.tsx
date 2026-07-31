@@ -289,7 +289,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // Find the top-level nav item whose href matches the current path prefix
     const matchedItem = navItems.find(item => pathname.startsWith(item.href));
     if (!matchedItem) return; // unknown route — let it through
-    if (!allowedPages.has(matchedItem.href)) {
+    const requiredPages = new Set(REQUIRED_ROLE_PAGES[user.role] ?? []);
+    if (!allowedPages.has(matchedItem.href) && !requiredPages.has(matchedItem.href)) {
       router.replace('/unauthorized');
     }
   }, [pathname, user, allowedPages, router]);
@@ -354,6 +355,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // If allowedPages is loaded (non-null), use DB permissions; otherwise fall back to static roles
   const filteredNav = navItems.filter((item) => {
     if (user.role === 'admin') return true;
+    if ((REQUIRED_ROLE_PAGES[user.role] ?? []).includes(item.href)) return true;
     if (allowedPages !== null) return allowedPages.has(item.href);
     return item.roles.includes(user.role);
   });
