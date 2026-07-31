@@ -22,6 +22,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor', 'ceo'] },
+  { label: 'Operations Calendar', href: '/operations-calendar', iconName: 'CalendarDays', roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   {
     label: 'Recurring Bills', href: '/recurring-bills/phone-bills', iconName: 'FileText', roles: ['admin', 'supervisor', 'ceo'],
     children: [
