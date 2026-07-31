@@ -179,11 +179,11 @@ export default function SportsRegistrationsPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#f5f0eb] px-4 py-5 text-[#1f1a17] sm:px-6">
-      <div className="mx-auto max-w-xl overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(44,24,16,0.12)]">
-        <div className="bg-gradient-to-br from-[#2c1810] to-[#4a2c1a] px-6 py-6 text-center text-white">
+    <div className="ds-page px-4 py-5 sm:px-6">
+      <div className="mx-auto max-w-xl overflow-hidden rounded-xl border shadow-[0_8px_24px_rgba(27,74,27,0.10)]" style={{ background: "var(--t-card)", borderColor: "var(--t-border)" }}>
+        <div className="px-6 py-6 text-center text-white" style={{ background: "linear-gradient(135deg, var(--t-heading) 0%, var(--t-green) 100%)" }}>
           <div className="mb-2 flex items-center justify-center gap-2 text-2xl font-semibold">
-            <Trophy className="h-6 w-6 text-[#e8b86d]" />
+            <Trophy className="h-6 w-6" style={{ color: "var(--t-gold)" }} />
             <span>MSP Coffee</span>
           </div>
           <h1 className="text-lg font-medium">Sports League Registration</h1>
@@ -196,47 +196,50 @@ export default function SportsRegistrationsPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Full Name *</label>
+            <label className="ds-filter-label">Full Name *</label>
             <input
               required
               value={form.name}
               onChange={(event) => setField("name", event.target.value)}
-              className="w-full rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              className="w-full rounded-lg border px-3.5 py-3 text-base outline-none transition focus:ring-4"
+              style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}
               placeholder="Enter full name as on Aadhaar"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Phone as per Aadhaar</label>
+            <label className="ds-filter-label">Phone as per Aadhaar</label>
             <input
               inputMode="numeric"
               pattern="[0-9]{10}"
               value={form.phoneAsPerAadhaar}
               onChange={(event) => setField("phoneAsPerAadhaar", event.target.value.replace(/\D/g, "").slice(0, 10))}
-              className="w-full rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              className="w-full rounded-lg border px-3.5 py-3 text-base outline-none transition focus:ring-4"
+              style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}
               placeholder="Auto-filled if visible on Aadhaar"
             />
-            <p className="mt-1 text-xs text-[#6b5b4f]">Most Aadhaar cards do not print the linked phone number.</p>
+            <p className="mt-1 text-xs" style={{ color: "var(--t-muted)" }}>Most Aadhaar cards do not print the linked phone number.</p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Alternate Phone Number *</label>
+            <label className="ds-filter-label">Alternate Phone Number *</label>
             <input
               required
               inputMode="numeric"
               pattern="[0-9]{10}"
               value={form.alternatePhone}
               onChange={(event) => setField("alternatePhone", event.target.value.replace(/\D/g, "").slice(0, 10))}
-              className="w-full rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              className="w-full rounded-lg border px-3.5 py-3 text-base outline-none transition focus:ring-4"
+              style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}
               placeholder="10-digit contact number"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#2c1810]">Gender *</label>
+            <label className="ds-filter-label">Gender *</label>
             <div className="grid grid-cols-2 gap-3">
               {["Male", "Female"].map((gender) => (
-                <label key={gender} className="flex items-center gap-2 rounded-xl border border-[#e8ddd3] bg-[#fdfaf7] px-3 py-3">
+                <label key={gender} className="flex items-center gap-2 rounded-lg border px-3 py-3" style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}>
                   <input
                     required
                     type="radio"
@@ -244,7 +247,7 @@ export default function SportsRegistrationsPage() {
                     value={gender}
                     checked={form.gender === gender}
                     onChange={() => setField("gender", gender)}
-                    className="accent-[#c67c4e]"
+                    style={{ accentColor: "var(--t-accent)" }}
                   />
                   {gender}
                 </label>
@@ -253,63 +256,66 @@ export default function SportsRegistrationsPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Current Location / Address *</label>
+            <label className="ds-filter-label">Current Location / Address *</label>
             <textarea
               required
               value={form.currentLocation}
               onChange={(event) => setField("currentLocation", event.target.value)}
-              className="min-h-24 w-full resize-y rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              className="min-h-24 w-full resize-y rounded-lg border px-3.5 py-3 text-base outline-none transition focus:ring-4"
+              style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}
               placeholder="Enter current residential address"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Address as per Aadhaar *</label>
+            <label className="ds-filter-label">Address as per Aadhaar *</label>
             <textarea
               required
               value={form.aadhaarAddress}
               onChange={(event) => setField("aadhaarAddress", event.target.value)}
-              className="min-h-24 w-full resize-y rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              className="min-h-24 w-full resize-y rounded-lg border px-3.5 py-3 text-base outline-none transition focus:ring-4"
+              style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}
               placeholder="Enter the full address written on Aadhaar"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Registration Year *</label>
+            <label className="ds-filter-label">Registration Year *</label>
             <select
               required
               value={form.year}
               onChange={(event) => setField("year", event.target.value)}
-              className="w-full rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              className="w-full rounded-lg border px-3.5 py-3 text-base outline-none transition focus:ring-4"
+              style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}
             >
               {YEARS.map((year) => <option key={year}>{year}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#2c1810]">Sports interested in *</label>
+            <label className="ds-filter-label">Sports interested in *</label>
             <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
               {SPORTS.map((sport) => (
-                <label key={sport} className="flex items-center gap-2 rounded-xl border border-[#e8ddd3] bg-[#fdfaf7] px-3 py-3">
+                <label key={sport} className="flex items-center gap-2 rounded-lg border px-3 py-3" style={{ background: "var(--t-bg)", borderColor: "var(--t-border)", color: "var(--t-text)" }}>
                   <input
                     type="checkbox"
                     checked={form.sports.includes(sport)}
                     onChange={() => toggleSport(sport)}
-                    className="accent-[#c67c4e]"
+                    style={{ accentColor: "var(--t-accent)" }}
                   />
                   {sport}
                 </label>
               ))}
             </div>
-            <p className="mt-2 text-xs text-[#6b5b4f]">{selectedSportsText}</p>
+            <p className="mt-2 text-xs" style={{ color: "var(--t-muted)" }}>{selectedSportsText}</p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Aadhaar Card Photo *</label>
-            <label className="flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-[#d4c8bc] bg-[#fdfaf7] px-4 py-6 text-center transition hover:border-[#c67c4e] hover:bg-[#fff8f0]">
-              <Upload className="mb-2 h-7 w-7 text-[#a65d2e]" />
+            <label className="ds-filter-label">Aadhaar Card Photo *</label>
+            <label className="flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition" style={{ background: "var(--t-subtle)", borderColor: "var(--t-border)", color: "var(--t-text)" }}>
+              <Upload className="mb-2 h-7 w-7" style={{ color: "var(--t-accent)" }} />
               <span className="font-medium">{aadhaarFile ? aadhaarFile.name : "Click to upload Aadhaar photo"}</span>
-              <span className="mt-1 text-xs text-[#6b5b4f]">
+              <span className="mt-1 text-xs" style={{ color: "var(--t-muted)" }}>
                 {extractingAadhaar ? "Reading Aadhaar details..." : "JPG, PNG or PDF. Max 5 MB."}
               </span>
               <input
@@ -324,7 +330,7 @@ export default function SportsRegistrationsPage() {
               />
             </label>
             {extractMessage && (
-              <div className="mt-2 flex items-start gap-2 rounded-xl bg-[#fff8f0] px-3 py-2 text-xs text-[#5f3a22]">
+              <div className="mt-2 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs" style={{ background: "var(--t-subtle)", borderColor: "var(--t-border)", color: "var(--t-text)" }}>
                 <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>{extractMessage}</span>
               </div>
@@ -332,7 +338,7 @@ export default function SportsRegistrationsPage() {
           </div>
 
           {message && (
-            <div className="rounded-xl border border-[#e8ddd3] bg-[#fff8f0] px-4 py-3 text-sm text-[#5f3a22]">
+            <div className="rounded-lg border px-4 py-3 text-sm" style={{ background: "var(--t-subtle)", borderColor: "var(--t-border)", color: "var(--t-text)" }}>
               {message}
             </div>
           )}
@@ -340,23 +346,24 @@ export default function SportsRegistrationsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-gradient-to-br from-[#c67c4e] to-[#a65d2e] px-4 py-3.5 text-base font-semibold text-white shadow-[0_4px_12px_rgba(166,93,46,0.3)] transition hover:-translate-y-0.5 disabled:opacity-50"
+            className="w-full rounded-lg px-4 py-3.5 text-base font-semibold shadow-[0_4px_12px_rgba(27,74,27,0.20)] transition hover:-translate-y-0.5 disabled:opacity-50"
+            style={{ background: "var(--t-accent)", color: "var(--t-bg)" }}
           >
             {saving ? "Saving..." : "Submit Registration"}
           </button>
 
-          <p className="text-center text-xs text-[#6b5b4f]">
+          <p className="text-center text-xs" style={{ color: "var(--t-muted)" }}>
             Aadhaar is used only for verification. Entries are saved on this device first, so field entry can continue without internet.
           </p>
         </form>
 
-        <div className="border-t border-[#ebe4dc] bg-[#f8f4f0] px-6 py-4">
+        <div className="border-t px-6 py-4" style={{ background: "var(--t-subtle)", borderColor: "var(--t-border)" }}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-[#2c1810]">Pending on this device</div>
-              <div className="text-xs text-[#8a7a6d]">Stored locally until sync is connected</div>
+              <div className="text-sm font-semibold" style={{ color: "var(--t-heading)" }}>Pending on this device</div>
+              <div className="text-xs" style={{ color: "var(--t-muted)" }}>Stored locally until sync is connected</div>
             </div>
-            <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#2d6a4f]">
+            <div className="flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold" style={{ background: "var(--t-card)", color: "var(--t-heading)" }}>
               <CheckCircle2 className="h-4 w-4" />
               {pending.length}
             </div>
