@@ -14,6 +14,7 @@ const PAGES = [
   { href: '/estate-management',    label: 'Estate Management',    defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/processing-dashboard', label: 'Processing Dashboard', defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
   { href: '/labour-costs',         label: 'Labour Costs',         defaults: { supervisor: 'none' as Access, worker: 'none' as Access } },
+  { href: '/labour-activities',    label: 'Labour Activities',    defaults: { supervisor: 'none' as Access, worker: 'none' as Access } },
   { href: '/daily-report',         label: 'Daily Report',         defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
   { href: '/muster-roll',          label: 'Muster Roll',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
   { href: '/harvest-yield',        label: 'Harvest Yield',        defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },

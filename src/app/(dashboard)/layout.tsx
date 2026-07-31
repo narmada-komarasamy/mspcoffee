@@ -151,6 +151,14 @@ const navItems: NavItem[] = [
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
   {
+    label: 'Labour Activities', href: '/labour-activities', icon: Activity, roles: ['admin'],
+    children: [
+      { label: 'Sports Registrations', href: '/labour-activities/sports-registrations' },
+      { label: 'Health Camps', href: '/labour-activities/health-camps' },
+      { label: 'New Facilities', href: '/labour-activities/new-facilities' },
+    ],
+  },
+  {
     label: 'Daily Report', href: '/daily-report', icon: FileText, roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
       { label: 'Stanmore Estate', href: '/daily-report/stanmore-estate' },

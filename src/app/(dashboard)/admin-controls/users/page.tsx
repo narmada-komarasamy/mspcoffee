@@ -26,6 +26,7 @@ const PAGES = [
   { href: '/ho-fuel',              label: 'HO Fuel' },
   { href: '/processing-dashboard', label: 'Processing Dashboard' },
   { href: '/labour-costs',         label: 'Labour Costs' },
+  { href: '/labour-activities',    label: 'Labour Activities' },
   { href: '/daily-report',         label: 'Daily Report' },
   { href: '/muster-roll',          label: 'Muster Roll' },
   { href: '/harvest-yield',        label: 'Harvest Yield' },

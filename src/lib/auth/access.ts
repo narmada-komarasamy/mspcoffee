@@ -100,6 +100,14 @@ export const NAV_ITEMS: NavItemDef[] = [
     ],
   },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
+  {
+    label: 'Labour Activities', href: '/labour-activities', iconName: 'Activity', roles: ['admin'],
+    children: [
+      { label: 'Sports Registrations', href: '/labour-activities/sports-registrations' },
+      { label: 'Health Camps', href: '/labour-activities/health-camps' },
+      { label: 'New Facilities', href: '/labour-activities/new-facilities' },
+    ],
+  },
   { label: 'Cup Score Catalogue', href: '/cup-scores',      iconName: 'Award',        roles: ['admin', 'supervisor', 'ceo'] },
   {
     label: 'Daily Report',        href: '/daily-report',    iconName: 'FileText',     roles: ['admin', 'supervisor', 'worker', 'ceo'],
