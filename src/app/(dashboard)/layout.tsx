@@ -205,6 +205,10 @@ const navItems: NavItem[] = [
   },
 ];
 
+const REQUIRED_ROLE_PAGES: Record<string, string[]> = {
+  hr: ['/operations-calendar', '/labour-activities'],
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -239,7 +243,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .eq('id', cached.id)
       .single()
       .then(async ({ data, error }) => {
-        const verifiedRole = ((!error && data) ? data.role : cached.role).toLowerCase();
+        const verifiedRole = ((!error && data) ? data.role : cached.role).trim().toLowerCase();
         const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate };
         setUser(verified);
         localStorage.setItem('msp_user', JSON.stringify(verified));
@@ -258,14 +262,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (perms) {
           const configuredPages = new Set<string>();
           const visiblePages = new Set<string>();
+          const requiredPages = new Set(REQUIRED_ROLE_PAGES[verifiedRole] ?? []);
 
           for (const p of perms) {
             configuredPages.add(p.page_href);
-            if (p.access !== 'none') visiblePages.add(p.page_href);
+            if (p.access !== 'none' || requiredPages.has(p.page_href)) visiblePages.add(p.page_href);
           }
 
           for (const item of navItems) {
-            if (!configuredPages.has(item.href) && item.roles.includes(verifiedRole)) {
+            if (requiredPages.has(item.href) || (!configuredPages.has(item.href) && item.roles.includes(verifiedRole))) {
               visiblePages.add(item.href);
             }
           }

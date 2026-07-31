@@ -8,27 +8,28 @@ import { Lock, RefreshCw, Save, CheckCircle2, AlertTriangle, Info } from 'lucide
 type Access = 'none' | 'view' | 'full';
 
 const PAGES = [
-  { href: '/rainfall',             label: 'Rain Gauge',           defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
-  { href: '/fuel-expenses',        label: 'Fleet Fuel Expenses',  defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/ho-fuel',              label: 'HO Fuel',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/estate-management',    label: 'Estate Management',    defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/processing-dashboard', label: 'Processing Dashboard', defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/labour-costs',         label: 'Labour Costs',         defaults: { supervisor: 'none' as Access, worker: 'none' as Access } },
-  { href: '/labour-activities',    label: 'Labour Activities',    defaults: { supervisor: 'none' as Access, worker: 'none' as Access } },
-  { href: '/daily-report',         label: 'Daily Report',         defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
-  { href: '/muster-roll',          label: 'Muster Roll',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
-  { href: '/harvest-yield',        label: 'Harvest Yield',        defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/nursery',              label: 'Nursery',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/spraying-log',         label: 'Spraying Log',         defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/vehicle-log',          label: 'Vehicle Log',          defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/store-inventory',      label: 'Store Inventory',      defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
-  { href: '/coffee-trading',       label: 'Coffee Trading / Green Store', defaults: { supervisor: 'full' as Access, worker: 'none' as Access } },
-  { href: '/shopify-orders',       label: 'Shopify Orders',       defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
-  { href: '/weather',              label: 'Weather',              defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
-  { href: '/ai-insights',          label: 'AI Insights',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access } },
+  { href: '/rainfall',             label: 'Rain Gauge',           defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/fuel-expenses',        label: 'Fleet Fuel Expenses',  defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/ho-fuel',              label: 'HO Fuel',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/operations-calendar',  label: 'Operations Calendar',  defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'full' as Access } },
+  { href: '/estate-management',    label: 'Estate Management',    defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/processing-dashboard', label: 'Processing Dashboard', defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/labour-costs',         label: 'Labour Costs',         defaults: { supervisor: 'none' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/labour-activities',    label: 'Labour Activities',    defaults: { supervisor: 'none' as Access, worker: 'none' as Access, hr: 'full' as Access } },
+  { href: '/daily-report',         label: 'Daily Report',         defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/muster-roll',          label: 'Muster Roll',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/harvest-yield',        label: 'Harvest Yield',        defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/nursery',              label: 'Nursery',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/spraying-log',         label: 'Spraying Log',         defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/vehicle-log',          label: 'Vehicle Log',          defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/store-inventory',      label: 'Store Inventory',      defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/coffee-trading',       label: 'Coffee Trading / Green Store', defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
+  { href: '/shopify-orders',       label: 'Shopify Orders',       defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/weather',              label: 'Weather',              defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/ai-insights',          label: 'AI Insights',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
 ];
 
-const ROLES = ['supervisor', 'worker'] as const;
+const ROLES = ['supervisor', 'worker', 'hr'] as const;
 
 type PermMap = Record<string, Record<string, Access>>;
 
@@ -127,7 +128,7 @@ export default function PermissionsPage() {
   const buildDefaults = useCallback((): PermMap => {
     const map: PermMap = {};
     for (const p of PAGES) {
-      map[p.href] = { supervisor: p.defaults.supervisor, worker: p.defaults.worker };
+      map[p.href] = { supervisor: p.defaults.supervisor, worker: p.defaults.worker, hr: p.defaults.hr };
     }
     return map;
   }, []);
@@ -156,7 +157,15 @@ export default function PermissionsPage() {
     setLoading(false);
   }, [buildDefaults]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void load();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
 
   const toggle = (href: string, role: string, val: Access) => {
     setPerms(prev => ({ ...prev, [href]: { ...prev[href], [role]: val } }));
@@ -264,14 +273,14 @@ UPDATE role_permissions SET access = CASE WHEN allowed THEN 'full' ELSE 'none' E
               </th>
               {ROLES.map(r => (
                 <th key={r} style={{ ...thStyle }}>
-                  <span style={{ background: r === 'supervisor' ? '#1a3a6e' : '#6b3a1f', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'capitalize' }}>{r}</span>
+                  <span style={{ background: r === 'supervisor' ? '#1a3a6e' : r === 'hr' ? '#7a1f35' : '#6b3a1f', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'capitalize' }}>{r}</span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem', color: 'var(--t-muted)' }}>Loading…</td></tr>
+              <tr><td colSpan={2 + ROLES.length} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem', color: 'var(--t-muted)' }}>Loading…</td></tr>
             ) : PAGES.map((page, idx) => (
               <tr key={page.href}
                 style={{ background: idx % 2 === 0 ? 'white' : 'var(--t-subtle)' }}
