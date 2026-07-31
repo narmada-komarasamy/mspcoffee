@@ -4,7 +4,7 @@
  * Keep this file serializable — no React imports, no server-only imports.
  */
 
-export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo';
+export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo' | 'hr';
 
 export type NavLeafDef  = { label: string; href: string };
 export type NavGroupDef = { label: string; href?: never; children: NavLeafDef[] };
@@ -22,7 +22,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Rain Gauge',          href: '/rainfall',        iconName: 'CloudRain',    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor', 'ceo'] },
-  { label: 'Operations Calendar', href: '/operations-calendar', iconName: 'CalendarDays', roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Operations Calendar', href: '/operations-calendar', iconName: 'CalendarDays', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   {
     label: 'Recurring Bills', href: '/recurring-bills/phone-bills', iconName: 'FileText', roles: ['admin', 'supervisor', 'ceo'],
     children: [
@@ -102,7 +102,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   },
   { label: 'Labour Costs',        href: '/labour-costs',    iconName: 'DollarSign',   roles: ['admin'] },
   {
-    label: 'Labour Activities', href: '/labour-activities', iconName: 'Activity', roles: ['admin'],
+    label: 'Labour Activities', href: '/labour-activities', iconName: 'Activity', roles: ['admin', 'hr'],
     children: [
       { label: 'Sports Registrations', href: '/labour-activities/sports-registrations' },
       { label: 'Health Camps', href: '/labour-activities/health-camps' },

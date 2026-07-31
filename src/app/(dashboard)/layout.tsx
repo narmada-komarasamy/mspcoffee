@@ -73,7 +73,7 @@ const navItems: NavItem[] = [
   { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
-  { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   {
     label: 'Recurring Bills', href: '/recurring-bills/phone-bills', icon: FileText, roles: ['admin', 'supervisor', 'ceo'],
     children: [
@@ -153,7 +153,7 @@ const navItems: NavItem[] = [
   },
   { label: 'Labour Costs',         href: '/labour-costs',         icon: DollarSign,   roles: ['admin'] },
   {
-    label: 'Labour Activities', href: '/labour-activities', icon: Activity, roles: ['admin'],
+    label: 'Labour Activities', href: '/labour-activities', icon: Activity, roles: ['admin', 'hr'],
     children: [
       { label: 'Sports Registrations', href: '/labour-activities/sports-registrations' },
       { label: 'Health Camps', href: '/labour-activities/health-camps' },
