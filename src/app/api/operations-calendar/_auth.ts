@@ -33,7 +33,7 @@ export async function requireOperationsCalendarUser(request: Request, allowedRol
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(user.role.toLowerCase())) {
     return { error: NextResponse.json({ error: 'Operations calendar access required' }, { status: 403 }) };
   }
 

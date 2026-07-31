@@ -239,7 +239,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .eq('id', cached.id)
       .single()
       .then(async ({ data, error }) => {
-        const verifiedRole = (!error && data) ? data.role : cached.role;
+        const verifiedRole = ((!error && data) ? data.role : cached.role).toLowerCase();
         const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate };
         setUser(verified);
         localStorage.setItem('msp_user', JSON.stringify(verified));
