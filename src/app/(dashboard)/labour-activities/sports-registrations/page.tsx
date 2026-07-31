@@ -1,12 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CloudOff, RefreshCw, Trophy, Upload } from "lucide-react";
+import { CheckCircle2, CloudOff, RefreshCw, Sparkles, Trophy, Upload } from "lucide-react";
 
 type SportsRegistration = {
   id: string;
   name: string;
-  phone: string;
+  phoneAsPerAadhaar: string;
+  alternatePhone: string;
   gender: string;
   currentLocation: string;
   aadhaarAddress: string;
@@ -24,7 +25,8 @@ const YEARS = ["2025", "2026", "2027", "2028"];
 
 const emptyForm = {
   name: "",
-  phone: "",
+  phoneAsPerAadhaar: "",
+  alternatePhone: "",
   gender: "",
   currentLocation: "",
   aadhaarAddress: "",
@@ -61,6 +63,8 @@ export default function SportsRegistrationsPage() {
   const [pending, setPending] = useState<SportsRegistration[]>([]);
   const [online, setOnline] = useState(true);
   const [message, setMessage] = useState("");
+  const [extractMessage, setExtractMessage] = useState("");
+  const [extractingAadhaar, setExtractingAadhaar] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -92,6 +96,45 @@ export default function SportsRegistrationsPage() {
         ? prev.sports.filter((item) => item !== sport)
         : [...prev.sports, sport],
     }));
+  };
+
+  const extractAadhaarDetails = async (file: File) => {
+    setExtractMessage("");
+    if (!navigator.onLine) {
+      setExtractMessage("Offline: enter Aadhaar address and phone manually.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setExtractMessage("Aadhaar file must be 5 MB or smaller.");
+      return;
+    }
+
+    setExtractingAadhaar(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const response = await fetch("/api/parse-aadhaar-card", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          base64: dataUrl.split(",")[1] ?? "",
+          mediaType: file.type || "application/pdf",
+        }),
+      });
+      const parsed = await response.json();
+      if (!response.ok) throw new Error(parsed.error || "Could not read Aadhaar details.");
+
+      setForm((prev) => ({
+        ...prev,
+        name: parsed.name || prev.name,
+        aadhaarAddress: parsed.aadhaar_address || prev.aadhaarAddress,
+        phoneAsPerAadhaar: parsed.phone_as_per_aadhaar || prev.phoneAsPerAadhaar,
+      }));
+      setExtractMessage(parsed.notes || "Aadhaar details read. Please review before submitting.");
+    } catch (error) {
+      setExtractMessage(error instanceof Error ? error.message : "Could not read Aadhaar details. Enter them manually.");
+    } finally {
+      setExtractingAadhaar(false);
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -164,15 +207,28 @@ export default function SportsRegistrationsPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Phone Number *</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Phone as per Aadhaar</label>
+            <input
+              inputMode="numeric"
+              pattern="[0-9]{10}"
+              value={form.phoneAsPerAadhaar}
+              onChange={(event) => setField("phoneAsPerAadhaar", event.target.value.replace(/\D/g, "").slice(0, 10))}
+              className="w-full rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
+              placeholder="Auto-filled if visible on Aadhaar"
+            />
+            <p className="mt-1 text-xs text-[#6b5b4f]">Most Aadhaar cards do not print the linked phone number.</p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-[#2c1810]">Alternate Phone Number *</label>
             <input
               required
               inputMode="numeric"
               pattern="[0-9]{10}"
-              value={form.phone}
-              onChange={(event) => setField("phone", event.target.value.replace(/\D/g, "").slice(0, 10))}
+              value={form.alternatePhone}
+              onChange={(event) => setField("alternatePhone", event.target.value.replace(/\D/g, "").slice(0, 10))}
               className="w-full rounded-xl border border-[#d4c8bc] bg-[#fdfaf7] px-3.5 py-3 text-base outline-none focus:border-[#c67c4e] focus:ring-4 focus:ring-[#c67c4e]/15"
-              placeholder="10-digit mobile number"
+              placeholder="10-digit contact number"
             />
           </div>
 
@@ -253,14 +309,26 @@ export default function SportsRegistrationsPage() {
             <label className="flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-[#d4c8bc] bg-[#fdfaf7] px-4 py-6 text-center transition hover:border-[#c67c4e] hover:bg-[#fff8f0]">
               <Upload className="mb-2 h-7 w-7 text-[#a65d2e]" />
               <span className="font-medium">{aadhaarFile ? aadhaarFile.name : "Click to upload Aadhaar photo"}</span>
-              <span className="mt-1 text-xs text-[#6b5b4f]">JPG, PNG or PDF. Max 5 MB.</span>
+              <span className="mt-1 text-xs text-[#6b5b4f]">
+                {extractingAadhaar ? "Reading Aadhaar details..." : "JPG, PNG or PDF. Max 5 MB."}
+              </span>
               <input
                 type="file"
                 accept="image/*,.pdf"
                 className="hidden"
-                onChange={(event) => setAadhaarFile(event.target.files?.[0] ?? null)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setAadhaarFile(file);
+                  if (file) void extractAadhaarDetails(file);
+                }}
               />
             </label>
+            {extractMessage && (
+              <div className="mt-2 flex items-start gap-2 rounded-xl bg-[#fff8f0] px-3 py-2 text-xs text-[#5f3a22]">
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{extractMessage}</span>
+              </div>
+            )}
           </div>
 
           {message && (
