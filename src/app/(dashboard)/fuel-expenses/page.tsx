@@ -7,9 +7,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil, Palette, Maximize2, Minimize2 } from "lucide-react";
+import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil, Palette, Maximize2, Minimize2, Camera } from "lucide-react";
 import { UploadModal } from "@/components/fleet/UploadModal";
 import { RecordModal, FleetRecord } from "@/components/fleet/RecordModal";
+import { PhotoEntryModal } from "@/components/fleet/PhotoEntryModal";
 import s from "./fleet.module.css";
 
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
@@ -144,6 +145,7 @@ export default function FleetPage() {
 
   /* ── Modals ──────────────────────────────────────────────────────────────────── */
   const [showUpload, setShowUpload] = useState(false);
+  const [showPhotoEntry, setShowPhotoEntry] = useState(false);
   const [editRecord, setEditRecord] = useState<Row | null | false>(false);
 
   /* ── MIS Report ──────────────────────────────────────────────────────────────── */
@@ -538,6 +540,9 @@ export default function FleetPage() {
             </button>
             <button className={s.addBtn} onClick={() => setEditRecord(null)}>
               <Plus className="h-3.5 w-3.5" /> Add Record
+            </button>
+            <button className={s.addBtn} onClick={() => setShowPhotoEntry(true)}>
+              <Camera className="h-3.5 w-3.5" /> Add from Photos
             </button>
             <button className={s.refreshBtn} onClick={loadData} disabled={loading}>
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -1205,6 +1210,7 @@ export default function FleetPage() {
       </div>
 
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData}/>}
+      {showPhotoEntry && <PhotoEntryModal rows={data} vehicles={vehicles} onClose={() => setShowPhotoEntry(false)} onSuccess={loadData}/>}
       {editRecord !== false && <RecordModal record={editRecord} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={loadData}/>}
 
       {/* ════════════════════════════════════════════════════════════════════════
