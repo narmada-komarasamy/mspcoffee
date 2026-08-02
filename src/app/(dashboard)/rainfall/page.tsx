@@ -513,7 +513,7 @@ export default function RainfallPage() {
   );
 
   // ─── Tooltip style ─────────────────────────────────────────────────────────
-  const ttStyle = { backgroundColor: "var(--t-bg)", border: "1px solid var(--t-border)", borderRadius: 4, color: "var(--t-text)", fontSize: 11, fontFamily: "var(--font-jetbrains), monospace" };
+  const ttStyle = { backgroundColor: "var(--t-card)", border: "1px solid var(--t-border)", borderRadius: 8, color: "var(--t-text)", fontSize: 13, fontWeight: 700, fontFamily: "var(--t-font)" };
 
   if (loading) return (
     <div className={s.page}>
@@ -759,11 +759,11 @@ export default function RainfallPage() {
               <ResponsiveContainer width="100%" height={340}>
                 {grouping === "monthly" ? (
                   <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.06)" />
-                    <XAxis dataKey="name" stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
-                    <YAxis stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,74,27,0.12)" />
+                    <XAxis dataKey="name" stroke="var(--t-label)" fontSize={12} fontWeight={700} fontFamily="var(--t-font)" />
+                    <YAxis stroke="var(--t-label)" fontSize={12} fontWeight={700} fontFamily="var(--t-font)" />
                     <Tooltip contentStyle={ttStyle} />
-                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
+                    <Legend wrapperStyle={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--t-font)" }} />
                     {activeEstates.map((e) => (
                       <Line key={e} type="monotone" dataKey={e} stroke={theme.estates[e]} strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls />
                     ))}
@@ -776,11 +776,11 @@ export default function RainfallPage() {
                   </LineChart>
                 ) : (
                   <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(56,189,248,0.06)" />
-                    <XAxis dataKey="name" stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
-                    <YAxis stroke="var(--t-label)" fontSize={10} fontFamily="var(--font-jetbrains), monospace" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(27,74,27,0.12)" />
+                    <XAxis dataKey="name" stroke="var(--t-label)" fontSize={12} fontWeight={700} fontFamily="var(--t-font)" />
+                    <YAxis stroke="var(--t-label)" fontSize={12} fontWeight={700} fontFamily="var(--t-font)" />
                     <Tooltip contentStyle={ttStyle} />
-                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }} />
+                    <Legend wrapperStyle={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--t-font)" }} />
                     {activeEstates.map((e) => (
                       <Bar key={e} dataKey={e} fill={theme.estates[e]} radius={[3, 3, 0, 0]} />
                     ))}
