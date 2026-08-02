@@ -8,7 +8,7 @@ const items = [
     icon: Trophy,
   },
   {
-    label: "Health Camps",
+    label: "Labour Welfare",
     href: "/labour-activities/health-camps",
     icon: HeartPulse,
   },

@@ -1,6 +1,6 @@
 import { HeartPulse } from "lucide-react";
 
-export default function HealthCampsPage() {
+export default function LabourWelfarePage() {
   return (
     <div className="min-h-full bg-[#f7f2e7] p-6 text-[#1b2f1b]">
       <div className="mx-auto max-w-5xl">
@@ -9,13 +9,13 @@ export default function HealthCampsPage() {
             <HeartPulse className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-wide">Health Camps</h1>
+            <h1 className="text-2xl font-semibold tracking-wide">Labour Welfare</h1>
             <p className="text-sm text-[#6f776f]">Labour Activities</p>
           </div>
         </div>
         <div className="rounded-lg border border-[#e1d8c3] bg-white p-6 shadow-sm">
           <div className="text-sm font-medium uppercase tracking-[0.18em] text-[#7a826f]">Workspace</div>
-          <div className="mt-2 text-lg font-semibold">Health camp records</div>
+          <div className="mt-2 text-lg font-semibold">Labour welfare records</div>
         </div>
       </div>
     </div>

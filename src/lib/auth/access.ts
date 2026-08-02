@@ -105,7 +105,7 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Labour Activities', href: '/labour-activities', iconName: 'Activity', roles: ['admin', 'hr'],
     children: [
       { label: 'Sports Registrations', href: '/labour-activities/sports-registrations' },
-      { label: 'Health Camps', href: '/labour-activities/health-camps' },
+      { label: 'Labour Welfare', href: '/labour-activities/health-camps' },
       { label: 'New Facilities', href: '/labour-activities/new-facilities' },
     ],
   },
