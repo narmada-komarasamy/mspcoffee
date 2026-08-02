@@ -20,7 +20,7 @@ type SportsRegistration = {
 };
 
 const STORAGE_KEY = "msp_sports_registration_pending";
-const SPORTS = ["Cricket", "Football", "Volleyball", "Athletics", "Other"];
+const SPORTS = ["Cricket", "Football", "Volleyball", "Athletics", "Hockey", "Other"];
 const YEARS = ["2025", "2026", "2027", "2028"];
 
 const emptyForm = {
