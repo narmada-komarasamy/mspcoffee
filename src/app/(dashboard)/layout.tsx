@@ -256,12 +256,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // Security: re-fetch role from database — never trust localStorage for access control
     supabase
       .from('app_users')
-      .select('id, name, role, estate')
+      .select('id, name, role, estate, pin')
       .eq('id', cached.id)
       .single()
       .then(async ({ data, error }) => {
         const verifiedRole = ((!error && data) ? data.role : cached.role).trim().toLowerCase();
-        const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate };
+        const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate, pin: data?.pin ?? cached.pin };
         setUser(verified);
         localStorage.setItem('msp_user', JSON.stringify(verified));
 

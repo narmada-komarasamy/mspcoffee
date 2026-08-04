@@ -163,10 +163,13 @@ export function EmailReportsClient() {
       .then(async (response) => {
         const body = await response.json().catch(() => null) as unknown;
         if (!response.ok || !isProviderStatus(body)) {
-          const error = body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
+          const rawError = body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
             ? (body as { error: string }).error
             : 'Email provider status unavailable';
-          setMessage(error);
+          setMessage(rawError === 'Unauthorized'
+            ? 'Email access needs a fresh admin login. Sign out, sign back in as admin, then retry.'
+            : rawError
+          );
           return;
         }
         setProviderStatus(body);
