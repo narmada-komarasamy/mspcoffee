@@ -53,6 +53,17 @@ export async function POST(request: Request) {
         .maybeSingle<AppUserRow>();
     }
 
+    if ((result.error || !result.data) && name.toLowerCase() === 'admin') {
+      result = await supabase
+        .from('app_users')
+        .select('id, name, pin, role, estate, active')
+        .ilike('role', 'admin')
+        .eq('pin', pin)
+        .neq('active', false)
+        .limit(1)
+        .maybeSingle<AppUserRow>();
+    }
+
     user = result.data;
     error = result.error;
   } catch {
