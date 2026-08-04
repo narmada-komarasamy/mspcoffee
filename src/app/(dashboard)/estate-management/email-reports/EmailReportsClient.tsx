@@ -127,6 +127,7 @@ export function EmailReportsClient() {
   });
 
   const activePreview = preview?.previews[activeRecipient] ?? preview?.previews[0] ?? null;
+  const hasRecipients = recipients.some((recipient) => recipient.email.trim());
 
   const template = useMemo(() => ({
     name,
@@ -219,33 +220,49 @@ export function EmailReportsClient() {
     setMessage(`Loaded preset: ${preset.name}`);
   }
 
-  async function loadPreview() {
+  async function buildPreview() {
     setLoadingPreview(true);
     setMessage('');
     setPreview(null);
 
-    const response = await fetch('/api/email/reports/preview', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ template, recipients }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/api/email/reports/preview', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ template, recipients }),
+      });
+    } catch {
+      setLoadingPreview(false);
+      setMessage('Could not build preview');
+      return null;
+    }
+
     const body = await response.json().catch(() => null) as PreviewResponse | null;
     setLoadingPreview(false);
 
     if (!response.ok || !body) {
       setMessage(body?.error ?? 'Could not build preview');
-      return;
+      return null;
     }
 
     setPreview(body);
     setActiveRecipient(0);
+    return body;
+  }
+
+  async function loadPreview() {
+    await buildPreview();
   }
 
   async function submitBatch(action: 'send_now' | 'schedule') {
-    if (!preview) {
-      setMessage('Preview the report before sending or scheduling');
+    if (!hasRecipients) {
+      setMessage('Add at least one recipient email address');
       return;
     }
+    const previewForSend = preview ?? await buildPreview();
+    if (!previewForSend) return;
+
     if (action === 'send_now' && !window.confirm(`Send this report batch to ${recipients.length} recipient(s)?`)) return;
     const scheduleDate = action === 'schedule' ? new Date(scheduleAt) : null;
     if (action === 'schedule' && (!scheduleDate || Number.isNaN(scheduleDate.getTime()))) {
@@ -370,10 +387,10 @@ export function EmailReportsClient() {
               <input type="datetime-local" value={scheduleAt} onChange={(event) => setScheduleAt(event.target.value)} style={input} />
             </label>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button type="button" onClick={loadPreview} disabled={loadingPreview} style={secondaryButton}><Eye size={14} /> {loadingPreview ? 'Previewing...' : 'Preview'}</button>
-              <button type="button" onClick={() => submitBatch('schedule')} disabled={sending || !preview} style={secondaryButton}><CalendarClock size={14} /> Schedule</button>
+              <button type="button" onClick={loadPreview} disabled={loadingPreview || !hasRecipients} style={buttonStyle(secondaryButton, loadingPreview || !hasRecipients)}><Eye size={14} /> {loadingPreview ? 'Previewing...' : 'Preview'}</button>
+              <button type="button" onClick={() => submitBatch('schedule')} disabled={sending || loadingPreview || !hasRecipients} style={buttonStyle(secondaryButton, sending || loadingPreview || !hasRecipients)}><CalendarClock size={14} /> Schedule</button>
               <button type="button" onClick={savePreset} style={secondaryButton}><Save size={14} /> Save as Preset</button>
-              <button type="button" onClick={() => submitBatch('send_now')} disabled={sending || !preview} style={primaryButton}><Send size={14} /> {sending ? 'Sending...' : 'Send Now'}</button>
+              <button type="button" onClick={() => submitBatch('send_now')} disabled={sending || loadingPreview || !hasRecipients} style={buttonStyle(primaryButton, sending || loadingPreview || !hasRecipients)}><Send size={14} /> {sending ? 'Sending...' : 'Send Now'}</button>
             </div>
           </section>
         </div>
@@ -442,6 +459,14 @@ const primaryButton: React.CSSProperties = {
   background: 'var(--t-heading)',
   color: '#fff',
 };
+
+function buttonStyle(style: React.CSSProperties, disabled: boolean): React.CSSProperties {
+  return {
+    ...style,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.58 : 1,
+  };
+}
 
 const iconButton: React.CSSProperties = {
   ...secondaryButton,
