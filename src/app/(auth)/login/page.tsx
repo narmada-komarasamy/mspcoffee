@@ -54,14 +54,25 @@ export default function LoginPage() {
   }, [muted]);
 
   useEffect(() => {
-    supabase
-      .from('app_users')
-      .select('*')
-      .order('name')
-      .then(({ data }) => {
-        setUsers(data ?? []);
-        setLoading(false);
-      });
+    fetch('/api/auth/pin-users')
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as { users?: AppUser[]; error?: string } | null;
+        if (!response.ok || !body?.users) {
+          throw new Error(body?.error ?? 'Could not load users');
+        }
+        setUsers(body.users);
+      })
+      .catch(() => {
+        supabase
+          .from('app_users')
+          .select('*')
+          .order('name')
+          .then(({ data, error: loadError }) => {
+            if (loadError) setError(loadError.message);
+            setUsers(data ?? []);
+          });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const startSession = useCallback((user: AppUser, enteredPin: string) => {
@@ -249,6 +260,11 @@ export default function LoginPage() {
                 </div>
               </button>
             ))}
+            {users.length === 0 && (
+              <p className="rounded-xl bg-black/30 px-4 py-3 text-center text-sm text-red-100">
+                No login profiles loaded. Check Supabase environment variables in Vercel, then redeploy.
+              </p>
+            )}
           </div>
         ) : (
           /* PIN entry */
