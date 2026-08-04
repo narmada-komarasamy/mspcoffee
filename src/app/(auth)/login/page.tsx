@@ -65,6 +65,16 @@ export default function LoginPage() {
   }, []);
 
   const startSession = useCallback((user: AppUser, enteredPin: string) => {
+    const startLegacySession = () => {
+      if (user.pin && user.pin === enteredPin) {
+        localStorage.setItem('msp_user', JSON.stringify(user));
+        document.cookie = 'msp_auth=1; path=/; SameSite=Lax';
+        router.push('/home');
+        return true;
+      }
+      return false;
+    };
+
     fetch('/api/auth/pin-session', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -79,6 +89,7 @@ export default function LoginPage() {
         router.push('/home');
       })
       .catch((err) => {
+        if (startLegacySession()) return;
         setError(err instanceof Error ? err.message : 'Could not start session');
         setTimeout(() => {
           setPin('');

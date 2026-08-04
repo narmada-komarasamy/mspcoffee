@@ -31,12 +31,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  const supabase = adminClient();
-  const { data: user, error } = await supabase
-    .from('app_users')
-    .select('id, name, pin, role, estate, active')
-    .eq('id', userId)
-    .single<AppUserRow>();
+  let user: AppUserRow | null = null;
+  let error: { message?: string } | null = null;
+
+  try {
+    const supabase = adminClient();
+    const result = await supabase
+      .from('app_users')
+      .select('id, name, pin, role, estate, active')
+      .eq('id', userId)
+      .single<AppUserRow>();
+    user = result.data;
+    error = result.error;
+  } catch {
+    return NextResponse.json(
+      { error: 'Server login is not configured. Check SUPABASE_SERVICE_ROLE_KEY in Vercel.' },
+      { status: 500 }
+    );
+  }
 
   if (error || !user || user.pin !== pin || user.active === false) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
