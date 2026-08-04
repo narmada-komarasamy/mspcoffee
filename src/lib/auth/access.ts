@@ -136,6 +136,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Shopify Orders',      href: '/shopify-orders',  iconName: 'ShoppingCart', roles: ['admin'] },
   { label: 'Weather',             href: '/weather',         iconName: 'CloudSun',     roles: ['admin', 'worker'] },
   { label: 'AI Insights',         href: '/ai-insights',     iconName: 'Brain',        roles: ['admin'] },
+  { label: 'Email Composer',      href: '/email-composer',  iconName: 'Mail',         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Email Activity',      href: '/admin-controls/email-activity', iconName: 'Mail', roles: ['admin'] },
   { label: 'Users',               href: '/admin/users',     iconName: 'UserCog',      roles: ['admin'] },
 ];

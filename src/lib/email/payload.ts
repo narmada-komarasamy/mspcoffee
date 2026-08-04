@@ -1,5 +1,6 @@
 export type EmailType =
   | 'production_report'
+  | 'daily_operations_digest'
   | 'sales_inventory_summary'
   | 'order_notification'
   | 'alert'
@@ -33,6 +34,7 @@ export type EmailPayload = {
 
 export const EMAIL_TYPES: EmailType[] = [
   'production_report',
+  'daily_operations_digest',
   'sales_inventory_summary',
   'order_notification',
   'alert',

@@ -28,6 +28,7 @@ import {
   X,
   LogOut,
   Coffee,
+  Mail,
   ChevronDown,
   Maximize2,
   Minimize2,
@@ -195,6 +196,7 @@ const navItems: NavItem[] = [
   },
   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+  { label: 'Email Composer',       href: '/email-composer',       icon: Mail,         roles: ['admin', 'supervisor', 'ceo'] },
   {
     label: 'Admin Controls', href: '/admin-controls', icon: Shield, roles: ['admin'],
     children: [
@@ -553,6 +555,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   }}>A</button>
               ))}
             </div>
+
+            <Link
+              href={`/email-composer?source=${encodeURIComponent(pathname)}`}
+              className="flex items-center justify-center w-8 h-8 rounded-full transition"
+              style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.85)' }}
+              title="Email report"
+            >
+              <Mail className="h-4 w-4" />
+            </Link>
 
             {/* Fullscreen toggle */}
             <button onClick={toggleFullscreen}

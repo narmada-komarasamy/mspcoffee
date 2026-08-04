@@ -34,7 +34,7 @@ create table if not exists public.email_delivery_log (
   payload jsonb not null default '{}'::jsonb,
   provider_response jsonb,
   constraint email_delivery_log_type_check check (
-    email_type in ('production_report', 'sales_inventory_summary', 'order_notification', 'alert', 'custom_report')
+    email_type in ('production_report', 'daily_operations_digest', 'sales_inventory_summary', 'order_notification', 'alert', 'custom_report')
   ),
   constraint email_delivery_log_status_check check (status in ('queued', 'sent', 'failed', 'logged'))
 );
@@ -62,7 +62,7 @@ create table if not exists public.email_schedules (
   updated_at timestamptz not null default now(),
   created_by uuid references public.app_users(id) on delete set null,
   constraint email_schedules_type_check check (
-    email_type in ('production_report', 'sales_inventory_summary', 'order_notification', 'alert', 'custom_report')
+    email_type in ('production_report', 'daily_operations_digest', 'sales_inventory_summary', 'order_notification', 'alert', 'custom_report')
   ),
   constraint email_schedules_frequency_check check (frequency in ('daily', 'weekly', 'monthly'))
 );
