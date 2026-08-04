@@ -9,7 +9,7 @@ import Image from 'next/image';
 type AppUser = {
   id: string;
   name: string;
-  pin: string;
+  pin?: string;
   role: string;
   estate: string | null;
 };
@@ -93,17 +93,7 @@ export default function LoginPage() {
     setPin(nextPin);
 
     if (nextPin.length !== 4) return;
-
-    if (nextPin === selectedUser.pin) {
-      startSession(selectedUser, nextPin);
-      return;
-    }
-
-    setError('Incorrect PIN');
-    setTimeout(() => {
-      setPin('');
-      setError('');
-    }, 800);
+    startSession(selectedUser, nextPin);
   };
 
   const handleDelete = () => {
