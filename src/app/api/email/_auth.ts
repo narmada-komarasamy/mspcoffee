@@ -29,14 +29,16 @@ function cookieValue(request: Request, name: string) {
 }
 
 export async function requireEmailUser(request: Request, allowedRoles = EMAIL_ROLES) {
-  const userId = request.headers.get('x-msp-user-id')?.trim() || cookieValue(request, 'msp_user_id');
+  const headerUserId = request.headers.get('x-msp-user-id')?.trim();
+  const cookieUserId = cookieValue(request, 'msp_user_id');
+  const userId = [headerUserId, cookieUserId].find((value) => value && UUID_RE.test(value)) ?? '';
   const userPin = request.headers.get('x-msp-user-pin')?.trim() || cookieValue(request, 'msp_user_pin');
 
   if (!userId) {
     return authError('Email session is missing the admin user id. Sign out and sign back in as admin.');
   }
 
-  if (!UUID_RE.test(userId)) {
+  if ((headerUserId || cookieUserId) && !userId) {
     return authError('Email session has an invalid admin user id. Sign out and sign back in as admin.');
   }
 
