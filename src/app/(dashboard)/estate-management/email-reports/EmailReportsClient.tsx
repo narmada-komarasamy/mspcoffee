@@ -20,6 +20,20 @@ type PreviewResponse = {
   error?: string;
 };
 
+type ProviderStatus = {
+  provider: string;
+  from: string;
+  configured: boolean;
+};
+
+function isProviderStatus(value: unknown): value is ProviderStatus {
+  if (!value || typeof value !== 'object') return false;
+  const row = value as Record<string, unknown>;
+  return typeof row.provider === 'string'
+    && typeof row.from === 'string'
+    && typeof row.configured === 'boolean';
+}
+
 type RecipientDraft = {
   name: string;
   email: string;
@@ -115,6 +129,7 @@ export function EmailReportsClient() {
   const [sending, setSending] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(localScheduleDefault);
   const [message, setMessage] = useState('');
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [savedPresets, setSavedPresets] = useState<SavedPreset[]>(() => {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem('msp_email_report_presets');
@@ -141,6 +156,23 @@ export function EmailReportsClient() {
   useEffect(() => {
     if (!authorized) router.replace('/unauthorized');
   }, [authorized, router]);
+
+  useEffect(() => {
+    if (!authorized) return;
+    fetch('/api/email/status', { headers: authHeaders() })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as unknown;
+        if (!response.ok || !isProviderStatus(body)) {
+          const error = body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
+            ? (body as { error: string }).error
+            : 'Email provider status unavailable';
+          setMessage(error);
+          return;
+        }
+        setProviderStatus(body);
+      })
+      .catch(() => setMessage('Email provider status unavailable'));
+  }, [authorized]);
 
   if (!authorized) {
     return null;
@@ -324,6 +356,21 @@ export function EmailReportsClient() {
         <h1 style={{ margin: '4px 0 0', color: 'var(--t-heading)', fontSize: '1.55rem', fontWeight: 850 }}>Email Reports</h1>
         <p style={{ margin: '0.25rem 0 0', color: 'var(--t-muted)', fontSize: 14 }}>Build personalised report batches, preview each recipient, then send now or schedule.</p>
       </div>
+
+      {providerStatus && (
+        <div style={{
+          ...card,
+          padding: '11px 14px',
+          color: providerStatus.configured ? 'var(--t-heading)' : '#8a5b00',
+          background: providerStatus.configured ? 'var(--t-subtle)' : '#fff8e1',
+          fontSize: 13,
+          fontWeight: 750,
+        }}>
+          {providerStatus.configured
+            ? `Email delivery ready via ${providerStatus.provider}. From: ${providerStatus.from}`
+            : `Email delivery is not configured. Attempts will be logged only. Provider: ${providerStatus.provider}, From: ${providerStatus.from}`}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 520px) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>
         <div style={{ display: 'grid', gap: 14 }}>
