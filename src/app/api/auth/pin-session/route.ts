@@ -37,18 +37,20 @@ export async function POST(request: Request) {
 
   try {
     const supabase = adminClient();
-    let result = await supabase
-      .from('app_users')
-      .select('id, name, pin, role, estate, active')
-      .eq('id', userId)
-      .single<AppUserRow>();
+    let result = userId
+      ? await supabase
+          .from('app_users')
+          .select('id, name, pin, role, estate, active')
+          .eq('id', userId)
+          .maybeSingle<AppUserRow>()
+      : { data: null, error: null };
 
     if ((result.error || !result.data) && name) {
       result = await supabase
         .from('app_users')
         .select('id, name, pin, role, estate, active')
-        .eq('name', name)
-        .single<AppUserRow>();
+        .ilike('name', name)
+        .maybeSingle<AppUserRow>();
     }
 
     user = result.data;
