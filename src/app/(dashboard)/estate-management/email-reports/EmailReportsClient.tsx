@@ -101,8 +101,64 @@ function authHeaders(): Record<string, string> {
   return user.id && user.pin ? { 'x-msp-user-id': user.id, 'x-msp-user-pin': user.pin } : {};
 }
 
+function currentUserCredentials() {
+  const stored = localStorage.getItem('msp_user');
+  if (!stored) return null;
+  try {
+    const user = JSON.parse(stored) as { id?: string; pin?: string };
+    return user.id && user.pin ? { userId: user.id, pin: user.pin } : null;
+  } catch {
+    return null;
+  }
+}
+
 function hasEmailAuth() {
   return Boolean(authHeaders()['x-msp-user-pin']);
+}
+
+async function refreshPinSession() {
+  const credentials = currentUserCredentials();
+  if (!credentials) return false;
+
+  const response = await fetch('/api/auth/pin-session', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(credentials),
+  });
+
+  if (!response.ok) return false;
+
+  const body = await response.json().catch(() => null) as { user?: unknown } | null;
+  if (body?.user) {
+    localStorage.setItem('msp_user', JSON.stringify(body.user));
+    window.dispatchEvent(new Event('msp-user-updated'));
+  }
+  return true;
+}
+
+async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
+  const response = await fetch(input, {
+    ...init,
+    credentials: 'same-origin',
+    headers: {
+      ...(init.headers ?? {}),
+      ...authHeaders(),
+    },
+  });
+
+  if (response.status === 401 && retry && await refreshPinSession()) {
+    return emailFetch(input, init, false);
+  }
+
+  return response;
+}
+
+function friendlyEmailError(error: string | undefined, fallback: string) {
+  if (error === 'Unauthorized') {
+    return 'Email access could not verify your admin session. Sign out, sign back in as admin, then retry.';
+  }
+  return error ?? fallback;
 }
 
 function currentUserRole() {
@@ -174,7 +230,11 @@ export function EmailReportsClient() {
       }
 
       try {
-        const response = await fetch('/api/email/status', { headers: authHeaders() });
+        if (!hasEmailAuth()) {
+          await refreshPinSession();
+        }
+
+        const response = await emailFetch('/api/email/status');
         const body = await response.json().catch(() => null) as unknown;
         if (cancelled) return;
 
@@ -182,10 +242,7 @@ export function EmailReportsClient() {
           const rawError = body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
             ? (body as { error: string }).error
             : 'Email provider status unavailable';
-          setMessage(rawError === 'Unauthorized'
-            ? 'Email access needs a fresh admin login. Sign out, sign back in as admin, then retry.'
-            : rawError
-          );
+          setMessage(friendlyEmailError(rawError, 'Email provider status unavailable'));
           return;
         }
         setProviderStatus(body);
@@ -290,8 +347,11 @@ export function EmailReportsClient() {
 
   async function buildPreview() {
     if (!hasEmailAuth()) {
-      setMessage('Email access needs a fresh admin login. Sign out, sign back in as admin, then retry.');
-      return null;
+      const refreshed = await refreshPinSession();
+      if (!refreshed && !hasEmailAuth()) {
+        setMessage('Email access could not verify your admin session. Sign out, sign back in as admin, then retry.');
+        return null;
+      }
     }
 
     setLoadingPreview(true);
@@ -300,9 +360,9 @@ export function EmailReportsClient() {
 
     let response: Response;
     try {
-      response = await fetch('/api/email/reports/preview', {
+      response = await emailFetch('/api/email/reports/preview', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', ...authHeaders() },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ template, recipients }),
       });
     } catch {
@@ -315,7 +375,7 @@ export function EmailReportsClient() {
     setLoadingPreview(false);
 
     if (!response.ok || !body) {
-      setMessage(body?.error ?? 'Could not build preview');
+      setMessage(friendlyEmailError(body?.error, 'Could not build preview'));
       return null;
     }
 
@@ -330,8 +390,11 @@ export function EmailReportsClient() {
 
   async function submitBatch(action: 'send_now' | 'schedule') {
     if (!hasEmailAuth()) {
-      setMessage('Email access needs a fresh admin login. Sign out, sign back in as admin, then retry.');
-      return;
+      const refreshed = await refreshPinSession();
+      if (!refreshed && !hasEmailAuth()) {
+        setMessage('Email access could not verify your admin session. Sign out, sign back in as admin, then retry.');
+        return;
+      }
     }
 
     if (!hasRecipients) {
@@ -351,9 +414,9 @@ export function EmailReportsClient() {
     setSending(true);
     setMessage('');
 
-    const response = await fetch('/api/email/reports/batches', {
+    const response = await emailFetch('/api/email/reports/batches', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...authHeaders() },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         action,
         template,
@@ -373,7 +436,7 @@ export function EmailReportsClient() {
     setSending(false);
 
     if (!response.ok) {
-      setMessage(body?.error ?? 'Could not submit email batch');
+      setMessage(friendlyEmailError(body?.error, 'Could not submit email batch'));
       return;
     }
 
