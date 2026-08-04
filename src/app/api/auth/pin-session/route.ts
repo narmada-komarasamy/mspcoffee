@@ -59,7 +59,6 @@ export async function POST(request: Request) {
         .select('id, name, pin, role, estate, active')
         .ilike('role', 'admin')
         .eq('pin', pin)
-        .neq('active', false)
         .limit(1)
         .maybeSingle<AppUserRow>();
     }

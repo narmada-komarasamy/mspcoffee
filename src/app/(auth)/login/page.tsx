@@ -96,7 +96,7 @@ export default function LoginPage() {
         setTimeout(() => {
           setPin('');
           setError('');
-        }, 900);
+        }, 6000);
       });
   }, [router]);
 
