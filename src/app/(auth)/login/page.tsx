@@ -18,6 +18,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+  const [manualName, setManualName] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,8 @@ export default function LoginPage() {
       .from('app_users')
       .select('*')
       .order('name')
-      .then(({ data }) => {
+      .then(({ data, error: loadError }) => {
+        if (loadError) setError(loadError.message);
         setUsers(data ?? []);
         setLoading(false);
       });
@@ -249,6 +251,34 @@ export default function LoginPage() {
                 </div>
               </button>
             ))}
+            {users.length === 0 && (
+              <div className="space-y-3 rounded-xl bg-black/30 p-4">
+                <p className="text-center text-sm text-green-100/80">
+                  Profiles did not load. Enter your admin profile name to continue.
+                </p>
+                <input
+                  value={manualName}
+                  onChange={(event) => setManualName(event.target.value)}
+                  placeholder="Profile name"
+                  className="w-full rounded-lg border border-white/10 bg-white/10 px-4 py-3 text-center text-white placeholder:text-white/45 outline-none focus:border-[#86efac]/60"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = manualName.trim();
+                    if (!name) {
+                      setError('Enter your profile name');
+                      return;
+                    }
+                    setSelectedUser({ id: '', name, role: 'admin', estate: null });
+                    setError('');
+                  }}
+                  className="w-full rounded-lg bg-[#86efac] px-4 py-3 font-semibold text-[#102510] transition hover:bg-[#bbf7d0]"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           /* PIN entry */
