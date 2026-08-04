@@ -28,7 +28,7 @@ export async function requireEmailUser(request: Request, allowedRoles = EMAIL_RO
   const userId = request.headers.get('x-msp-user-id')?.trim() || cookieValue(request, 'msp_user_id');
   const userPin = request.headers.get('x-msp-user-pin')?.trim() || cookieValue(request, 'msp_user_pin');
 
-  if (!userId || !UUID_RE.test(userId)) {
+  if (!userId || !userPin || !UUID_RE.test(userId)) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
@@ -39,11 +39,7 @@ export async function requireEmailUser(request: Request, allowedRoles = EMAIL_RO
     .eq('id', userId)
     .single<AppUserRow>();
 
-  if (error || !user || user.active === false) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  if (userPin && user.pin !== userPin) {
+  if (error || !user || user.pin !== userPin || user.active === false) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 

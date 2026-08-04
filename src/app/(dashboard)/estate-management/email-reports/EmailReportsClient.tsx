@@ -98,10 +98,7 @@ function authHeaders(): Record<string, string> {
     return {};
   }
 
-  return {
-    ...(user.id ? { 'x-msp-user-id': user.id } : {}),
-    ...(user.pin ? { 'x-msp-user-pin': user.pin } : {}),
-  };
+  return user.id && user.pin ? { 'x-msp-user-id': user.id, 'x-msp-user-pin': user.pin } : {};
 }
 
 function currentUserCredentials() {
@@ -116,7 +113,7 @@ function currentUserCredentials() {
 }
 
 function hasEmailAuth() {
-  return Boolean(authHeaders()['x-msp-user-id']);
+  return Boolean(authHeaders()['x-msp-user-pin']);
 }
 
 async function refreshPinSession() {
