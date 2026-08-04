@@ -101,6 +101,10 @@ function authHeaders(): Record<string, string> {
   return user.id && user.pin ? { 'x-msp-user-id': user.id, 'x-msp-user-pin': user.pin } : {};
 }
 
+function hasEmailAuth() {
+  return Boolean(authHeaders()['x-msp-user-pin']);
+}
+
 function currentUserRole() {
   const stored = localStorage.getItem('msp_user');
   if (!stored) return '';
@@ -159,9 +163,21 @@ export function EmailReportsClient() {
 
   useEffect(() => {
     if (!authorized) return;
-    fetch('/api/email/status', { headers: authHeaders() })
-      .then(async (response) => {
+
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const loadProviderStatus = async (attempt = 0) => {
+      if (!hasEmailAuth() && attempt < 4) {
+        retryTimer = setTimeout(() => void loadProviderStatus(attempt + 1), 350);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/email/status', { headers: authHeaders() });
         const body = await response.json().catch(() => null) as unknown;
+        if (cancelled) return;
+
         if (!response.ok || !isProviderStatus(body)) {
           const rawError = body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
             ? (body as { error: string }).error
@@ -173,8 +189,25 @@ export function EmailReportsClient() {
           return;
         }
         setProviderStatus(body);
-      })
-      .catch(() => setMessage('Email provider status unavailable'));
+        setMessage('');
+      } catch {
+        if (!cancelled) setMessage('Email provider status unavailable');
+      }
+    };
+
+    const handleUserUpdated = () => {
+      setMessage('');
+      void loadProviderStatus();
+    };
+
+    window.addEventListener('msp-user-updated', handleUserUpdated);
+    void loadProviderStatus();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      window.removeEventListener('msp-user-updated', handleUserUpdated);
+    };
   }, [authorized]);
 
   if (!authorized) {
@@ -256,6 +289,11 @@ export function EmailReportsClient() {
   }
 
   async function buildPreview() {
+    if (!hasEmailAuth()) {
+      setMessage('Email access needs a fresh admin login. Sign out, sign back in as admin, then retry.');
+      return null;
+    }
+
     setLoadingPreview(true);
     setMessage('');
     setPreview(null);
@@ -291,6 +329,11 @@ export function EmailReportsClient() {
   }
 
   async function submitBatch(action: 'send_now' | 'schedule') {
+    if (!hasEmailAuth()) {
+      setMessage('Email access needs a fresh admin login. Sign out, sign back in as admin, then retry.');
+      return;
+    }
+
     if (!hasRecipients) {
       setMessage('Add at least one recipient email address');
       return;

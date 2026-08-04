@@ -264,6 +264,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate, pin: data?.pin ?? cached.pin };
         setUser(verified);
         localStorage.setItem('msp_user', JSON.stringify(verified));
+        window.dispatchEvent(new Event('msp-user-updated'));
 
         // Admin always sees everything; for other roles, load from role_permissions
         if (verifiedRole === 'admin') {
