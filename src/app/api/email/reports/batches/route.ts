@@ -171,9 +171,16 @@ export async function POST(request: Request) {
     }
   }
 
-  const sent = results.filter((result) => result.status === 'sent' || result.status === 'logged').length;
-  const failed = results.length - sent;
-  const batchStatus = failed === 0 ? 'sent' : sent === 0 ? 'failed' : 'partial';
+  const sent = results.filter((result) => result.status === 'sent').length;
+  const logged = results.filter((result) => result.status === 'logged').length;
+  const failed = results.filter((result) => result.status === 'failed').length;
+  const batchStatus = failed === results.length
+    ? 'failed'
+    : sent === results.length
+      ? 'sent'
+      : logged === results.length
+        ? 'logged'
+        : 'partial';
 
   await auth.supabase
     .from('email_report_batches')
@@ -183,6 +190,9 @@ export async function POST(request: Request) {
   return NextResponse.json({
     id: batch.id,
     status: batchStatus,
+    sent,
+    logged,
+    failed,
     results,
   }, { status: failed === 0 ? 201 : 207 });
 }

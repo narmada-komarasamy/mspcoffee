@@ -82,7 +82,7 @@ create table if not exists public.email_report_batches (
   scheduled_for timestamptz,
   default_blocks text[] not null default '{}',
   template jsonb not null default '{}'::jsonb,
-  constraint email_report_batches_status_check check (status in ('draft', 'scheduled', 'sending', 'sent', 'partial', 'failed'))
+  constraint email_report_batches_status_check check (status in ('draft', 'scheduled', 'sending', 'sent', 'logged', 'partial', 'failed'))
 );
 
 create table if not exists public.email_report_batch_recipients (

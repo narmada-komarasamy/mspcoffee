@@ -283,7 +283,15 @@ export function EmailReportsClient() {
         scheduledFor: action === 'schedule' ? scheduleDate!.toISOString() : null,
       }),
     });
-    const body = await response.json().catch(() => null) as { id?: string; status?: string; error?: string; recipients?: number } | null;
+    const body = await response.json().catch(() => null) as {
+      id?: string;
+      status?: string;
+      error?: string;
+      recipients?: number;
+      sent?: number;
+      logged?: number;
+      failed?: number;
+    } | null;
     setSending(false);
 
     if (!response.ok) {
@@ -291,10 +299,22 @@ export function EmailReportsClient() {
       return;
     }
 
-    setMessage(action === 'schedule'
-      ? `Batch scheduled for ${new Date(scheduleAt).toLocaleString('en-IN')}`
-      : `Batch submitted with status: ${body?.status ?? 'sent'}`
-    );
+    if (action === 'schedule') {
+      setMessage(`Batch scheduled for ${new Date(scheduleAt).toLocaleString('en-IN')}`);
+      return;
+    }
+
+    if (body?.status === 'logged') {
+      setMessage('Batch logged only. Add Resend credentials in Vercel to send live emails.');
+      return;
+    }
+
+    if (body?.status === 'partial') {
+      setMessage(`Batch partially completed: ${body.sent ?? 0} sent, ${body.logged ?? 0} logged, ${body.failed ?? 0} failed.`);
+      return;
+    }
+
+    setMessage(`Batch submitted: ${body?.sent ?? recipients.length} sent.`);
   }
 
   return (
