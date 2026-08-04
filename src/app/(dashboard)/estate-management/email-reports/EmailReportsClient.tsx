@@ -88,7 +88,7 @@ function localScheduleDefault() {
   return date.toISOString().slice(0, 16);
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const APP_USER_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 function authHeaders(): Record<string, string> {
   const stored = localStorage.getItem('msp_user');
@@ -100,7 +100,7 @@ function authHeaders(): Record<string, string> {
     return {};
   }
 
-  return user.id && UUID_RE.test(user.id) && user.pin
+  return user.id && APP_USER_ID_RE.test(user.id) && user.pin
     ? { 'x-msp-user-id': user.id, 'x-msp-user-pin': user.pin }
     : {};
 }
@@ -110,7 +110,7 @@ function currentUserCredentials() {
   if (!stored) return null;
   try {
     const user = JSON.parse(stored) as { id?: string; pin?: string };
-    return user.id && UUID_RE.test(user.id) && user.pin ? { userId: user.id, pin: user.pin } : null;
+    return user.id && APP_USER_ID_RE.test(user.id) && user.pin ? { userId: user.id, pin: user.pin } : null;
   } catch {
     return null;
   }

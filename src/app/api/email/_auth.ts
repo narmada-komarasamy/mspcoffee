@@ -10,7 +10,7 @@ type AppUserRow = {
 };
 
 export const EMAIL_ROLES = ['admin'];
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const APP_USER_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 function authError(message: string, status = 401) {
   return { error: NextResponse.json({ error: message }, { status }) };
@@ -31,7 +31,7 @@ function cookieValue(request: Request, name: string) {
 export async function requireEmailUser(request: Request, allowedRoles = EMAIL_ROLES) {
   const headerUserId = request.headers.get('x-msp-user-id')?.trim();
   const cookieUserId = cookieValue(request, 'msp_user_id');
-  const userId = [headerUserId, cookieUserId].find((value) => value && UUID_RE.test(value)) ?? '';
+  const userId = [headerUserId, cookieUserId].find((value) => value && APP_USER_ID_RE.test(value)) ?? '';
   const userPin = request.headers.get('x-msp-user-pin')?.trim() || cookieValue(request, 'msp_user_pin');
 
   if (!userId) {

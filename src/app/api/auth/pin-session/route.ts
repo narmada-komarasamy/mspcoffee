@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '@/lib/supabase/admin';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const APP_USER_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 type AppUserRow = {
   id: string;
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const userId = typeof body?.userId === 'string' ? body.userId.trim() : '';
   const pin = typeof body?.pin === 'string' ? body.pin.trim() : '';
 
-  if (!userId || !pin || !UUID_RE.test(userId)) {
+  if (!userId || !pin || !APP_USER_ID_RE.test(userId)) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
