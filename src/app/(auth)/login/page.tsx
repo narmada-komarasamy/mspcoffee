@@ -318,7 +318,9 @@ export default function LoginPage() {
               ))}
             </div>
             {error && (
-              <p className="text-center text-red-400 text-sm">{error}</p>
+              <p className="rounded-lg bg-red-950/70 px-3 py-2 text-center text-sm font-semibold text-red-100">
+                {error}
+              </p>
             )}
 
             {/* Number pad */}

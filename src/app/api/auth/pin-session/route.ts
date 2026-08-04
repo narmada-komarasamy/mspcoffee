@@ -63,6 +63,15 @@ export async function POST(request: Request) {
         .maybeSingle<AppUserRow>();
     }
 
+    if ((result.error || !result.data) && name.toLowerCase() === 'admin') {
+      result = await supabase
+        .from('app_users')
+        .select('id, name, pin, role, estate, active')
+        .eq('pin', pin)
+        .limit(1)
+        .maybeSingle<AppUserRow>();
+    }
+
     user = result.data;
     error = result.error;
   } catch {
@@ -82,6 +91,10 @@ export async function POST(request: Request) {
 
   if (user.active === false) {
     return NextResponse.json({ error: 'This admin user is disabled.' }, { status: 401 });
+  }
+
+  if (name.toLowerCase() === 'admin' && user.role.trim().toLowerCase() !== 'admin') {
+    return NextResponse.json({ error: 'Admin login requires an admin account PIN.' }, { status: 403 });
   }
 
   const response = NextResponse.json({
