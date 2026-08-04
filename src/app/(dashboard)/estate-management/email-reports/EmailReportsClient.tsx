@@ -116,9 +116,14 @@ function hasEmailAuth() {
   return Boolean(authHeaders()['x-msp-user-pin']);
 }
 
-async function refreshPinSession() {
+async function refreshPinSession(): Promise<{ ok: true } | { ok: false; error: string }> {
   const credentials = currentUserCredentials();
-  if (!credentials) return false;
+  if (!credentials) {
+    return {
+      ok: false,
+      error: 'This browser session does not include secure email credentials. Sign out, sign back in as admin, then retry.',
+    };
+  }
 
   const response = await fetch('/api/auth/pin-session', {
     method: 'POST',
@@ -127,14 +132,20 @@ async function refreshPinSession() {
     body: JSON.stringify(credentials),
   });
 
-  if (!response.ok) return false;
+  const body = await response.json().catch(() => null) as { user?: unknown; error?: string } | null;
 
-  const body = await response.json().catch(() => null) as { user?: unknown } | null;
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: body?.error ?? 'Could not refresh the admin email session.',
+    };
+  }
+
   if (body?.user) {
     localStorage.setItem('msp_user', JSON.stringify(body.user));
     window.dispatchEvent(new Event('msp-user-updated'));
   }
-  return true;
+  return { ok: true };
 }
 
 async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
@@ -147,8 +158,9 @@ async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}, retr
     },
   });
 
-  if (response.status === 401 && retry && await refreshPinSession()) {
-    return emailFetch(input, init, false);
+  if (response.status === 401 && retry) {
+    const refreshed = await refreshPinSession();
+    if (refreshed.ok) return emailFetch(input, init, false);
   }
 
   return response;
@@ -231,7 +243,11 @@ export function EmailReportsClient() {
 
       try {
         if (!hasEmailAuth()) {
-          await refreshPinSession();
+          const refreshed = await refreshPinSession();
+          if (!refreshed.ok && !cancelled) {
+            setMessage(refreshed.error);
+            return;
+          }
         }
 
         const response = await emailFetch('/api/email/status');
@@ -348,8 +364,8 @@ export function EmailReportsClient() {
   async function buildPreview() {
     if (!hasEmailAuth()) {
       const refreshed = await refreshPinSession();
-      if (!refreshed && !hasEmailAuth()) {
-        setMessage('Email access could not verify your admin session. Sign out, sign back in as admin, then retry.');
+      if (!refreshed.ok && !hasEmailAuth()) {
+        setMessage(refreshed.error);
         return null;
       }
     }
@@ -391,8 +407,8 @@ export function EmailReportsClient() {
   async function submitBatch(action: 'send_now' | 'schedule') {
     if (!hasEmailAuth()) {
       const refreshed = await refreshPinSession();
-      if (!refreshed && !hasEmailAuth()) {
-        setMessage('Email access could not verify your admin session. Sign out, sign back in as admin, then retry.');
+      if (!refreshed.ok && !hasEmailAuth()) {
+        setMessage(refreshed.error);
         return;
       }
     }
