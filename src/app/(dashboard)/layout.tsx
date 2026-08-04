@@ -201,6 +201,7 @@ const navItems: NavItem[] = [
       { label: 'User Management',   href: '/admin-controls/users' },
       { label: 'Role & Permissions', href: '/admin-controls/permissions' },
       { label: 'Activity Log',      href: '/admin-controls/activity-log' },
+      { label: 'Email Activity',     href: '/admin-controls/email-activity' },
     ],
   },
 ];

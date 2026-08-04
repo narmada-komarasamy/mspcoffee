@@ -7,6 +7,7 @@ import {
   CloudRain, Fuel, Droplets, FileText, Users, Wheat, DollarSign,
   Sprout, SprayCan, Truck, Package, ShoppingCart, CloudSun, Brain,
   UserCog, Menu, X, LogOut, Coffee, Globe, Award, BarChart2, ChevronDown,
+  Mail,
   CalendarDays,
 } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/auth/access';
@@ -16,7 +17,7 @@ import { signOut } from './actions';
 const ICON_MAP: Record<string, React.ElementType> = {
   CloudRain, Fuel, Droplets, FileText, Users, Wheat, DollarSign,
   Sprout, SprayCan, Truck, Package, ShoppingCart, CloudSun, Brain, UserCog, Globe, Award, BarChart2,
-  CalendarDays,
+  Mail, CalendarDays,
 };
 
 type Profile = { name: string; role: string; estate: string | null };
