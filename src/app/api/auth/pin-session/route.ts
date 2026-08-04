@@ -60,8 +60,16 @@ export async function POST(request: Request) {
     );
   }
 
-  if (error || !user || user.pin !== pin || user.active === false) {
+  if (error || !user) {
+    return NextResponse.json({ error: 'Server login could not find this admin user. Check Vercel Supabase env points to the same database as the browser app.' }, { status: 401 });
+  }
+
+  if (user.pin !== pin) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  }
+
+  if (user.active === false) {
+    return NextResponse.json({ error: 'This admin user is disabled.' }, { status: 401 });
   }
 
   const response = NextResponse.json({

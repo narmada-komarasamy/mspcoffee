@@ -167,6 +167,13 @@ async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}, retr
   if (response.status === 401 && retry) {
     const refreshed = await refreshPinSession();
     if (refreshed.ok) return emailFetch(input, init, false);
+    return new Response(
+      JSON.stringify({ error: `Email session repair failed: ${refreshed.error}` }),
+      {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }
+    );
   }
 
   return response;
