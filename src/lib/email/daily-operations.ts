@@ -211,7 +211,7 @@ export async function buildDailyOperationsDigest({
     recipients: [],
     cc: [],
     reportTitle: `Daily Operations Digest - ${date}`,
-    sourcePath: currentPage || '/email-composer',
+    sourcePath: currentPage || '/estate-management/email-reports',
     subject: `MSP Coffee Daily Operations Digest - ${date}`,
     note,
     attachmentName: `daily-operations-digest-${date}.html`,

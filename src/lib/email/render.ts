@@ -17,6 +17,7 @@ export function defaultSubject(payload: EmailPayload) {
   const prefix: Record<EmailPayload['type'], string> = {
     production_report: 'Production Report',
     daily_operations_digest: 'Daily Operations Digest',
+    email_report: 'Email Report',
     sales_inventory_summary: 'Sales and Inventory Summary',
     order_notification: 'Order Update',
     alert: 'MSP Coffee Alert',

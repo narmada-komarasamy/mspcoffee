@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     : todayInIndia();
   const currentPage = typeof body?.currentPage === 'string' && body.currentPage.startsWith('/')
     ? body.currentPage
-    : '/email-composer';
+    : '/estate-management/email-reports';
   const note = typeof body?.note === 'string' ? body.note.trim() : '';
 
   const payload = await buildDailyOperationsDigest({

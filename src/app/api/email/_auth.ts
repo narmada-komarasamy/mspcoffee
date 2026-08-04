@@ -9,7 +9,7 @@ type AppUserRow = {
   name: string | null;
 };
 
-export const EMAIL_ROLES = ['admin', 'supervisor', 'ceo'];
+export const EMAIL_ROLES = ['admin'];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
 export async function requireEmailUser(request: Request, allowedRoles = EMAIL_ROLES) {

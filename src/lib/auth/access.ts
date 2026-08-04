@@ -6,8 +6,8 @@
 
 export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo' | 'hr';
 
-export type NavLeafDef  = { label: string; href: string };
-export type NavGroupDef = { label: string; href?: never; children: NavLeafDef[] };
+export type NavLeafDef  = { label: string; href: string; roles?: Role[] };
+export type NavGroupDef = { label: string; href?: never; roles?: Role[]; children: NavLeafDef[] };
 export type NavChildDef = NavLeafDef | NavGroupDef;
 
 export type NavItemDef = {
@@ -23,6 +23,7 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',             href: '/ho-fuel',         iconName: 'Droplets',     roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar', href: '/operations-calendar', iconName: 'CalendarDays', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
+  { label: 'Email Reports',       href: '/estate-management/email-reports', iconName: 'Mail', roles: ['admin'] },
   {
     label: 'Recurring Bills', href: '/recurring-bills/phone-bills', iconName: 'FileText', roles: ['admin', 'supervisor', 'ceo'],
     children: [
@@ -33,6 +34,7 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Estate Management', href: '/estate-management', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'],
     children: [
       { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
+      { label: 'Email Reports', href: '/estate-management/email-reports', roles: ['admin'] },
     ],
   },
   {
@@ -136,7 +138,6 @@ export const NAV_ITEMS: NavItemDef[] = [
   { label: 'Shopify Orders',      href: '/shopify-orders',  iconName: 'ShoppingCart', roles: ['admin'] },
   { label: 'Weather',             href: '/weather',         iconName: 'CloudSun',     roles: ['admin', 'worker'] },
   { label: 'AI Insights',         href: '/ai-insights',     iconName: 'Brain',        roles: ['admin'] },
-  { label: 'Email Composer',      href: '/email-composer',  iconName: 'Mail',         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Email Activity',      href: '/admin-controls/email-activity', iconName: 'Mail', roles: ['admin'] },
   { label: 'Users',               href: '/admin/users',     iconName: 'UserCog',      roles: ['admin'] },
 ];
@@ -147,6 +148,19 @@ export const NAV_ITEMS: NavItemDef[] = [
  * they are governed by page-level requireRole() checks instead.
  */
 export function canAccess(pathname: string, role: Role): boolean {
+  for (const item of NAV_ITEMS) {
+    for (const child of item.children ?? []) {
+      if ('children' in child) {
+        const grandchild = child.children.find((entry) => pathname === entry.href || pathname.startsWith(entry.href + '/'));
+        if (grandchild) return (grandchild.roles ?? item.roles).includes(role);
+        continue;
+      }
+      if (pathname === child.href || pathname.startsWith(child.href + '/')) {
+        return (child.roles ?? item.roles).includes(role);
+      }
+    }
+  }
+
   const match = NAV_ITEMS.find(
     (i) => pathname === i.href || pathname.startsWith(i.href + '/')
   );

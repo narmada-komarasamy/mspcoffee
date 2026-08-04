@@ -66,25 +66,27 @@ supabase db push
 ## 4. Test delivery
 
 1. Start the app with `npm run dev`.
-2. Open `/email-composer`, or click the mail icon in the dashboard header from any page.
-3. Choose the digest date and report blocks.
-4. Click `Preview` to review the daily operations digest.
-5. Add an internal test recipient and click `Send Digest`.
-6. Open `/admin-controls/email-activity` and confirm the status is `sent`.
+2. Sign in as an admin.
+3. Open `/estate-management/email-reports`, click **Email Reports** in the sidebar, or use the mail icon in the dashboard header.
+4. Choose content pages, recipients, and personalisation variables.
+5. Click `Preview` to review the rendered email for each recipient.
+6. Add an internal test recipient and click `Send Now`.
+7. Open `/admin-controls/email-activity` and confirm the status is `sent`.
 
 If `EMAIL_PROVIDER` or `RESEND_API_KEY` is missing, the app records the attempt as `logged` instead of sending live email.
 
 ## 5. Current report blocks
 
-The Phase 1 composer can combine:
+The admin-only Email Reports builder can combine:
 
-- Rainfall records from `rainfall`
-- Fleet fuel records from `fleet_daily`
-- HO fuel records from `ho_fuel_log`
-- A current-page reference from the global mail button
-- Labour attendance status
+- Estate Overview
+- Harvest / Crop Report
+- Quality / Cupping Results
+- Inventory / Stock Levels
+- Sustainability / Certification Status
+- Financial Summary
+- Custom text block
 
-The labour attendance block is intentionally marked as not connected because the
-current Stanmore daily labour page keeps attendance in browser state. To include
-live attendance totals in automatic digests, add a persistent attendance table
-and save daily attendance before Phase 2 scheduling.
+The preview and send APIs are restricted to verified admin users. Non-admin roles
+do not see the menu item or header mail shortcut, and direct API calls return a
+403.

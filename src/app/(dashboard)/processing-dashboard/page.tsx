@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { EmailReportButton } from '@/components/email/EmailReportButton';
 
 // ── Static KPI data per season ────────────────────────────────────────────────
 type EstateData = {
@@ -131,40 +130,6 @@ export default function ProcessingDashboardPage() {
   const totalDry          = season.estates.reduce((s, e) => s + e.dryParchment, 0);
   const avgOutturn        = (totalDry / totalRipe) * 100;
   const totalProcessBatch = season.naturals + season.washed + season.honeyPsd + season.robusta;
-  const reportPayload = {
-    type: 'production_report' as const,
-    reportTitle: `Processing Summary ${season.label}`,
-    sourcePath: '/processing-dashboard',
-    subject: `MSP Coffee Processing Summary - ${season.label}`,
-    attachmentName: `processing-summary-${season.label.replace(/\s/g, '')}.html`,
-    data: {
-      summary: [
-        { label: 'Total Batches', value: fmtIN(totalBatches), detail: 'Across all 5 estates' },
-        { label: 'Ripe Cherry', value: `${fmtIN(totalRipe)} kg`, detail: 'Season input' },
-        { label: 'Dry Parchment', value: `${fmtIN(totalDry)} kg`, detail: 'Season output' },
-        { label: 'Average Outturn', value: pct(avgOutturn), detail: 'Cherry to dry parchment' },
-      ],
-      sections: [
-        {
-          title: 'Estate Performance',
-          rows: season.estates.map((estate) => ({
-            label: estate.name,
-            value: `${fmtIN(estate.dryParchment)} kg dry parchment`,
-            detail: `${fmtIN(estate.ripeCherry)} kg ripe cherry, ${estate.batches} batches, ${pct(estate.outturn)} outturn`,
-          })),
-        },
-        {
-          title: 'Process Breakdown',
-          rows: [
-            { label: 'Naturals', value: fmtIN(season.naturals), detail: 'Batches' },
-            { label: 'Washed', value: fmtIN(season.washed), detail: 'Batches' },
-            { label: 'Honey / PSD', value: fmtIN(season.honeyPsd), detail: 'Batches' },
-            { label: 'Robusta', value: fmtIN(season.robusta), detail: 'Batches' },
-          ],
-        },
-      ],
-    },
-  };
 
   return (
     <div style={{ color: '#1a1a1a' }}>
@@ -173,7 +138,6 @@ export default function ProcessingDashboardPage() {
           <h1 style={{ margin: 0, color: '#1b4a1b', fontSize: '1.45rem', fontWeight: 800 }}>Processing Data</h1>
           <p style={{ margin: '3px 0 0', color: '#6b7280', fontSize: '.84rem' }}>Review estate production and share season summaries.</p>
         </div>
-        <EmailReportButton payload={reportPayload} />
       </div>
 
       {/* ── Season tabs ─────────────────────────────────────────────────────── */}

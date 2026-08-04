@@ -58,8 +58,8 @@ type AppUser = {
 // hrefs the current user's role is allowed to access (null = not loaded yet)
 type AllowedSet = Set<string> | null;
 
-type NavLeaf  = { label: string; href: string };
-type NavGroup = { label: string; href?: never; children: NavLeaf[] };
+type NavLeaf  = { label: string; href: string; roles?: string[] };
+type NavGroup = { label: string; href?: never; roles?: string[]; children: NavLeaf[] };
 type NavChild = NavLeaf | NavGroup;
 
 type NavItem = {
@@ -75,6 +75,7 @@ const navItems: NavItem[] = [
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
+  { label: 'Email Reports',        href: '/estate-management/email-reports', icon: Mail, roles: ['admin'] },
   {
     label: 'Recurring Bills', href: '/recurring-bills/phone-bills', icon: FileText, roles: ['admin', 'supervisor', 'ceo'],
     children: [
@@ -85,6 +86,7 @@ const navItems: NavItem[] = [
     label: 'Estate Management', href: '/estate-management', icon: Users, roles: ['admin', 'supervisor', 'ceo'],
     children: [
       { label: 'Estate Staff Meetings', href: '/estate-management/staff-meetings' },
+      { label: 'Email Reports', href: '/estate-management/email-reports', roles: ['admin'] },
     ],
   },
   {
@@ -196,7 +198,6 @@ const navItems: NavItem[] = [
   },
   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
-  { label: 'Email Composer',       href: '/email-composer',       icon: Mail,         roles: ['admin', 'supervisor', 'ceo'] },
   {
     label: 'Admin Controls', href: '/admin-controls', icon: Shield, roles: ['admin'],
     children: [
@@ -211,6 +212,19 @@ const navItems: NavItem[] = [
 const REQUIRED_ROLE_PAGES: Record<string, string[]> = {
   hr: ['/operations-calendar', '/labour-activities'],
 };
+
+function childAllowed(child: NavChild, role: string) {
+  return !child.roles || child.roles.includes(role);
+}
+
+function visibleChild(child: NavChild, role: string): NavChild | null {
+  if (!childAllowed(child, role)) return null;
+  if ('children' in child) {
+    const children = child.children.filter((grandchild) => childAllowed(grandchild, role));
+    return children.length ? { ...child, children } : null;
+  }
+  return child;
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
@@ -288,7 +302,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Route-level guard: redirect if user navigates directly to a blocked page
   useEffect(() => {
-    if (!user || user.role === 'admin' || allowedPages === null) return;
+    if (!user) return;
+    if (user.role !== 'admin' && pathname.startsWith('/estate-management/email-reports')) {
+      router.replace('/unauthorized');
+      return;
+    }
+    if (user.role === 'admin' || allowedPages === null) return;
     // Find the top-level nav item whose href matches the current path prefix
     const matchedItem = navItems.find(item => pathname.startsWith(item.href));
     if (!matchedItem) return; // unknown route — let it through
@@ -357,6 +376,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // If allowedPages is loaded (non-null), use DB permissions; otherwise fall back to static roles
   const filteredNav = navItems.filter((item) => {
+    if (item.href === '/estate-management/email-reports' && user.role !== 'admin') return false;
     if (user.role === 'admin') return true;
     if ((REQUIRED_ROLE_PAGES[user.role] ?? []).includes(item.href)) return true;
     if (allowedPages !== null) return allowedPages.has(item.href);
@@ -419,9 +439,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {filteredNav.map((item) => {
             const Icon        = item.icon;
             const active      = pathname === item.href;
-            const hasChildren = !!(item.children && item.children.length > 0);
+            const visibleChildren = item.children
+              ?.map((child) => visibleChild(child, user.role))
+              .filter((child): child is NavChild => Boolean(child));
+            const hasChildren = !!(visibleChildren && visibleChildren.length > 0);
             const isExpanded  = expandedNav[item.href] ?? false;
-            const childActive = hasChildren && item.children!.some(c =>
+            const childActive = hasChildren && visibleChildren!.some(c =>
               ('href' in c && pathname === c.href) ||
               ('children' in c && c.children.some(gc => pathname === gc.href))
             );
@@ -447,7 +470,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                   {isExpanded && (
                     <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
-                      {item.children!.map(child => {
+                      {visibleChildren!.map(child => {
                         // ── Season group (e.g. "2025–2026") ──────────────────
                         if ('children' in child) {
                           const groupKey     = `${item.href}__${child.label}`;
@@ -556,14 +579,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ))}
             </div>
 
-            <Link
-              href={`/email-composer?source=${encodeURIComponent(pathname)}`}
-              className="flex items-center justify-center w-8 h-8 rounded-full transition"
-              style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.85)' }}
-              title="Email report"
-            >
-              <Mail className="h-4 w-4" />
-            </Link>
+            {user.role === 'admin' && (
+              <Link
+                href={`/estate-management/email-reports?source=${encodeURIComponent(pathname)}`}
+                className="flex items-center justify-center w-8 h-8 rounded-full transition"
+                style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.85)' }}
+                title="Email reports"
+              >
+                <Mail className="h-4 w-4" />
+              </Link>
+            )}
 
             {/* Fullscreen toggle */}
             <button onClick={toggleFullscreen}
