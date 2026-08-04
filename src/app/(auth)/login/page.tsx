@@ -78,7 +78,7 @@ export default function LoginPage() {
     fetch('/api/auth/pin-session', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, pin: enteredPin }),
+      body: JSON.stringify({ userId: user.id, name: user.name, pin: enteredPin }),
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null) as { user?: AppUser; error?: string } | null;

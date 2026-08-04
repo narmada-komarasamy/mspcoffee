@@ -23,11 +23,12 @@ function sessionCookieOptions() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as { userId?: unknown; pin?: unknown } | null;
+  const body = await request.json().catch(() => null) as { userId?: unknown; name?: unknown; pin?: unknown } | null;
   const userId = typeof body?.userId === 'string' ? body.userId.trim() : '';
+  const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const pin = typeof body?.pin === 'string' ? body.pin.trim() : '';
 
-  if (!userId || !pin || !APP_USER_ID_RE.test(userId)) {
+  if ((!userId && !name) || !pin || (userId && !APP_USER_ID_RE.test(userId))) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
@@ -36,11 +37,20 @@ export async function POST(request: Request) {
 
   try {
     const supabase = adminClient();
-    const result = await supabase
+    let result = await supabase
       .from('app_users')
       .select('id, name, pin, role, estate, active')
       .eq('id', userId)
       .single<AppUserRow>();
+
+    if ((result.error || !result.data) && name) {
+      result = await supabase
+        .from('app_users')
+        .select('id, name, pin, role, estate, active')
+        .eq('name', name)
+        .single<AppUserRow>();
+    }
+
     user = result.data;
     error = result.error;
   } catch {

@@ -109,8 +109,10 @@ function currentUserCredentials() {
   const stored = localStorage.getItem('msp_user');
   if (!stored) return null;
   try {
-    const user = JSON.parse(stored) as { id?: string; pin?: string };
-    return user.id && APP_USER_ID_RE.test(user.id) && user.pin ? { userId: user.id, pin: user.pin } : null;
+    const user = JSON.parse(stored) as { id?: string; name?: string; pin?: string };
+    if (!user.pin) return null;
+    const userId = user.id && APP_USER_ID_RE.test(user.id) ? user.id : undefined;
+    return userId || user.name ? { userId, name: user.name, pin: user.pin } : null;
   } catch {
     return null;
   }
