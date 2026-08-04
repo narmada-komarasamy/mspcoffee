@@ -64,25 +64,46 @@ export default function LoginPage() {
       });
   }, []);
 
-  useEffect(() => {
-    if (pin.length === 4 && selectedUser) {
-      if (pin === selectedUser.pin) {
-        localStorage.setItem('msp_user', JSON.stringify(selectedUser));
-        // Set a session cookie so proxy.ts can verify auth server-side
-        document.cookie = 'msp_auth=1; path=/; SameSite=Lax';
+  const startSession = useCallback((user: AppUser, enteredPin: string) => {
+    fetch('/api/auth/pin-session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, pin: enteredPin }),
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as { user?: AppUser; error?: string } | null;
+        if (!response.ok || !body?.user) {
+          throw new Error(body?.error ?? 'Could not start session');
+        }
+        localStorage.setItem('msp_user', JSON.stringify(body.user));
         router.push('/home');
-      } else {
-        setError('Incorrect PIN');
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Could not start session');
         setTimeout(() => {
           setPin('');
           setError('');
-        }, 800);
-      }
-    }
-  }, [pin, selectedUser, router]);
+        }, 900);
+      });
+  }, [router]);
 
   const handleDigit = (d: string) => {
-    if (pin.length < 4) setPin((p) => p + d);
+    if (pin.length >= 4 || !selectedUser) return;
+    const nextPin = pin + d;
+    setPin(nextPin);
+
+    if (nextPin.length !== 4) return;
+
+    if (nextPin === selectedUser.pin) {
+      startSession(selectedUser, nextPin);
+      return;
+    }
+
+    setError('Incorrect PIN');
+    setTimeout(() => {
+      setPin('');
+      setError('');
+    }, 800);
   };
 
   const handleDelete = () => {

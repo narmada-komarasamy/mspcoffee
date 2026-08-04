@@ -345,7 +345,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = () => {
     localStorage.removeItem('msp_user');
+    void fetch('/api/auth/pin-session', { method: 'DELETE' });
     document.cookie = 'msp_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'msp_user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'msp_user_pin=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     router.push('/login');
   };
 
