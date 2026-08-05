@@ -277,6 +277,16 @@ export default function LoginPage() {
                 >
                   Continue
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('msp_user');
+                    window.location.href = '/api/auth/reset-session';
+                  }}
+                  className="w-full rounded-lg border border-white/15 bg-white/10 px-4 py-3 font-semibold text-white transition hover:bg-white/20"
+                >
+                  Reset Session
+                </button>
               </div>
             )}
           </div>
