@@ -1,4 +1,5 @@
 import type { EmailPayload } from './payload';
+import nodemailer from 'nodemailer';
 
 export type SendEmailInput = {
   payload: EmailPayload;
@@ -7,7 +8,7 @@ export type SendEmailInput = {
   html: string;
 };
 
-export type EmailProviderName = 'resend' | 'webhook';
+export type EmailProviderName = 'resend' | 'smtp' | 'webhook';
 
 export class EmailDeliveryError extends Error {
   provider: string;
@@ -23,7 +24,7 @@ export class EmailDeliveryError extends Error {
 
 export function getEmailProviderConfig() {
   const providerEnv = process.env.EMAIL_PROVIDER;
-  const provider: EmailProviderName = providerEnv === 'resend' || providerEnv === 'webhook'
+  const provider: EmailProviderName = providerEnv === 'resend' || providerEnv === 'smtp' || providerEnv === 'webhook'
     ? providerEnv
     : process.env.RESEND_API_KEY
       ? 'resend'
@@ -35,7 +36,9 @@ export function getEmailProviderConfig() {
     from,
     configured: provider === 'resend'
       ? Boolean(process.env.RESEND_API_KEY)
-      : Boolean(process.env.EMAIL_WEBHOOK_URL),
+      : provider === 'smtp'
+        ? Boolean(process.env.SMTP_USER && process.env.SMTP_PASS)
+        : Boolean(process.env.EMAIL_WEBHOOK_URL),
   };
 }
 
@@ -103,6 +106,70 @@ export async function sendEmail(input: SendEmailInput) {
       providerMessageId: typeof responseBody?.id === 'string' ? responseBody.id : null,
       response: responseBody,
     };
+  }
+
+  if (provider === 'smtp') {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+
+    if (!smtpUser || !smtpPass) {
+      return {
+        status: 'logged' as const,
+        provider: 'smtp_not_configured',
+        from,
+        providerMessageId: null,
+        response: { message: 'Set SMTP_USER and SMTP_PASS to enable live delivery.' },
+      };
+    }
+
+    const port = Number.parseInt(process.env.SMTP_PORT || '465', 10);
+    const secure = process.env.SMTP_SECURE
+      ? process.env.SMTP_SECURE === 'true'
+      : port === 465;
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port,
+      secure,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    try {
+      const info = await transporter.sendMail({
+        from,
+        to: input.payload.recipients,
+        cc: input.payload.cc,
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+        attachments: input.payload.attachmentName
+          ? [{
+              filename: input.payload.attachmentName,
+              content: Buffer.from(input.html, 'utf8'),
+            }]
+          : [],
+      });
+
+      return {
+        status: 'sent' as const,
+        provider: 'smtp',
+        from,
+        providerMessageId: info.messageId || null,
+        response: {
+          accepted: info.accepted,
+          rejected: info.rejected,
+          response: info.response,
+        },
+      };
+    } catch (error) {
+      throw new EmailDeliveryError(
+        error instanceof Error ? error.message : 'SMTP email delivery failed',
+        'smtp',
+        null
+      );
+    }
   }
 
   if (!webhookUrl) {
