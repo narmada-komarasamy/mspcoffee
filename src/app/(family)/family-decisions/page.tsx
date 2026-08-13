@@ -8,7 +8,6 @@ import {
   Clock3,
   IndianRupee,
   Lightbulb,
-  Mail,
   MessageSquareWarning,
   Plus,
   Printer,
@@ -17,6 +16,7 @@ import {
   Vote,
   XCircle,
 } from 'lucide-react';
+import { EmailReportButton } from '@/components/email/EmailReportButton';
 
 type VoteStatus = 'Yes' | 'No' | 'Pending';
 
@@ -90,29 +90,72 @@ export default function FamilyDecisionsPage() {
   const pendingVotes = activeVotes.filter(vote => vote.vote === 'Pending').length;
   const totalCast = yesVotes + noVotes;
   const yesPercent = totalCast ? Math.round((yesVotes / totalCast) * 100) : 0;
-  const emailHref = useMemo(() => {
-    const subject = `Family decision needed: ${decision.question}`;
-    const body = [
-      'Dear family,',
-      '',
-      'Please vote on this decision:',
-      decision.question,
-      '',
-      'Reply with:',
-      '1. Yes or No',
-      '2. Any objection that must be resolved',
-      '3. Any better suggestion',
-      '',
-      'Project details:',
-      `Estimated cost: ${decision.cost}`,
-      `Project lead: ${decision.lead}`,
-      `Timeline: ${decision.timeline}`,
-      '',
-      `Decision rule: ${decision.rule}`,
-    ].join('\n');
+  const emailPayload = useMemo(() => {
+    const recommendation = yesVotes > noVotes ? 'Proceed' : 'Hold';
 
-    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }, [decision]);
+    return {
+      type: 'custom_report' as const,
+      subject: `Family decision needed - ${decision.question}`,
+      reportTitle: 'Family Decisions',
+      sourcePath: '/family-decisions',
+      attachmentName: 'family-decision.html',
+      recipients: [],
+      note: 'Please reply with Yes or No, any objection that must be resolved, and any better suggestion.',
+      data: {
+        summary: [
+          { label: 'Question', value: decision.question },
+          { label: 'Recommendation', value: recommendation },
+          { label: 'Yes votes', value: String(yesVotes), detail: `${yesPercent}% yes majority` },
+          { label: 'No votes', value: String(noVotes) },
+          { label: 'Pending votes', value: String(pendingVotes) },
+        ],
+        sections: [
+          {
+            title: 'Project details',
+            rows: [
+              { label: 'Estimated cost', value: decision.cost, detail: 'Budget or expected spend' },
+              { label: 'Project lead', value: decision.lead, detail: 'Responsible after approval' },
+              { label: 'Timeline', value: decision.timeline, detail: 'Target window' },
+            ],
+          },
+          {
+            title: 'Decision rule',
+            rows: [{ label: 'Rule', value: decision.rule }],
+          },
+          {
+            title: 'Member votes',
+            rows: activeVotes.map(vote => ({
+              label: vote.name,
+              value: vote.vote,
+              detail: vote.note,
+            })),
+          },
+          {
+            title: 'Objections to resolve',
+            rows: objections.map(objection => ({
+              label: objection.by,
+              value: objection.concern,
+              detail: objection.response,
+            })),
+          },
+          {
+            title: 'Suggestions',
+            rows: activeSuggestions.length
+              ? activeSuggestions.map((suggestion, index) => ({ label: `Option ${index + 1}`, value: suggestion }))
+              : [{ label: 'Suggestions', value: 'No suggestions yet' }],
+          },
+          {
+            title: 'Close-out plan',
+            rows: decisionSteps.map(step => ({
+              label: step.label,
+              value: step.done ? 'Done' : 'Pending',
+              detail: step.date,
+            })),
+          },
+        ],
+      },
+    };
+  }, [activeSuggestions, activeVotes, decision, noVotes, pendingVotes, yesPercent, yesVotes]);
 
   const saveQuestion = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -167,10 +210,7 @@ export default function FamilyDecisionsPage() {
             <Printer className="h-4 w-4" />
             Print
           </button>
-          <a href={emailHref} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold transition active:scale-[0.99]" style={{ background: '#fff', borderColor: 'var(--t-border)', color: 'var(--t-heading)' }}>
-            <Mail className="h-4 w-4" />
-            Email family
-          </a>
+          <EmailReportButton payload={emailPayload} label="Email family" />
         </div>
       </section>
 
