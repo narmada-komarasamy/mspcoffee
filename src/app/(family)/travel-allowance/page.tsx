@@ -563,13 +563,12 @@ export default function TravelAllowancePage() {
 
   const filteredPaymentRows = useMemo(() => {
     const query = paymentSearch.trim().toLowerCase();
-    const selectedMonth = /^\d{4}-\d{2}$/.test(paymentMonth) ? paymentMonth : '';
 
     return paymentRows.filter(row => {
       const paid = row.payment?.status === 'paid';
       if (paymentStatus === 'paid' && !paid) return false;
       if (paymentStatus === 'unpaid' && paid) return false;
-      if (selectedMonth && row.month !== selectedMonth) return false;
+      if (paymentMonth && row.month !== paymentMonth) return false;
       if (!query) return true;
 
       return [
@@ -582,6 +581,10 @@ export default function TravelAllowancePage() {
       ].some(value => value.toLowerCase().includes(query));
     });
   }, [paymentMonth, paymentRows, paymentSearch, paymentStatus]);
+
+  const paymentMonthOptions = useMemo(() => {
+    return Array.from(new Set(paymentRows.map(row => row.month))).sort((a, b) => b.localeCompare(a));
+  }, [paymentRows]);
 
   const paymentStats = useMemo(() => {
     const paidRows = filteredPaymentRows.filter(row => row.payment?.status === 'paid');
@@ -800,7 +803,10 @@ export default function TravelAllowancePage() {
               </select>
             </Field>
             <Field label="Month">
-              <input type="month" value={paymentMonth} onChange={event => setPaymentMonth(event.target.value)} className="ta-input" />
+              <select value={paymentMonth} onChange={event => setPaymentMonth(event.target.value)} className="ta-input">
+                <option value="">All months</option>
+                {paymentMonthOptions.map(month => <option key={month} value={month}>{month}</option>)}
+              </select>
             </Field>
           </div>
 
