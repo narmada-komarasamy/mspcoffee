@@ -563,12 +563,13 @@ export default function TravelAllowancePage() {
 
   const filteredPaymentRows = useMemo(() => {
     const query = paymentSearch.trim().toLowerCase();
+    const selectedMonth = /^\d{4}-\d{2}$/.test(paymentMonth) ? paymentMonth : '';
 
     return paymentRows.filter(row => {
       const paid = row.payment?.status === 'paid';
       if (paymentStatus === 'paid' && !paid) return false;
       if (paymentStatus === 'unpaid' && paid) return false;
-      if (paymentMonth && row.month !== paymentMonth) return false;
+      if (selectedMonth && row.month !== selectedMonth) return false;
       if (!query) return true;
 
       return [
@@ -583,8 +584,8 @@ export default function TravelAllowancePage() {
   }, [paymentMonth, paymentRows, paymentSearch, paymentStatus]);
 
   const paymentStats = useMemo(() => {
-    const paidRows = paymentRows.filter(row => row.payment?.status === 'paid');
-    const unpaidRows = paymentRows.filter(row => row.payment?.status !== 'paid');
+    const paidRows = filteredPaymentRows.filter(row => row.payment?.status === 'paid');
+    const unpaidRows = filteredPaymentRows.filter(row => row.payment?.status !== 'paid');
 
     return {
       paid: paidRows.reduce((sum, row) => sum + row.amount, 0),
@@ -592,7 +593,7 @@ export default function TravelAllowancePage() {
       paidCount: paidRows.length,
       unpaidCount: unpaidRows.length,
     };
-  }, [paymentRows]);
+  }, [filteredPaymentRows]);
 
   const markPayment = async (row: PaymentRow, status: 'paid' | 'unpaid') => {
     if (!isAdmin) {
