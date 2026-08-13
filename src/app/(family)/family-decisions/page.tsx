@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   CalendarDays,
@@ -27,6 +27,7 @@ type MemberVote = {
 };
 
 type Decision = {
+  id?: string;
   question: string;
   cost: string;
   lead: string;
@@ -45,6 +46,15 @@ type StoredFamilyDecisionState = {
   votes: MemberVote[];
   objections: Objection[];
   suggestions: string[];
+};
+
+type FamilyDecisionApiState = StoredFamilyDecisionState & {
+  error?: string;
+};
+
+type AppUser = {
+  id?: string;
+  pin?: string;
 };
 
 const familyMembers = ['Ashok', 'Meera', 'Rohan', 'Anika'];
@@ -128,6 +138,25 @@ function readStoredFamilyDecisionState(): StoredFamilyDecisionState {
   }
 }
 
+function familyDecisionAuthHeaders() {
+  if (typeof window === 'undefined') return null;
+
+  const stored = localStorage.getItem('msp_user');
+  if (!stored) return null;
+
+  try {
+    const user = JSON.parse(stored) as AppUser;
+    if (!user.id || !user.pin) return null;
+    return {
+      'Content-Type': 'application/json',
+      'x-msp-user-id': user.id,
+      'x-msp-user-pin': user.pin,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function FamilyDecisionsPage() {
   const [storedState] = useState(readStoredFamilyDecisionState);
   const [decision, setDecision] = useState<Decision>(storedState.decision);
@@ -140,6 +169,8 @@ export default function FamilyDecisionsPage() {
   const [responseNote, setResponseNote] = useState('');
   const [responseObjection, setResponseObjection] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isSavingDecision, setIsSavingDecision] = useState(false);
 
   const yesVotes = activeVotes.filter(vote => vote.vote === 'Yes').length;
   const noVotes = activeVotes.filter(vote => vote.vote === 'No').length;
@@ -155,6 +186,39 @@ export default function FamilyDecisionsPage() {
       suggestions: activeSuggestions,
     } satisfies StoredFamilyDecisionState));
   }, [activeObjections, activeSuggestions, activeVotes, decision]);
+
+  const applyDecisionState = useCallback((state: FamilyDecisionApiState) => {
+    setDecision(state.decision);
+    setDraft(state.decision);
+    setActiveVotes(state.votes);
+    setActiveObjections(state.objections);
+    setActiveSuggestions(state.suggestions);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const headers = familyDecisionAuthHeaders();
+      if (!headers) {
+        setStatusMessage('Sign in to save family decisions across devices.');
+        return;
+      }
+
+      fetch('/api/family-decisions', { headers })
+        .then(async response => {
+          const body = await response.json().catch(() => null) as FamilyDecisionApiState | null;
+          if (!response.ok || !body) {
+            throw new Error(body?.error ?? 'Could not load family decisions.');
+          }
+          applyDecisionState(body);
+          setStatusMessage('Family decision responses are synced with Supabase.');
+        })
+        .catch(error => {
+          setStatusMessage(error instanceof Error ? error.message : 'Could not load family decisions.');
+        });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [applyDecisionState]);
   const emailPayload = useMemo(() => {
     const recommendation = yesVotes > noVotes ? 'Proceed' : 'Hold';
 
@@ -222,7 +286,7 @@ export default function FamilyDecisionsPage() {
     };
   }, [activeObjections, activeSuggestions, activeVotes, decision, noVotes, pendingVotes, yesPercent, yesVotes]);
 
-  const saveQuestion = (event: FormEvent<HTMLFormElement>) => {
+  const saveQuestion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const nextDecision = {
       question: draft.question.trim(),
@@ -234,44 +298,85 @@ export default function FamilyDecisionsPage() {
 
     if (!nextDecision.question) return;
 
-    setDecision(nextDecision);
-    setActiveVotes(familyMembers.map(name => ({ name, vote: 'Pending', note: 'Waiting for response.' })));
-    setActiveObjections([]);
-    setActiveSuggestions(newSuggestion.trim() ? [newSuggestion.trim()] : []);
-    setNewSuggestion('');
-    setComposerOpen(false);
+    const headers = familyDecisionAuthHeaders();
+    if (!headers) {
+      setStatusMessage('Sign in again before saving the question to Supabase.');
+      return;
+    }
+
+    setIsSavingDecision(true);
+    setStatusMessage('Saving question...');
+
+    try {
+      const response = await fetch('/api/family-decisions', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...nextDecision, openingSuggestion: newSuggestion }),
+      });
+      const body = await response.json().catch(() => null) as FamilyDecisionApiState | null;
+      if (!response.ok || !body) {
+        throw new Error(body?.error ?? 'Could not save family decision.');
+      }
+
+      applyDecisionState(body);
+      setNewSuggestion('');
+      setComposerOpen(false);
+      setStatusMessage('Question saved. Family responses will be recorded in Supabase.');
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Could not save family decision.');
+    } finally {
+      setIsSavingDecision(false);
+    }
   };
 
-  const recordResponse = (vote: VoteStatus) => {
+  const recordResponse = async (vote: VoteStatus) => {
     const note = responseNote.trim() || (vote === 'Pending' ? 'Waiting for response.' : `Recorded ${vote.toLowerCase()} in app.`);
     const objection = responseObjection.trim();
     const suggestion = newSuggestion.trim();
 
-    setActiveVotes(current => current.map(item => (
-      item.name === responseMember ? { ...item, vote, note } : item
-    )));
-
-    if (objection) {
-      setActiveObjections(current => [
-        ...current,
-        { by: responseMember, concern: objection, response: 'Needs response before close-out.' },
-      ]);
+    const headers = familyDecisionAuthHeaders();
+    if (!headers || !decision.id) {
+      setStatusMessage('Sign in again, then wait for the shared decision to load before recording a response.');
+      return;
     }
 
-    if (suggestion && !activeSuggestions.includes(suggestion)) {
-      setActiveSuggestions(current => [...current, suggestion]);
-    }
+    setIsSavingDecision(true);
+    setStatusMessage('Recording response...');
 
-    setResponseNote('');
-    setResponseObjection('');
-    setNewSuggestion('');
+    try {
+      const response = await fetch('/api/family-decisions', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          decisionId: decision.id,
+          memberName: responseMember,
+          vote,
+          note,
+          objection,
+          suggestion,
+        }),
+      });
+      const body = await response.json().catch(() => null) as FamilyDecisionApiState | null;
+      if (!response.ok || !body) {
+        throw new Error(body?.error ?? 'Could not record response.');
+      }
+
+      applyDecisionState(body);
+      setResponseNote('');
+      setResponseObjection('');
+      setNewSuggestion('');
+      setStatusMessage(`${responseMember}'s response was saved.`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Could not record response.');
+    } finally {
+      setIsSavingDecision(false);
+    }
   };
 
   const addSuggestion = () => {
     const suggestion = newSuggestion.trim();
     if (!suggestion || activeSuggestions.includes(suggestion)) return;
-    setActiveSuggestions(current => [...current, suggestion]);
-    setNewSuggestion('');
+    void recordResponse('Pending');
   };
 
   return (
@@ -349,9 +454,9 @@ export default function FamilyDecisionsPage() {
             </label>
 
             <div className="flex flex-col gap-2 sm:flex-row lg:col-span-2">
-              <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>
+              <button type="submit" disabled={isSavingDecision} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: 'var(--t-green)' }}>
                 <CheckCircle2 className="h-4 w-4" />
-                Save question
+                {isSavingDecision ? 'Saving...' : 'Save question'}
               </button>
               <button type="button" onClick={() => { setDraft(decision); setNewSuggestion(''); setComposerOpen(false); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)', color: 'var(--t-heading)' }}>
                 <XCircle className="h-4 w-4" />
@@ -420,11 +525,11 @@ export default function FamilyDecisionsPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <button onClick={() => recordResponse('Yes')} className="flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>
+            <button disabled={isSavingDecision} onClick={() => void recordResponse('Yes')} className="flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-black text-white disabled:opacity-60" style={{ background: 'var(--t-green)' }}>
               <CheckCircle2 className="h-5 w-5" />
               Vote yes
             </button>
-            <button onClick={() => recordResponse('No')} className="flex h-12 items-center justify-center gap-2 rounded-lg border text-sm font-black" style={{ borderColor: '#f3b2a8', background: '#fff7f5', color: '#9f2a1d' }}>
+            <button disabled={isSavingDecision} onClick={() => void recordResponse('No')} className="flex h-12 items-center justify-center gap-2 rounded-lg border text-sm font-black disabled:opacity-60" style={{ borderColor: '#f3b2a8', background: '#fff7f5', color: '#9f2a1d' }}>
               <XCircle className="h-5 w-5" />
               Vote no
             </button>
@@ -432,6 +537,11 @@ export default function FamilyDecisionsPage() {
 
           <div className="family-decision-no-print mt-5 rounded-lg border p-4" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)' }}>
             <h3 className="text-xs font-black uppercase tracking-[0.1em]" style={{ color: 'var(--t-heading)' }}>Record response</h3>
+            {statusMessage && (
+              <p className="mt-2 rounded-md border px-3 py-2 text-xs font-bold" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-heading)' }}>
+                {statusMessage}
+              </p>
+            )}
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               <DecisionSelect label="Family member" value={responseMember} options={familyMembers} onChange={setResponseMember} />
               <DecisionInput label="Comment" value={responseNote} placeholder="Reply note or context" onChange={setResponseNote} />
@@ -446,9 +556,9 @@ export default function FamilyDecisionsPage() {
                 />
               </label>
               <DecisionInput label="Suggestion" value={newSuggestion} placeholder="Alternative suggestion from this person" onChange={setNewSuggestion} />
-              <button onClick={() => recordResponse('Pending')} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-heading)' }}>
+              <button disabled={isSavingDecision} onClick={() => void recordResponse('Pending')} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black disabled:opacity-60" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-heading)' }}>
                 <Clock3 className="h-4 w-4" />
-                Save pending note
+                {isSavingDecision ? 'Saving...' : 'Save pending note'}
               </button>
             </div>
           </div>
@@ -524,7 +634,7 @@ export default function FamilyDecisionsPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <input value={newSuggestion} onChange={event => setNewSuggestion(event.target.value)} className="h-11 w-full rounded-lg border px-3 text-sm outline-none" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }} placeholder="Suggest another name or approach" />
-            <button onClick={addSuggestion} className="rounded-lg px-4 text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>Add</button>
+            <button disabled={isSavingDecision} onClick={addSuggestion} className="rounded-lg px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: 'var(--t-green)' }}>Add</button>
           </div>
         </div>
 
