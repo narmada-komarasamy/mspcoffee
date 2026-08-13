@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Printer, Trash2 } from 'lucide-react';
+import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, ExternalLink, Plus, Printer, Search, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { EmailReportButton } from '@/components/email/EmailReportButton';
 
-type Tab = 'entry' | 'reports' | 'manage';
+type Tab = 'entry' | 'reports' | 'payments' | 'manage';
 type ReportType = 'week' | 'month' | 'employee';
 const EVENT_RATE = 250;
 
@@ -25,6 +25,33 @@ type Entry = {
 type RawEntry = Omit<Entry, 'employee' | 'location'> & {
   employee?: Employee | Employee[] | null;
   location?: Location | Location[] | null;
+};
+type PaymentRecord = {
+  id: string;
+  employee_id: string;
+  period_start: string;
+  period_end: string;
+  report_type: string;
+  events: number;
+  amount: number;
+  status: 'paid' | 'unpaid' | 'void';
+  paid_at: string | null;
+  receipt_file_name: string | null;
+  receipt_file_path: string | null;
+  receipt_signed_url: string | null;
+  notes: string | null;
+};
+type PaymentRow = {
+  key: string;
+  employeeId: string;
+  employeeName: string;
+  periodStart: string;
+  periodEnd: string;
+  month: string;
+  events: number;
+  entries: number;
+  amount: number;
+  payment: PaymentRecord | null;
 };
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -53,6 +80,23 @@ function safeName(name?: string | null) {
   return name?.trim() || 'Unknown';
 }
 
+function monthStartEnd(month: string) {
+  const [year, monthIndex] = month.split('-').map(Number);
+  const end = new Date(year, monthIndex, 0).toISOString().slice(0, 10);
+  return { start: `${month}-01`, end };
+}
+
+function storedAppUser() {
+  const stored = localStorage.getItem('msp_user');
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored) as AppUser;
+  } catch {
+    return null;
+  }
+}
+
 function travelAuthHeaders(user: AppUser | null) {
   if (!user?.id || !user?.pin) return null;
   return {
@@ -72,6 +116,7 @@ export default function TravelAllowancePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
@@ -90,6 +135,12 @@ export default function TravelAllowancePage() {
   const [reportEmployee, setReportEmployee] = useState('');
   const [reportStartDate, setReportStartDate] = useState('');
   const [reportEndDate, setReportEndDate] = useState('');
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [paymentMonth, setPaymentMonth] = useState('');
+  const [paymentFiles, setPaymentFiles] = useState<Record<string, File | null>>({});
+  const [paymentNotes, setPaymentNotes] = useState<Record<string, string>>({});
+  const [updatingPayment, setUpdatingPayment] = useState('');
   const isAdmin = currentUser?.role === 'admin';
 
   const showToast = useCallback((message: string) => {
@@ -121,11 +172,24 @@ export default function TravelAllowancePage() {
       employee: Array.isArray(entry.employee) ? entry.employee[0] ?? null : entry.employee ?? null,
       location: Array.isArray(entry.location) ? entry.location[0] ?? null : entry.location ?? null,
     })));
+    const paymentHeaders = travelAuthHeaders(currentUser ?? storedAppUser());
+    if (paymentHeaders) {
+      const response = await fetch('/api/travel-allowance/payments', { headers: paymentHeaders });
+      const body = await response.json().catch(() => null) as { payments?: PaymentRecord[]; error?: string } | null;
+      if (response.ok) {
+        setPayments(body?.payments ?? []);
+      } else {
+        setPayments([]);
+        showToast(body?.error ?? 'Could not load travel allowance payment records.');
+      }
+    } else {
+      setPayments([]);
+    }
     setEmployeeId(current => current || employeeRows[0]?.id || '');
     setLocationId(current => current || locationRows[0]?.id || '');
     setReportEmployee(current => current || employeeRows[0]?.id || '');
     setLoading(false);
-  }, [showToast]);
+  }, [currentUser, showToast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -442,6 +506,157 @@ export default function TravelAllowancePage() {
     };
   }, [filteredReportEntries, report, reportDateLabel, reportTitle, reportType]);
 
+  const paymentRows = useMemo<PaymentRow[]>(() => {
+    const buckets = new Map<string, PaymentRow>();
+    const paymentByPeriod = new Map(payments.map(payment => [
+      `${payment.employee_id}|${payment.period_start}|${payment.period_end}`,
+      payment,
+    ]));
+
+    entries.forEach(entry => {
+      const month = entry.entry_date.slice(0, 7);
+      const { start, end } = monthStartEnd(month);
+      const employeeName = safeName(entry.employee?.name);
+      const key = `${entry.employee_id}|${start}|${end}`;
+      const current = buckets.get(key) ?? {
+        key,
+        employeeId: entry.employee_id,
+        employeeName,
+        periodStart: start,
+        periodEnd: end,
+        month,
+        events: 0,
+        entries: 0,
+        amount: 0,
+        payment: paymentByPeriod.get(key) ?? null,
+      };
+
+      current.events += entry.times;
+      current.entries += 1;
+      current.amount = current.events * EVENT_RATE;
+      buckets.set(key, current);
+    });
+
+    payments.forEach(payment => {
+      const key = `${payment.employee_id}|${payment.period_start}|${payment.period_end}`;
+      if (buckets.has(key)) return;
+      const employeeName = safeName(employees.find(employee => employee.id === payment.employee_id)?.name);
+      buckets.set(key, {
+        key,
+        employeeId: payment.employee_id,
+        employeeName,
+        periodStart: payment.period_start,
+        periodEnd: payment.period_end,
+        month: payment.period_start.slice(0, 7),
+        events: payment.events,
+        entries: 0,
+        amount: Number(payment.amount),
+        payment,
+      });
+    });
+
+    return Array.from(buckets.values()).sort((a, b) => {
+      const period = b.periodStart.localeCompare(a.periodStart);
+      return period || a.employeeName.localeCompare(b.employeeName);
+    });
+  }, [employees, entries, payments]);
+
+  const filteredPaymentRows = useMemo(() => {
+    const query = paymentSearch.trim().toLowerCase();
+
+    return paymentRows.filter(row => {
+      const paid = row.payment?.status === 'paid';
+      if (paymentStatus === 'paid' && !paid) return false;
+      if (paymentStatus === 'unpaid' && paid) return false;
+      if (paymentMonth && row.month !== paymentMonth) return false;
+      if (!query) return true;
+
+      return [
+        row.employeeName,
+        row.periodStart,
+        row.periodEnd,
+        row.month,
+        row.payment?.receipt_file_name ?? '',
+        row.payment?.notes ?? '',
+      ].some(value => value.toLowerCase().includes(query));
+    });
+  }, [paymentMonth, paymentRows, paymentSearch, paymentStatus]);
+
+  const paymentStats = useMemo(() => {
+    const paidRows = paymentRows.filter(row => row.payment?.status === 'paid');
+    const unpaidRows = paymentRows.filter(row => row.payment?.status !== 'paid');
+
+    return {
+      paid: paidRows.reduce((sum, row) => sum + row.amount, 0),
+      unpaid: unpaidRows.reduce((sum, row) => sum + row.amount, 0),
+      paidCount: paidRows.length,
+      unpaidCount: unpaidRows.length,
+    };
+  }, [paymentRows]);
+
+  const markPayment = async (row: PaymentRow, status: 'paid' | 'unpaid') => {
+    if (!isAdmin) {
+      showToast('Only admins can update payments');
+      return;
+    }
+
+    const headers = travelAuthHeaders(currentUser);
+    if (!headers) {
+      showToast('Sign in again before updating payments');
+      return;
+    }
+
+    setUpdatingPayment(row.key);
+
+    const receiptFileName = '';
+    const receiptFilePath = '';
+
+    if (status === 'paid') {
+      const file = paymentFiles[row.key];
+      if (!file && !row.payment?.receipt_file_path) {
+        setUpdatingPayment('');
+        showToast('Attach receipt before marking paid');
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    formData.set('employee_id', row.employeeId);
+    formData.set('period_start', row.periodStart);
+    formData.set('period_end', row.periodEnd);
+    formData.set('report_type', 'month');
+    formData.set('events', String(row.events));
+    formData.set('amount', String(row.amount));
+    formData.set('status', status);
+    formData.set('existing_receipt_file_name', receiptFileName || row.payment?.receipt_file_name || '');
+    formData.set('existing_receipt_file_path', receiptFilePath || row.payment?.receipt_file_path || '');
+    formData.set('notes', paymentNotes[row.key] ?? row.payment?.notes ?? '');
+    if (status === 'paid' && paymentFiles[row.key]) {
+      formData.set('receipt', paymentFiles[row.key]!);
+    }
+
+    const authHeaders = {
+      'x-msp-user-id': headers['x-msp-user-id'],
+      'x-msp-user-pin': headers['x-msp-user-pin'],
+    };
+    const response = await fetch('/api/travel-allowance/payments', {
+      method: 'POST',
+      headers: authHeaders,
+      body: formData,
+    });
+
+    setUpdatingPayment('');
+
+    if (!response.ok) {
+      showToast(await readApiError(response, 'Could not update payment'));
+      return;
+    }
+
+    setPaymentFiles(current => ({ ...current, [row.key]: null }));
+    await loadData();
+    showToast(status === 'paid' ? 'Payment marked paid' : 'Payment marked unpaid');
+  };
+
   const printReport = () => {
     window.print();
   };
@@ -461,6 +676,7 @@ export default function TravelAllowancePage() {
         {[
           ['entry', 'Add entry'],
           ['reports', 'Reports'],
+          ['payments', 'Payments'],
           ['manage', 'Manage employees / locations'],
         ].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key as Tab)}
@@ -545,6 +761,59 @@ export default function TravelAllowancePage() {
           </div>
 
           <EntryTable entries={filteredReportEntries} loading={loading} onDelete={deleteEntry} canDelete={isAdmin} compact />
+        </section>
+      )}
+
+      {tab === 'payments' && (
+        <section className="rounded-xl border p-4 space-y-4" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-lg font-black" style={{ color: 'var(--t-text)' }}>Payment Register</h2>
+              <p className="text-sm" style={{ color: 'var(--t-muted)' }}>Track what has been paid, what is pending, and keep receipt copies against each employee period.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[620px]">
+              <Stat label="Paid" value={paymentStats.paid} money />
+              <Stat label="Unpaid" value={paymentStats.unpaid} money />
+              <Stat label="Paid periods" value={paymentStats.paidCount} />
+              <Stat label="Pending periods" value={paymentStats.unpaidCount} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-[1.4fr_180px_180px] gap-3">
+            <Field label="Search">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--t-muted)' }} />
+                <input
+                  value={paymentSearch}
+                  onChange={event => setPaymentSearch(event.target.value)}
+                  placeholder="Search employee, receipt, note, period..."
+                  className="ta-input pl-9"
+                />
+              </div>
+            </Field>
+            <Field label="Status">
+              <select value={paymentStatus} onChange={event => setPaymentStatus(event.target.value as 'all' | 'paid' | 'unpaid')} className="ta-input">
+                <option value="all">All payments</option>
+                <option value="paid">Paid only</option>
+                <option value="unpaid">Unpaid only</option>
+              </select>
+            </Field>
+            <Field label="Month">
+              <input type="month" value={paymentMonth} onChange={event => setPaymentMonth(event.target.value)} className="ta-input" />
+            </Field>
+          </div>
+
+          <PaymentRegisterTable
+            rows={filteredPaymentRows}
+            loading={loading}
+            isAdmin={isAdmin}
+            updatingKey={updatingPayment}
+            files={paymentFiles}
+            notes={paymentNotes}
+            onFile={(key, event) => setPaymentFiles(current => ({ ...current, [key]: event.target.files?.[0] ?? null }))}
+            onNote={(key, value) => setPaymentNotes(current => ({ ...current, [key]: value }))}
+            onMark={markPayment}
+          />
         </section>
       )}
 
@@ -691,6 +960,137 @@ function EntryTable({ entries, loading, onDelete, canDelete, compact = false }: 
         </table>
       </div>
     </section>
+  );
+}
+
+function PaymentRegisterTable({
+  rows,
+  loading,
+  isAdmin,
+  updatingKey,
+  files,
+  notes,
+  onFile,
+  onNote,
+  onMark,
+}: {
+  rows: PaymentRow[];
+  loading: boolean;
+  isAdmin: boolean;
+  updatingKey: string;
+  files: Record<string, File | null>;
+  notes: Record<string, string>;
+  onFile: (key: string, event: ChangeEvent<HTMLInputElement>) => void;
+  onNote: (key: string, value: string) => void;
+  onMark: (row: PaymentRow, status: 'paid' | 'unpaid') => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border" style={{ borderColor: 'var(--t-border)' }}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead style={{ background: 'var(--t-bg)', color: 'var(--t-muted)' }}>
+            <tr>
+              <th className="px-4 py-3 text-left">Period</th>
+              <th className="px-4 py-3 text-left">Employee</th>
+              <th className="px-4 py-3 text-left">Events</th>
+              <th className="px-4 py-3 text-left">Amount</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-left">Receipt / Notes</th>
+              <th className="px-4 py-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td className="px-4 py-8 text-center" colSpan={7} style={{ color: 'var(--t-muted)' }}>Loading payment register...</td></tr>
+            ) : rows.length ? rows.map(row => {
+              const paid = row.payment?.status === 'paid';
+              const busy = updatingKey === row.key;
+              const noteValue = notes[row.key] ?? row.payment?.notes ?? '';
+
+              return (
+                <tr key={row.key} className="border-t align-top" style={{ borderColor: 'var(--t-border)' }}>
+                  <td className="px-4 py-3">
+                    <div className="font-bold" style={{ color: 'var(--t-text)' }}>{row.month}</div>
+                    <div className="text-xs" style={{ color: 'var(--t-muted)' }}>{row.periodStart} to {row.periodEnd}</div>
+                  </td>
+                  <td className="px-4 py-3 font-bold" style={{ color: 'var(--t-text)' }}>{row.employeeName}</td>
+                  <td className="px-4 py-3">
+                    <div>{row.events}</div>
+                    <div className="text-xs" style={{ color: 'var(--t-muted)' }}>{row.entries} entries</div>
+                  </td>
+                  <td className="px-4 py-3 font-bold">₹{row.amount.toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black" style={{
+                      background: paid ? '#e9f7df' : '#fff4e5',
+                      color: paid ? '#1b4a1b' : '#9a5b00',
+                    }}>
+                      {paid && <CheckCircle2 className="h-3.5 w-3.5" />}
+                      {paid ? 'Paid' : 'Unpaid'}
+                    </span>
+                    {row.payment?.paid_at && <div className="mt-1 text-xs" style={{ color: 'var(--t-muted)' }}>{new Date(row.payment.paid_at).toLocaleString('en-IN')}</div>}
+                  </td>
+                  <td className="px-4 py-3 min-w-[260px]">
+                    {row.payment?.receipt_signed_url ? (
+                      <a href={row.payment.receipt_signed_url} target="_blank" rel="noreferrer" className="mb-2 inline-flex items-center gap-1 text-xs font-bold" style={{ color: '#1b4a1b' }}>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        {row.payment.receipt_file_name || 'View receipt'}
+                      </a>
+                    ) : row.payment?.receipt_file_name ? (
+                      <div className="mb-2 text-xs font-bold" style={{ color: 'var(--t-muted)' }}>{row.payment.receipt_file_name}</div>
+                    ) : (
+                      <div className="mb-2 text-xs" style={{ color: 'var(--t-muted)' }}>No receipt attached</div>
+                    )}
+                    {isAdmin && (
+                      <div className="grid gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold" style={{ borderColor: 'var(--t-border)', color: 'var(--t-text)' }}>
+                          <Upload className="h-3.5 w-3.5" />
+                          {files[row.key]?.name || 'Attach receipt'}
+                          <input type="file" accept="image/*,.pdf" className="hidden" onChange={event => onFile(row.key, event)} />
+                        </label>
+                        <input
+                          value={noteValue}
+                          onChange={event => onNote(row.key, event.target.value)}
+                          placeholder="Payment note"
+                          className="ta-input"
+                        />
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {isAdmin ? (
+                      <div className="flex flex-col items-end gap-2">
+                        <button
+                          onClick={() => onMark(row, 'paid')}
+                          disabled={busy}
+                          className="inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-black text-white disabled:opacity-60"
+                          style={{ background: '#1b4a1b' }}
+                        >
+                          {busy ? 'Saving...' : paid ? 'Update receipt' : 'Mark paid'}
+                        </button>
+                        {paid && (
+                          <button
+                            onClick={() => onMark(row, 'unpaid')}
+                            disabled={busy}
+                            className="rounded-lg border px-3 py-2 text-xs font-black disabled:opacity-60"
+                            style={{ borderColor: '#f0997b', color: '#993c1d' }}
+                          >
+                            Mark unpaid
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--t-muted)' }}>Admin only</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            }) : (
+              <tr><td className="px-4 py-8 text-center" colSpan={7} style={{ color: 'var(--t-muted)' }}>No payment periods found.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
