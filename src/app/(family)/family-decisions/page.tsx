@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   CalendarDays,
@@ -32,6 +32,19 @@ type Decision = {
   lead: string;
   timeline: string;
   rule: string;
+};
+
+type Objection = {
+  by: string;
+  concern: string;
+  response: string;
+};
+
+type StoredFamilyDecisionState = {
+  decision: Decision;
+  votes: MemberVote[];
+  objections: Objection[];
+  suggestions: string[];
 };
 
 const familyMembers = ['Ashok', 'Meera', 'Rohan', 'Anika'];
@@ -77,12 +90,55 @@ const initialDecision: Decision = {
   rule: 'Passes with 3 yes votes and no unresolved major objections.',
 };
 
+function readStoredFamilyDecisionState(): StoredFamilyDecisionState {
+  if (typeof window === 'undefined') {
+    return {
+      decision: initialDecision,
+      votes: initialVotes,
+      objections,
+      suggestions,
+    };
+  }
+
+  const stored = localStorage.getItem('msp_family_decision_state');
+  if (!stored) {
+    return {
+      decision: initialDecision,
+      votes: initialVotes,
+      objections,
+      suggestions,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as Partial<StoredFamilyDecisionState>;
+    return {
+      decision: parsed.decision ?? initialDecision,
+      votes: parsed.votes?.length ? parsed.votes : initialVotes,
+      objections: parsed.objections ?? objections,
+      suggestions: parsed.suggestions ?? suggestions,
+    };
+  } catch {
+    return {
+      decision: initialDecision,
+      votes: initialVotes,
+      objections,
+      suggestions,
+    };
+  }
+}
+
 export default function FamilyDecisionsPage() {
-  const [decision, setDecision] = useState<Decision>(initialDecision);
-  const [draft, setDraft] = useState<Decision>(initialDecision);
-  const [activeVotes, setActiveVotes] = useState<MemberVote[]>(initialVotes);
-  const [activeSuggestions, setActiveSuggestions] = useState(suggestions);
+  const [storedState] = useState(readStoredFamilyDecisionState);
+  const [decision, setDecision] = useState<Decision>(storedState.decision);
+  const [draft, setDraft] = useState<Decision>(storedState.decision);
+  const [activeVotes, setActiveVotes] = useState<MemberVote[]>(storedState.votes);
+  const [activeObjections, setActiveObjections] = useState<Objection[]>(storedState.objections);
+  const [activeSuggestions, setActiveSuggestions] = useState(storedState.suggestions);
   const [newSuggestion, setNewSuggestion] = useState('');
+  const [responseMember, setResponseMember] = useState(familyMembers[0]);
+  const [responseNote, setResponseNote] = useState('');
+  const [responseObjection, setResponseObjection] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
 
   const yesVotes = activeVotes.filter(vote => vote.vote === 'Yes').length;
@@ -90,6 +146,15 @@ export default function FamilyDecisionsPage() {
   const pendingVotes = activeVotes.filter(vote => vote.vote === 'Pending').length;
   const totalCast = yesVotes + noVotes;
   const yesPercent = totalCast ? Math.round((yesVotes / totalCast) * 100) : 0;
+
+  useEffect(() => {
+    localStorage.setItem('msp_family_decision_state', JSON.stringify({
+      decision,
+      votes: activeVotes,
+      objections: activeObjections,
+      suggestions: activeSuggestions,
+    } satisfies StoredFamilyDecisionState));
+  }, [activeObjections, activeSuggestions, activeVotes, decision]);
   const emailPayload = useMemo(() => {
     const recommendation = yesVotes > noVotes ? 'Proceed' : 'Hold';
 
@@ -132,11 +197,11 @@ export default function FamilyDecisionsPage() {
           },
           {
             title: 'Objections to resolve',
-            rows: objections.map(objection => ({
+            rows: activeObjections.length ? activeObjections.map(objection => ({
               label: objection.by,
               value: objection.concern,
               detail: objection.response,
-            })),
+            })) : [{ label: 'Objections', value: 'No objections recorded' }],
           },
           {
             title: 'Suggestions',
@@ -155,7 +220,7 @@ export default function FamilyDecisionsPage() {
         ],
       },
     };
-  }, [activeSuggestions, activeVotes, decision, noVotes, pendingVotes, yesPercent, yesVotes]);
+  }, [activeObjections, activeSuggestions, activeVotes, decision, noVotes, pendingVotes, yesPercent, yesVotes]);
 
   const saveQuestion = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -171,9 +236,42 @@ export default function FamilyDecisionsPage() {
 
     setDecision(nextDecision);
     setActiveVotes(familyMembers.map(name => ({ name, vote: 'Pending', note: 'Waiting for response.' })));
+    setActiveObjections([]);
     setActiveSuggestions(newSuggestion.trim() ? [newSuggestion.trim()] : []);
     setNewSuggestion('');
     setComposerOpen(false);
+  };
+
+  const recordResponse = (vote: VoteStatus) => {
+    const note = responseNote.trim() || (vote === 'Pending' ? 'Waiting for response.' : `Recorded ${vote.toLowerCase()} in app.`);
+    const objection = responseObjection.trim();
+    const suggestion = newSuggestion.trim();
+
+    setActiveVotes(current => current.map(item => (
+      item.name === responseMember ? { ...item, vote, note } : item
+    )));
+
+    if (objection) {
+      setActiveObjections(current => [
+        ...current,
+        { by: responseMember, concern: objection, response: 'Needs response before close-out.' },
+      ]);
+    }
+
+    if (suggestion && !activeSuggestions.includes(suggestion)) {
+      setActiveSuggestions(current => [...current, suggestion]);
+    }
+
+    setResponseNote('');
+    setResponseObjection('');
+    setNewSuggestion('');
+  };
+
+  const addSuggestion = () => {
+    const suggestion = newSuggestion.trim();
+    if (!suggestion || activeSuggestions.includes(suggestion)) return;
+    setActiveSuggestions(current => [...current, suggestion]);
+    setNewSuggestion('');
   };
 
   return (
@@ -322,14 +420,37 @@ export default function FamilyDecisionsPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <button className="flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>
+            <button onClick={() => recordResponse('Yes')} className="flex h-12 items-center justify-center gap-2 rounded-lg text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>
               <CheckCircle2 className="h-5 w-5" />
               Vote yes
             </button>
-            <button className="flex h-12 items-center justify-center gap-2 rounded-lg border text-sm font-black" style={{ borderColor: '#f3b2a8', background: '#fff7f5', color: '#9f2a1d' }}>
+            <button onClick={() => recordResponse('No')} className="flex h-12 items-center justify-center gap-2 rounded-lg border text-sm font-black" style={{ borderColor: '#f3b2a8', background: '#fff7f5', color: '#9f2a1d' }}>
               <XCircle className="h-5 w-5" />
               Vote no
             </button>
+          </div>
+
+          <div className="family-decision-no-print mt-5 rounded-lg border p-4" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)' }}>
+            <h3 className="text-xs font-black uppercase tracking-[0.1em]" style={{ color: 'var(--t-heading)' }}>Record response</h3>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <DecisionSelect label="Family member" value={responseMember} options={familyMembers} onChange={setResponseMember} />
+              <DecisionInput label="Comment" value={responseNote} placeholder="Reply note or context" onChange={setResponseNote} />
+              <label className="md:col-span-2">
+                <span className="text-xs font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--t-label)' }}>Objection to resolve</span>
+                <textarea
+                  value={responseObjection}
+                  onChange={event => setResponseObjection(event.target.value)}
+                  className="mt-2 min-h-20 w-full resize-none rounded-lg border p-3 text-sm outline-none"
+                  style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }}
+                  placeholder="Record an objection from email or in-person response"
+                />
+              </label>
+              <DecisionInput label="Suggestion" value={newSuggestion} placeholder="Alternative suggestion from this person" onChange={setNewSuggestion} />
+              <button onClick={() => recordResponse('Pending')} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-heading)' }}>
+                <Clock3 className="h-4 w-4" />
+                Save pending note
+              </button>
+            </div>
           </div>
         </div>
 
@@ -354,7 +475,7 @@ export default function FamilyDecisionsPage() {
               Email response flow
             </div>
             <p className="mt-2 text-sm leading-6" style={{ color: 'var(--t-muted)' }}>
-              The email asks each person to reply with Yes, No, objections, and suggestions. Those replies can be entered here now; the next production step is to save replies directly into the app.
+              The email asks each person to reply with Yes, No, objections, and suggestions. Enter those replies in the record response panel so the vote count and email summary stay current.
             </p>
           </div>
         </aside>
@@ -367,15 +488,20 @@ export default function FamilyDecisionsPage() {
             Objections to resolve
           </h2>
           <div className="mt-4 space-y-3">
-            {objections.map(objection => (
+            {activeObjections.map(objection => (
               <div key={objection.concern} className="rounded-lg border p-4" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)' }}>
                 <p className="text-sm font-bold" style={{ color: 'var(--t-text)' }}>{objection.by}</p>
                 <p className="mt-1 text-sm leading-6" style={{ color: 'var(--t-muted)' }}>{objection.concern}</p>
                 <p className="mt-3 rounded-md px-3 py-2 text-xs font-semibold" style={{ background: '#fff', color: 'var(--t-heading)' }}>{objection.response}</p>
               </div>
             ))}
+            {activeObjections.length === 0 && (
+              <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--t-border)', background: 'var(--t-subtle)', color: 'var(--t-muted)' }}>
+                No objections recorded.
+              </div>
+            )}
           </div>
-          <textarea className="mt-4 min-h-24 w-full resize-none rounded-lg border p-3 text-sm outline-none" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }} placeholder="Add an objection that must be answered before the decision closes" />
+          <textarea value={responseObjection} onChange={event => setResponseObjection(event.target.value)} className="mt-4 min-h-24 w-full resize-none rounded-lg border p-3 text-sm outline-none" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }} placeholder="Add an objection that must be answered before the decision closes" />
         </div>
 
         <div className="rounded-xl border p-5" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
@@ -396,7 +522,10 @@ export default function FamilyDecisionsPage() {
               </div>
             ))}
           </div>
-          <input className="mt-4 h-11 w-full rounded-lg border px-3 text-sm outline-none" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }} placeholder="Suggest another name or approach" />
+          <div className="mt-4 flex gap-2">
+            <input value={newSuggestion} onChange={event => setNewSuggestion(event.target.value)} className="h-11 w-full rounded-lg border px-3 text-sm outline-none" style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }} placeholder="Suggest another name or approach" />
+            <button onClick={addSuggestion} className="rounded-lg px-4 text-sm font-black text-white" style={{ background: 'var(--t-green)' }}>Add</button>
+          </div>
         </div>
 
         <div className="rounded-xl border p-5" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
@@ -457,6 +586,22 @@ function DecisionInput({ label, value, placeholder, onChange }: { label: string;
         style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }}
         placeholder={placeholder}
       />
+    </label>
+  );
+}
+
+function DecisionSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+  return (
+    <label>
+      <span className="text-xs font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--t-label)' }}>{label}</span>
+      <select
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        className="mt-2 h-11 w-full rounded-lg border px-3 text-sm outline-none"
+        style={{ borderColor: 'var(--t-border)', background: '#fff', color: 'var(--t-text)' }}
+      >
+        {options.map(option => <option key={option} value={option}>{option}</option>)}
+      </select>
     </label>
   );
 }
