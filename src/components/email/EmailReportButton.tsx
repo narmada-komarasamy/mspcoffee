@@ -35,6 +35,13 @@ function splitEmails(value: string) {
     .filter(Boolean);
 }
 
+function providerLabel(provider?: string) {
+  if (provider === 'resend') return 'Resend';
+  if (provider === 'smtp') return 'SMTP';
+  if (provider === 'webhook') return 'custom webhook';
+  return 'email provider';
+}
+
 export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
   const [open, setOpen] = useState(false);
   const [recipients, setRecipients] = useState(payload.recipients?.join(', ') ?? '');
@@ -69,7 +76,7 @@ export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
       return;
     }
 
-    const provider = body?.provider === 'resend' ? 'Resend' : 'custom webhook';
+    const provider = providerLabel(body?.provider);
     setProviderStatus(body?.configured
       ? `Ready to send through ${provider} from ${body.from}.`
       : `Not configured yet. This report will be logged until ${provider} credentials are added.`
@@ -202,6 +209,44 @@ export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
                   style={{ resize: 'vertical', border: '1px solid #d8cfb5', borderRadius: 8, padding: 10, fontSize: 13 }}
                 />
               </label>
+              <div style={{
+                border: '1px solid #e5dfc8',
+                background: '#fffdf7',
+                borderRadius: 8,
+                overflow: 'hidden',
+              }}>
+                <div style={{ padding: '10px 12px', borderBottom: '1px solid #f0ead4', display: 'grid', gap: 3 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.08em' }}>Preview</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#1b4a1b' }}>Subject: {payload.subject || payload.reportTitle}</div>
+                </div>
+                <div style={{ padding: 12, display: 'grid', gap: 12, maxHeight: 270, overflow: 'auto' }}>
+                  {note && <div style={{ background: '#fff8e1', border: '1px solid #ead58a', borderRadius: 7, padding: 10, color: '#374151', fontSize: 13 }}>{note}</div>}
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#6b7280', marginBottom: 6 }}>Summary</div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {payload.data.summary.map((item) => (
+                        <div key={item.label} style={{ display: 'grid', gridTemplateColumns: 'minmax(110px, 1fr) minmax(130px, 1.3fr)', gap: 10, padding: '8px 10px', border: '1px solid #f0ead4', borderRadius: 7 }}>
+                          <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 700 }}>{item.label}</span>
+                          <span style={{ color: '#111827', fontSize: 13, fontWeight: 800 }}>{item.value}{item.detail ? <small style={{ display: 'block', color: '#6b7280', fontWeight: 600 }}>{item.detail}</small> : null}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {payload.data.sections?.map((section) => (
+                    <div key={section.title}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#6b7280', marginBottom: 6 }}>{section.title}</div>
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        {section.rows.map((item) => (
+                          <div key={`${section.title}-${item.label}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(110px, 1fr) minmax(130px, 1.3fr)', gap: 10, padding: '8px 10px', border: '1px solid #f0ead4', borderRadius: 7 }}>
+                            <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 700 }}>{item.label}</span>
+                            <span style={{ color: '#111827', fontSize: 13, fontWeight: 800 }}>{item.value}{item.detail ? <small style={{ display: 'block', color: '#6b7280', fontWeight: 600 }}>{item.detail}</small> : null}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               {providerStatus && (
                 <div style={{
                   border: '1px solid #e5dfc8',

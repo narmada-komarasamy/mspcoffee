@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Mail, Plus, Printer, Trash2 } from 'lucide-react';
+import { Plus, Printer, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { EmailReportButton } from '@/components/email/EmailReportButton';
 
 type Tab = 'entry' | 'reports' | 'manage';
 type ReportType = 'week' | 'month' | 'employee';
@@ -385,25 +386,61 @@ export default function TravelAllowancePage() {
     return 'All dates in selected report';
   }, [reportEndDate, reportStartDate]);
 
-  const emailMonthlyReport = () => {
-    const monthlyEntries = entries.filter(entry => entry.entry_date.startsWith(reportMonth));
-    const lines = monthlyEntries
-      .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
-      .map(entry => `${entry.entry_date} | ${safeName(entry.employee?.name)} | ${safeName(entry.location?.name)} | Times: ${entry.times}`);
-    const total = monthlyEntries.reduce((sum, entry) => sum + entry.times, 0);
-    const subject = `Travel Allowance Report - ${reportMonth}`;
-    const body = [
-      `Travel Allowance Report - ${reportMonth}`,
-      '',
-      `Total entries: ${monthlyEntries.length}`,
-      `Total events: ${total}`,
-      `Amount payable: Rs. ${(total * EVENT_RATE).toLocaleString('en-IN')}`,
-      '',
-      ...lines,
-    ].join('\n');
+  const emailPayload = useMemo(() => {
+    const sortedEntries = [...filteredReportEntries].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+    const amountPayable = report.totalTimes * EVENT_RATE;
 
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
+    return {
+      type: 'custom_report' as const,
+      subject: `MSP Coffee - ${reportTitle}`,
+      reportTitle: `Travel Allowance - ${reportTitle}`,
+      sourcePath: '/travel-allowance',
+      attachmentName: `travel-allowance-${reportType}.html`,
+      recipients: [],
+      note: `Prepared from the Travel Allowance report view. Date filter: ${reportDateLabel}.`,
+      data: {
+        summary: [
+          { label: 'Date filter', value: reportDateLabel },
+          { label: 'Total events', value: String(report.totalTimes) },
+          { label: 'Amount payable', value: `Rs. ${amountPayable.toLocaleString('en-IN')}`, detail: `Rs. ${EVENT_RATE} per event` },
+          { label: 'Entries', value: String(filteredReportEntries.length) },
+          { label: 'Employees', value: String(report.employeeRows.length) },
+        ],
+        sections: [
+          {
+            title: 'By employee',
+            rows: report.employeeRows.length
+              ? report.employeeRows.map(([name, total]) => ({
+                  label: name,
+                  value: `${total} event${total === 1 ? '' : 's'}`,
+                  detail: `Rs. ${(total * EVENT_RATE).toLocaleString('en-IN')}`,
+                }))
+              : [{ label: 'No employees', value: 'No report data' }],
+          },
+          {
+            title: 'By location',
+            rows: report.locationRows.length
+              ? report.locationRows.map(([name, total]) => ({
+                  label: name,
+                  value: `${total} event${total === 1 ? '' : 's'}`,
+                  detail: `Rs. ${(total * EVENT_RATE).toLocaleString('en-IN')}`,
+                }))
+              : [{ label: 'No locations', value: 'No report data' }],
+          },
+          {
+            title: 'Entries',
+            rows: sortedEntries.length
+              ? sortedEntries.map((entry) => ({
+                  label: entry.entry_date,
+                  value: `${safeName(entry.employee?.name)} - ${entry.times} event${entry.times === 1 ? '' : 's'}`,
+                  detail: `${safeName(entry.location?.name)} - Rs. ${(entry.times * EVENT_RATE).toLocaleString('en-IN')}`,
+                }))
+              : [{ label: 'No entries', value: 'No report data' }],
+          },
+        ],
+      },
+    };
+  }, [filteredReportEntries, report, reportDateLabel, reportTitle, reportType]);
 
   const printReport = () => {
     window.print();
@@ -417,10 +454,7 @@ export default function TravelAllowancePage() {
           <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--t-text)' }}>Travel Allowance</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--t-muted)' }}>Log employee travel events at ₹250 per event and prepare weekly, monthly, or employee reports.</p>
         </div>
-        <button onClick={emailMonthlyReport} className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white transition active:scale-95" style={{ background: '#1b4a1b' }}>
-          <Mail className="h-4 w-4" />
-          Email monthly report
-        </button>
+        <EmailReportButton payload={emailPayload} label="Email report" />
       </div>
 
       <div className="ta-no-print flex flex-wrap gap-2 border-b" style={{ borderColor: 'var(--t-border)' }}>
