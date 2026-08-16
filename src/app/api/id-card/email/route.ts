@@ -27,7 +27,7 @@ type CardTheme = {
   leaf: string;
 };
 
-const printerEmailAddress = process.env.ID_CARD_PRINTER_EMAIL || 'printer@mspcoffee.com';
+const emailAddressPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const categoryThemes: Record<CardCategory, CardTheme> = {
   'estate-field': {
@@ -410,11 +410,17 @@ export async function POST(request: Request) {
   if ('error' in auth) return auth.error;
 
   const body = await request.json().catch(() => null);
-  const form = validateForm((body as Record<string, unknown> | null)?.form);
+  const bodyRow = body as Record<string, unknown> | null;
+  const recipient = cleanText(bodyRow?.recipient).toLowerCase();
+  if (!emailAddressPattern.test(recipient)) {
+    return NextResponse.json({ error: 'Enter a valid printer email address.' }, { status: 400 });
+  }
+
+  const form = validateForm(bodyRow?.form);
   if (!form) return NextResponse.json({ error: 'Enter a valid ID card profile before emailing.' }, { status: 400 });
 
-  const photo = safeImageSource((body as Record<string, unknown>).photo);
-  const signature = safeImageSource((body as Record<string, unknown>).signature);
+  const photo = safeImageSource(bodyRow?.photo);
+  const signature = safeImageSource(bodyRow?.signature);
   const theme = categoryThemes[form.category];
   const origin = new URL(request.url).origin;
   const attachmentName = `${safeFileName(form.fullName)}-msp-id-card.html`;
@@ -424,7 +430,7 @@ export async function POST(request: Request) {
 
   const payload: EmailPayload = {
     type: 'custom_report',
-    recipients: [printerEmailAddress],
+    recipients: [recipient],
     cc: [],
     subject,
     reportTitle: `MSP Coffee ID Card - ${form.fullName}`,
@@ -451,7 +457,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       status: result.status,
       provider: result.provider,
-      recipient: printerEmailAddress,
+      recipient,
       attachmentName,
     }, { status: 201 });
   } catch (error) {

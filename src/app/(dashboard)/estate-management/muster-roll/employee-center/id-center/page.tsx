@@ -2,7 +2,7 @@
 
 import { CSSProperties, ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, IdCard, Loader2, Mail, Printer, RotateCcw, Upload, Users } from "lucide-react";
+import { ArrowLeft, IdCard, Loader2, Mail, Printer, RotateCcw, Send, Upload, Users, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import css from "./id-center.module.css";
 
@@ -138,6 +138,7 @@ const initialForm: CardForm = {
 
 const logoPath = "/msp-id-logo.png";
 const idCenterPrefillStorageKey = "msp-id-center-prefill";
+const defaultPrinterEmail = "printer@mspcoffee.com";
 
 const splitEstateName = (estateName: string) => {
   const clean = estateName.trim() || "Moganad Estate";
@@ -223,6 +224,8 @@ export default function EmployeeIdCenterPage() {
   const [message, setMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailMessage, setEmailMessage] = useState("");
+  const [emailPreviewOpen, setEmailPreviewOpen] = useState(false);
+  const [printerEmail, setPrinterEmail] = useState(defaultPrinterEmail);
 
   const selectedSummary = useMemo(() => {
     if (!employee) return "";
@@ -230,6 +233,26 @@ export default function EmployeeIdCenterPage() {
       .filter(Boolean)
       .join(" | ");
   }, [employee]);
+
+  const selectedCategory = getCategory(form.category);
+  const emailSubject = `ID Card Print - ${form.fullName || "Employee"}`;
+  const attachmentName = `${(form.fullName || "employee")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72) || "employee"}-msp-id-card.html`;
+  const emailBodyLines = [
+    "Please print the attached MSP Coffee ID card.",
+    "",
+    `Name: ${form.fullName || "-"}`,
+    `Category: ${selectedCategory.label}`,
+    `Designation: ${form.designation || "-"}`,
+    `Place: ${form.place || "-"}`,
+    `Estate: ${[form.estateLine1, form.estateLine2].filter(Boolean).join(" ") || "-"}`,
+    `Blood Group: ${form.bloodGroup || "-"}`,
+    `Mobile No.: ${form.mobile || "-"}`,
+    `Address: ${form.address || "-"}`,
+  ];
 
   useEffect(() => {
     const employeeId = new URLSearchParams(window.location.search).get("employee");
@@ -301,6 +324,12 @@ export default function EmployeeIdCenterPage() {
     setEmployee(null);
     setMessage("");
     setEmailMessage("");
+    setEmailPreviewOpen(false);
+  };
+
+  const openEmailPreview = () => {
+    setEmailMessage("");
+    setEmailPreviewOpen(true);
   };
 
   const emailPrinter = async () => {
@@ -311,7 +340,7 @@ export default function EmployeeIdCenterPage() {
       const response = await fetch("/api/id-card/email", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ form, photo, signature }),
+        body: JSON.stringify({ recipient: printerEmail, form, photo, signature }),
       });
       const result = (await response.json().catch(() => null)) as {
         error?: string;
@@ -325,6 +354,7 @@ export default function EmployeeIdCenterPage() {
 
       if (result?.status === "sent") {
         setEmailMessage(`Sent to printer with ${result.attachmentName || "ID card attachment"}.`);
+        setEmailPreviewOpen(false);
       } else {
         setEmailMessage("ID card email was prepared, but live email delivery is not configured.");
       }
@@ -495,9 +525,9 @@ export default function EmployeeIdCenterPage() {
               <RotateCcw size={15} />
               Clear all fields
             </button>
-            <button type="button" className={css.emailBtn} onClick={emailPrinter} disabled={sendingEmail}>
-              {sendingEmail ? <Loader2 className={css.spin} size={16} /> : <Mail size={16} />}
-              {sendingEmail ? "Sending..." : "Email to printer"}
+            <button type="button" className={css.emailBtn} onClick={openEmailPreview}>
+              <Mail size={16} />
+              Email to printer
             </button>
             {emailMessage ? <p className={css.actionMessage}>{emailMessage}</p> : null}
           </div>
@@ -511,6 +541,74 @@ export default function EmployeeIdCenterPage() {
           </div>
         </section>
       </div>
+
+      {emailPreviewOpen ? (
+        <div className={css.modalBackdrop} role="presentation">
+          <section className={css.emailModal} role="dialog" aria-modal="true" aria-labelledby="id-card-email-title">
+            <div className={css.emailModalHead}>
+              <div>
+                <p className={css.emailEyebrow}>Review before sending</p>
+                <h2 id="id-card-email-title">Email ID card to printer</h2>
+              </div>
+              <button type="button" className={css.iconBtn} onClick={() => setEmailPreviewOpen(false)} aria-label="Close email preview">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className={css.emailModalGrid}>
+              <div className={css.emailComposer}>
+                <label className={css.fieldGroup}>
+                  <span>Printer email address</span>
+                  <input
+                    type="email"
+                    value={printerEmail}
+                    onChange={(event) => setPrinterEmail(event.target.value)}
+                    placeholder="printer@mspcoffee.com"
+                  />
+                </label>
+
+                <div className={css.emailFieldPreview}>
+                  <span>Subject</span>
+                  <strong>{emailSubject}</strong>
+                </div>
+
+                <div className={css.emailBodyPreview}>
+                  <span>Email message</span>
+                  <pre>{emailBodyLines.join("\n")}</pre>
+                </div>
+
+                <div className={css.attachmentPreview}>
+                  <IdCard size={18} />
+                  <div>
+                    <strong>{attachmentName}</strong>
+                    <span>Printable front and back ID card attachment</span>
+                  </div>
+                </div>
+
+                {emailMessage ? <p className={css.actionMessage}>{emailMessage}</p> : null}
+
+                <div className={css.modalActions}>
+                  <button type="button" className={css.ghostBtn} onClick={() => setEmailPreviewOpen(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className={css.emailBtn} onClick={emailPrinter} disabled={sendingEmail}>
+                    {sendingEmail ? <Loader2 className={css.spin} size={16} /> : <Send size={16} />}
+                    {sendingEmail ? "Sending..." : "Send email"}
+                  </button>
+                </div>
+              </div>
+
+              <div className={css.emailCardPreview}>
+                <div className={css.stageLabel}>Attachment Preview</div>
+                <div className={css.modalCardsWrap}>
+                  <IdCardFront form={form} photo={photo} signature={signature} />
+                  <IdCardBack form={form} signature={signature} />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
