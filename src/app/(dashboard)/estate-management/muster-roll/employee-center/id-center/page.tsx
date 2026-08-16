@@ -2,7 +2,7 @@
 
 import { CSSProperties, ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, IdCard, Loader2, Printer, RotateCcw, Upload, Users } from "lucide-react";
+import { ArrowLeft, IdCard, Loader2, Mail, Printer, RotateCcw, Upload, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import css from "./id-center.module.css";
 
@@ -138,6 +138,7 @@ const initialForm: CardForm = {
 
 const logoPath = "/msp-id-logo.png";
 const idCenterPrefillStorageKey = "msp-id-center-prefill";
+const printerEmailAddress = "printer@mspcoffee.com";
 
 const splitEstateName = (estateName: string) => {
   const clean = estateName.trim() || "Moganad Estate";
@@ -177,6 +178,22 @@ const cardStyleForTheme = (theme: CardTheme) =>
     "--id-glow": theme.glow,
     "--id-leaf": theme.leaf,
   }) as CSSProperties;
+
+const buildPrinterEmailBody = (form: CardForm, categoryLabel: string) =>
+  [
+    "Please print the MSP Coffee ID card for this profile.",
+    "",
+    `Name: ${form.fullName || "-"}`,
+    `Category: ${categoryLabel}`,
+    `Designation: ${form.designation || "-"}`,
+    `Place: ${form.place || "-"}`,
+    `Estate: ${[form.estateLine1, form.estateLine2].filter(Boolean).join(" ") || "-"}`,
+    `Blood Group: ${form.bloodGroup || "-"}`,
+    `Mobile No.: ${form.mobile || "-"}`,
+    `Address: ${form.address || "-"}`,
+    "",
+    "Use the current ID Center front and back preview for printing.",
+  ].join("\n");
 
 const cardFormFromEmployee = (employee: EmployeeIdRecord): CardForm => {
   const [estateLine1, estateLine2] = splitEstateName(employee.estate_name);
@@ -298,6 +315,19 @@ export default function EmployeeIdCenterPage() {
     setSignature("");
     setEmployee(null);
     setMessage("");
+  };
+
+  const openPrinterEmail = () => {
+    const category = getCategory(form.category);
+    const params = new URLSearchParams({
+      view: "cm",
+      fs: "1",
+      to: printerEmailAddress,
+      su: `ID Card Print - ${form.fullName || "Employee"}`,
+      body: buildPrinterEmailBody(form, category.label),
+    });
+
+    window.open(`https://mail.google.com/mail/?${params.toString()}`, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -459,6 +489,10 @@ export default function EmployeeIdCenterPage() {
             <button type="button" className={css.ghostBtn} onClick={resetForm}>
               <RotateCcw size={15} />
               Clear all fields
+            </button>
+            <button type="button" className={css.emailBtn} onClick={openPrinterEmail}>
+              <Mail size={16} />
+              Email to printer
             </button>
           </div>
         </aside>

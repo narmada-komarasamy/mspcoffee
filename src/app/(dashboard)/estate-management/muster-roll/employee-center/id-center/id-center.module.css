@@ -39,7 +39,8 @@
 .linkBtn,
 .primaryBtn,
 .ghostBtn,
-.goldBtn {
+.goldBtn,
+.emailBtn {
   display: inline-flex;
   min-height: 38px;
   align-items: center;
@@ -70,6 +71,16 @@
   border: 0;
   background: linear-gradient(135deg, #ffdd33, #a8730f);
   color: #0c1a14;
+}
+
+.emailBtn {
+  border: 1px solid #05291f;
+  background: #05291f;
+  color: #fffefb;
+}
+
+.printActions .emailBtn {
+  flex: 1 1 100%;
 }
 
 .ghostBtn input {
