@@ -139,6 +139,7 @@ const initialForm: CardForm = {
 const logoPath = "/msp-id-logo.png";
 const idCenterPrefillStorageKey = "msp-id-center-prefill";
 const defaultPrinterEmail = "printer@mspcoffee.com";
+const defaultPrinterNote = "Please print the attached MSP Coffee ID card.";
 
 const splitEstateName = (estateName: string) => {
   const clean = estateName.trim() || "Moganad Estate";
@@ -178,6 +179,258 @@ const cardStyleForTheme = (theme: CardTheme) =>
     "--id-glow": theme.glow,
     "--id-leaf": theme.leaf,
   }) as CSSProperties;
+
+const loadCanvasImage = (source: string) =>
+  new Promise<HTMLImageElement | null>((resolve) => {
+    if (!source) {
+      resolve(null);
+      return;
+    }
+
+    const image = new Image();
+    if (!source.startsWith("data:")) image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
+
+const drawRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+};
+
+const drawCenteredText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  fontSize: number,
+  lineHeight: number,
+  fontWeight = 900
+) => {
+  ctx.font = `${fontWeight} ${fontSize}px Segoe UI, Arial, sans-serif`;
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+
+  words.forEach((word) => {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width <= maxWidth || !line) {
+      line = next;
+    } else {
+      lines.push(line);
+      line = word;
+    }
+  });
+  if (line) lines.push(line);
+
+  ctx.textAlign = "center";
+  lines.slice(0, 3).forEach((item, index) => {
+    ctx.fillText(item, x, y + index * lineHeight, maxWidth);
+  });
+};
+
+const drawCoverImage = (
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) => {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+};
+
+const renderIdCardImage = async (form: CardForm, photo: string, signature: string) => {
+  const theme = getCategory(form.category).theme;
+  const cardWidth = 675;
+  const cardHeight = 1050;
+  const gap = 75;
+  const canvas = document.createElement("canvas");
+  canvas.width = cardWidth * 2 + gap;
+  canvas.height = cardHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not create the ID card image.");
+
+  const [logoImage, photoImage, signatureImage] = await Promise.all([
+    loadCanvasImage(logoPath),
+    loadCanvasImage(photo),
+    loadCanvasImage(signature),
+  ]);
+
+  ctx.fillStyle = "#e9e4d8";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const drawCardBase = (x: number) => {
+    ctx.save();
+    drawRoundRect(ctx, x, 0, cardWidth, cardHeight, 48);
+    ctx.clip();
+    const background = ctx.createLinearGradient(x, 0, x + cardWidth, cardHeight);
+    background.addColorStop(0, "#0a4531");
+    background.addColorStop(0.58, "#05291f");
+    background.addColorStop(1, "#031c14");
+    ctx.fillStyle = background;
+    ctx.fillRect(x, 0, cardWidth, cardHeight);
+  };
+
+  const drawLogo = (x: number, y: number, width: number, height: number) => {
+    if (logoImage) {
+      ctx.drawImage(logoImage, x, y, width, height);
+      return;
+    }
+    ctx.fillStyle = "#000";
+    ctx.fillRect(x, y, width, height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 44px Segoe UI, Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("MSP", x + width / 2, y + height / 2);
+    ctx.font = "900 24px Segoe UI, Arial, sans-serif";
+    ctx.fillText("COFFEE", x + width / 2, y + height / 2 + 44);
+  };
+
+  const frontX = 0;
+  drawCardBase(frontX);
+  ctx.save();
+  ctx.translate(frontX, 0);
+  const ribbon = ctx.createLinearGradient(0, 0, 220, cardHeight);
+  ribbon.addColorStop(0, theme.accentSoft);
+  ribbon.addColorStop(0.48, theme.ribbon);
+  ribbon.addColorStop(1, theme.ribbonDark);
+  ctx.fillStyle = ribbon;
+  ctx.globalAlpha = 0.94;
+  ctx.translate(100, 420);
+  ctx.rotate((-18 * Math.PI) / 180);
+  ctx.fillRect(-75, -550, 116, 1260);
+  ctx.globalAlpha = 0.8;
+  ctx.fillRect(-255, -530, 112, 1260);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(frontX + 145, 450);
+  ctx.rotate((-24 * Math.PI) / 180);
+  ctx.fillStyle = ribbon;
+  ctx.globalAlpha = 0.9;
+  ctx.fillRect(0, 0, 650, 52);
+  ctx.restore();
+
+  drawLogo(frontX + 222, 88, 231, 258);
+
+  const photoCenterX = frontX + cardWidth / 2;
+  const photoCenterY = 472;
+  const photoRadius = 145;
+  const ring = ctx.createLinearGradient(photoCenterX - photoRadius, photoCenterY - photoRadius, photoCenterX + photoRadius, photoCenterY + photoRadius);
+  ring.addColorStop(0, theme.accent);
+  ring.addColorStop(0.58, theme.accentDark);
+  ring.addColorStop(1, theme.accentSoft);
+  ctx.fillStyle = ring;
+  ctx.beginPath();
+  ctx.arc(photoCenterX, photoCenterY, photoRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#efe9db";
+  ctx.beginPath();
+  ctx.arc(photoCenterX, photoCenterY, 122, 0, Math.PI * 2);
+  ctx.fill();
+  if (photoImage) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(photoCenterX, photoCenterY, 122, 0, Math.PI * 2);
+    ctx.clip();
+    drawCoverImage(ctx, photoImage, photoCenterX - 122, photoCenterY - 122, 244, 244);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = "#a89a76";
+    ctx.font = "900 27px Segoe UI, Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("PHOTO", photoCenterX, photoCenterY + 10);
+  }
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 72px Segoe UI, Arial, sans-serif";
+  drawCenteredText(ctx, (form.fullName || "Full Name").toUpperCase(), frontX + cardWidth / 2, 690, 580, 72, 72);
+  ctx.fillStyle = theme.accent;
+  drawCenteredText(ctx, (form.designation || "Designation").toUpperCase(), frontX + cardWidth / 2, 780, 560, 50, 52, 800);
+  drawCenteredText(ctx, (form.place || "Place").toUpperCase(), frontX + cardWidth / 2, 835, 560, 44, 46, 800);
+  ctx.fillStyle = "#fff";
+  drawCenteredText(ctx, (form.estateLine1 || "Estate").toUpperCase(), frontX + cardWidth / 2, 945, 560, 52, 54);
+  drawCenteredText(ctx, (form.estateLine2 || "Estate").toUpperCase(), frontX + cardWidth / 2, 998, 560, 44, 46, 600);
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(frontX + 72, 975);
+  ctx.lineTo(frontX + 412, 975);
+  ctx.stroke();
+  ctx.fillStyle = theme.accent;
+  ctx.font = "900 22px Segoe UI, Arial, sans-serif";
+  ctx.textAlign = "left";
+  if (signatureImage) ctx.drawImage(signatureImage, frontX + 72, 932, 170, 42);
+  ctx.fillText("AUTHORITY SIGNATURE", frontX + 72, 1014);
+  drawLogo(frontX + 490, 930, 125, 102);
+  ctx.restore();
+
+  const backX = cardWidth + gap;
+  drawCardBase(backX);
+  ctx.save();
+  ctx.translate(backX, 0);
+  ctx.strokeStyle = theme.leaf;
+  ctx.globalAlpha = 0.24;
+  ctx.lineWidth = 4;
+  [[-10, 70, 220, 24], [520, 36, 120, 220], [4, 780, 240, 950], [500, 730, 680, 1050]].forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.bezierCurveTo(x1 + 95, y1 - 70, x2 - 90, y2 - 110, x2, y2);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  drawLogo(backX + 250, 74, 175, 222);
+  ctx.fillStyle = theme.accent;
+  drawCenteredText(ctx, "MSP COFFEE", backX + cardWidth / 2, 380, 560, 70, 72);
+  ctx.fillStyle = theme.accentSoft;
+  drawCenteredText(ctx, "I D  C A R D", backX + cardWidth / 2, 505, 560, 56, 58);
+
+  ctx.fillStyle = theme.accentSoft;
+  ctx.font = "900 38px Segoe UI, Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("BLOOD", backX + 180, 674);
+  ctx.fillText("MOBILE NO.", backX + 500, 674);
+  ctx.fillText("GROUP", backX + 180, 720);
+  ctx.font = "500 38px Segoe UI, Arial, sans-serif";
+  ctx.fillText(form.bloodGroup || "-", backX + 180, 800);
+  drawCenteredText(ctx, form.mobile || "-", backX + 500, 780, 250, 36, 42, 500);
+  ctx.font = "900 40px Segoe UI, Arial, sans-serif";
+  ctx.fillText("ADDRESS", backX + cardWidth / 2, 914);
+  drawCenteredText(ctx, form.address || "-", backX + cardWidth / 2, 968, 540, 31, 38, 500);
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(backX + 196, 982);
+  ctx.lineTo(backX + 480, 982);
+  ctx.stroke();
+  if (signatureImage) ctx.drawImage(signatureImage, backX + 260, 944, 150, 38);
+  ctx.font = "900 30px Segoe UI, Arial, sans-serif";
+  ctx.fillStyle = theme.accentSoft;
+  ctx.fillText("HOLDER SIGNATURE", backX + cardWidth / 2, 1030);
+  ctx.restore();
+
+  try {
+    return canvas.toDataURL("image/png");
+  } catch {
+    throw new Error("Could not create the image attachment. Try uploading the photo again, then resend.");
+  }
+};
 
 const cardFormFromEmployee = (employee: EmployeeIdRecord): CardForm => {
   const [estateLine1, estateLine2] = splitEstateName(employee.estate_name);
@@ -226,6 +479,7 @@ export default function EmployeeIdCenterPage() {
   const [emailMessage, setEmailMessage] = useState("");
   const [emailPreviewOpen, setEmailPreviewOpen] = useState(false);
   const [printerEmail, setPrinterEmail] = useState(defaultPrinterEmail);
+  const [emailNote, setEmailNote] = useState(defaultPrinterNote);
 
   const selectedSummary = useMemo(() => {
     if (!employee) return "";
@@ -240,9 +494,9 @@ export default function EmployeeIdCenterPage() {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 72) || "employee"}-msp-id-card.html`;
+    .slice(0, 72) || "employee"}-msp-id-card.png`;
   const emailBodyLines = [
-    "Please print the attached MSP Coffee ID card.",
+    emailNote || defaultPrinterNote,
     "",
     `Name: ${form.fullName || "-"}`,
     `Category: ${selectedCategory.label}`,
@@ -324,6 +578,7 @@ export default function EmployeeIdCenterPage() {
     setEmployee(null);
     setMessage("");
     setEmailMessage("");
+    setEmailNote(defaultPrinterNote);
     setEmailPreviewOpen(false);
   };
 
@@ -337,10 +592,11 @@ export default function EmployeeIdCenterPage() {
     setEmailMessage("");
 
     try {
+      const imageDataUrl = await renderIdCardImage(form, photo, signature);
       const response = await fetch("/api/id-card/email", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ recipient: printerEmail, form, photo, signature }),
+        body: JSON.stringify({ recipient: printerEmail, note: emailNote, form, imageDataUrl }),
       });
       const result = (await response.json().catch(() => null)) as {
         error?: string;
@@ -574,7 +830,13 @@ export default function EmployeeIdCenterPage() {
 
                 <div className={css.emailBodyPreview}>
                   <span>Email message</span>
-                  <pre>{emailBodyLines.join("\n")}</pre>
+                  <textarea
+                    value={emailNote}
+                    onChange={(event) => setEmailNote(event.target.value)}
+                    rows={4}
+                    placeholder="Write a note for the printer"
+                  />
+                  <pre>{emailBodyLines.slice(2).join("\n")}</pre>
                 </div>
 
                 <div className={css.attachmentPreview}>

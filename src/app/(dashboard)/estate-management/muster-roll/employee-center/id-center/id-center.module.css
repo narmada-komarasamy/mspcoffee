@@ -755,10 +755,28 @@
 }
 
 .emailBodyPreview pre {
-  margin: 0;
+  margin: 10px 0 0;
   white-space: pre-wrap;
   color: #2f4a3a;
   font: 13px/1.45 "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+
+.emailBodyPreview textarea {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
+  border: 1px solid #d8d1bf;
+  border-radius: 6px;
+  background: #fffefb;
+  color: #0c1a14;
+  font: 13px/1.45 "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  padding: 10px;
+  outline: none;
+}
+
+.emailBodyPreview textarea:focus {
+  border-color: #a8730f;
+  outline: 2px solid rgba(168, 115, 15, 0.18);
 }
 
 .attachmentPreview {
