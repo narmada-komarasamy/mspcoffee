@@ -215,6 +215,7 @@
 }
 
 .fieldGroup input,
+.fieldGroup select,
 .fieldGroup textarea {
   width: 100%;
   min-width: 0;
@@ -227,16 +228,61 @@
   outline: none;
 }
 
+.fieldGroup select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #2f4a3a 50%) right 17px center / 7px 7px no-repeat,
+    linear-gradient(135deg, #2f4a3a 50%, transparent 50%) right 11px center / 7px 7px no-repeat,
+    #fbfaf6;
+}
+
 .fieldGroup textarea {
   min-height: 64px;
   resize: vertical;
 }
 
 .fieldGroup input:focus,
+.fieldGroup select:focus,
 .fieldGroup textarea:focus {
   border-color: #a8730f;
   background: #fff;
   outline: 2px solid rgba(168, 115, 15, 0.18);
+}
+
+.categorySwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -5px 0 16px;
+}
+
+.categorySwatch {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #d8d1bf;
+  border-radius: 999px;
+  background: #fffefb;
+  color: #2f4a3a;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.categorySwatch::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  box-shadow: 0 0 0 2px rgba(12, 26, 20, 0.08);
+}
+
+.categorySwatchActive {
+  border-color: var(--swatch-color);
+  background: color-mix(in srgb, var(--swatch-color) 16%, #fffefb);
 }
 
 .row2 {
@@ -321,7 +367,7 @@
 
 .cardFront {
   background:
-    radial-gradient(circle at 55% 42%, rgba(16, 83, 61, 0.72), transparent 46%),
+    radial-gradient(circle at 55% 42%, var(--id-glow), transparent 46%),
     linear-gradient(150deg, #0a4531 0%, #05291f 55%, #031c14 100%);
 }
 
@@ -373,7 +419,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffdd33, #d69b18 58%, #fff09d);
+  background: linear-gradient(135deg, var(--id-accent), var(--id-accent-dark) 58%, var(--id-accent-soft));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   padding: 7px;
 }
@@ -414,7 +460,7 @@
 .desigText,
 .placeText {
   max-width: 100%;
-  color: #ffdd33;
+  color: var(--id-accent);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -457,8 +503,8 @@
 .sigRow,
 .backSig {
   width: 100%;
-  border-top: 1px solid rgba(255, 221, 51, 0.5);
-  color: #ffdd33;
+  border-top: 1px solid color-mix(in srgb, var(--id-accent) 58%, transparent);
+  color: var(--id-accent);
   font-size: 8px;
   font-weight: 900;
   letter-spacing: 0.05em;
@@ -516,7 +562,7 @@
 }
 
 .goldText {
-  background: linear-gradient(180deg, #fff5a8, #ffdd33 55%, #c58b13);
+  background: linear-gradient(180deg, var(--id-accent-soft), var(--id-accent) 55%, var(--id-accent-dark));
   background-clip: text;
   color: transparent;
   font-weight: 900;
@@ -530,7 +576,7 @@
 
 .backSubtitle {
   margin-bottom: 40px;
-  color: #fff5a8;
+  color: var(--id-accent-soft);
   font-size: 21px;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -547,7 +593,7 @@
 
 .cellLabel {
   margin-bottom: 7px;
-  color: #fff5a8;
+  color: var(--id-accent-soft);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.03em;
@@ -555,7 +601,7 @@
 }
 
 .cellValue {
-  color: #fff7b8;
+  color: var(--id-accent-soft);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.25;
@@ -576,7 +622,7 @@
   margin-top: 18px;
   padding-top: 8px;
   align-items: center;
-  color: #fff5a8;
+  color: var(--id-accent-soft);
   font-size: 12px;
   letter-spacing: 0.03em;
 }

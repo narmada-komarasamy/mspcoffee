@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { CSSProperties, ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, IdCard, Loader2, Printer, RotateCcw, Upload, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +23,7 @@ type EmployeeIdRecord = {
 
 type CardForm = {
   fullName: string;
+  category: CardCategory;
   designation: string;
   place: string;
   estateLine1: string;
@@ -38,8 +39,94 @@ type IdCenterPrefill = {
   form: CardForm;
 };
 
+type CardCategory = "estate-field" | "pf-worker" | "line-worker" | "village-worker" | "migrant-worker";
+
+type CardTheme = {
+  accent: string;
+  accentSoft: string;
+  accentDark: string;
+  ribbon: string;
+  ribbonDark: string;
+  glow: string;
+  leaf: string;
+};
+
+const categoryOptions: { value: CardCategory; label: string; shortLabel: string; theme: CardTheme }[] = [
+  {
+    value: "estate-field",
+    label: "Staff & Field",
+    shortLabel: "Staff & Field",
+    theme: {
+      accent: "#ffd400",
+      accentSoft: "#fff2a6",
+      accentDark: "#b8860b",
+      ribbon: "#ffd400",
+      ribbonDark: "#8a6008",
+      glow: "rgba(184, 134, 11, 0.44)",
+      leaf: "#87ad77",
+    },
+  },
+  {
+    value: "pf-worker",
+    label: "PF Workers",
+    shortLabel: "PF Worker",
+    theme: {
+      accent: "#2f7bff",
+      accentSoft: "#c9dcff",
+      accentDark: "#063c9e",
+      ribbon: "#2f7bff",
+      ribbonDark: "#06285f",
+      glow: "rgba(29, 82, 168, 0.66)",
+      leaf: "#78a9ff",
+    },
+  },
+  {
+    value: "line-worker",
+    label: "Line Workers",
+    shortLabel: "Line Worker",
+    theme: {
+      accent: "#ff7a00",
+      accentSoft: "#ffd7b0",
+      accentDark: "#9f3a00",
+      ribbon: "#ff7a00",
+      ribbonDark: "#7a2b00",
+      glow: "rgba(188, 86, 0, 0.58)",
+      leaf: "#ffae75",
+    },
+  },
+  {
+    value: "village-worker",
+    label: "Village Workers",
+    shortLabel: "Village Worker",
+    theme: {
+      accent: "#b83a32",
+      accentSoft: "#ffd1ce",
+      accentDark: "#6f1712",
+      ribbon: "#b83a32",
+      ribbonDark: "#54100d",
+      glow: "rgba(145, 36, 30, 0.56)",
+      leaf: "#e98282",
+    },
+  },
+  {
+    value: "migrant-worker",
+    label: "Migrant Workers",
+    shortLabel: "Migrant Worker",
+    theme: {
+      accent: "#b994ff",
+      accentSoft: "#eadfff",
+      accentDark: "#5c2fb1",
+      ribbon: "#b994ff",
+      ribbonDark: "#3b1e78",
+      glow: "rgba(111, 68, 174, 0.6)",
+      leaf: "#c9b2ff",
+    },
+  },
+];
+
 const initialForm: CardForm = {
   fullName: "Arjun Menon",
+  category: "estate-field",
   designation: "Field Supervisor",
   place: "Moganad",
   estateLine1: "Moganad",
@@ -65,11 +152,38 @@ const formatMobile = (mobile: string | null) => {
   return clean.startsWith("+") ? clean : `+91 ${clean}`;
 };
 
+const categoryFromText = (...values: (string | null | undefined)[]): CardCategory => {
+  const text = values.filter(Boolean).join(" ").toLowerCase();
+  if (text.includes("migrant")) return "migrant-worker";
+  if (text.includes("village")) return "village-worker";
+  if (text.includes("line")) return "line-worker";
+  if (text.includes("pf") || text.includes("p.f")) return "pf-worker";
+  return "estate-field";
+};
+
+const normalizeCategory = (value: unknown): CardCategory =>
+  categoryOptions.some((option) => option.value === value) ? (value as CardCategory) : "estate-field";
+
+const getCategory = (category: CardCategory) =>
+  categoryOptions.find((option) => option.value === category) ?? categoryOptions[0];
+
+const cardStyleForTheme = (theme: CardTheme) =>
+  ({
+    "--id-accent": theme.accent,
+    "--id-accent-soft": theme.accentSoft,
+    "--id-accent-dark": theme.accentDark,
+    "--id-ribbon": theme.ribbon,
+    "--id-ribbon-dark": theme.ribbonDark,
+    "--id-glow": theme.glow,
+    "--id-leaf": theme.leaf,
+  }) as CSSProperties;
+
 const cardFormFromEmployee = (employee: EmployeeIdRecord): CardForm => {
   const [estateLine1, estateLine2] = splitEstateName(employee.estate_name);
 
   return {
     fullName: employee.full_name || "",
+    category: categoryFromText(employee.job_role, employee.section_division),
     designation: employee.job_role || employee.section_division || "",
     place: employee.section_division || estateLine1,
     estateLine1,
@@ -86,7 +200,14 @@ const readIdCenterPrefill = (employeeId: string): IdCenterPrefill | null => {
 
   try {
     const parsed = JSON.parse(raw) as IdCenterPrefill;
-    return parsed.employeeId === employeeId ? parsed : null;
+    if (parsed.employeeId !== employeeId) return null;
+    return {
+      ...parsed,
+      form: {
+        ...parsed.form,
+        category: normalizeCategory(parsed.form.category),
+      },
+    };
   } catch {
     window.sessionStorage.removeItem(idCenterPrefillStorageKey);
     return null;
@@ -156,7 +277,7 @@ export default function EmployeeIdCenterPage() {
   }, []);
 
   const updateField = (key: keyof CardForm, value: string) => {
-    setForm((current) => ({ ...current, [key]: value }));
+    setForm((current) => ({ ...current, [key]: key === "category" ? normalizeCategory(value) : value }));
   };
 
   const readImage = (event: ChangeEvent<HTMLInputElement>, setter: (value: string) => void) => {
@@ -238,6 +359,31 @@ export default function EmployeeIdCenterPage() {
             <span>Full Name</span>
             <input value={form.fullName} onChange={(event) => updateField("fullName", event.target.value)} />
           </label>
+
+          <label className={css.fieldGroup}>
+            <span>Category</span>
+            <select value={form.category} onChange={(event) => updateField("category", event.target.value)}>
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className={css.categorySwatches}>
+            {categoryOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`${css.categorySwatch} ${form.category === option.value ? css.categorySwatchActive : ""}`}
+                style={{ "--swatch-color": option.theme.accent } as CSSProperties}
+                onClick={() => updateField("category", option.value)}
+              >
+                {option.shortLabel}
+              </button>
+            ))}
+          </div>
 
           <div className={css.row2}>
             <label className={css.fieldGroup}>
@@ -338,9 +484,12 @@ function IdCardFront({
   photo: string;
   signature: string;
 }) {
+  const category = getCategory(form.category);
+  const theme = category.theme;
+
   return (
-    <article className={`${css.card} ${css.cardFront}`}>
-      <FrontBackground />
+    <article className={`${css.card} ${css.cardFront}`} style={cardStyleForTheme(theme)}>
+      <FrontBackground theme={theme} />
       <div className={css.frontContent}>
         <img className={css.frontLogo} src={logoPath} alt="MSP Coffee logo" />
 
@@ -373,9 +522,12 @@ function IdCardFront({
 }
 
 function IdCardBack({ form, signature }: { form: CardForm; signature: string }) {
+  const category = getCategory(form.category);
+  const theme = category.theme;
+
   return (
-    <article className={`${css.card} ${css.cardBack}`}>
-      <BackBackground />
+    <article className={`${css.card} ${css.cardBack}`} style={cardStyleForTheme(theme)}>
+      <BackBackground theme={theme} />
       <div className={css.backContent}>
         <img className={css.backLogo} src={logoPath} alt="MSP Coffee logo" />
         <div className={`${css.goldText} ${css.backTitle}`}>MSP COFFEE</div>
@@ -406,18 +558,18 @@ function IdCardBack({ form, signature }: { form: CardForm; signature: string }) 
   );
 }
 
-function FrontBackground() {
+function FrontBackground({ theme }: { theme: CardTheme }) {
   return (
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="idGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#ffe98c" />
-          <stop offset="45%" stopColor="#ffdd33" />
-          <stop offset="100%" stopColor="#a8730f" />
+          <stop offset="45%" stopColor={theme.ribbon} />
+          <stop offset="100%" stopColor={theme.accentDark} />
         </linearGradient>
         <linearGradient id="idGoldGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#f0c14e" />
-          <stop offset="100%" stopColor="#8a6008" />
+          <stop offset="0%" stopColor={theme.accentSoft} />
+          <stop offset="100%" stopColor={theme.ribbonDark} />
         </linearGradient>
       </defs>
       <path
@@ -448,7 +600,7 @@ function FrontBackground() {
   );
 }
 
-function BackBackground() {
+function BackBackground({ theme }: { theme: CardTheme }) {
   return (
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
       <rect width="225" height="350" fill="#05291f" />
@@ -457,7 +609,7 @@ function BackBackground() {
         <stop offset="100%" stopColor="#031c14" />
       </radialGradient>
       <rect width="225" height="350" fill="url(#backGlow)" opacity=".85" />
-      <g fill="none" stroke="#87ad77" strokeWidth="1.1" opacity=".22">
+      <g fill="none" stroke={theme.leaf} strokeWidth="1.1" opacity=".22">
         <path d="M-6,26 C22,2 48,-2 78,18" />
         <path d="M12,14 C21,37 39,53 72,66" />
         <path d="M17,18 C34,20 48,31 61,52" />
@@ -470,7 +622,7 @@ function BackBackground() {
         <path d="M176,260 C196,278 211,304 227,341" />
         <path d="M221,255 C197,267 181,286 171,318" />
       </g>
-      <g fill="none" stroke="#87ad77" strokeWidth=".9" opacity=".18">
+      <g fill="none" stroke={theme.leaf} strokeWidth=".9" opacity=".18">
         <circle cx="7" cy="68" r="14" />
         <circle cx="218" cy="36" r="13" />
         <circle cx="17" cy="311" r="15" />

@@ -329,6 +329,15 @@ const formatMobileForIdCard = (mobile: string) => {
   return clean.startsWith("+") ? clean : `+91 ${clean}`;
 };
 
+const categoryForIdCardFromText = (...values: string[]) => {
+  const text = values.filter(Boolean).join(" ").toLowerCase();
+  if (text.includes("migrant")) return "migrant-worker";
+  if (text.includes("village")) return "village-worker";
+  if (text.includes("line")) return "line-worker";
+  if (text.includes("pf") || text.includes("p.f")) return "pf-worker";
+  return "estate-field";
+};
+
 const idCardPrefillFromForm = (form: FormState, photo: string, employeeId: string) => {
   const [estateLine1, estateLine2] = splitEstateNameForIdCard(form.estateName);
 
@@ -337,6 +346,7 @@ const idCardPrefillFromForm = (form: FormState, photo: string, employeeId: strin
     photo,
     form: {
       fullName: form.fullName,
+      category: categoryForIdCardFromText(form.jobRole, form.section),
       designation: form.jobRole || form.section,
       place: form.section || estateLine1,
       estateLine1,
