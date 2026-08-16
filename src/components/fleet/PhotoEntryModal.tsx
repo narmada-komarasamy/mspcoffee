@@ -81,6 +81,12 @@ function nearestPriorRow(rows: Row[], draft: Draft) {
   return beforeDate.at(-1) ?? vehicleRows.at(-1) ?? null;
 }
 
+function priorClosingKm(rows: Row[], draft: Draft, vehicle_id = draft.vehicle_id, date = draft.date) {
+  if (!vehicle_id) return 0;
+  const prior = nearestPriorRow(rows, { ...draft, vehicle_id, date });
+  return prior ? n(prior.closing_km) : 0;
+}
+
 function buildValidation(rows: Row[], draft: Draft): Validation[] {
   const checks: Validation[] = [];
   const sameDate = rows.find((row) => row.vehicle_id === draft.vehicle_id && row.date === draft.date);
@@ -166,6 +172,20 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
     set(field, (parseFloat(e.target.value) || 0) as Draft[typeof field]);
   };
 
+  const setDate = (date: string) => {
+    setDraft((prev) => {
+      const starting_km = n(prev.starting_km) > 0 ? prev.starting_km : priorClosingKm(rows, prev, prev.vehicle_id, date);
+      return derive({ ...prev, date, starting_km });
+    });
+  };
+
+  const setVehicle = (vehicle_id: string) => {
+    setDraft((prev) => {
+      const starting_km = n(prev.starting_km) > 0 ? prev.starting_km : priorClosingKm(rows, prev, vehicle_id, prev.date);
+      return derive({ ...prev, vehicle_id, starting_km });
+    });
+  };
+
   const handleExtract = async () => {
     setError("");
     if (!odometerFile && !billFile) {
@@ -195,14 +215,16 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
       const parsed = await response.json();
       if (!response.ok) throw new Error(parsed.error || "Could not extract details from photos.");
 
+      const nextDate = parsed.date || draft.date;
       const nextVehicle = parsed.vehicle_id || draft.vehicle_id;
-      const prior = nextVehicle ? nearestPriorRow(rows, { ...draft, vehicle_id: nextVehicle }) : null;
+      const parsedStartingKm = Number(parsed.starting_km) || 0;
+      const fallbackStartingKm = priorClosingKm(rows, draft, nextVehicle, nextDate);
       const next = derive({
         ...draft,
-        date: parsed.date || draft.date,
+        date: nextDate,
         vehicle_id: nextVehicle,
         fuel_type: FUEL_TYPES.includes(parsed.fuel_type) ? parsed.fuel_type : draft.fuel_type,
-        starting_km: Number(parsed.starting_km) || (prior ? n(prior.closing_km) : draft.starting_km),
+        starting_km: parsedStartingKm || fallbackStartingKm || draft.starting_km,
         closing_km: Number(parsed.closing_km) || draft.closing_km,
         fuel_filled_l: Number(parsed.fuel_filled_l) || draft.fuel_filled_l,
         fuel_cost: Number(parsed.fuel_cost) || draft.fuel_cost,
@@ -351,11 +373,11 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Date</label>
-                <input type="date" value={draft.date} onChange={(e) => set("date", e.target.value)} className={inputCls} />
+                <input type="date" value={draft.date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Vehicle ID</label>
-                <input list="photo-vehicle-list" value={draft.vehicle_id} onChange={(e) => set("vehicle_id", e.target.value)} className={`${inputCls} text-msp-teal`} />
+                <input list="photo-vehicle-list" value={draft.vehicle_id} onChange={(e) => setVehicle(e.target.value)} className={`${inputCls} text-msp-teal`} />
                 <datalist id="photo-vehicle-list">
                   {vehicles.map((vehicle) => <option key={vehicle} value={vehicle} />)}
                 </datalist>
