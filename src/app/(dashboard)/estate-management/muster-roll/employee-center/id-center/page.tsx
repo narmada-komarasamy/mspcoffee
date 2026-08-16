@@ -138,7 +138,6 @@ const initialForm: CardForm = {
 
 const logoPath = "/msp-id-logo.png";
 const idCenterPrefillStorageKey = "msp-id-center-prefill";
-const printerEmailAddress = "printer@mspcoffee.com";
 
 const splitEstateName = (estateName: string) => {
   const clean = estateName.trim() || "Moganad Estate";
@@ -178,22 +177,6 @@ const cardStyleForTheme = (theme: CardTheme) =>
     "--id-glow": theme.glow,
     "--id-leaf": theme.leaf,
   }) as CSSProperties;
-
-const buildPrinterEmailBody = (form: CardForm, categoryLabel: string) =>
-  [
-    "Please print the MSP Coffee ID card for this profile.",
-    "",
-    `Name: ${form.fullName || "-"}`,
-    `Category: ${categoryLabel}`,
-    `Designation: ${form.designation || "-"}`,
-    `Place: ${form.place || "-"}`,
-    `Estate: ${[form.estateLine1, form.estateLine2].filter(Boolean).join(" ") || "-"}`,
-    `Blood Group: ${form.bloodGroup || "-"}`,
-    `Mobile No.: ${form.mobile || "-"}`,
-    `Address: ${form.address || "-"}`,
-    "",
-    "Use the current ID Center front and back preview for printing.",
-  ].join("\n");
 
 const cardFormFromEmployee = (employee: EmployeeIdRecord): CardForm => {
   const [estateLine1, estateLine2] = splitEstateName(employee.estate_name);
@@ -238,6 +221,8 @@ export default function EmployeeIdCenterPage() {
   const [signature, setSignature] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailMessage, setEmailMessage] = useState("");
 
   const selectedSummary = useMemo(() => {
     if (!employee) return "";
@@ -315,19 +300,39 @@ export default function EmployeeIdCenterPage() {
     setSignature("");
     setEmployee(null);
     setMessage("");
+    setEmailMessage("");
   };
 
-  const openPrinterEmail = () => {
-    const category = getCategory(form.category);
-    const params = new URLSearchParams({
-      view: "cm",
-      fs: "1",
-      to: printerEmailAddress,
-      su: `ID Card Print - ${form.fullName || "Employee"}`,
-      body: buildPrinterEmailBody(form, category.label),
-    });
+  const emailPrinter = async () => {
+    setSendingEmail(true);
+    setEmailMessage("");
 
-    window.open(`https://mail.google.com/mail/?${params.toString()}`, "_blank", "noopener,noreferrer");
+    try {
+      const response = await fetch("/api/id-card/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ form, photo, signature }),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        error?: string;
+        status?: "sent" | "logged";
+        attachmentName?: string;
+      } | null;
+
+      if (!response.ok) {
+        throw new Error(result?.error || "Could not send the ID card email.");
+      }
+
+      if (result?.status === "sent") {
+        setEmailMessage(`Sent to printer with ${result.attachmentName || "ID card attachment"}.`);
+      } else {
+        setEmailMessage("ID card email was prepared, but live email delivery is not configured.");
+      }
+    } catch (error) {
+      setEmailMessage(error instanceof Error ? error.message : "Could not send the ID card email.");
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   return (
@@ -490,10 +495,11 @@ export default function EmployeeIdCenterPage() {
               <RotateCcw size={15} />
               Clear all fields
             </button>
-            <button type="button" className={css.emailBtn} onClick={openPrinterEmail}>
-              <Mail size={16} />
-              Email to printer
+            <button type="button" className={css.emailBtn} onClick={emailPrinter} disabled={sendingEmail}>
+              {sendingEmail ? <Loader2 className={css.spin} size={16} /> : <Mail size={16} />}
+              {sendingEmail ? "Sending..." : "Email to printer"}
             </button>
+            {emailMessage ? <p className={css.actionMessage}>{emailMessage}</p> : null}
           </div>
         </aside>
 

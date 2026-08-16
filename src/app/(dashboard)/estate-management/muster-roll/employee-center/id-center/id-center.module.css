@@ -79,8 +79,22 @@
   color: #fffefb;
 }
 
+.emailBtn:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
 .printActions .emailBtn {
   flex: 1 1 100%;
+}
+
+.actionMessage {
+  flex: 1 1 100%;
+  margin: -2px 0 0;
+  color: #2f4a3a;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .ghostBtn input {

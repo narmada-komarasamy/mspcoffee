@@ -6,6 +6,7 @@ export type SendEmailInput = {
   subject: string;
   text: string;
   html: string;
+  attachmentHtml?: string;
 };
 
 export type EmailProviderName = 'resend' | 'smtp' | 'webhook';
@@ -49,7 +50,7 @@ export async function sendEmail(input: SendEmailInput) {
   const attachments = input.payload.attachmentName
     ? [{
         filename: input.payload.attachmentName,
-        content: Buffer.from(input.html, 'utf8').toString('base64'),
+        content: Buffer.from(input.attachmentHtml ?? input.html, 'utf8').toString('base64'),
       }]
     : [];
 
@@ -147,7 +148,7 @@ export async function sendEmail(input: SendEmailInput) {
         attachments: input.payload.attachmentName
           ? [{
               filename: input.payload.attachmentName,
-              content: Buffer.from(input.html, 'utf8'),
+              content: Buffer.from(input.attachmentHtml ?? input.html, 'utf8'),
             }]
           : [],
       });
