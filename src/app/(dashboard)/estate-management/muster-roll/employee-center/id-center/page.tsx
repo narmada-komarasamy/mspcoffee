@@ -399,7 +399,7 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   ctx.fillStyle = theme.accent;
   drawCenteredText(ctx, "MSP COFFEE", backX + cardWidth / 2, 380, 560, 70, 72);
   ctx.fillStyle = theme.accentSoft;
-  drawCenteredText(ctx, "I D  C A R D", backX + cardWidth / 2, 505, 560, 56, 58);
+  drawCenteredText(ctx, "ID CARD", backX + cardWidth / 2, 505, 560, 56, 58);
 
   ctx.fillStyle = theme.accentSoft;
   ctx.font = "900 38px Segoe UI, Arial, sans-serif";
@@ -409,20 +409,11 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   ctx.fillText("GROUP", backX + 180, 720);
   ctx.font = "500 38px Segoe UI, Arial, sans-serif";
   ctx.fillText(form.bloodGroup || "-", backX + 180, 800);
-  drawCenteredText(ctx, form.mobile || "-", backX + 500, 780, 250, 36, 42, 500);
+  ctx.font = "700 33px Segoe UI, Arial, sans-serif";
+  ctx.fillText(form.mobile || "-", backX + 500, 770, 300);
   ctx.font = "900 40px Segoe UI, Arial, sans-serif";
-  ctx.fillText("ADDRESS", backX + cardWidth / 2, 914);
-  drawCenteredText(ctx, form.address || "-", backX + cardWidth / 2, 968, 540, 31, 38, 500);
-  ctx.strokeStyle = theme.accent;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(backX + 196, 982);
-  ctx.lineTo(backX + 480, 982);
-  ctx.stroke();
-  if (signatureImage) ctx.drawImage(signatureImage, backX + 260, 944, 150, 38);
-  ctx.font = "900 30px Segoe UI, Arial, sans-serif";
-  ctx.fillStyle = theme.accentSoft;
-  ctx.fillText("HOLDER SIGNATURE", backX + cardWidth / 2, 1030);
+  ctx.fillText("ADDRESS", backX + cardWidth / 2, 890);
+  drawCenteredText(ctx, form.address || "-", backX + cardWidth / 2, 936, 560, 28, 34, 600);
   ctx.restore();
 
   try {
@@ -793,7 +784,7 @@ export default function EmployeeIdCenterPage() {
           <div className={css.stageLabel}>Live Preview - Front & Back</div>
           <div className={css.cardsWrap}>
             <IdCardFront form={form} photo={photo} signature={signature} />
-            <IdCardBack form={form} signature={signature} />
+            <IdCardBack form={form} />
           </div>
         </section>
       </div>
@@ -864,7 +855,7 @@ export default function EmployeeIdCenterPage() {
                 <div className={css.stageLabel}>Attachment Preview</div>
                 <div className={css.modalCardsWrap}>
                   <IdCardFront form={form} photo={photo} signature={signature} />
-                  <IdCardBack form={form} signature={signature} />
+                  <IdCardBack form={form} />
                 </div>
               </div>
             </div>
@@ -921,7 +912,7 @@ function IdCardFront({
   );
 }
 
-function IdCardBack({ form, signature }: { form: CardForm; signature: string }) {
+function IdCardBack({ form }: { form: CardForm }) {
   const category = getCategory(form.category);
   const theme = category.theme;
 
@@ -931,7 +922,7 @@ function IdCardBack({ form, signature }: { form: CardForm; signature: string }) 
       <div className={css.backContent}>
         <img className={css.backLogo} src={logoPath} alt="MSP Coffee logo" />
         <div className={`${css.goldText} ${css.backTitle}`}>MSP COFFEE</div>
-        <div className={css.backSubtitle}>I D&nbsp; C A R D</div>
+        <div className={css.backSubtitle}>ID CARD</div>
 
         <div className={css.backGrid}>
           <div>
@@ -940,19 +931,15 @@ function IdCardBack({ form, signature }: { form: CardForm; signature: string }) 
           </div>
           <div>
             <div className={css.cellLabel}>Mobile No.</div>
-            <div className={css.cellValue}>{form.mobile || "-"}</div>
+            <div className={`${css.cellValue} ${css.mobileValue}`}>{form.mobile || "-"}</div>
           </div>
         </div>
 
         <div className={css.addrBlock}>
           <div className={css.cellLabel}>Address</div>
-          <div className={css.cellValue}>{form.address || "-"}</div>
+          <div className={`${css.cellValue} ${css.addressValue}`}>{form.address || "-"}</div>
         </div>
 
-        <div className={css.backSig}>
-          {signature ? <img className={css.signatureImage} src={signature} alt="" /> : null}
-          <span>Holder Signature</span>
-        </div>
       </div>
     </article>
   );
