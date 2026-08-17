@@ -17,7 +17,7 @@ const PAGES = [
   { href: '/labour-costs',         label: 'Labour Costs',         defaults: { supervisor: 'none' as Access, worker: 'none' as Access, hr: 'none' as Access } },
   { href: '/labour-activities',    label: 'Labour Activities',    defaults: { supervisor: 'none' as Access, worker: 'none' as Access, hr: 'full' as Access } },
   { href: '/daily-report',         label: 'Daily Report',         defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
-  { href: '/muster-roll',          label: 'Muster Roll',          defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
+  { href: '/estate-management/muster-roll', label: 'Muster Roll', defaults: { supervisor: 'full' as Access, worker: 'full' as Access, hr: 'none' as Access } },
   { href: '/harvest-yield',        label: 'Harvest Yield',        defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
   { href: '/nursery',              label: 'Nursery',              defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },
   { href: '/spraying-log',         label: 'Spraying Log',         defaults: { supervisor: 'full' as Access, worker: 'none' as Access, hr: 'none' as Access } },

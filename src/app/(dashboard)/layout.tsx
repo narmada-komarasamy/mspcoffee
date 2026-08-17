@@ -170,7 +170,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Muster Roll', href: '/muster-roll', icon: Users, roles: ['admin', 'supervisor', 'worker', 'ceo'],
+    label: 'Muster Roll', href: '/estate-management/muster-roll', icon: Users, roles: ['admin', 'supervisor', 'worker', 'ceo'],
     children: [
       {
         label: 'Employee Center',

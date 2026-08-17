@@ -28,7 +28,7 @@ const PAGES = [
   { href: '/labour-costs',         label: 'Labour Costs' },
   { href: '/labour-activities',    label: 'Labour Activities' },
   { href: '/daily-report',         label: 'Daily Report' },
-  { href: '/muster-roll',          label: 'Muster Roll' },
+  { href: '/estate-management/muster-roll', label: 'Muster Roll' },
   { href: '/harvest-yield',        label: 'Harvest Yield' },
   { href: '/nursery',              label: 'Nursery' },
   { href: '/spraying-log',         label: 'Spraying Log' },
