@@ -61,6 +61,14 @@ const fmtC = (n: number) => n >= 100000 ? "₹" + (n/100000).toFixed(2) + "L" : 
 // Supabase returns numeric PostgreSQL columns as strings — coerce everything to number
 const n = (v: unknown) => Number(v) || 0;
 
+function dateParts(date: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(date);
+  if (match) return { year: Number(match[1]), month: Number(match[2]) };
+
+  const d = new Date(date);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
+
 function aggRows(rows: Row[]) {
   const totalKm     = rows.reduce((a, r) => a + n(r.km_run), 0);
   const totalLitres = rows.reduce((a, r) => a + n(r.fuel_filled_l), 0);
@@ -81,8 +89,7 @@ const ttStyle = { backgroundColor:"var(--t-surface)", border:"1px solid var(--t-
 
 function filterRows(rows: Row[], vehicle: string, year: string, month: string, type?: string) {
   return rows.filter(r => {
-    const ry = r.year  ?? new Date(r.date).getFullYear();
-    const rm = r.month ?? new Date(r.date).getMonth() + 1;
+    const { year: ry, month: rm } = dateParts(r.date);
     if (vehicle && vehicle !== "ALL" && r.vehicle_id !== vehicle) return false;
     if (year    && year    !== "ALL" && String(ry) !== year) return false;
     if (month   && month   !== "ALL" && MONTH_NAMES[rm - 1] !== month) return false;
@@ -277,7 +284,7 @@ export default function FleetPage() {
 
   /* ─── Derived ─────────────────────────────────────────────────────────────────── */
   const vehicles = useMemo(() => Array.from(new Set(data.map(r => r.vehicle_id))).sort(), [data]);
-  const years    = useMemo(() => Array.from(new Set(data.map(r => String(r.year ?? new Date(r.date).getFullYear())))).sort(), [data]);
+  const years    = useMemo(() => Array.from(new Set(data.map(r => String(dateParts(r.date).year)))).sort(), [data]);
 
   const svRows  = useMemo(() => filterRows(data, svVehicle, svYear, svMonth), [data, svVehicle, svYear, svMonth]);
   const svAgg   = useMemo(() => aggRows(svRows), [svRows]);
@@ -295,8 +302,7 @@ export default function FleetPage() {
     const cmpAll = [...cmpRows1, ...cmpRows2];
     const map = new Map<string, { label:string; fuelCost:number; maintCost:number; kmRun:number; litres:number }>();
     cmpAll.forEach(r => {
-      const yr = r.year  ?? new Date(r.date).getFullYear();
-      const mo = r.month ?? new Date(r.date).getMonth() + 1;
+      const { year: yr, month: mo } = dateParts(r.date);
       const key = `${yr}-${String(mo).padStart(2,"0")}`;
       const ex = map.get(key) ?? { label:`${MONTH_NAMES[mo-1]} ${yr}`, fuelCost:0, maintCost:0, kmRun:0, litres:0 };
       ex.fuelCost  += r.fuel_cost;
@@ -312,16 +318,18 @@ export default function FleetPage() {
 
   /* Period comparison */
   const paRows = useMemo(() => data.filter(r => {
-    const ry = String(r.year ?? new Date(r.date).getFullYear());
-    const rm = r.month ?? new Date(r.date).getMonth() + 1;
+    const { year, month } = dateParts(r.date);
+    const ry = String(year);
+    const rm = month;
     if (periodVehicle !== "ALL" && r.vehicle_id !== periodVehicle) return false;
     if (ry !== periodAYear) return false;
     if (periodAMonth !== "ALL" && MONTH_NAMES[rm - 1] !== periodAMonth) return false;
     return true;
   }), [data, periodVehicle, periodAYear, periodAMonth]);
   const pbRows = useMemo(() => data.filter(r => {
-    const ry = String(r.year ?? new Date(r.date).getFullYear());
-    const rm = r.month ?? new Date(r.date).getMonth() + 1;
+    const { year, month } = dateParts(r.date);
+    const ry = String(year);
+    const rm = month;
     if (periodVehicle !== "ALL" && r.vehicle_id !== periodVehicle) return false;
     if (ry !== periodBYear) return false;
     if (periodBMonth !== "ALL" && MONTH_NAMES[rm - 1] !== periodBMonth) return false;
@@ -479,8 +487,8 @@ export default function FleetPage() {
   const tripCalc = useMemo(() => {
     const dist = osrmDist;
     const vRows = tripVehicle ? data.filter(r => r.vehicle_id === tripVehicle) : [];
-    const latestYear = vRows.length > 0 ? Math.max(...vRows.map(r => r.year ?? new Date(r.date).getFullYear())) : null;
-    const latestRows = latestYear ? vRows.filter(r => (r.year ?? new Date(r.date).getFullYear()) === latestYear) : [];
+    const latestYear = vRows.length > 0 ? Math.max(...vRows.map(r => dateParts(r.date).year)) : null;
+    const latestRows = latestYear ? vRows.filter(r => dateParts(r.date).year === latestYear) : [];
     const km = latestRows.reduce((a,r) => a+r.km_run,0);
     const lt = latestRows.reduce((a,r) => a+r.fuel_filled_l,0);
     const tc = latestRows.reduce((a,r) => a+r.total_cost,0);
@@ -1224,8 +1232,7 @@ export default function FleetPage() {
         const toY      = parseInt(reportToYear,   10);
 
         const reportRows = data.filter(r => {
-          const ry = r.year  ?? new Date(r.date).getFullYear();
-          const rm = r.month ?? new Date(r.date).getMonth() + 1;
+          const { year: ry, month: rm } = dateParts(r.date);
           const stamp = ry * 100 + rm;
           return stamp >= fromY * 100 + fromMIdx && stamp <= toY * 100 + toMIdx;
         });
