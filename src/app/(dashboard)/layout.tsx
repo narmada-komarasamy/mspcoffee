@@ -170,7 +170,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Muster Roll', href: '/estate-management/muster-roll', icon: Users, roles: ['admin', 'supervisor', 'worker', 'ceo'],
+    label: 'Muster Roll', href: '/estate-management/muster-roll', icon: Users, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'],
     children: [
       {
         label: 'Employee Center',
@@ -210,7 +210,7 @@ const navItems: NavItem[] = [
 ];
 
 const REQUIRED_ROLE_PAGES: Record<string, string[]> = {
-  hr: ['/operations-calendar', '/labour-activities'],
+  hr: ['/operations-calendar', '/labour-activities', '/estate-management/muster-roll'],
 };
 
 function childAllowed(child: NavChild, role: string) {

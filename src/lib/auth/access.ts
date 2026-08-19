@@ -119,7 +119,7 @@ export const NAV_ITEMS: NavItemDef[] = [
     ],
   },
   {
-    label: 'Muster Roll',         href: '/estate-management/muster-roll', iconName: 'Users', roles: ['admin', 'supervisor', 'worker', 'ceo'],
+    label: 'Muster Roll',         href: '/estate-management/muster-roll', iconName: 'Users', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'],
     children: [
       {
         label: 'Employee Center',
