@@ -50,7 +50,6 @@ type FontKey = keyof typeof FONT_SIZES;
 type AppUser = {
   id: string;
   name: string;
-  pin: string;
   role: string;
   estate: string | null;
 };
@@ -240,11 +239,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const theme = THEMES[themeKey];
 
   useEffect(() => {
-    const stored = localStorage.getItem('msp_user');
-    if (!stored) { router.push('/login'); return; }
-
-    const cached = JSON.parse(stored) as AppUser;
-
     // Apply theme/font from localStorage (display prefs only)
     const t = localStorage.getItem('msp_theme') as ThemeKey | null;
     const f = localStorage.getItem('msp_font') as FontKey | null;
@@ -253,15 +247,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setFontKey(validFont);
     document.documentElement.style.fontSize = FONT_SIZES[validFont];
 
-    // Security: re-fetch role from database — never trust localStorage for access control
-    supabase
-      .from('app_users')
-      .select('id, name, role, estate, pin')
-      .eq('id', cached.id)
-      .single()
-      .then(async ({ data, error }) => {
-        const verifiedRole = ((!error && data) ? data.role : cached.role).trim().toLowerCase();
-        const verified: AppUser = { ...cached, role: verifiedRole, name: data?.name ?? cached.name, estate: data?.estate ?? cached.estate, pin: data?.pin ?? cached.pin };
+    fetch('/api/auth/me')
+      .then(async (response) => {
+        if (!response.ok) {
+          localStorage.removeItem('msp_user');
+          router.push('/login');
+          return;
+        }
+
+        const body = await response.json() as { user?: AppUser };
+        if (!body.user) {
+          localStorage.removeItem('msp_user');
+          router.push('/login');
+          return;
+        }
+
+        const verifiedRole = body.user.role.trim().toLowerCase();
+        const verified: AppUser = { ...body.user, role: verifiedRole };
         setUser(verified);
         localStorage.setItem('msp_user', JSON.stringify(verified));
         window.dispatchEvent(new Event('msp-user-updated'));
@@ -345,10 +347,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = () => {
     localStorage.removeItem('msp_user');
-    void fetch('/api/auth/pin-session', { method: 'DELETE' });
-    document.cookie = 'msp_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'msp_user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'msp_user_pin=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    void fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
 

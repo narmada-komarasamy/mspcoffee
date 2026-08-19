@@ -59,9 +59,22 @@ export default function HomePage() {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    const stored = localStorage.getItem('msp_user');
-    if (!stored) { router.push('/login'); return; }
-    setUser(JSON.parse(stored));
+    fetch('/api/auth/me')
+      .then(async (response) => {
+        if (!response.ok) {
+          localStorage.removeItem('msp_user');
+          router.push('/login');
+          return;
+        }
+        const body = await response.json() as { user?: AppUser };
+        if (!body.user) {
+          localStorage.removeItem('msp_user');
+          router.push('/login');
+          return;
+        }
+        localStorage.setItem('msp_user', JSON.stringify(body.user));
+        setUser(body.user);
+      });
   }, [router]);
 
   const handleEnter = (card: typeof CARDS[0]) => {

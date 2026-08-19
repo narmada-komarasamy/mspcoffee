@@ -13,11 +13,19 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      const redirectPath = type === 'invite' ? '/accept-invite' : '/reset-password';
+      const response = NextResponse.redirect(`${origin}${redirectPath}`);
+      response.cookies.set('msp_auth', '1', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
       if (type === 'invite') {
-        return NextResponse.redirect(`${origin}/accept-invite`);
+        return response;
       }
-      // recovery or any other type
-      return NextResponse.redirect(`${origin}/reset-password`);
+      return response;
     }
   }
 
