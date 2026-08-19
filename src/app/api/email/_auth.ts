@@ -70,7 +70,7 @@ async function requireSupabaseEmailUser(allowedRoles: string[]) {
 
   const role = normalizeRole(profile.role);
   if (!allowedRole(role, allowedRoles)) {
-    return authError('Email access is not enabled for this user role.', 403);
+    return authError(`Email access is not enabled for this user role (${role}). Change this user to the hr role in Admin Controls.`, 403);
   }
 
   return {
@@ -127,7 +127,7 @@ export async function requireEmailUser(request: Request, allowedRoles = EMAIL_RO
 
   const role = normalizeRole(user.role);
   if (!allowedRole(role, allowedRoles)) {
-    return authError('Email access is not enabled for this user role.', 403);
+    return authError(`Email access is not enabled for this user role (${role}). Change this user to the hr role in Admin Controls.`, 403);
   }
 
   return { supabase, user: { ...user, role } };
