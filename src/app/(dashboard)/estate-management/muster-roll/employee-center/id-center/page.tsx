@@ -52,76 +52,46 @@ type CardTheme = {
   leaf: string;
 };
 
+const standardCardTheme: CardTheme = {
+  accent: "#e8b13f",
+  accentSoft: "#ffe39a",
+  accentDark: "#b77a18",
+  ribbon: "#e8b13f",
+  ribbonDark: "#8d5e13",
+  glow: "rgba(10, 70, 43, 0.44)",
+  leaf: "#d6bd71",
+};
+
 const categoryOptions: { value: CardCategory; label: string; shortLabel: string; theme: CardTheme }[] = [
   {
     value: "estate-field",
     label: "Staff & Field",
     shortLabel: "Staff & Field",
-    theme: {
-      accent: "#ffd400",
-      accentSoft: "#fff2a6",
-      accentDark: "#b8860b",
-      ribbon: "#ffd400",
-      ribbonDark: "#8a6008",
-      glow: "rgba(184, 134, 11, 0.44)",
-      leaf: "#87ad77",
-    },
+    theme: standardCardTheme,
   },
   {
     value: "pf-worker",
     label: "PF Workers",
     shortLabel: "PF Worker",
-    theme: {
-      accent: "#2f7bff",
-      accentSoft: "#c9dcff",
-      accentDark: "#063c9e",
-      ribbon: "#2f7bff",
-      ribbonDark: "#06285f",
-      glow: "rgba(29, 82, 168, 0.66)",
-      leaf: "#78a9ff",
-    },
+    theme: standardCardTheme,
   },
   {
     value: "line-worker",
     label: "Line Workers",
     shortLabel: "Line Worker",
-    theme: {
-      accent: "#ff7a00",
-      accentSoft: "#ffd7b0",
-      accentDark: "#9f3a00",
-      ribbon: "#ff7a00",
-      ribbonDark: "#7a2b00",
-      glow: "rgba(188, 86, 0, 0.58)",
-      leaf: "#ffae75",
-    },
+    theme: standardCardTheme,
   },
   {
     value: "village-worker",
     label: "Village Workers",
     shortLabel: "Village Worker",
-    theme: {
-      accent: "#b83a32",
-      accentSoft: "#ffd1ce",
-      accentDark: "#6f1712",
-      ribbon: "#b83a32",
-      ribbonDark: "#54100d",
-      glow: "rgba(145, 36, 30, 0.56)",
-      leaf: "#e98282",
-    },
+    theme: standardCardTheme,
   },
   {
     value: "migrant-worker",
     label: "Migrant Workers",
     shortLabel: "Migrant Worker",
-    theme: {
-      accent: "#b994ff",
-      accentSoft: "#eadfff",
-      accentDark: "#5c2fb1",
-      ribbon: "#b994ff",
-      ribbonDark: "#3b1e78",
-      glow: "rgba(111, 68, 174, 0.6)",
-      leaf: "#c9b2ff",
-    },
+    theme: standardCardTheme,
   },
 ];
 
@@ -328,9 +298,9 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
     drawRoundRect(ctx, x, 0, cardWidth, cardHeight, 48);
     ctx.clip();
     const background = ctx.createLinearGradient(x, 0, x + cardWidth, cardHeight);
-    background.addColorStop(0, "#06391f");
-    background.addColorStop(0.55, "#022b18");
-    background.addColorStop(1, "#011b10");
+    background.addColorStop(0, "#06442b");
+    background.addColorStop(0.55, "#00351f");
+    background.addColorStop(1, "#002516");
     ctx.fillStyle = background;
     ctx.fillRect(x, 0, cardWidth, cardHeight);
 
@@ -997,9 +967,9 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="frontCardBase" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#0a4531" />
-          <stop offset="55%" stopColor="#05291f" />
-          <stop offset="100%" stopColor="#031c14" />
+          <stop offset="0%" stopColor="#06442b" />
+          <stop offset="55%" stopColor="#00351f" />
+          <stop offset="100%" stopColor="#002516" />
         </linearGradient>
         <radialGradient id="frontCardGlow" cx="55%" cy="42%" r="58%">
           <stop offset="0%" stopColor={theme.glow} />
@@ -1025,10 +995,10 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
 function BackBackground({ theme }: { theme: CardTheme }) {
   return (
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
-      <rect width="225" height="350" fill="#05291f" />
+      <rect width="225" height="350" fill="#00351f" />
       <radialGradient id="backGlow" cx="50%" cy="45%" r="70%">
-        <stop offset="0%" stopColor="#0b3a2b" />
-        <stop offset="100%" stopColor="#031c14" />
+        <stop offset="0%" stopColor="#06442b" />
+        <stop offset="100%" stopColor="#002516" />
       </radialGradient>
       <rect width="225" height="350" fill="url(#backGlow)" opacity=".85" />
       <g fill="none" stroke={theme.leaf} strokeWidth="1.1" opacity=".22">

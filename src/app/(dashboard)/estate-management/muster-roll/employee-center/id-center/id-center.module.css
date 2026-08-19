@@ -417,13 +417,13 @@
 .cardFront {
   background:
     radial-gradient(circle at 50% 36%, rgba(14, 82, 45, 0.42), transparent 50%),
-    linear-gradient(150deg, #06391f 0%, #022b18 58%, #011b10 100%);
+    linear-gradient(150deg, #06442b 0%, #00351f 58%, #002516 100%);
 }
 
 .cardBack {
   background:
     radial-gradient(circle at 50% 32%, rgba(14, 82, 45, 0.38), transparent 54%),
-    linear-gradient(160deg, #06391f 0%, #011b10 100%);
+    linear-gradient(160deg, #06442b 0%, #002516 100%);
 }
 
 .bgSvg {
@@ -874,13 +874,13 @@
   .cardFront {
     background:
       radial-gradient(circle at 50% 36%, rgba(14, 82, 45, 0.42), transparent 50%),
-      linear-gradient(150deg, #06391f 0%, #022b18 58%, #011b10 100%) !important;
+      linear-gradient(150deg, #06442b 0%, #00351f 58%, #002516 100%) !important;
   }
 
   .cardBack {
     background:
       radial-gradient(circle at 50% 32%, rgba(14, 82, 45, 0.38), transparent 54%),
-      linear-gradient(160deg, #06391f 0%, #011b10 100%) !important;
+      linear-gradient(160deg, #06442b 0%, #002516 100%) !important;
   }
 
   .bgSvg {
