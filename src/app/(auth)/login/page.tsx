@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FormEvent, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Volume2, VolumeX } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -24,7 +24,7 @@ const SLIDES = [
 const IMAGE_DURATION = 5000;
 const VIDEO_FALLBACK = 12000;
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -235,5 +235,17 @@ export default function LoginPage() {
         </form>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#1a2e1a]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#86efac]" />
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }
