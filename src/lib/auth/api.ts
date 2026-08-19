@@ -18,6 +18,15 @@ type ProfileRow = {
   active: boolean | null;
 };
 
+type AppUserRow = {
+  id: string;
+  name: string;
+  role: string;
+  estate: string | null;
+  pin: string;
+  active: boolean | null;
+};
+
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
 function unauthorized(message = 'Unauthorized', status = 401) {
@@ -28,7 +37,19 @@ function normalizeRole(role: string) {
   return role.trim().toLowerCase();
 }
 
-export async function requireApiUser(_request: Request, allowedRoles?: string[]) {
+function cookieValue(request: Request, name: string) {
+  const cookie = request.headers.get('cookie');
+  if (!cookie) return '';
+
+  const match = cookie
+    .split(';')
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(`${name}=`));
+
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : '';
+}
+
+export async function requireApiUser(request: Request, allowedRoles?: string[]) {
   const allowed = allowedRoles?.map(normalizeRole);
   const supabase = adminClient();
 
@@ -57,6 +78,35 @@ export async function requireApiUser(_request: Request, allowedRoles?: string[])
         name: profile.name || authUser.email || 'MSP User',
         role,
         estate: profile.estate,
+        active: true,
+      } satisfies ApiUser,
+    };
+  }
+
+  const legacyUserId = cookieValue(request, 'msp_user_id');
+  const legacyPin = cookieValue(request, 'msp_user_pin');
+
+  if (legacyUserId && legacyPin && UUID_RE.test(legacyUserId)) {
+    const { data: user, error } = await supabase
+      .from('app_users')
+      .select('id, name, role, estate, pin, active')
+      .eq('id', legacyUserId)
+      .single<AppUserRow>();
+
+    if (error || !user) return unauthorized();
+    if (user.active === false) return unauthorized('Account disabled', 403);
+    if (user.pin !== legacyPin) return unauthorized();
+
+    const role = normalizeRole(user.role);
+    if (allowed && !allowed.includes(role)) return unauthorized('Access denied', 403);
+
+    return {
+      supabase,
+      user: {
+        id: user.id,
+        name: user.name,
+        role,
+        estate: user.estate,
         active: true,
       } satisfies ApiUser,
     };

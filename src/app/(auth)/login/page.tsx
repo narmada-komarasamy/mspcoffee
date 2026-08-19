@@ -1,66 +1,45 @@
 'use client';
 
-import { FormEvent, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, Volume2, VolumeX } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Delete, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
-type SessionUser = {
+type AppUser = {
   id: string;
   name: string;
+  pin?: string;
   role: string;
   estate: string | null;
 };
 
-const SLIDES = [
-  { type: 'video' as const, src: '/bg-video-1.mp4' },
-  { type: 'image' as const, src: '/cover-img-1.jpg', alt: 'MSP Coffee' },
-  { type: 'image' as const, src: '/cover-img-2.webp', alt: 'MSP Coffee' },
-  { type: 'video' as const, src: '/bg-video-2.mp4' },
-  { type: 'image' as const, src: '/cover-img-3.png', alt: 'MSP Coffee' },
-  { type: 'video' as const, src: '/bg-video-3.mp4' },
-];
-
-const IMAGE_DURATION = 5000;
-const VIDEO_FALLBACK = 12000;
-
-function LoginPageContent() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+  const [manualName, setManualName] = useState('');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [muted, setMuted] = useState(false);
-  const [activeSlide, setActiveSlide] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(async (response) => {
-        if (!response.ok) return;
-        const body = await response.json() as { user?: SessionUser };
-        if (body.user) {
-          localStorage.setItem('msp_user', JSON.stringify(body.user));
-          router.replace('/home');
-        }
-      })
-      .finally(() => setCheckingSession(false));
-  }, [router]);
-
+  // Start audio on first user interaction (browsers block autoplay with sound)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = 0.5;
-    audio.muted = muted;
+    audio.muted = false;
 
     const tryPlay = () => {
       audio.play().catch(() => {});
     };
 
+    // Try immediately (works if page was already interacted with)
     tryPlay();
+
+    // Otherwise wait for first touch/click
     document.addEventListener('click', tryPlay, { once: true });
     document.addEventListener('touchstart', tryPlay, { once: true });
 
@@ -68,7 +47,96 @@ function LoginPageContent() {
       document.removeEventListener('click', tryPlay);
       document.removeEventListener('touchstart', tryPlay);
     };
+  }, []);
+
+  // Sync mute state via ref (React's muted prop is unreliable)
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);
+
+  useEffect(() => {
+    supabase
+      .from('app_users')
+      .select('*')
+      .order('name')
+      .then(({ data, error: loadError }) => {
+        if (loadError) setError(loadError.message);
+        setUsers(data ?? []);
+        setLoading(false);
+      });
+  }, []);
+
+  const startSession = useCallback((user: AppUser, enteredPin: string) => {
+    const startLegacySession = () => {
+      if (user.pin && user.pin === enteredPin) {
+        localStorage.setItem('msp_user', JSON.stringify(user));
+        document.cookie = 'msp_auth=1; path=/; SameSite=Lax';
+        router.push('/home');
+        return true;
+      }
+      return false;
+    };
+
+    fetch('/api/auth/pin-session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, name: user.name, pin: enteredPin }),
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as { user?: AppUser; error?: string } | null;
+        if (!response.ok || !body?.user) {
+          throw new Error(body?.error ?? 'Could not start session');
+        }
+        localStorage.setItem('msp_user', JSON.stringify(body.user));
+        router.push('/home');
+      })
+      .catch((err) => {
+        if (startLegacySession()) return;
+        setError(err instanceof Error ? err.message : 'Could not start session');
+        setTimeout(() => {
+          setPin('');
+          setError('');
+        }, 6000);
+      });
+  }, [router]);
+
+  const handleDigit = (d: string) => {
+    if (pin.length >= 4 || !selectedUser) return;
+    const nextPin = pin + d;
+    setPin(nextPin);
+
+    if (nextPin.length !== 4) return;
+    startSession(selectedUser, nextPin);
+  };
+
+  const handleDelete = () => {
+    setPin((p) => p.slice(0, -1));
+    setError('');
+  };
+
+  const roleColor: Record<string, string> = {
+    admin: 'text-yellow-400',
+    supervisor: 'text-sky-400',
+    worker: 'text-green-400',
+  };
+
+  const SLIDES = [
+    { type: 'video' as const, src: '/bg-video-1.mp4' },
+    { type: 'image' as const, src: '/cover-img-1.jpg',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-2.webp', alt: 'MSP Coffee' },
+    { type: 'video' as const, src: '/bg-video-2.mp4' },
+    { type: 'image' as const, src: '/cover-img-3.png',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-4.png',  alt: 'MSP Coffee' },
+    { type: 'video' as const, src: '/bg-video-3.mp4' },
+    { type: 'image' as const, src: '/cover-img-5.png',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-6.jpg',  alt: 'MSP Coffee' },
+    { type: 'image' as const, src: '/cover-img-7.jpg',  alt: 'MSP Coffee' },
+  ];
+  const IMAGE_DURATION = 5000;  // ms per image
+  const VIDEO_FALLBACK  = 12000; // max ms before forcing next if video stalls
+
+  const [activeSlide, setActiveSlide] = useState(0);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   const advance = useCallback(() => {
     setActiveSlide((prev) => (prev + 1) % SLIDES.length);
@@ -77,56 +145,24 @@ function LoginPageContent() {
   useEffect(() => {
     const slide = SLIDES[activeSlide];
 
-    videoRefs.current.forEach((video, index) => {
-      if (!video) return;
-      if (index === activeSlide && slide.type === 'video') {
-        video.currentTime = 0;
-        video.play().catch(() => {});
+    // Play active video; pause all others
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === activeSlide && slide.type === 'video') {
+        v.currentTime = 0;
+        v.play().catch(() => {});
       } else {
-        video.pause();
+        v.pause();
       }
     });
 
-    const timer = window.setTimeout(advance, slide.type === 'image' ? IMAGE_DURATION : VIDEO_FALLBACK);
-    return () => window.clearTimeout(timer);
+    // Always set a fallback timer so the show never stalls
+    const duration = slide.type === 'image' ? IMAGE_DURATION : VIDEO_FALLBACK;
+    const timer = setTimeout(advance, duration);
+    return () => clearTimeout(timer);
   }, [activeSlide, advance]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), password }),
-    });
-
-    if (!response.ok) {
-      setLoading(false);
-      setError('Invalid email or password');
-      return;
-    }
-
-    const profileResponse = await fetch('/api/auth/me');
-    if (!profileResponse.ok) {
-      setLoading(false);
-      setError('Signed in, but your MSP Coffee profile is missing.');
-      return;
-    }
-
-    const body = await profileResponse.json() as { user?: SessionUser };
-    if (!body.user) {
-      setLoading(false);
-      setError('Signed in, but your MSP Coffee profile is missing.');
-      return;
-    }
-
-    localStorage.setItem('msp_user', JSON.stringify(body.user));
-    router.push(searchParams.get('redirectTo') || '/home');
-  }
-
-  if (checkingSession) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#1a2e1a]">
         <Loader2 className="h-8 w-8 animate-spin text-[#86efac]" />
@@ -136,26 +172,28 @@ function LoginPageContent() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
+      {/* Background audio */}
       <audio ref={audioRef} src="/bg-music.m4a" loop preload="auto" />
 
+      {/* Mute toggle */}
       <button
-        onClick={() => setMuted((value) => !value)}
+        onClick={() => setMuted((m) => !m)}
         className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/30 text-white/70 hover:text-white hover:bg-black/50 transition"
         aria-label={muted ? 'Unmute' : 'Mute'}
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
-
-      {SLIDES.map((slide, index) =>
+      {/* Background slideshow */}
+      {SLIDES.map((slide, i) =>
         slide.type === 'video' ? (
           <video
             key={slide.src}
-            ref={(element) => { videoRefs.current[index] = element; }}
+            ref={(el) => { videoRefs.current[i] = el; }}
             muted
             playsInline
             onEnded={advance}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
-            style={{ opacity: activeSlide === index ? 1 : 0 }}
+            style={{ opacity: activeSlide === i ? 1 : 0 }}
           >
             <source src={slide.src} type="video/mp4" />
           </video>
@@ -163,89 +201,168 @@ function LoginPageContent() {
           <div
             key={slide.src}
             className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: activeSlide === index ? 1 : 0 }}
+            style={{ opacity: activeSlide === i ? 1 : 0 }}
           >
-            <Image src={slide.src} alt={slide.alt} fill className="object-cover" sizes="100vw" priority={index === 0} />
+            <Image src={slide.src} alt={slide.alt} fill className="object-cover" sizes="100vw" priority={i === 0} />
           </div>
         )
       )}
 
-      <div className="absolute inset-0 bg-black/55" />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/50" />
 
-      <main className="relative z-10 w-full max-w-sm">
-        <div className="mb-8 text-center">
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center w-full">
+        {/* Branding */}
+        <div className="mb-8">
           <Image
             src="/msp-logo-new.png"
             alt="MSP Coffee"
-            width={150}
-            height={193}
+            width={160}
+            height={206}
             className="mx-auto drop-shadow-2xl"
             priority
           />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-white/10 bg-black/35 p-5 backdrop-blur-md">
-          <div className="space-y-1 text-center">
-            <h1 className="text-lg font-semibold text-white">Sign in</h1>
-            <p className="text-sm text-green-100/70">Use your MSP Coffee account</p>
-          </div>
-
-          <input
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            type="email"
-            autoComplete="email"
-            placeholder="Email"
-            className="w-full rounded-lg border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-white/45 outline-none focus:border-[#86efac]/60"
-            required
-          />
-
-          <input
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            type="password"
-            autoComplete="current-password"
-            placeholder="Password"
-            className="w-full rounded-lg border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-white/45 outline-none focus:border-[#86efac]/60"
-            required
-          />
-
-          {error && (
-            <p className="rounded-lg bg-red-950/75 px-3 py-2 text-center text-sm font-semibold text-red-100">
-              {error}
+        {!selectedUser ? (
+          /* User selection */
+          <div className="w-full max-w-sm space-y-3">
+            <p className="text-center text-green-200/70 text-sm mb-4">
+              Select your profile to sign in
             </p>
-          )}
+            {users.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => setSelectedUser(u)}
+                className="w-full flex items-center gap-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 px-5 py-4 text-left transition hover:bg-white/20 hover:border-[#86efac]/40"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#86efac]/20 text-[#86efac] font-bold text-lg">
+                  {u.name[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium truncate">{u.name}</p>
+                  {!['Ashok Rajes', 'MD', 'Navin Rajes'].includes(u.name) && (
+                    <p className={`text-xs capitalize ${roleColor[u.role] ?? 'text-gray-400'}`}>
+                      {u.role}
+                      {u.estate && ` · ${u.estate}`}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+            {users.length === 0 && (
+              <div className="space-y-3 rounded-xl bg-black/30 p-4">
+                <p className="text-center text-sm text-green-100/80">
+                  Profiles did not load. Enter your admin profile name to continue.
+                </p>
+                <input
+                  value={manualName}
+                  onChange={(event) => setManualName(event.target.value)}
+                  placeholder="Profile name"
+                  className="w-full rounded-lg border border-white/10 bg-white/10 px-4 py-3 text-center text-white placeholder:text-white/45 outline-none focus:border-[#86efac]/60"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = manualName.trim();
+                    if (!name) {
+                      setError('Enter your profile name');
+                      return;
+                    }
+                    setSelectedUser({ id: '', name, role: 'admin', estate: null });
+                    setError('');
+                  }}
+                  className="w-full rounded-lg bg-[#86efac] px-4 py-3 font-semibold text-[#102510] transition hover:bg-[#bbf7d0]"
+                >
+                  Continue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('msp_user');
+                    window.location.href = '/api/auth/reset-session';
+                  }}
+                  className="w-full rounded-lg border border-white/15 bg-white/10 px-4 py-3 font-semibold text-white transition hover:bg-white/20"
+                >
+                  Reset Session
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* PIN entry */
+          <div className="w-full max-w-xs space-y-6">
+            <button
+              onClick={() => {
+                setSelectedUser(null);
+                setPin('');
+                setError('');
+              }}
+              className="text-green-200/70 text-sm hover:text-white transition"
+            >
+              &larr; Back
+            </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#86efac] px-4 py-3 font-semibold text-[#102510] transition hover:bg-[#bbf7d0] disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Sign in
-          </button>
+            <div className="text-center">
+              <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-full bg-[#86efac]/20 text-[#86efac] font-bold text-2xl mb-3">
+                {selectedUser.name[0]}
+              </div>
+              <p className="text-white font-medium text-lg">{selectedUser.name}</p>
+              <p className="text-green-200/60 text-sm">Enter your 4-digit PIN</p>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => router.push('/forgot-password')}
-            className="w-full text-sm font-medium text-green-100/75 transition hover:text-white"
-          >
-            Forgot password?
-          </button>
-        </form>
-      </main>
-    </div>
-  );
-}
+            {/* PIN dots */}
+            <div className="flex justify-center gap-3">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`h-4 w-4 rounded-full transition-all duration-150 ${
+                    error
+                      ? 'bg-red-500'
+                      : i < pin.length
+                        ? 'bg-[#86efac] scale-110'
+                        : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+            {error && (
+              <p className="rounded-lg bg-red-950/70 px-3 py-2 text-center text-sm font-semibold text-red-100">
+                {error}
+              </p>
+            )}
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#1a2e1a]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#86efac]" />
+            {/* Number pad */}
+            <div className="grid grid-cols-3 gap-3">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map(
+                (key) => {
+                  if (key === '') return <div key="empty" />;
+                  if (key === 'del')
+                    return (
+                      <button
+                        key="del"
+                        onClick={handleDelete}
+                        className="flex items-center justify-center h-14 rounded-xl bg-white/10 text-white transition hover:bg-white/20"
+                      >
+                        <Delete className="h-5 w-5" />
+                      </button>
+                    );
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleDigit(key)}
+                      className="flex items-center justify-center h-14 rounded-xl bg-white/10 text-white text-xl font-medium transition hover:bg-white/20 active:bg-[#86efac]/30"
+                    >
+                      {key}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    }>
-      <LoginPageContent />
-    </Suspense>
+    </div>
   );
 }

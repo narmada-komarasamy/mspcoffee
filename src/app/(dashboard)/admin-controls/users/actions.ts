@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { adminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
@@ -28,6 +29,13 @@ type ProfileRow = {
   name: string | null;
   role: string | null;
   estate: string | null;
+  active: boolean | null;
+};
+
+type AppUserRow = {
+  id: string;
+  role: string;
+  pin: string;
   active: boolean | null;
 };
 
@@ -76,24 +84,47 @@ function validateUserInput(input: UserInput, requireEmail: boolean) {
 
 async function requireAdmin() {
   const sessionClient = await createClient();
+  const supabase = adminClient();
   const {
     data: { user },
   } = await sessionClient.auth.getUser();
 
-  if (!user) throw new Error('Unauthorized');
+  if (user) {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, role, active')
+      .eq('id', user.id)
+      .single<{ id: string; role: string | null; active: boolean | null }>();
 
-  const supabase = adminClient();
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id, role, active')
-    .eq('id', user.id)
-    .single<{ id: string; role: string | null; active: boolean | null }>();
+    if (error || !profile || profile.role !== 'admin' || profile.active === false) {
+      throw new Error('Admin access required');
+    }
 
-  if (error || !profile || profile.role !== 'admin' || profile.active === false) {
+    return { supabase, adminUserId: user.id };
+  }
+
+  const cookieStore = await cookies();
+  const legacyUserId = cookieStore.get('msp_user_id')?.value ?? '';
+  const legacyPin = cookieStore.get('msp_user_pin')?.value ?? '';
+  if (!legacyUserId || !legacyPin || !UUID_RE.test(legacyUserId)) throw new Error('Unauthorized');
+
+  const { data: legacyUser, error } = await supabase
+    .from('app_users')
+    .select('id, role, pin, active')
+    .eq('id', legacyUserId)
+    .single<AppUserRow>();
+
+  if (
+    error ||
+    !legacyUser ||
+    legacyUser.active === false ||
+    legacyUser.pin !== legacyPin ||
+    normalizeRole(legacyUser.role) !== 'admin'
+  ) {
     throw new Error('Admin access required');
   }
 
-  return { supabase, adminUserId: user.id };
+  return { supabase, adminUserId: legacyUser.id };
 }
 
 async function getOrigin() {
