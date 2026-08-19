@@ -4,7 +4,6 @@ import { CSSProperties, ChangeEvent, useEffect, useMemo, useState } from "react"
 import Link from "next/link";
 import { ArrowLeft, IdCard, Loader2, Mail, Printer, RotateCcw, Send, Upload, Users, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { signedStorageUrl } from "@/lib/storage/urls";
 import css from "./id-center.module.css";
 
 type EmployeeIdRecord = {
@@ -19,7 +18,6 @@ type EmployeeIdRecord = {
   blood_group: string | null;
   current_address: string | null;
   permanent_address: string | null;
-  photo_path: string | null;
   photo_public_url: string | null;
 };
 
@@ -544,7 +542,7 @@ export default function EmployeeIdCenterPage() {
       supabase
         .from("estate_employees")
         .select(
-          "id, full_name, employee_code, estate_name, status, job_role, section_division, mobile_number, blood_group, current_address, permanent_address, photo_path, photo_public_url"
+          "id, full_name, employee_code, estate_name, status, job_role, section_division, mobile_number, blood_group, current_address, permanent_address, photo_public_url"
         )
         .eq("id", employeeId)
         .single()
@@ -558,7 +556,7 @@ export default function EmployeeIdCenterPage() {
             const selected = data as EmployeeIdRecord;
             setEmployee(selected);
             if (!hasPrefill) setForm(cardFormFromEmployee(selected));
-            setPhoto((currentPhoto) => selected.photo_path ? signedStorageUrl("employee-center", selected.photo_path) : currentPhoto || "");
+            setPhoto((currentPhoto) => selected.photo_public_url || currentPhoto || "");
             setMessage("");
             window.sessionStorage.removeItem(idCenterPrefillStorageKey);
           }
