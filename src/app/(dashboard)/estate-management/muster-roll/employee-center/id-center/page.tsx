@@ -642,7 +642,6 @@ export default function EmployeeIdCenterPage() {
     if (!window.confirm("Clear all fields and start a fresh card?")) return;
     setForm(initialForm);
     setPhoto("");
-    setSignature("");
     setEmployee(null);
     setMessage("");
     setEmailMessage("");
