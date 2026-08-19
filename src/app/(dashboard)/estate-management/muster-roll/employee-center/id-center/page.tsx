@@ -28,6 +28,7 @@ type CardForm = {
   place: string;
   estateLine1: string;
   estateLine2: string;
+  employeeNumber: string;
   bloodGroup: string;
   mobile: string;
   address: string;
@@ -131,12 +132,13 @@ const initialForm: CardForm = {
   place: "Moganad",
   estateLine1: "Moganad",
   estateLine2: "Estate",
+  employeeNumber: "EMP-001",
   bloodGroup: "O+",
   mobile: "+91 98765 43210",
   address: "123 Coffee Lane, Brewsville, Grounds 12345",
 };
 
-const logoPath = "/msp-id-logo.png";
+const logoPath = "/msp-id-upload-logo-transparent.png";
 const idCenterPrefillStorageKey = "msp-id-center-prefill";
 const defaultPrinterEmail = "printer@mspcoffee.com";
 const defaultPrinterNote = "Please print the attached MSP Coffee ID card.";
@@ -188,6 +190,15 @@ const getNameFontSize = (name: string) => {
   return Math.min(24, Math.max(9, Math.floor(188 / (length * 0.62))));
 };
 
+const getRoleLine = (form: CardForm) =>
+  `${form.designation || "Designation"} - ${form.place || "Place"} ${form.estateLine2 || "Estate"}`.toUpperCase();
+
+const getRoleLineFontSize = (form: CardForm) => {
+  const length = getRoleLine(form).length;
+  if (length <= 32) return 11.5;
+  return Math.min(11.5, Math.max(7.4, Math.floor(285 / (length * 0.7)) / 10));
+};
+
 const fitCanvasTextSize = (
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -231,7 +242,7 @@ const drawRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, widt
   ctx.closePath();
 };
 
-const drawCenteredText = (
+const drawLeftText = (
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
@@ -257,8 +268,8 @@ const drawCenteredText = (
   });
   if (line) lines.push(line);
 
-  ctx.textAlign = "center";
-  lines.slice(0, 3).forEach((item, index) => {
+  ctx.textAlign = "left";
+  lines.slice(0, 4).forEach((item, index) => {
     ctx.fillText(item, x, y + index * lineHeight, maxWidth);
   });
 };
@@ -317,11 +328,35 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
     drawRoundRect(ctx, x, 0, cardWidth, cardHeight, 48);
     ctx.clip();
     const background = ctx.createLinearGradient(x, 0, x + cardWidth, cardHeight);
-    background.addColorStop(0, "#0a4531");
-    background.addColorStop(0.58, "#05291f");
-    background.addColorStop(1, "#031c14");
+    background.addColorStop(0, "#06391f");
+    background.addColorStop(0.55, "#022b18");
+    background.addColorStop(1, "#011b10");
     ctx.fillStyle = background;
     ctx.fillRect(x, 0, cardWidth, cardHeight);
+
+    ctx.globalAlpha = 0.16;
+    for (let i = 0; i < 22; i += 1) {
+      ctx.fillStyle = i % 2 ? "#0b4a2c" : "#02130b";
+      ctx.fillRect(x + i * 34, 0, 18, cardHeight);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 18;
+    drawRoundRect(ctx, x + 13, 13, cardWidth - 26, cardHeight - 26, 38);
+    ctx.stroke();
+
+    ctx.strokeStyle = theme.accentSoft;
+    ctx.lineWidth = 3;
+    drawRoundRect(ctx, x + 31, 31, cardWidth - 62, cardHeight - 62, 27);
+    ctx.stroke();
+
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(x + 42, cardHeight - 106);
+    ctx.quadraticCurveTo(x + cardWidth / 2, cardHeight - 28, x + cardWidth - 42, cardHeight - 106);
+    ctx.stroke();
   };
 
   const drawLogo = (x: number, y: number, width: number, height: number) => {
@@ -341,52 +376,35 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
 
   const frontX = 0;
   drawCardBase(frontX);
-  ctx.save();
-  ctx.translate(frontX, 0);
-  const ribbon = ctx.createLinearGradient(0, 0, 220, cardHeight);
-  ribbon.addColorStop(0, theme.accentSoft);
-  ribbon.addColorStop(0.48, theme.ribbon);
-  ribbon.addColorStop(1, theme.ribbonDark);
-  ctx.fillStyle = ribbon;
-  ctx.globalAlpha = 0.94;
-  ctx.translate(100, 420);
-  ctx.rotate((-18 * Math.PI) / 180);
-  ctx.fillRect(-75, -550, 116, 1260);
-  ctx.globalAlpha = 0.8;
-  ctx.fillRect(-255, -530, 112, 1260);
-  ctx.restore();
-
-  ctx.save();
-  ctx.translate(frontX + 110, 410);
-  ctx.rotate((-24 * Math.PI) / 180);
-  ctx.fillStyle = ribbon;
-  ctx.globalAlpha = 0.9;
-  ctx.fillRect(0, 0, 760, 56);
-  ctx.restore();
-
-  drawLogo(frontX + 222, 50, 231, 258);
+  drawLogo(frontX + 208, 70, 260, 244);
 
   const photoCenterX = frontX + cardWidth / 2;
-  const photoCenterY = 472;
-  const photoRadius = 145;
+  const photoCenterY = 555;
+  const photoRadius = 142;
   const ring = ctx.createLinearGradient(photoCenterX - photoRadius, photoCenterY - photoRadius, photoCenterX + photoRadius, photoCenterY + photoRadius);
-  ring.addColorStop(0, theme.accent);
-  ring.addColorStop(0.58, theme.accentDark);
-  ring.addColorStop(1, theme.accentSoft);
-  ctx.fillStyle = ring;
+  ring.addColorStop(0, theme.accentSoft);
+  ring.addColorStop(0.42, theme.accent);
+  ring.addColorStop(1, theme.accentDark);
+  ctx.strokeStyle = ring;
+  ctx.lineWidth = 18;
   ctx.beginPath();
   ctx.arc(photoCenterX, photoCenterY, photoRadius, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = theme.accentSoft;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(photoCenterX, photoCenterY, photoRadius - 17, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.fillStyle = "#efe9db";
   ctx.beginPath();
-  ctx.arc(photoCenterX, photoCenterY, 122, 0, Math.PI * 2);
+  ctx.arc(photoCenterX, photoCenterY, 126, 0, Math.PI * 2);
   ctx.fill();
   if (photoImage) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(photoCenterX, photoCenterY, 122, 0, Math.PI * 2);
+    ctx.arc(photoCenterX, photoCenterY, 126, 0, Math.PI * 2);
     ctx.clip();
-    drawCoverImage(ctx, photoImage, photoCenterX - 122, photoCenterY - 122, 244, 244);
+    drawCoverImage(ctx, photoImage, photoCenterX - 126, photoCenterY - 126, 252, 252);
     ctx.restore();
   } else {
     ctx.fillStyle = "#fff";
@@ -396,13 +414,32 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   }
 
   ctx.fillStyle = "#fff";
-  drawCenteredSingleLineText(ctx, getDisplayName(form.fullName), frontX + cardWidth / 2, 690, 580, 72, 42);
-  ctx.fillStyle = "#fff";
-  drawCenteredText(ctx, (form.designation || "Designation").toUpperCase(), frontX + cardWidth / 2, 780, 560, 50, 52, 800);
-  drawCenteredText(ctx, (form.place || "Place").toUpperCase(), frontX + cardWidth / 2, 835, 560, 44, 46, 800);
-  ctx.fillStyle = "#fff";
-  drawCenteredText(ctx, (form.estateLine1 || "Estate").toUpperCase(), frontX + cardWidth / 2, 930, 560, 50, 52);
-  drawCenteredText(ctx, (form.estateLine2 || "Estate").toUpperCase(), frontX + cardWidth / 2, 982, 560, 40, 42, 600);
+  drawCenteredSingleLineText(ctx, getDisplayName(form.fullName), frontX + cardWidth / 2, 812, 570, 66, 38);
+
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(frontX + 112, 862);
+  ctx.lineTo(frontX + 270, 862);
+  ctx.moveTo(frontX + 405, 862);
+  ctx.lineTo(frontX + 563, 862);
+  ctx.stroke();
+  ctx.fillStyle = theme.accent;
+  ctx.font = "900 34px Segoe UI, Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("✦", frontX + cardWidth / 2, 873);
+
+  ctx.fillStyle = theme.accentSoft;
+  drawCenteredSingleLineText(
+    ctx,
+    `${form.designation || "Designation"} - ${form.place || "Place"} ${form.estateLine2 || "Estate"}`.toUpperCase(),
+    frontX + cardWidth / 2,
+    925,
+    520,
+    31,
+    19,
+    750
+  );
   ctx.restore();
 
   const backX = cardWidth + gap;
@@ -420,25 +457,37 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   });
   ctx.restore();
 
-  drawLogo(backX + 250, 74, 175, 222);
+  drawLogo(backX + 208, 74, 260, 244);
   ctx.fillStyle = "#fff";
-  drawCenteredText(ctx, "MSP COFFEE", backX + cardWidth / 2, 380, 560, 70, 72);
-  ctx.fillStyle = "#fff";
-  drawCenteredText(ctx, "ID CARD", backX + cardWidth / 2, 505, 560, 56, 58);
+  drawCenteredSingleLineText(ctx, "MSP COFFEE ID CARD", backX + cardWidth / 2, 414, 540, 44, 30, 900);
+
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(backX + 95, 484);
+  ctx.lineTo(backX + 275, 484);
+  ctx.moveTo(backX + 400, 484);
+  ctx.lineTo(backX + 580, 484);
+  ctx.stroke();
+  ctx.fillStyle = theme.accent;
+  ctx.font = "900 34px Segoe UI, Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("✦", backX + cardWidth / 2, 495);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = theme.accent;
+  ctx.font = "900 38px Segoe UI, Arial, sans-serif";
+  ctx.fillText("●", backX + 126, 516);
+  ctx.fillText("●", backX + 126, 576);
+  ctx.fillText("☎", backX + 121, 636);
+  ctx.fillText("●", backX + 126, 696);
 
   ctx.fillStyle = "#fff";
-  ctx.font = "900 38px Segoe UI, Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("BLOOD", backX + 180, 674);
-  ctx.fillText("MOBILE NO.", backX + 500, 674);
-  ctx.fillText("GROUP", backX + 180, 720);
-  ctx.font = "500 38px Segoe UI, Arial, sans-serif";
-  ctx.fillText(form.bloodGroup || "-", backX + 180, 800);
-  ctx.font = "700 33px Segoe UI, Arial, sans-serif";
-  ctx.fillText(form.mobile || "-", backX + 500, 770, 300);
-  ctx.font = "900 40px Segoe UI, Arial, sans-serif";
-  ctx.fillText("ADDRESS", backX + cardWidth / 2, 890);
-  drawCenteredText(ctx, form.address || "-", backX + cardWidth / 2, 936, 560, 28, 34, 600);
+  ctx.font = "700 25px Segoe UI, Arial, sans-serif";
+  ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 516, 430);
+  ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 576, 430);
+  ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 636, 430);
+  drawLeftText(ctx, form.address || "-", backX + 185, 696, 430, 23, 28, 600);
   ctx.restore();
 
   try {
@@ -458,6 +507,7 @@ const cardFormFromEmployee = (employee: EmployeeIdRecord): CardForm => {
     place: employee.section_division || estateLine1,
     estateLine1,
     estateLine2,
+    employeeNumber: employee.employee_code || "",
     bloodGroup: employee.blood_group || "",
     mobile: formatMobile(employee.mobile_number),
     address: employee.current_address || employee.permanent_address || "",
@@ -474,8 +524,10 @@ const readIdCenterPrefill = (employeeId: string): IdCenterPrefill | null => {
     return {
       ...parsed,
       form: {
+        ...initialForm,
         ...parsed.form,
-        category: normalizeCategory(parsed.form.category),
+        category: normalizeCategory(parsed.form?.category),
+        employeeNumber: parsed.form?.employeeNumber || "",
       },
     };
   } catch {
@@ -488,7 +540,6 @@ export default function EmployeeIdCenterPage() {
   const [form, setForm] = useState<CardForm>(initialForm);
   const [employee, setEmployee] = useState<EmployeeIdRecord | null>(null);
   const [photo, setPhoto] = useState("");
-  const [signature, setSignature] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -519,6 +570,7 @@ export default function EmployeeIdCenterPage() {
     `Designation: ${form.designation || "-"}`,
     `Place: ${form.place || "-"}`,
     `Estate: ${[form.estateLine1, form.estateLine2].filter(Boolean).join(" ") || "-"}`,
+    `Employee No.: ${form.employeeNumber || "-"}`,
     `Blood Group: ${form.bloodGroup || "-"}`,
     `Mobile No.: ${form.mobile || "-"}`,
     `Address: ${form.address || "-"}`,
@@ -758,6 +810,11 @@ export default function EmployeeIdCenterPage() {
 
           <div className={css.divider} />
 
+          <label className={css.fieldGroup}>
+            <span>Employee No.</span>
+            <input value={form.employeeNumber} onChange={(event) => updateField("employeeNumber", event.target.value)} />
+          </label>
+
           <div className={css.row2}>
             <label className={css.fieldGroup}>
               <span>Blood Group</span>
@@ -773,20 +830,6 @@ export default function EmployeeIdCenterPage() {
             <span>Address</span>
             <textarea value={form.address} onChange={(event) => updateField("address", event.target.value)} />
           </label>
-
-          <div className={css.fieldGroup}>
-            <span>Signature image, optional</span>
-            <div className={css.uploadRow}>
-              <div className={`${css.thumb} ${css.sigThumb}`}>{signature ? <img src={signature} alt="" /> : "Sign"}</div>
-              <label className={css.ghostBtn}>
-                <Upload size={15} />
-                Upload signature
-                <input type="file" accept="image/*" onChange={(event) => readImage(event, setSignature)} />
-              </label>
-            </div>
-          </div>
-
-          <div className={css.divider} />
 
           <div className={css.printActions}>
             <button type="button" className={css.goldBtn} onClick={() => window.print()}>
@@ -917,12 +960,9 @@ function IdCardFront({
         <div className={css.nameText} style={{ fontSize: `${getNameFontSize(form.fullName)}px` }}>
           {form.fullName || "Full Name"}
         </div>
-        <div className={css.desigText}>{form.designation || "Designation"}</div>
-        <div className={css.placeText}>{form.place || "Place"}</div>
-
-        <div className={css.estateText}>
-          <span>{form.estateLine1 || "Estate"}</span>
-          <span>{form.estateLine2 || "Estate"}</span>
+        <div className={css.ornament}><span /></div>
+        <div className={css.frontRoleLine} style={{ fontSize: `${getRoleLineFontSize(form)}px` }}>
+          {getRoleLine(form)}
         </div>
 
       </div>
@@ -939,25 +979,15 @@ function IdCardBack({ form }: { form: CardForm }) {
       <BackBackground theme={theme} />
       <div className={css.backContent}>
         <img className={css.backLogo} src={logoPath} alt="MSP Coffee logo" />
-        <div className={`${css.goldText} ${css.backTitle}`}>MSP COFFEE</div>
-        <div className={css.backSubtitle}>ID CARD</div>
+        <div className={css.backTitle}>MSP COFFEE ID CARD</div>
+        <div className={css.ornament}><span /></div>
 
-        <div className={css.backGrid}>
-          <div>
-            <div className={css.cellLabel}>Blood Group</div>
-            <div className={css.cellValue}>{form.bloodGroup || "-"}</div>
-          </div>
-          <div>
-            <div className={css.cellLabel}>Mobile No.</div>
-            <div className={`${css.cellValue} ${css.mobileValue}`}>{form.mobile || "-"}</div>
-          </div>
+        <div className={css.infoList}>
+          <div><span className={css.infoIcon}>●</span><span>Employee No : {form.employeeNumber || "-"}</span></div>
+          <div><span className={css.infoIcon}>●</span><span>Blood Group : {form.bloodGroup || "-"}</span></div>
+          <div><span className={css.infoIcon}>☎</span><span>Mobile : {form.mobile || "-"}</span></div>
+          <div><span className={css.infoIcon}>●</span><span>{form.address || "-"}</span></div>
         </div>
-
-        <div className={css.addrBlock}>
-          <div className={css.cellLabel}>Address</div>
-          <div className={`${css.cellValue} ${css.addressValue}`}>{form.address || "-"}</div>
-        </div>
-
       </div>
     </article>
   );
@@ -988,30 +1018,7 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
       </defs>
       <rect width="225" height="350" fill="url(#frontCardBase)" />
       <rect width="225" height="350" fill="url(#frontCardGlow)" />
-      <path
-        d="M-28,-18 L28,-18 C54,66 46,128 65,188 C83,246 57,299 77,368 L28,368 C4,292 28,244 8,190 C-13,132 -7,70 -58,-18 Z"
-        fill="url(#idGoldGrad)"
-      />
-      <path
-        d="M15,-16 C78,58 36,125 91,184 C132,228 76,275 109,366 L84,366 C47,281 101,234 63,190 C4,122 50,56 -12,-16 Z"
-        fill="url(#idGoldGrad2)"
-        opacity=".85"
-      />
-      <path
-        d="M38,145 C91,162 150,144 234,56 L234,90 C157,171 92,196 30,171 Z"
-        fill="url(#idGoldGrad)"
-        opacity=".9"
-      />
-      <path
-        d="M230,-12 C218,46 209,89 177,129 C145,170 116,181 76,181 L66,165 C111,157 143,139 165,102 C189,62 199,21 206,-12 Z"
-        fill="#031c14"
-        opacity=".62"
-      />
-      <path
-        d="M-8,270 C4,311 21,336 48,365 L20,365 C-5,330 -17,296 -20,257 Z"
-        fill="#05291f"
-        opacity=".55"
-      />
+      <path d="M6,316 C68,346 155,346 219,316" fill="none" stroke="url(#idGoldGrad)" strokeWidth="1.5" />
     </svg>
   );
 }

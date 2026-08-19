@@ -400,6 +400,7 @@
   height: 3.5in;
   overflow: hidden;
   border-radius: 16px;
+  border: 7px solid var(--id-accent);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
   print-color-adjust: exact;
@@ -415,12 +416,14 @@
 
 .cardFront {
   background:
-    radial-gradient(circle at 55% 42%, var(--id-glow), transparent 46%),
-    linear-gradient(150deg, #0a4531 0%, #05291f 55%, #031c14 100%);
+    radial-gradient(circle at 50% 36%, rgba(14, 82, 45, 0.42), transparent 50%),
+    linear-gradient(150deg, #06391f 0%, #022b18 58%, #011b10 100%);
 }
 
 .cardBack {
-  background: linear-gradient(160deg, #05291f 0%, #031c14 100%);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(14, 82, 45, 0.38), transparent 54%),
+    linear-gradient(160deg, #06391f 0%, #011b10 100%);
 }
 
 .bgSvg {
@@ -438,12 +441,13 @@
   height: 100%;
   flex-direction: column;
   align-items: center;
-  padding: 19px 15px 18px;
+  padding: 17px 13px 18px;
 }
 
 .frontLogo {
-  width: 74px;
-  height: 86px;
+  width: 96px;
+  height: auto;
+  max-height: 84px;
   margin: 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.55));
@@ -452,11 +456,11 @@
 .photoFrame {
   position: relative;
   display: flex;
-  width: 96px;
-  height: 96px;
+  width: 110px;
+  height: 110px;
   align-items: center;
   justify-content: center;
-  margin: 14px 0 14px;
+  margin: 30px 0 16px;
 }
 
 .connector {
@@ -469,7 +473,16 @@
   border-radius: 50%;
   background: linear-gradient(135deg, var(--id-accent), var(--id-accent-dark) 58%, var(--id-accent-soft));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  padding: 7px;
+  padding: 8px;
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 2px solid var(--id-accent-soft);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .inner {
@@ -495,9 +508,10 @@
 
 .nameText {
   max-width: 100%;
-  margin-bottom: 6px;
+  margin-top: 18px;
+  margin-bottom: 8px;
   color: #fff;
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 900;
   line-height: 1.05;
   text-align: center;
@@ -506,48 +520,43 @@
   overflow-wrap: normal;
 }
 
-.desigText,
-.placeText {
-  max-width: 100%;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.05;
-  text-align: center;
-  text-transform: uppercase;
-  overflow-wrap: anywhere;
+.ornament {
+  display: flex;
+  width: 74%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  color: var(--id-accent-soft);
 }
 
-.placeText {
-  margin-bottom: 14px;
-  font-size: 16px;
+.ornament::before,
+.ornament::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--id-accent);
 }
 
-.estateText {
-  max-width: 100%;
-  margin-top: auto;
-  margin-bottom: 22px;
-  color: #fff;
-  line-height: 1.15;
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-
-.estateText span {
+.ornament span::before {
+  content: "✦";
   display: block;
+  color: var(--id-accent);
+  font-size: 14px;
+  line-height: 1;
 }
 
-.estateText span:first-child {
-  font-size: 18px;
-  font-weight: 900;
+.frontRoleLine {
+  max-width: 100%;
+  color: var(--id-accent-soft);
+  font-size: 11.5px;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  margin-top: 4px;
+  text-align: center;
   text-transform: uppercase;
-}
-
-.estateText span:last-child {
-  font-size: 16px;
-  font-weight: 500;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .backContent {
@@ -557,98 +566,55 @@
   height: 100%;
   flex-direction: column;
   align-items: center;
-  padding: 18px 16px 12px;
+  padding: 18px 17px 14px;
   text-align: center;
 }
 
 .backLogo {
-  width: 52px;
-  height: 62px;
-  margin-bottom: 4px;
+  width: 96px;
+  height: auto;
+  max-height: 90px;
+  margin-bottom: 20px;
   object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
 }
 
-.goldText {
-  color: #fff;
-  font-weight: 900;
-}
-
 .backTitle {
-  margin-bottom: 12px;
-  font-size: 22px;
-  letter-spacing: 0.03em;
-}
-
-.backSubtitle {
-  margin-bottom: 24px;
+  margin-bottom: 14px;
   color: #fff;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
-  letter-spacing: 0;
-  opacity: 1;
-}
-
-.backGrid {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 0.78fr 1.22fr;
-  gap: 5px;
-  margin-bottom: 13px;
-}
-
-.backGrid > div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-}
-
-.cellLabel {
-  margin-bottom: 5px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
   text-transform: uppercase;
 }
 
-.cellValue {
+.infoList {
+  display: flex;
+  width: 92%;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.infoList div {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 6px;
+  align-items: start;
   color: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-.backGrid .cellValue {
-  font-size: 12px;
-}
-
-.mobileValue {
-  white-space: nowrap;
-  font-size: 11.5px !important;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-top: 6px;
-  overflow-wrap: normal;
-}
-
-.addrBlock {
-  margin-bottom: 0;
-  max-width: 190px;
-}
-
-.addressValue {
-  display: -webkit-box;
-  max-height: 84px;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
-  font-size: 10.5px;
+  font-size: 10.2px;
   font-weight: 650;
-  line-height: 1.2;
-  text-wrap: balance;
+  line-height: 1.22;
+}
+
+.infoIcon {
+  color: var(--id-accent);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
 }
 
 .modalBackdrop {
@@ -907,17 +873,14 @@
 
   .cardFront {
     background:
-      radial-gradient(circle at 55% 42%, var(--id-glow), transparent 46%),
-      linear-gradient(150deg, #0a4531 0%, #05291f 55%, #031c14 100%) !important;
+      radial-gradient(circle at 50% 36%, rgba(14, 82, 45, 0.42), transparent 50%),
+      linear-gradient(150deg, #06391f 0%, #022b18 58%, #011b10 100%) !important;
   }
 
   .cardBack {
-    background: linear-gradient(160deg, #05291f 0%, #031c14 100%) !important;
-  }
-
-  .goldText {
-    background: none !important;
-    color: #fff !important;
+    background:
+      radial-gradient(circle at 50% 32%, rgba(14, 82, 45, 0.38), transparent 54%),
+      linear-gradient(160deg, #06391f 0%, #011b10 100%) !important;
   }
 
   .bgSvg {
