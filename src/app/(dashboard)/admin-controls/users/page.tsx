@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import {
   CheckCircle2,
   Edit2,
+  KeyRound,
   Loader2,
-  Mail,
   Plus,
   RefreshCw,
   Save,
@@ -21,8 +21,8 @@ import {
   inviteAuthUserAction,
   listAuthUsersAction,
   loadUserPermissionsAction,
+  resetAppUserPinAction,
   saveUserPermissionsAction,
-  sendPasswordResetAction,
   setAuthUserActiveAction,
   updateAuthUserAction,
 } from './actions';
@@ -30,7 +30,7 @@ import {
 type UserPerms = Record<string, Access>;
 
 type UserForm = {
-  email: string;
+  pin: string;
   name: string;
   role: string;
   estate: string | null;
@@ -38,6 +38,7 @@ type UserForm = {
 
 type Modal =
   | { type: 'edit'; user: AuthUserRow }
+  | { type: 'pin'; user: AuthUserRow }
   | { type: 'perms'; user: AuthUserRow }
   | { type: 'invite' }
   | null;
@@ -70,7 +71,7 @@ const ACCESS_OPTS: { value: Access; label: string; color: string; bg: string; bo
 const ROLES = ['admin', 'supervisor', 'ceo', 'worker', 'hr'];
 const ESTATES = ['', 'NM', 'BV', 'MG', 'OR', 'HF', 'ST'];
 
-const blank: UserForm = { email: '', name: '', role: 'worker', estate: null };
+const blank: UserForm = { pin: '', name: '', role: 'worker', estate: null };
 
 const roleColors: Record<string, { bg: string; color: string }> = {
   admin: { bg: 'var(--t-heading)', color: 'white' },
@@ -157,17 +158,13 @@ function AccessControl({ value, onChange }: { value: Access; onChange: (v: Acces
   );
 }
 
-function formatDate(value: string | null) {
-  if (!value) return 'Never';
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
-}
-
 export default function UserManagementPage() {
   const [users, setUsers] = useState<AuthUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState<Modal>(null);
   const [form, setForm] = useState<UserForm>(blank);
+  const [newPin, setNewPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [perms, setPerms] = useState<UserPerms>({});
@@ -208,7 +205,7 @@ export default function UserManagementPage() {
   const filtered = useMemo(() => {
     const term = search.toLowerCase();
     return users.filter((u) =>
-      [u.name, u.email, u.role, u.estate ?? ''].some((value) => value.toLowerCase().includes(term))
+      [u.name, u.role, u.estate ?? ''].some((value) => value.toLowerCase().includes(term))
     );
   }, [search, users]);
 
@@ -249,7 +246,7 @@ export default function UserManagementPage() {
       showToast(result.error);
       return;
     }
-    showToast('Invite sent');
+    showToast(form.name + ' added');
     setForm(blank);
     setModal(null);
     load();
@@ -280,9 +277,19 @@ export default function UserManagementPage() {
     load();
   };
 
-  const handlePasswordReset = async (u: AuthUserRow) => {
-    const result = await sendPasswordResetAction(u.email);
-    showToast(result.ok ? 'Password reset email sent' : result.error);
+  const handleResetPin = async () => {
+    if (modal?.type !== 'pin') return;
+    setSaving(true);
+    const result = await resetAppUserPinAction(modal.user.id, newPin);
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error);
+      return;
+    }
+    showToast('PIN reset for ' + modal.user.name);
+    setNewPin('');
+    setModal(null);
+    load();
   };
 
   return (
@@ -294,7 +301,7 @@ export default function UserManagementPage() {
             User Management
           </h1>
           <p style={{ color: 'var(--t-muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
-            {users.length} Auth users · {activeCount} active
+            {users.length} users · {activeCount} active
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -312,7 +319,7 @@ export default function UserManagementPage() {
             }}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', background: 'var(--t-heading)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
           >
-            <Plus size={14} /> Invite User
+            <Plus size={14} /> Add User
           </button>
         </div>
       </div>
@@ -322,7 +329,7 @@ export default function UserManagementPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, email, role, or estate..."
+          placeholder="Search by name, role, or estate..."
           style={{ border: 'none', outline: 'none', fontSize: '13px', color: 'var(--t-text)', background: 'transparent', width: '100%' }}
         />
         {search && (
@@ -336,7 +343,7 @@ export default function UserManagementPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Name', 'Email', 'Role', 'Estate', 'Status', 'Last Sign-In', 'Actions'].map((h) => (
+              {['Name', 'Role', 'Estate', 'Status', 'Actions'].map((h) => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
             </tr>
@@ -344,13 +351,13 @@ export default function UserManagementPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem' }}>
+                <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', padding: '2.5rem' }}>
                   <Loader2 size={20} style={{ color: 'var(--t-heading)', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: 'var(--t-muted)', padding: '2rem' }}>No users found</td>
+                <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--t-muted)', padding: '2rem' }}>No users found</td>
               </tr>
             ) : filtered.map((u) => {
               const rc = roleColors[u.role] ?? { bg: 'var(--t-muted)', color: 'white' };
@@ -369,7 +376,6 @@ export default function UserManagementPage() {
                       <span style={{ fontWeight: 600 }}>{u.name}</span>
                     </div>
                   </td>
-                  <td style={{ ...tdStyle, color: 'var(--t-muted)' }}>{u.email}</td>
                   <td style={tdStyle}>
                     <span style={{ background: rc.bg, color: rc.color, borderRadius: '999px', padding: '2px 10px', fontSize: '11px', fontWeight: 700, textTransform: 'capitalize' }}>
                       {u.role}
@@ -381,12 +387,11 @@ export default function UserManagementPage() {
                       ? <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#16a34a', fontWeight: 600 }}><CheckCircle2 size={13} /> Active</span>
                       : <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#dc2626', fontWeight: 600 }}><XCircle size={13} /> Inactive</span>}
                   </td>
-                  <td style={{ ...tdStyle, color: 'var(--t-muted)' }}>{formatDate(u.lastSignInAt)}</td>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => {
-                          setForm({ email: u.email, name: u.name, role: u.role, estate: u.estate });
+                          setForm({ pin: u.pin, name: u.name, role: u.role, estate: u.estate });
                           setModal({ type: 'edit', user: u });
                         }}
                         style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: 'var(--t-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--t-heading)' }}
@@ -405,10 +410,13 @@ export default function UserManagementPage() {
                         </button>
                       )}
                       <button
-                        onClick={() => handlePasswordReset(u)}
-                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #bae6fd', background: '#f0f9ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#0369a1' }}
+                        onClick={() => {
+                          setNewPin('');
+                          setModal({ type: 'pin', user: u });
+                        }}
+                        style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #e5dfc8', background: 'var(--t-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: '#b8920a' }}
                       >
-                        <Mail size={12} /> Reset
+                        <KeyRound size={12} /> PIN
                       </button>
                       <button
                         onClick={() => handleToggleActive(u)}
@@ -497,7 +505,7 @@ export default function UserManagementPage() {
             <div style={{ ...card, width: '100%', maxWidth: '420px', padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--t-heading)', margin: 0 }}>
-                  {modal.type === 'invite' ? 'Invite User' : 'Edit User'}
+                  {modal.type === 'invite' ? 'Add User' : 'Edit User'}
                 </h2>
                 <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-muted)' }}>
                   <X size={18} />
@@ -505,20 +513,22 @@ export default function UserManagementPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
-                  <label style={labelStyle}>Email</label>
-                  <input
-                    value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                    disabled={modal.type === 'edit'}
-                    type="email"
-                    style={{ ...inputStyle, opacity: modal.type === 'edit' ? 0.7 : 1 }}
-                    placeholder="name@example.com"
-                  />
-                </div>
-                <div>
                   <label style={labelStyle}>Full Name</label>
                   <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. John Smith" />
                 </div>
+                {modal.type === 'invite' && (
+                  <div>
+                    <label style={labelStyle}>PIN (4 digits)</label>
+                    <input
+                      value={form.pin}
+                      onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))}
+                      maxLength={4}
+                      inputMode="numeric"
+                      style={inputStyle}
+                      placeholder="e.g. 1234"
+                    />
+                  </div>
+                )}
                 <div>
                   <label style={labelStyle}>Role</label>
                   <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} style={inputStyle}>
@@ -537,8 +547,41 @@ export default function UserManagementPage() {
                 disabled={saving}
                 style={{ marginTop: '1.25rem', width: '100%', padding: '10px', borderRadius: '8px', background: 'var(--t-heading)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: saving ? 0.6 : 1 }}
               >
-                {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : modal.type === 'invite' ? <Mail size={14} /> : <Save size={14} />}
-                {modal.type === 'invite' ? 'Send Invite' : 'Save Changes'}
+                {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />}
+                {modal.type === 'invite' ? 'Create User' : 'Save Changes'}
+              </button>
+            </div>
+          )}
+
+          {modal.type === 'pin' && (
+            <div style={{ ...card, width: '100%', maxWidth: '420px', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--t-heading)', margin: 0 }}>Reset PIN</h2>
+                <button onClick={() => setModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-muted)' }}>
+                  <X size={18} />
+                </button>
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--t-muted)', marginBottom: '1rem' }}>
+                Setting new PIN for <strong style={{ color: 'var(--t-text)' }}>{modal.user.name}</strong>
+              </p>
+              <div>
+                <label style={labelStyle}>New 4-digit PIN</label>
+                <input
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value)}
+                  maxLength={4}
+                  inputMode="numeric"
+                  style={{ ...inputStyle, textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5em' }}
+                  placeholder="1234"
+                />
+              </div>
+              <button
+                onClick={handleResetPin}
+                disabled={saving || newPin.length !== 4}
+                style={{ marginTop: '1.25rem', width: '100%', padding: '10px', borderRadius: '8px', background: '#b8920a', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: saving || newPin.length !== 4 ? 0.6 : 1 }}
+              >
+                {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <KeyRound size={14} />}
+                Reset PIN
               </button>
             </div>
           )}

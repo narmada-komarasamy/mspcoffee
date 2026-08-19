@@ -1,46 +1,37 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { adminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
-import { APP_USER_ID_RE, UUID_RE } from '@/lib/auth/api';
+import { APP_USER_ID_RE } from '@/lib/auth/api';
 
 export type Access = 'none' | 'view' | 'full';
 
 export type AuthUserRow = {
   id: string;
-  email: string;
   name: string;
+  pin: string;
   role: string;
   estate: string | null;
   active: boolean;
-  createdAt: string | null;
-  lastSignInAt: string | null;
 };
 
 export type UserActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-type ProfileRow = {
+type AppUserRow = {
   id: string;
-  name: string | null;
-  role: string | null;
+  name: string;
+  role: string;
+  pin: string;
   estate: string | null;
   active: boolean | null;
 };
 
-type AppUserRow = {
-  id: string;
-  role: string;
-  pin: string;
-  active: boolean | null;
-};
-
 type UserInput = {
-  email?: string;
+  pin?: string;
   name: string;
   role: string;
   estate: string | null;
@@ -67,19 +58,15 @@ function actionError(error: unknown, fallback: string): UserActionResult<never> 
   return { ok: false, error: message };
 }
 
-function validateUserInput(input: UserInput, requireEmail: boolean) {
+function validateUserInput(input: UserInput) {
   const name = cleanText(input.name);
   const role = normalizeRole(input.role);
   const estate = cleanEstate(input.estate);
-  const email = cleanText(input.email).toLowerCase();
 
   if (!name) return { ok: false as const, error: 'Name is required' };
   if (!ROLES.has(role)) return { ok: false as const, error: 'Invalid role' };
-  if (requireEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { ok: false as const, error: 'Valid email is required' };
-  }
 
-  return { ok: true as const, data: { name, role, estate, email } };
+  return { ok: true as const, data: { name, role, estate } };
 }
 
 async function requireAdmin() {
@@ -112,7 +99,7 @@ async function requireAdmin() {
     .from('app_users')
     .select('id, role, pin, active')
     .eq('id', legacyUserId)
-    .single<AppUserRow>();
+    .single<{ id: string; role: string; pin: string; active: boolean | null }>();
 
   if (
     error ||
@@ -127,41 +114,25 @@ async function requireAdmin() {
   return { supabase, adminUserId: legacyUser.id };
 }
 
-async function getOrigin() {
-  const h = await headers();
-  const proto = h.get('x-forwarded-proto') || 'http';
-  const host = h.get('x-forwarded-host') || h.get('host') || 'localhost:3000';
-  return `${proto}://${host}`;
-}
-
 export async function listAuthUsersAction(): Promise<UserActionResult<AuthUserRow[]>> {
   try {
     const { supabase } = await requireAdmin();
-    const [{ data: authData, error: authError }, { data: profiles, error: profileError }] = await Promise.all([
-      supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      supabase.from('profiles').select('id, name, role, estate, active').returns<ProfileRow[]>(),
-    ]);
+    const { data, error } = await supabase
+      .from('app_users')
+      .select('id, name, pin, role, estate, active')
+      .order('name')
+      .returns<AppUserRow[]>();
 
-    if (authError) throw authError;
-    if (profileError) throw profileError;
+    if (error) throw error;
 
-    const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
-    const users = (authData.users ?? [])
-      .map((user) => {
-        const profile = profileById.get(user.id);
-        const email = user.email ?? '';
-        return {
-          id: user.id,
-          email,
-          name: profile?.name || user.user_metadata?.name || email || 'MSP User',
-          role: normalizeRole(profile?.role || user.user_metadata?.role || 'worker'),
-          estate: profile?.estate ?? user.user_metadata?.estate ?? null,
-          active: profile?.active !== false && !user.banned_until,
-          createdAt: user.created_at ?? null,
-          lastSignInAt: user.last_sign_in_at ?? null,
-        } satisfies AuthUserRow;
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const users = (data ?? []).map((user) => ({
+      id: user.id,
+      name: user.name || 'MSP User',
+      pin: user.pin,
+      role: normalizeRole(user.role || 'worker'),
+      estate: user.estate ?? null,
+      active: user.active !== false,
+    }));
 
     return { ok: true, data: users };
   } catch (error) {
@@ -171,60 +142,38 @@ export async function listAuthUsersAction(): Promise<UserActionResult<AuthUserRo
 
 export async function inviteAuthUserAction(input: UserInput): Promise<UserActionResult> {
   try {
-    const parsed = validateUserInput(input, true);
+    const parsed = validateUserInput(input);
     if (!parsed.ok) return parsed;
+    const pin = cleanText(input.pin);
+    if (!/^\d{4}$/.test(pin)) return { ok: false, error: 'PIN must be exactly 4 digits' };
 
-    const { supabase, adminUserId } = await requireAdmin();
-    const origin = await getOrigin();
-    const { email, name, role, estate } = parsed.data;
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: { name, role, estate, created_by: adminUserId },
-      redirectTo: `${origin}/auth/callback?type=invite`,
-    });
+    const { supabase } = await requireAdmin();
+    const { name, role, estate } = parsed.data;
+    const { error } = await supabase.from('app_users').insert([{ name, pin, role, estate, active: true }]);
 
     if (error) throw error;
-    if (!data.user?.id) throw new Error('Supabase did not return the invited user');
-
-    const { error: profileError } = await supabase.from('profiles').upsert(
-      {
-        id: data.user.id,
-        name,
-        role,
-        estate,
-        active: true,
-        created_by: adminUserId,
-      },
-      { onConflict: 'id' }
-    );
-
-    if (profileError) throw profileError;
     revalidatePath('/admin-controls/users');
     return { ok: true, data: undefined };
   } catch (error) {
-    return actionError(error, 'Unable to invite user');
+    return actionError(error, 'Unable to add user');
   }
 }
 
 export async function updateAuthUserAction(userId: string, input: UserInput): Promise<UserActionResult> {
   try {
-    if (!UUID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
+    if (!APP_USER_ID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
 
-    const parsed = validateUserInput(input, false);
+    const parsed = validateUserInput(input);
     if (!parsed.ok) return parsed;
 
     const { supabase } = await requireAdmin();
     const { name, role, estate } = parsed.data;
 
-    const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-      user_metadata: { name, role, estate },
-    });
-    if (authError) throw authError;
-
-    const { error: profileError } = await supabase
-      .from('profiles')
+    const { error } = await supabase
+      .from('app_users')
       .update({ name, role, estate })
       .eq('id', userId);
-    if (profileError) throw profileError;
+    if (error) throw error;
 
     revalidatePath('/admin-controls/users');
     return { ok: true, data: undefined };
@@ -235,21 +184,16 @@ export async function updateAuthUserAction(userId: string, input: UserInput): Pr
 
 export async function setAuthUserActiveAction(userId: string, active: boolean): Promise<UserActionResult> {
   try {
-    if (!UUID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
+    if (!APP_USER_ID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
 
     const { supabase, adminUserId } = await requireAdmin();
     if (userId === adminUserId && !active) return { ok: false, error: 'You cannot deactivate your own account' };
 
-    const { error: profileError } = await supabase
-      .from('profiles')
+    const { error } = await supabase
+      .from('app_users')
       .update({ active })
       .eq('id', userId);
-    if (profileError) throw profileError;
-
-    const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-      ban_duration: active ? 'none' : '876000h',
-    });
-    if (authError) throw authError;
+    if (error) throw error;
 
     revalidatePath('/admin-controls/users');
     return { ok: true, data: undefined };
@@ -258,27 +202,9 @@ export async function setAuthUserActiveAction(userId: string, active: boolean): 
   }
 }
 
-export async function sendPasswordResetAction(email: string): Promise<UserActionResult> {
-  try {
-    const cleanEmail = cleanText(email).toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return { ok: false, error: 'Valid email is required' };
-
-    const { supabase } = await requireAdmin();
-    const origin = await getOrigin();
-    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: `${origin}/auth/callback?type=recovery`,
-    });
-    if (error) throw error;
-
-    return { ok: true, data: undefined };
-  } catch (error) {
-    return actionError(error, 'Unable to send reset email');
-  }
-}
-
 export async function loadUserPermissionsAction(userId: string): Promise<UserActionResult<Record<string, Access>>> {
   try {
-    if (!UUID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
+    if (!APP_USER_ID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
 
     const { supabase } = await requireAdmin();
     const { data, error } = await supabase
@@ -307,7 +233,7 @@ export async function saveUserPermissionsAction(
   permissions: Record<string, Access>
 ): Promise<UserActionResult> {
   try {
-    if (!UUID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
+    if (!APP_USER_ID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
 
     const rows = Object.entries(permissions).map(([page_href, access]) => ({
       user_id: userId,
@@ -325,5 +251,22 @@ export async function saveUserPermissionsAction(
     return { ok: true, data: undefined };
   } catch (error) {
     return actionError(error, 'Unable to save permissions');
+  }
+}
+
+export async function resetAppUserPinAction(userId: string, pin: string): Promise<UserActionResult> {
+  try {
+    if (!APP_USER_ID_RE.test(userId)) return { ok: false, error: 'Invalid user id' };
+    const cleanPin = cleanText(pin);
+    if (!/^\d{4}$/.test(cleanPin)) return { ok: false, error: 'PIN must be exactly 4 digits' };
+
+    const { supabase } = await requireAdmin();
+    const { error } = await supabase.from('app_users').update({ pin: cleanPin }).eq('id', userId);
+    if (error) throw error;
+
+    revalidatePath('/admin-controls/users');
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return actionError(error, 'Unable to reset PIN');
   }
 }
