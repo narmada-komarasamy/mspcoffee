@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireEmailUser } from '@/app/api/email/_auth';
 import { EmailDeliveryError, sendEmail } from '@/lib/email/provider';
 import type { EmailPayload } from '@/lib/email/payload';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 type CardCategory = 'estate-field' | 'pf-worker' | 'line-worker' | 'village-worker' | 'migrant-worker';
 
@@ -21,6 +22,7 @@ type CardTheme = {
   label: string;
 };
 
+const ID_CARD_EMAIL_ROLES = ['admin', 'hr'];
 const emailAddressPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const categoryThemes: Record<CardCategory, CardTheme> = {
@@ -106,8 +108,15 @@ function buildEmailText(form: CardForm, categoryLabel: string, note: string) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireEmailUser(request, ['admin', 'hr']);
+  const auth = await requireEmailUser(request, ID_CARD_EMAIL_ROLES);
   if ('error' in auth) return auth.error;
+
+  const limited = checkRateLimit({
+    key: rateLimitKey('id-card-email', auth.user.id),
+    limit: 20,
+    windowMs: 60 * 60 * 1000,
+  });
+  if ('error' in limited) return limited.error;
 
   const body = await request.json().catch(() => null);
   const bodyRow = body as Record<string, unknown> | null;
