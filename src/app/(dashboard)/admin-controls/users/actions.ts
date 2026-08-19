@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { adminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
-import { UUID_RE } from '@/lib/auth/api';
+import { APP_USER_ID_RE, UUID_RE } from '@/lib/auth/api';
 
 export type Access = 'none' | 'view' | 'full';
 
@@ -106,7 +106,7 @@ async function requireAdmin() {
   const cookieStore = await cookies();
   const legacyUserId = cookieStore.get('msp_user_id')?.value ?? '';
   const legacyPin = cookieStore.get('msp_user_pin')?.value ?? '';
-  if (!legacyUserId || !legacyPin || !UUID_RE.test(legacyUserId)) throw new Error('Unauthorized');
+  if (!legacyUserId || !legacyPin || !APP_USER_ID_RE.test(legacyUserId)) throw new Error('Unauthorized');
 
   const { data: legacyUser, error } = await supabase
     .from('app_users')
