@@ -438,13 +438,13 @@
   height: 100%;
   flex-direction: column;
   align-items: center;
-  padding: 17px 15px 16px;
+  padding: 19px 15px 18px;
 }
 
 .frontLogo {
   width: 74px;
   height: 86px;
-  margin-top: -2px;
+  margin: 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.55));
 }
@@ -456,7 +456,7 @@
   height: 96px;
   align-items: center;
   justify-content: center;
-  margin: 7px 0 14px;
+  margin: 14px 0 14px;
 }
 
 .connector {
@@ -481,7 +481,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: #efe9db;
-  color: #a89a76;
+  color: #fff;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.05em;
@@ -509,7 +509,7 @@
 .desigText,
 .placeText {
   max-width: 100%;
-  color: var(--id-accent);
+  color: #fff;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -520,13 +520,14 @@
 }
 
 .placeText {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
   font-size: 16px;
 }
 
 .estateText {
   max-width: 100%;
   margin-top: auto;
+  margin-bottom: 22px;
   color: #fff;
   line-height: 1.15;
   text-align: center;
@@ -549,46 +550,6 @@
   text-transform: uppercase;
 }
 
-.sigRow {
-  width: 100%;
-  border-top: 1px solid color-mix(in srgb, var(--id-accent) 58%, transparent);
-  color: var(--id-accent);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.sigRow {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 7px;
-}
-
-.sigRow div {
-  display: flex;
-  min-height: 24px;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 2px;
-}
-
-.miniLogo {
-  width: 45px;
-  height: 43px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
-}
-
-.signatureImage {
-  max-width: 78px;
-  max-height: 18px;
-  object-fit: contain;
-  filter: brightness(1.2);
-}
-
 .backContent {
   position: relative;
   z-index: 2;
@@ -609,9 +570,7 @@
 }
 
 .goldText {
-  background: linear-gradient(180deg, var(--id-accent-soft), var(--id-accent) 55%, var(--id-accent-dark));
-  background-clip: text;
-  color: transparent;
+  color: #fff;
   font-weight: 900;
 }
 
@@ -623,7 +582,7 @@
 
 .backSubtitle {
   margin-bottom: 24px;
-  color: var(--id-accent-soft);
+  color: #fff;
   font-size: 20px;
   font-weight: 900;
   letter-spacing: 0;
@@ -647,7 +606,7 @@
 
 .cellLabel {
   margin-bottom: 5px;
-  color: var(--id-accent-soft);
+  color: #fff;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.03em;
@@ -655,7 +614,7 @@
 }
 
 .cellValue {
-  color: var(--id-accent-soft);
+  color: #fff;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.25;
@@ -958,7 +917,7 @@
 
   .goldText {
     background: none !important;
-    color: var(--id-accent) !important;
+    color: #fff !important;
   }
 
   .bgSvg {

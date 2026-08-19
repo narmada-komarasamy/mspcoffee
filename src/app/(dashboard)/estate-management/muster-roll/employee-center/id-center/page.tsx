@@ -4,6 +4,7 @@ import { CSSProperties, ChangeEvent, useEffect, useMemo, useState } from "react"
 import Link from "next/link";
 import { ArrowLeft, IdCard, Loader2, Mail, Printer, RotateCcw, Send, Upload, Users, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { signedStorageUrl } from "@/lib/storage/urls";
 import css from "./id-center.module.css";
 
 type EmployeeIdRecord = {
@@ -18,6 +19,7 @@ type EmployeeIdRecord = {
   blood_group: string | null;
   current_address: string | null;
   permanent_address: string | null;
+  photo_path: string | null;
   photo_public_url: string | null;
 };
 
@@ -293,7 +295,7 @@ const drawCoverImage = (
   ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
 };
 
-const renderIdCardImage = async (form: CardForm, photo: string, signature: string) => {
+const renderIdCardImage = async (form: CardForm, photo: string) => {
   const theme = getCategory(form.category).theme;
   const cardWidth = 675;
   const cardHeight = 1050;
@@ -304,10 +306,9 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Could not create the ID card image.");
 
-  const [logoImage, photoImage, signatureImage] = await Promise.all([
+  const [logoImage, photoImage] = await Promise.all([
     loadCanvasImage(logoPath),
     loadCanvasImage(photo),
-    loadCanvasImage(signature),
   ]);
 
   ctx.fillStyle = "#e9e4d8";
@@ -358,14 +359,14 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   ctx.restore();
 
   ctx.save();
-  ctx.translate(frontX + 145, 450);
+  ctx.translate(frontX + 110, 410);
   ctx.rotate((-24 * Math.PI) / 180);
   ctx.fillStyle = ribbon;
   ctx.globalAlpha = 0.9;
-  ctx.fillRect(0, 0, 650, 52);
+  ctx.fillRect(0, 0, 760, 56);
   ctx.restore();
 
-  drawLogo(frontX + 222, 88, 231, 258);
+  drawLogo(frontX + 222, 50, 231, 258);
 
   const photoCenterX = frontX + cardWidth / 2;
   const photoCenterY = 472;
@@ -390,7 +391,7 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
     drawCoverImage(ctx, photoImage, photoCenterX - 122, photoCenterY - 122, 244, 244);
     ctx.restore();
   } else {
-    ctx.fillStyle = "#a89a76";
+    ctx.fillStyle = "#fff";
     ctx.font = "900 27px Segoe UI, Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("PHOTO", photoCenterX, photoCenterY + 10);
@@ -398,24 +399,12 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
 
   ctx.fillStyle = "#fff";
   drawCenteredSingleLineText(ctx, getDisplayName(form.fullName), frontX + cardWidth / 2, 690, 580, 72, 42);
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = "#fff";
   drawCenteredText(ctx, (form.designation || "Designation").toUpperCase(), frontX + cardWidth / 2, 780, 560, 50, 52, 800);
   drawCenteredText(ctx, (form.place || "Place").toUpperCase(), frontX + cardWidth / 2, 835, 560, 44, 46, 800);
   ctx.fillStyle = "#fff";
   drawCenteredText(ctx, (form.estateLine1 || "Estate").toUpperCase(), frontX + cardWidth / 2, 930, 560, 50, 52);
   drawCenteredText(ctx, (form.estateLine2 || "Estate").toUpperCase(), frontX + cardWidth / 2, 982, 560, 40, 42, 600);
-  ctx.strokeStyle = theme.accent;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(frontX + 72, 975);
-  ctx.lineTo(frontX + 412, 975);
-  ctx.stroke();
-  ctx.fillStyle = theme.accent;
-  ctx.font = "900 22px Segoe UI, Arial, sans-serif";
-  ctx.textAlign = "left";
-  if (signatureImage) ctx.drawImage(signatureImage, frontX + 72, 944, 170, 38);
-  ctx.fillText("AUTHORITY SIGNATURE", frontX + 72, 1026);
-  drawLogo(frontX + 490, 944, 118, 92);
   ctx.restore();
 
   const backX = cardWidth + gap;
@@ -434,12 +423,12 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   ctx.restore();
 
   drawLogo(backX + 250, 74, 175, 222);
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = "#fff";
   drawCenteredText(ctx, "MSP COFFEE", backX + cardWidth / 2, 380, 560, 70, 72);
-  ctx.fillStyle = theme.accentSoft;
+  ctx.fillStyle = "#fff";
   drawCenteredText(ctx, "ID CARD", backX + cardWidth / 2, 505, 560, 56, 58);
 
-  ctx.fillStyle = theme.accentSoft;
+  ctx.fillStyle = "#fff";
   ctx.font = "900 38px Segoe UI, Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText("BLOOD", backX + 180, 674);
@@ -555,7 +544,7 @@ export default function EmployeeIdCenterPage() {
       supabase
         .from("estate_employees")
         .select(
-          "id, full_name, employee_code, estate_name, status, job_role, section_division, mobile_number, blood_group, current_address, permanent_address, photo_public_url"
+          "id, full_name, employee_code, estate_name, status, job_role, section_division, mobile_number, blood_group, current_address, permanent_address, photo_path, photo_public_url"
         )
         .eq("id", employeeId)
         .single()
@@ -569,7 +558,7 @@ export default function EmployeeIdCenterPage() {
             const selected = data as EmployeeIdRecord;
             setEmployee(selected);
             if (!hasPrefill) setForm(cardFormFromEmployee(selected));
-            setPhoto((currentPhoto) => selected.photo_public_url || currentPhoto || "");
+            setPhoto((currentPhoto) => selected.photo_path ? signedStorageUrl("employee-center", selected.photo_path) : currentPhoto || "");
             setMessage("");
             window.sessionStorage.removeItem(idCenterPrefillStorageKey);
           }
@@ -621,7 +610,7 @@ export default function EmployeeIdCenterPage() {
     setEmailMessage("");
 
     try {
-      const imageDataUrl = await renderIdCardImage(form, photo, signature);
+      const imageDataUrl = await renderIdCardImage(form, photo);
       const response = await fetch("/api/id-card/email", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -821,7 +810,7 @@ export default function EmployeeIdCenterPage() {
         <section className={css.stage}>
           <div className={css.stageLabel}>Live Preview - Front & Back</div>
           <div className={css.cardsWrap}>
-            <IdCardFront form={form} photo={photo} signature={signature} />
+            <IdCardFront form={form} photo={photo} />
             <IdCardBack form={form} />
           </div>
         </section>
@@ -892,7 +881,7 @@ export default function EmployeeIdCenterPage() {
               <div className={css.emailCardPreview}>
                 <div className={css.stageLabel}>Attachment Preview</div>
                 <div className={css.modalCardsWrap}>
-                  <IdCardFront form={form} photo={photo} signature={signature} />
+                  <IdCardFront form={form} photo={photo} />
                   <IdCardBack form={form} />
                 </div>
               </div>
@@ -907,11 +896,9 @@ export default function EmployeeIdCenterPage() {
 function IdCardFront({
   form,
   photo,
-  signature,
 }: {
   form: CardForm;
   photo: string;
-  signature: string;
 }) {
   const category = getCategory(form.category);
   const theme = category.theme;
@@ -940,13 +927,6 @@ function IdCardFront({
           <span>{form.estateLine2 || "Estate"}</span>
         </div>
 
-        <div className={css.sigRow}>
-          <div>
-            {signature ? <img className={css.signatureImage} src={signature} alt="" /> : null}
-            <span>Authority Signature</span>
-          </div>
-          <img className={css.miniLogo} src={logoPath} alt="" />
-        </div>
       </div>
     </article>
   );
@@ -1011,7 +991,7 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
       <rect width="225" height="350" fill="url(#frontCardBase)" />
       <rect width="225" height="350" fill="url(#frontCardGlow)" />
       <path
-        d="M-34,-16 C48,62 18,114 50,168 C80,218 12,263 35,366 L10,366 C-22,270 44,220 9,172 C-44,100 5,50 -62,-16 Z"
+        d="M-28,-18 L28,-18 C54,66 46,128 65,188 C83,246 57,299 77,368 L28,368 C4,292 28,244 8,190 C-13,132 -7,70 -58,-18 Z"
         fill="url(#idGoldGrad)"
       />
       <path
@@ -1020,7 +1000,7 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
         opacity=".85"
       />
       <path
-        d="M51,158 C97,174 145,167 234,71 L234,104 C156,187 91,205 42,182 Z"
+        d="M38,145 C91,162 150,144 234,56 L234,90 C157,171 92,196 30,171 Z"
         fill="url(#idGoldGrad)"
         opacity=".9"
       />
