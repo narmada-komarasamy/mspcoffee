@@ -106,7 +106,7 @@ function buildEmailText(form: CardForm, categoryLabel: string, note: string) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireEmailUser(request);
+  const auth = await requireEmailUser(request, ['admin', 'hr']);
   if ('error' in auth) return auth.error;
 
   const body = await request.json().catch(() => null);

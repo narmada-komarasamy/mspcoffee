@@ -402,6 +402,15 @@
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.card *,
+.card svg,
+.card img {
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
 }
 
 .cardFront {
@@ -429,7 +438,7 @@
   height: 100%;
   flex-direction: column;
   align-items: center;
-  padding: 17px 15px 12px;
+  padding: 17px 15px 16px;
 }
 
 .frontLogo {
@@ -493,7 +502,8 @@
   line-height: 1.05;
   text-align: center;
   text-transform: uppercase;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .desigText,
@@ -510,7 +520,7 @@
 }
 
 .placeText {
-  margin-bottom: 13px;
+  margin-bottom: 10px;
   font-size: 16px;
 }
 
@@ -890,8 +900,16 @@
 }
 
 @media print {
+  html,
+  body {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
   .page {
     margin: 0;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
   }
 
   .header,
@@ -924,6 +942,27 @@
     box-shadow: none;
     border-radius: 0;
     break-inside: avoid;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .cardFront {
+    background:
+      radial-gradient(circle at 55% 42%, var(--id-glow), transparent 46%),
+      linear-gradient(150deg, #0a4531 0%, #05291f 55%, #031c14 100%) !important;
+  }
+
+  .cardBack {
+    background: linear-gradient(160deg, #05291f 0%, #031c14 100%) !important;
+  }
+
+  .goldText {
+    background: none !important;
+    color: var(--id-accent) !important;
+  }
+
+  .bgSvg {
+    display: block !important;
   }
 
   @page {

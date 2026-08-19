@@ -180,6 +180,29 @@ const cardStyleForTheme = (theme: CardTheme) =>
     "--id-leaf": theme.leaf,
   }) as CSSProperties;
 
+const getDisplayName = (name: string) => (name.trim() || "Full Name").toUpperCase();
+
+const getNameFontSize = (name: string) => {
+  const length = getDisplayName(name).length;
+  if (length <= 12) return 24;
+  return Math.min(24, Math.max(9, Math.floor(188 / (length * 0.62))));
+};
+
+const fitCanvasTextSize = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  startSize: number,
+  minSize: number,
+  fontWeight = 900
+) => {
+  for (let size = startSize; size >= minSize; size -= 1) {
+    ctx.font = `${fontWeight} ${size}px Segoe UI, Arial, sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+  }
+  return minSize;
+};
+
 const loadCanvasImage = (source: string) =>
   new Promise<HTMLImageElement | null>((resolve) => {
     if (!source) {
@@ -238,6 +261,22 @@ const drawCenteredText = (
   lines.slice(0, 3).forEach((item, index) => {
     ctx.fillText(item, x, y + index * lineHeight, maxWidth);
   });
+};
+
+const drawCenteredSingleLineText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  startSize: number,
+  minSize: number,
+  fontWeight = 900
+) => {
+  const fontSize = fitCanvasTextSize(ctx, text, maxWidth, startSize, minSize, fontWeight);
+  ctx.font = `${fontWeight} ${fontSize}px Segoe UI, Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.fillText(text, x, y, maxWidth);
 };
 
 const drawCoverImage = (
@@ -358,14 +397,13 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   }
 
   ctx.fillStyle = "#fff";
-  ctx.font = "900 72px Segoe UI, Arial, sans-serif";
-  drawCenteredText(ctx, (form.fullName || "Full Name").toUpperCase(), frontX + cardWidth / 2, 690, 580, 72, 72);
+  drawCenteredSingleLineText(ctx, getDisplayName(form.fullName), frontX + cardWidth / 2, 690, 580, 72, 42);
   ctx.fillStyle = theme.accent;
   drawCenteredText(ctx, (form.designation || "Designation").toUpperCase(), frontX + cardWidth / 2, 780, 560, 50, 52, 800);
   drawCenteredText(ctx, (form.place || "Place").toUpperCase(), frontX + cardWidth / 2, 835, 560, 44, 46, 800);
   ctx.fillStyle = "#fff";
-  drawCenteredText(ctx, (form.estateLine1 || "Estate").toUpperCase(), frontX + cardWidth / 2, 945, 560, 52, 54);
-  drawCenteredText(ctx, (form.estateLine2 || "Estate").toUpperCase(), frontX + cardWidth / 2, 998, 560, 44, 46, 600);
+  drawCenteredText(ctx, (form.estateLine1 || "Estate").toUpperCase(), frontX + cardWidth / 2, 930, 560, 50, 52);
+  drawCenteredText(ctx, (form.estateLine2 || "Estate").toUpperCase(), frontX + cardWidth / 2, 982, 560, 40, 42, 600);
   ctx.strokeStyle = theme.accent;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -375,9 +413,9 @@ const renderIdCardImage = async (form: CardForm, photo: string, signature: strin
   ctx.fillStyle = theme.accent;
   ctx.font = "900 22px Segoe UI, Arial, sans-serif";
   ctx.textAlign = "left";
-  if (signatureImage) ctx.drawImage(signatureImage, frontX + 72, 932, 170, 42);
-  ctx.fillText("AUTHORITY SIGNATURE", frontX + 72, 1014);
-  drawLogo(frontX + 490, 930, 125, 102);
+  if (signatureImage) ctx.drawImage(signatureImage, frontX + 72, 944, 170, 38);
+  ctx.fillText("AUTHORITY SIGNATURE", frontX + 72, 1026);
+  drawLogo(frontX + 490, 944, 118, 92);
   ctx.restore();
 
   const backX = cardWidth + gap;
@@ -891,7 +929,9 @@ function IdCardFront({
           </div>
         </div>
 
-        <div className={css.nameText}>{form.fullName || "Full Name"}</div>
+        <div className={css.nameText} style={{ fontSize: `${getNameFontSize(form.fullName)}px` }}>
+          {form.fullName || "Full Name"}
+        </div>
         <div className={css.desigText}>{form.designation || "Designation"}</div>
         <div className={css.placeText}>{form.place || "Place"}</div>
 
@@ -949,6 +989,15 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
   return (
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
       <defs>
+        <linearGradient id="frontCardBase" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0a4531" />
+          <stop offset="55%" stopColor="#05291f" />
+          <stop offset="100%" stopColor="#031c14" />
+        </linearGradient>
+        <radialGradient id="frontCardGlow" cx="55%" cy="42%" r="58%">
+          <stop offset="0%" stopColor={theme.glow} />
+          <stop offset="100%" stopColor="transparent" />
+        </radialGradient>
         <linearGradient id="idGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#ffe98c" />
           <stop offset="45%" stopColor={theme.ribbon} />
@@ -959,6 +1008,8 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
           <stop offset="100%" stopColor={theme.ribbonDark} />
         </linearGradient>
       </defs>
+      <rect width="225" height="350" fill="url(#frontCardBase)" />
+      <rect width="225" height="350" fill="url(#frontCardGlow)" />
       <path
         d="M-34,-16 C48,62 18,114 50,168 C80,218 12,263 35,366 L10,366 C-22,270 44,220 9,172 C-44,100 5,50 -62,-16 Z"
         fill="url(#idGoldGrad)"
