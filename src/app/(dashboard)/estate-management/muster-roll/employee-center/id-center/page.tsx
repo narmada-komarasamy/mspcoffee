@@ -301,18 +301,11 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
     drawRoundRect(ctx, x, 0, cardWidth, cardHeight, 48);
     ctx.clip();
     const background = ctx.createLinearGradient(x, 0, x + cardWidth, cardHeight);
-    background.addColorStop(0, "#06442b");
-    background.addColorStop(0.55, "#00351f");
-    background.addColorStop(1, "#002516");
+    background.addColorStop(0, "#064b30");
+    background.addColorStop(0.55, "#004326");
+    background.addColorStop(1, "#00311d");
     ctx.fillStyle = background;
     ctx.fillRect(x, 0, cardWidth, cardHeight);
-
-    ctx.globalAlpha = 0.16;
-    for (let i = 0; i < 22; i += 1) {
-      ctx.fillStyle = i % 2 ? "#0b4a2c" : "#02130b";
-      ctx.fillRect(x + i * 34, 0, 18, cardHeight);
-    }
-    ctx.globalAlpha = 1;
 
     ctx.strokeStyle = standardCardTheme.accent;
     ctx.lineWidth = 18;
@@ -970,9 +963,9 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="frontCardBase" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#06442b" />
-          <stop offset="55%" stopColor="#00351f" />
-          <stop offset="100%" stopColor="#002516" />
+          <stop offset="0%" stopColor="#064b30" />
+          <stop offset="55%" stopColor="#004326" />
+          <stop offset="100%" stopColor="#00311d" />
         </linearGradient>
         <radialGradient id="frontCardGlow" cx="55%" cy="42%" r="58%">
           <stop offset="0%" stopColor={theme.glow} />
@@ -998,10 +991,10 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
 function BackBackground({ theme }: { theme: CardTheme }) {
   return (
     <svg className={css.bgSvg} viewBox="0 0 225 350" preserveAspectRatio="none" aria-hidden="true">
-      <rect width="225" height="350" fill="#00351f" />
+      <rect width="225" height="350" fill="#004326" />
       <radialGradient id="backGlow" cx="50%" cy="45%" r="70%">
-        <stop offset="0%" stopColor="#06442b" />
-        <stop offset="100%" stopColor="#002516" />
+        <stop offset="0%" stopColor="#064b30" />
+        <stop offset="100%" stopColor="#00311d" />
       </radialGradient>
       <rect width="225" height="350" fill="url(#backGlow)" opacity=".85" />
       <g fill="none" stroke={theme.leaf} strokeWidth="1.1" opacity=".22">
