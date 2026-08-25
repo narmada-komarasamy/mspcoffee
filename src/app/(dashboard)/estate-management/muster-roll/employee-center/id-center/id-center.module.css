@@ -471,7 +471,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--id-accent), var(--id-accent-dark) 58%, var(--id-accent-soft));
+  background: linear-gradient(135deg, var(--id-category-accent), var(--id-category-accent-dark) 58%, var(--id-category-accent-soft));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   padding: 8px;
 }
@@ -480,7 +480,7 @@
   content: "";
   position: absolute;
   inset: 4px;
-  border: 2px solid var(--id-accent-soft);
+  border: 2px solid var(--id-category-accent-soft);
   border-radius: 50%;
   pointer-events: none;
 }

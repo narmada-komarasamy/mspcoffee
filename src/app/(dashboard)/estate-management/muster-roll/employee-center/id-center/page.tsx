@@ -73,25 +73,57 @@ const categoryOptions: { value: CardCategory; label: string; shortLabel: string;
     value: "pf-worker",
     label: "PF Workers",
     shortLabel: "PF Worker",
-    theme: standardCardTheme,
+    theme: {
+      accent: "#3aa7e8",
+      accentSoft: "#bfe8ff",
+      accentDark: "#12639b",
+      ribbon: "#3aa7e8",
+      ribbonDark: "#12639b",
+      glow: standardCardTheme.glow,
+      leaf: standardCardTheme.leaf,
+    },
   },
   {
     value: "line-worker",
     label: "Line Workers",
     shortLabel: "Line Worker",
-    theme: standardCardTheme,
+    theme: {
+      accent: "#d63b35",
+      accentSoft: "#ffb9b6",
+      accentDark: "#841c18",
+      ribbon: "#d63b35",
+      ribbonDark: "#841c18",
+      glow: standardCardTheme.glow,
+      leaf: standardCardTheme.leaf,
+    },
   },
   {
     value: "village-worker",
     label: "Village Workers",
     shortLabel: "Village Worker",
-    theme: standardCardTheme,
+    theme: {
+      accent: "#1f9f65",
+      accentSoft: "#b6f0d4",
+      accentDark: "#0c5d38",
+      ribbon: "#1f9f65",
+      ribbonDark: "#0c5d38",
+      glow: standardCardTheme.glow,
+      leaf: standardCardTheme.leaf,
+    },
   },
   {
     value: "migrant-worker",
     label: "Migrant Workers",
     shortLabel: "Migrant Worker",
-    theme: standardCardTheme,
+    theme: {
+      accent: "#a77ad9",
+      accentSoft: "#eadcff",
+      accentDark: "#5e3490",
+      ribbon: "#a77ad9",
+      ribbonDark: "#5e3490",
+      glow: standardCardTheme.glow,
+      leaf: standardCardTheme.leaf,
+    },
   },
 ];
 
@@ -143,13 +175,16 @@ const getCategory = (category: CardCategory) =>
 
 const cardStyleForTheme = (theme: CardTheme) =>
   ({
-    "--id-accent": theme.accent,
-    "--id-accent-soft": theme.accentSoft,
-    "--id-accent-dark": theme.accentDark,
-    "--id-ribbon": theme.ribbon,
-    "--id-ribbon-dark": theme.ribbonDark,
-    "--id-glow": theme.glow,
-    "--id-leaf": theme.leaf,
+    "--id-accent": standardCardTheme.accent,
+    "--id-accent-soft": standardCardTheme.accentSoft,
+    "--id-accent-dark": standardCardTheme.accentDark,
+    "--id-ribbon": standardCardTheme.ribbon,
+    "--id-ribbon-dark": standardCardTheme.ribbonDark,
+    "--id-glow": standardCardTheme.glow,
+    "--id-leaf": standardCardTheme.leaf,
+    "--id-category-accent": theme.accent,
+    "--id-category-accent-soft": theme.accentSoft,
+    "--id-category-accent-dark": theme.accentDark,
   }) as CSSProperties;
 
 const getDisplayName = (name: string) => (name.trim() || "Full Name").toUpperCase();
@@ -311,17 +346,17 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
     }
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = theme.accent;
+    ctx.strokeStyle = standardCardTheme.accent;
     ctx.lineWidth = 18;
     drawRoundRect(ctx, x + 13, 13, cardWidth - 26, cardHeight - 26, 38);
     ctx.stroke();
 
-    ctx.strokeStyle = theme.accentSoft;
+    ctx.strokeStyle = standardCardTheme.accentSoft;
     ctx.lineWidth = 3;
     drawRoundRect(ctx, x + 31, 31, cardWidth - 62, cardHeight - 62, 27);
     ctx.stroke();
 
-    ctx.strokeStyle = theme.accent;
+    ctx.strokeStyle = standardCardTheme.accent;
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.moveTo(x + 42, cardHeight - 106);
@@ -386,7 +421,7 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.fillStyle = "#fff";
   drawCenteredSingleLineText(ctx, getDisplayName(form.fullName), frontX + cardWidth / 2, 812, 570, 66, 38);
 
-  ctx.strokeStyle = theme.accent;
+  ctx.strokeStyle = standardCardTheme.accent;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(frontX + 112, 862);
@@ -394,12 +429,12 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.moveTo(frontX + 405, 862);
   ctx.lineTo(frontX + 563, 862);
   ctx.stroke();
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = standardCardTheme.accent;
   ctx.font = "900 34px Segoe UI, Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText("✦", frontX + cardWidth / 2, 873);
 
-  ctx.fillStyle = theme.accentSoft;
+  ctx.fillStyle = standardCardTheme.accentSoft;
   drawCenteredSingleLineText(
     ctx,
     `${form.designation || "Designation"} - ${form.place || "Place"} ${form.estateLine2 || "Estate"}`.toUpperCase(),
@@ -416,7 +451,7 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   drawCardBase(backX);
   ctx.save();
   ctx.translate(backX, 0);
-  ctx.strokeStyle = theme.leaf;
+  ctx.strokeStyle = standardCardTheme.leaf;
   ctx.globalAlpha = 0.24;
   ctx.lineWidth = 4;
   [[-10, 70, 220, 24], [520, 36, 120, 220], [4, 780, 240, 950], [500, 730, 680, 1050]].forEach(([x1, y1, x2, y2]) => {
@@ -431,7 +466,7 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.fillStyle = "#fff";
   drawCenteredSingleLineText(ctx, "MSP COFFEE ID CARD", backX + cardWidth / 2, 414, 540, 44, 30, 900);
 
-  ctx.strokeStyle = theme.accent;
+  ctx.strokeStyle = standardCardTheme.accent;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(backX + 95, 484);
@@ -439,13 +474,13 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.moveTo(backX + 400, 484);
   ctx.lineTo(backX + 580, 484);
   ctx.stroke();
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = standardCardTheme.accent;
   ctx.font = "900 34px Segoe UI, Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText("✦", backX + cardWidth / 2, 495);
 
   ctx.textAlign = "left";
-  ctx.fillStyle = theme.accent;
+  ctx.fillStyle = standardCardTheme.accent;
   ctx.font = "900 38px Segoe UI, Arial, sans-serif";
   ctx.fillText("●", backX + 126, 516);
   ctx.fillText("●", backX + 126, 576);
@@ -977,12 +1012,12 @@ function FrontBackground({ theme }: { theme: CardTheme }) {
         </radialGradient>
         <linearGradient id="idGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#ffe98c" />
-          <stop offset="45%" stopColor={theme.ribbon} />
-          <stop offset="100%" stopColor={theme.accentDark} />
+          <stop offset="45%" stopColor={standardCardTheme.ribbon} />
+          <stop offset="100%" stopColor={standardCardTheme.accentDark} />
         </linearGradient>
         <linearGradient id="idGoldGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={theme.accentSoft} />
-          <stop offset="100%" stopColor={theme.ribbonDark} />
+          <stop offset="0%" stopColor={standardCardTheme.accentSoft} />
+          <stop offset="100%" stopColor={standardCardTheme.ribbonDark} />
         </linearGradient>
       </defs>
       <rect width="225" height="350" fill="url(#frontCardBase)" />
