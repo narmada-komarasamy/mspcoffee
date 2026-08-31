@@ -679,7 +679,25 @@ export default function RainfallPage() {
             ))}
           </div>
 
-          {/* ─── Estate Comparison Cards ─────────────────────────────────── */}
+          {/* ─── Seasonal Profile Cards ────────────────────────────────────── */}
+ <div className={s.sectionLabel}>Seasonal Rainfall Profile</div>
+ <div className={s.seasonGrid}>
+ {[
+ { emoji: "🌧️", name: "Southwest Monsoon", range: "Jun – Sep", color: "var(--t-accent)", note: "Primary crop cycle · Peak Jul–Aug" },
+ { emoji: "🌦️", name: "NE Monsoon", range: "Oct – Dec", color: "#0891b2", note: "Post-harvest · Peak Oct–Nov" },
+ { emoji: "☀️", name: "Winter / Dry", range: "Jan – Feb", color: "#d97706", note: "Minimal rain · Dormant season" },
+ { emoji: "🔥", name: "Summer / Pre-monsoon", range: "Mar – May", color: "#dc2626", note: "Dry spells · Pre-monsoon prep" },
+ ].map((season) => (
+ <div key={season.name} className={s.seasonCard} style={{ borderTopColor: season.color }}>
+ <div className={s.seasonEmoji}>{season.emoji}</div>
+ <div className={s.seasonName}>{season.name}</div>
+ <div className={s.seasonRange} style={{ color: season.color }}>{season.range}</div>
+ <div className={s.seasonNote}>{season.note}</div>
+ </div>
+ ))}
+ </div>
+
+ {/* ─── Estate Comparison Cards ─────────────────────────────────── */}
           {compareCards.length > 0 && (
             <>
               <div className={s.sectionLabel}>Estate Comparison</div>
