@@ -12,7 +12,11 @@
       "Bash(npx tsc *)",
       "Bash(git add *)",
       "Bash(git commit -m 'fix\\(cup-scores/seed\\): add GET handler so seeding works by visiting the URL in a browser *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git show *)",
+      "Bash(git commit -m 'revert: restore original login page to unblock access *)",
+      "Bash(git commit --allow-empty -m 'chore: trigger redeploy with original login page *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireEstateStaffMeetingUser, stringValue } from '../_auth';
+import { signedStorageUrl } from '@/lib/storage/urls';
 
 const fileTypes = ['meeting-pack', 'audio', 'minutes-draft', 'signed-minutes', 'attachment'];
 
@@ -28,13 +29,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Upload failed: ${uploadError.message}` }, { status: 500 });
   }
 
-  const { data: urlData } = auth.supabase.storage.from('estate-staff-meetings').getPublicUrl(path);
   const { error: fileError } = await auth.supabase.from('estate_staff_meeting_files').insert([{
     meeting_id: meetingId,
     file_type: fileType,
     file_name: file.name,
     file_path: path,
-    public_url: urlData.publicUrl,
+    public_url: signedStorageUrl('estate-staff-meetings', path),
     content_type: file.type || null,
     file_size: file.size,
     uploaded_by: uploadedBy || null,

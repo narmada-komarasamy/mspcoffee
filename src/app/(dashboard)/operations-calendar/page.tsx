@@ -44,7 +44,7 @@ type CalendarEvent = {
   conflict_note: string | null;
 };
 
-type AppUser = { id: string; pin?: string; name: string; role: string; estate: string | null };
+type AppUser = { id: string; name: string; role: string; estate: string | null };
 
 type DraftForm = {
   title: string;
@@ -169,10 +169,7 @@ function blankDraft(): DraftForm {
 }
 
 function authHeaders(): Record<string, string> {
-  const stored = typeof window === "undefined" ? null : localStorage.getItem("msp_user");
-  if (!stored) return {};
-  const user = JSON.parse(stored) as AppUser;
-  return user.id && user.pin ? { "x-msp-user-id": user.id, "x-msp-user-pin": user.pin } : {};
+  return {};
 }
 
 function parseISO(date: string) {

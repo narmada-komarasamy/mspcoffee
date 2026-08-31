@@ -4,6 +4,7 @@ import { ChangeEvent, InputHTMLAttributes, TextareaHTMLAttributes, useCallback, 
 import { useRouter } from "next/navigation";
 import { Download, ExternalLink, IdCard, Loader2, Plus, Printer, RotateCcw, Save, Search, Trash2, Upload, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { signedStorageUrl } from "@/lib/storage/urls";
 import css from "./employee-center.module.css";
 
 type AppUser = { id: string; name: string; role: string; estate: string | null };
@@ -135,7 +136,7 @@ type EmployeeDocument = {
   document_type: EmployeeDocumentType;
   file_name: string;
   file_path: string;
-  public_url: string;
+  public_url: string | null;
   content_type: string | null;
   file_size: number | null;
   uploaded_at: string;
@@ -1062,7 +1063,7 @@ export default function EmployeeCenterPage() {
           }))
         : [blankFamily(1)]
     );
-    setPhoto(employee.photo_public_url || "");
+    setPhoto(employee.photo_path ? signedStorageUrl("employee-center", employee.photo_path) : "");
     setPhotoFile(null);
     flash(`Loaded ${employee.full_name}`);
   };
@@ -1080,7 +1081,7 @@ export default function EmployeeCenterPage() {
 
     setSaving(true);
     let photoPath = selectedEmployee?.photo_path ?? null;
-    let photoUrl = selectedEmployee?.photo_public_url ?? null;
+    let photoUrl: string | null = null;
 
     if (photoFile) {
       const safeName = photoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -1095,9 +1096,8 @@ export default function EmployeeCenterPage() {
         return null;
       }
 
-      const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
       photoPath = path;
-      photoUrl = urlData.publicUrl;
+      photoUrl = signedStorageUrl("employee-center", path);
     }
 
     const payload = payloadFromForm(formToSave, photoUrl, photoPath);
@@ -1156,7 +1156,7 @@ export default function EmployeeCenterPage() {
     }
 
     setSelectedId(employeeId);
-    setPhoto(photoUrl || photoToSave || "");
+    setPhoto(photoPath ? signedStorageUrl("employee-center", photoPath) : photoToSave || "");
     setPhotoFile(null);
     await loadEmployees();
     setSaving(false);
@@ -1237,12 +1237,11 @@ export default function EmployeeCenterPage() {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
     const { error: updateError } = await supabase
       .from("estate_employees")
       .update({
         application_form_path: path,
-        application_form_public_url: urlData.publicUrl,
+        application_form_public_url: signedStorageUrl("employee-center", path),
         application_form_file_name: file.name,
         application_form_uploaded_at: new Date().toISOString(),
       })
@@ -1300,13 +1299,12 @@ export default function EmployeeCenterPage() {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
     const { error: insertError } = await supabase.from("estate_employee_documents").insert({
       employee_id: employeeId,
       document_type: documentType,
       file_name: file.name,
       file_path: path,
-      public_url: urlData.publicUrl,
+      public_url: signedStorageUrl("employee-center", path),
       content_type: file.type || null,
       file_size: file.size,
       uploaded_by: null,
@@ -1344,7 +1342,6 @@ export default function EmployeeCenterPage() {
     }
 
     let attachmentPath: string | null = null;
-    let attachmentUrl: string | null = null;
 
     if (documentNoteFile) {
       const safeName = documentNoteFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -1362,9 +1359,7 @@ export default function EmployeeCenterPage() {
         return;
       }
 
-      const { data: urlData } = supabase.storage.from("employee-center").getPublicUrl(path);
       attachmentPath = path;
-      attachmentUrl = urlData.publicUrl;
     }
 
     const { error } = await supabase.from("estate_employee_document_notes").insert({
@@ -1374,7 +1369,7 @@ export default function EmployeeCenterPage() {
       author_name: currentUser?.name || "Unknown user",
       attachment_file_name: documentNoteFile?.name ?? null,
       attachment_file_path: attachmentPath,
-      attachment_public_url: attachmentUrl,
+      attachment_public_url: attachmentPath ? signedStorageUrl("employee-center", attachmentPath) : null,
       attachment_content_type: documentNoteFile?.type || null,
       attachment_file_size: documentNoteFile?.size ?? null,
     });
@@ -1654,10 +1649,10 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
             {uploadingForm ? <Loader2 size={15} className={css.spin} /> : <Upload size={15} />}
             Upload filled form
           </button>
-          {selectedEmployee?.application_form_public_url && (
+          {selectedEmployee?.application_form_path && (
             <a
               className={css.uploadedFormLink}
-              href={selectedEmployee.application_form_public_url}
+              href={signedStorageUrl("employee-center", selectedEmployee.application_form_path)}
               target="_blank"
               rel="noreferrer"
               title={selectedEmployee.application_form_file_name || "Uploaded filled form"}
@@ -1721,7 +1716,7 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
                           <a
                             key={document.id}
                             className={css.documentLink}
-                            href={document.public_url}
+                            href={signedStorageUrl("employee-center", document.file_path)}
                             target="_blank"
                             rel="noreferrer"
                             title={document.file_name}
@@ -1799,8 +1794,8 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
                       <span>{formatDateTime(note.created_at)}</span>
                     </div>
                     <p>{note.note_text}</p>
-                    {note.attachment_public_url && (
-                      <a className={css.documentLink} href={note.attachment_public_url} target="_blank" rel="noreferrer">
+                    {note.attachment_file_path && (
+                      <a className={css.documentLink} href={signedStorageUrl("employee-center", note.attachment_file_path)} target="_blank" rel="noreferrer">
                         <ExternalLink size={13} />
                         {note.attachment_file_name || "View attachment"}
                       </a>

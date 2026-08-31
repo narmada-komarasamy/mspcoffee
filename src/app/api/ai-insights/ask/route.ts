@@ -4,15 +4,9 @@
  *
  * Streams a Claude response grounded in live Supabase data.
  */
-import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
-  );
-}
+import { requireApiUser } from '@/lib/auth/api';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +27,16 @@ function daysAgo(n: number) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireApiUser(request);
+  if ('error' in auth) return auth.error;
+
+  const limited = checkRateLimit({
+    key: rateLimitKey('ai-insights-ask', auth.user.id),
+    limit: 30,
+    windowMs: 60 * 60 * 1000,
+  });
+  if ('error' in limited) return limited.error;
+
   const body = await request.json();
   const question: string = body.question ?? '';
   const history: { role: 'user' | 'assistant'; content: string }[] = body.history ?? [];
@@ -41,13 +45,10 @@ export async function POST(request: Request) {
     return new Response('Question is required', { status: 400 });
   }
 
-  // Fetch live context
-  const supabase = getSupabase();
-
   const [rainRes, fleetRes, cupRes] = await Promise.all([
-    supabase.from('rainfall').select('date,estate,rainfall_mm').gte('date', daysAgo(30)).order('date', { ascending: false }),
-    supabase.from('fleet_daily').select('date,vehicle_id,total_cost,km_run,fuel_filled_l').gte('date', daysAgo(30)),
-    supabase.from('cup_scores').select('name,estate,score,process,year').order('score', { ascending: false }).limit(20),
+    auth.supabase.from('rainfall').select('date,estate,rainfall_mm').gte('date', daysAgo(30)).order('date', { ascending: false }),
+    auth.supabase.from('fleet_daily').select('date,vehicle_id,total_cost,km_run,fuel_filled_l').gte('date', daysAgo(30)),
+    auth.supabase.from('cup_scores').select('name,estate,score,process,year').order('score', { ascending: false }).limit(20),
   ]);
 
   const rainData  = rainRes.data  ?? [];

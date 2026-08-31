@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = [
   '/reset-password',
   '/accept-invite',
   '/auth/callback',
+  '/premiumshowcase',
 ];
 
 export async function proxy(request: NextRequest) {

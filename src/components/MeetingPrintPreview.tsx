@@ -32,7 +32,6 @@ type PrintAction = {
 type PrintFile = {
   file_type: string;
   file_name: string;
-  public_url: string | null;
 };
 
 type PrintMeeting = {
@@ -131,7 +130,7 @@ function emailBody(
     ...(actions.length ? actions.map((a) => `- ${a.action_text} | Owner: ${a.assigned_to} | Due: ${fmtDate(a.due_date)} | Status: ${a.status}`) : ["- No follow-up actions recorded"]),
     "",
     "Files",
-    ...(files.length ? files.map((f) => `- ${f.file_type}: ${f.file_name}${f.public_url ? ` (${f.public_url})` : ""}`) : ["- No files uploaded"]),
+    ...(files.length ? files.map((f) => `- ${f.file_type}: ${f.file_name}`) : ["- No files uploaded"]),
     "",
     "Next Meeting",
     `Date: ${fmtDate(meeting.next_meeting_date)}`,

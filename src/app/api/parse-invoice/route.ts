@@ -7,11 +7,23 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { requireApiUser } from '@/lib/auth/api';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireApiUser(req, ['admin', 'supervisor', 'ceo']);
+    if ('error' in auth) return auth.error;
+
+    const limited = checkRateLimit({
+      key: rateLimitKey('parse-invoice', auth.user.id),
+      limit: 20,
+      windowMs: 60 * 60 * 1000,
+    });
+    if ('error' in limited) return limited.error;
+
     const body = await req.json();
     const { base64, mediaType } = body as {
       base64: string;

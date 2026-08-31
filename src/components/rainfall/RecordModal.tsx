@@ -15,7 +15,7 @@ export type RainfallRecord = {
 
 interface Props {
   record: RainfallRecord | null; // null = new record
-  authHeaders: Record<string, string> | null;
+  authHeaders?: Record<string, string> | null;
   canDelete: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -28,6 +28,7 @@ async function readApiError(response: Response, fallback: string) {
 
 export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess }: Props) {
   const isEdit = record?.id != null;
+  const requestHeaders = authHeaders ?? { "Content-Type": "application/json" };
   const [form, setForm] = useState<RainfallRecord>(
     record ?? { date: new Date().toISOString().slice(0, 10), estate: "Gowri", rainfall_mm: 0, inches: 0 }
   );
@@ -52,13 +53,12 @@ export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess
   const handleSave = async () => {
     setError("");
     if (!form.date || !form.estate) { setError("Date and estate are required"); return; }
-    if (!authHeaders) { setError("Sign in again before saving rainfall records"); return; }
 
     setSaving(true);
     const payload = { date: form.date, estate: form.estate, rainfall_mm: form.rainfall_mm, inches: form.inches };
     const response = await fetch(isEdit ? `/api/rainfall/${record!.id!}` : "/api/rainfall", {
       method: isEdit ? "PATCH" : "POST",
-      headers: authHeaders,
+      headers: requestHeaders,
       body: JSON.stringify(payload),
     });
     setSaving(false);
@@ -69,13 +69,12 @@ export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess
 
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
-    if (!authHeaders) { setError("Sign in again before deleting rainfall records"); return; }
     if (!canDelete) { setError("You do not have permission to delete rainfall records"); return; }
 
     setDeleting(true);
     const response = await fetch(`/api/rainfall/${record!.id!}`, {
       method: "DELETE",
-      headers: authHeaders,
+      headers: requestHeaders,
     });
     setDeleting(false);
     if (!response.ok) { setError(await readApiError(response, "Could not delete rainfall record")); return; }

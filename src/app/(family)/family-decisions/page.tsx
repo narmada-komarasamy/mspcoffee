@@ -54,7 +54,6 @@ type FamilyDecisionApiState = StoredFamilyDecisionState & {
 
 type AppUser = {
   id?: string;
-  pin?: string;
 };
 
 const familyMembers = ['Ashok', 'Meera', 'Rohan', 'Anika'];
@@ -146,11 +145,9 @@ function familyDecisionAuthHeaders() {
 
   try {
     const user = JSON.parse(stored) as AppUser;
-    if (!user.id || !user.pin) return null;
+    if (!user.id) return null;
     return {
       'Content-Type': 'application/json',
-      'x-msp-user-id': user.id,
-      'x-msp-user-pin': user.pin,
     };
   } catch {
     return null;

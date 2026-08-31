@@ -1,0 +1,289 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 14% 14%, rgba(185, 127, 65, 0.24), transparent 28rem),
+    radial-gradient(circle at 86% 16%, rgba(146, 64, 106, 0.2), transparent 30rem),
+    linear-gradient(135deg, #120f0d 0%, #20170f 43%, #f4eee0 43.2%, #fffaf1 100%);
+  color: #fff7e8;
+  font-family: var(--t-font);
+  overflow-x: hidden;
+}
+
+.hero {
+  min-height: 86vh;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+  gap: clamp(28px, 6vw, 88px);
+  align-items: center;
+  padding: clamp(34px, 6vw, 72px) 0 clamp(22px, 4vw, 52px);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 560px;
+}
+
+.kicker {
+  margin: 0 0 22px;
+  color: #e5c477;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.copy h1 {
+  margin: 0;
+  font-family: var(--t-font-display);
+  font-size: clamp(4.5rem, 12vw, 10rem);
+  font-weight: 700;
+  line-height: 0.82;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.estate {
+  margin: 18px 0 0;
+  color: #d9a9d6;
+  font-size: clamp(1rem, 2vw, 1.42rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.description {
+  max-width: 520px;
+  margin: 28px 0 0;
+  color: rgba(255, 247, 232, 0.82);
+  font-size: clamp(1rem, 1.6vw, 1.18rem);
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.notes span {
+  border: 1px solid rgba(229, 196, 119, 0.42);
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: rgba(255, 247, 232, 0.08);
+  color: #f5d88e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 20px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.primaryAction {
+  background: #e5c477;
+  color: #1a120c;
+  box-shadow: 0 16px 36px rgba(229, 196, 119, 0.18);
+}
+
+.secondaryAction {
+  border: 1px solid rgba(255, 247, 232, 0.34);
+  color: #fff7e8;
+}
+
+.productStage {
+  position: relative;
+  min-height: clamp(560px, 78vh, 820px);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.productStage::before {
+  content: "";
+  position: absolute;
+  inset: 11% 4% 9% 18%;
+  z-index: -2;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(247, 221, 156, 0.42) 0%, rgba(209, 145, 77, 0.12) 44%, transparent 68%),
+    #7f4229;
+  filter: blur(2px);
+}
+
+.productStage::after {
+  content: "";
+  position: absolute;
+  right: 2%;
+  bottom: 5%;
+  left: 12%;
+  z-index: -3;
+  height: 24%;
+  border-radius: 50%;
+  background: rgba(36, 20, 10, 0.26);
+  filter: blur(24px);
+}
+
+.brandMark {
+  position: absolute;
+  top: 6%;
+  right: 2%;
+  z-index: -1;
+  color: rgba(35, 22, 12, 0.08);
+  font-size: clamp(4.5rem, 10vw, 9rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.productImage {
+  width: min(76vw, 445px);
+  height: auto;
+  filter: drop-shadow(0 30px 42px rgba(30, 18, 10, 0.36));
+}
+
+.profile {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  padding: 0 0 clamp(34px, 5vw, 64px);
+  color: #261912;
+}
+
+.profile div {
+  min-height: 116px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-top: 1px solid rgba(50, 29, 16, 0.16);
+  background: rgba(255, 250, 241, 0.72);
+  padding: 22px;
+}
+
+.profile p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.profileLabel {
+  margin-bottom: 8px !important;
+  color: #8a6030;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .page {
+    background:
+      radial-gradient(circle at 50% 30%, rgba(185, 127, 65, 0.24), transparent 24rem),
+      linear-gradient(180deg, #120f0d 0%, #20170f 58%, #fffaf1 58.2%, #fffaf1 100%);
+  }
+
+  .hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding-top: 34px;
+  }
+
+  .copy {
+    max-width: none;
+  }
+
+  .copy h1 {
+    font-size: clamp(4.25rem, 18vw, 7.8rem);
+  }
+
+  .productStage {
+    min-height: 520px;
+    order: -1;
+  }
+
+  .productImage {
+    width: min(82vw, 390px);
+  }
+
+  .brandMark {
+    display: none;
+  }
+
+  .profile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .hero,
+  .profile {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .copy h1 {
+    font-size: clamp(3.6rem, 19vw, 5.8rem);
+  }
+
+  .estate {
+    font-size: 0.9rem;
+  }
+
+  .description {
+    font-size: 0.96rem;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    flex: 1 1 150px;
+  }
+
+  .productStage {
+    min-height: 430px;
+  }
+
+  .productImage {
+    width: min(90vw, 330px);
+  }
+
+  .profile {
+    grid-template-columns: 1fr;
+  }
+
+  .profile div {
+    min-height: 92px;
+  }
+}

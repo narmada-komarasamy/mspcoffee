@@ -3,6 +3,7 @@ import { buildRecipientReportPayload, normalizeRecipients, normalizeTemplate } f
 import { EmailDeliveryError, getEmailProviderConfig, sendEmail } from '@/lib/email/provider';
 import { renderEmail } from '@/lib/email/render';
 import { requireEmailUser } from '../../_auth';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 type BatchAction = 'send_now' | 'schedule';
 
@@ -19,6 +20,13 @@ function scheduleDate(value: unknown) {
 export async function POST(request: Request) {
   const auth = await requireEmailUser(request);
   if ('error' in auth) return auth.error;
+
+  const limited = checkRateLimit({
+    key: rateLimitKey('email-report-batches', auth.user.id),
+    limit: 10,
+    windowMs: 60 * 60 * 1000,
+  });
+  if ('error' in limited) return limited.error;
 
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const action = actionValue(body?.action);

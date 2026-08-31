@@ -5,6 +5,8 @@
  * This is a helper for data entry only; the user still reviews before saving.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { requireApiUser } from '@/lib/auth/api';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,16 @@ function cleanString(value: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireApiUser(req, ['admin', 'hr', 'supervisor']);
+    if ('error' in auth) return auth.error;
+
+    const limited = checkRateLimit({
+      key: rateLimitKey('parse-aadhaar-card', auth.user.id),
+      limit: 20,
+      windowMs: 60 * 60 * 1000,
+    });
+    if ('error' in limited) return limited.error;
+
     const body = await req.json();
     const { base64, mediaType } = body as {
       base64?: string;
@@ -114,8 +126,7 @@ Rules:
     });
 
     if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      return NextResponse.json({ error: `OpenAI parse failed: ${errorText}` }, { status: 502 });
+      return NextResponse.json({ error: 'OpenAI parse failed' }, { status: 502 });
     }
 
     const aiPayload = await aiResponse.json();

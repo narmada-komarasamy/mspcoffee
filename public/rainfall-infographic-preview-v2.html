@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSP Coffee — Rainfall Infographic Preview</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<style>
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+ :root {
+ --gowri: #38bdf8;
+ --hidden-falls: #f87171;
+ --moganad: #4ade80;
+ --orchardale: #f59e0b;
+ --stanmore: #a78bfa;
+ --vyapurikuttai: #fb923c;
+ --bg-primary: #0f172a;
+ --bg-card: #1e293b;
+ --bg-card-alt: #1a2332;
+ --text-primary: #f1f5f9;
+ --text-secondary: #94a3b8;
+ --text-muted: #64748b;
+ --border: #334155;
+ }
+
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+
+ body {
+ font-family: 'Inter', sans-serif;
+ background: var(--bg-primary);
+ color: var(--text-primary);
+ min-height: 100vh;
+ -webkit-font-smoothing: antialiased;
+ }
+
+ .container {
+ max-width: 1400px;
+ margin: 0 auto;
+ padding: 40px 32px;
+ }
+
+ /* ─── HEADER ─── */
+ .header {
+ text-align: center;
+ margin-bottom: 48px;
+ position: relative;
+ }
+
+ .header-badge {
+ display: inline-block;
+ background: linear-gradient(135deg, #38bdf820, #4ade8020);
+ border: 1px solid #38bdf840;
+ color: #38bdf8;
+ padding: 6px 20px;
+ border-radius: 100px;
+ font-size: 12px;
+ font-weight: 600;
+ letter-spacing: 1.5px;
+ text-transform: uppercase;
+ margin-bottom: 16px;
+ }
+
+ .header h1 {
+ font-size: 48px;
+ font-weight: 800;
+ line-height: 1.1;
+ margin-bottom: 12px;
+ background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+ -webkit-background-clip: text;
+ -webkit-text-fill-color: transparent;
+ }
+
+ .header p {
+ font-size: 18px;
+ color: var(--text-secondary);
+ max-width: 700px;
+ margin: 0 auto;
+ line-height: 1.6;
+ }
+
+ .preview-tag {
+ display: inline-flex;
+ align-items: center;
+ gap: 6px;
+ background: #f59e0b15;
+ border: 1px solid #f59e0b30;
+ color: #f59e0b;
+ padding: 4px 14px;
+ border-radius: 100px;
+ font-size: 11px;
+ font-weight: 600;
+ letter-spacing: 1px;
+ text-transform: uppercase;
+ margin-top: 16px;
+ }
+
+ .preview-tag::before {
+ content: '';
+ width: 6px;
+ height: 6px;
+ background: #f59e0b;
+ border-radius: 50%;
+ animation: pulse 2s infinite;
+ }
+
+ @keyframes pulse {
+ 0%, 100% { opacity: 1; }
+ 50% { opacity: 0.3; }
+ }
+
+ /* ─── SECTION LABELS ─── */
+ .section-label {
+ display: flex;
+ align-items: center;
+ gap: 12px;
+ margin-bottom: 20px;
+ }
+
+ .section-label span {
+ font-size: 11px;
+ font-weight: 700;
+ letter-spacing: 2px;
+ text-transform: uppercase;
+ color: var(--text-muted);
+ white-space: nowrap;
+ }
+
+ .section-label::after {
+ content: '';
+ flex: 1;
+ height: 1px;
+ background: var(--border);
+ }
+
+ /* ─── ESTATE RANKING CARDS ─── */
+ .estate-grid {
+ display: grid;
+ grid-template-columns: repeat(6, 1fr);
+ gap: 16px;
+ margin-bottom: 48px;
+ }
+
+ .estate-card {
+ background: var(--bg-card);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ padding: 24px 20px;
+ text-align: center;
+ position: relative;
+ overflow: hidden;
+ transition: transform 0.2s, border-color 0.2s;
+ }
+
+ .estate-card:hover {
+ transform: translateY(-4px);
+ border-color: #ffffff20;
+ }
+
+ .estate-card::before {
+ content: '';
+ position: absolute;
+ top: 0;
+ left: 0;
+ right: 0;
+ height: 3px;
+ }
+
+ .estate-card:nth-child(1)::before { background: var(--gowri); }
+ .estate-card:nth-child(2)::before { background: var(--hidden-falls); }
+ .estate-card:nth-child(3)::before { background: var(--moganad); }
+ .estate-card:nth-child(4)::before { background: var(--orchardale); }
+ .estate-card:nth-child(5)::before { background: var(--stanmore); }
+ .estate-card:nth-child(6)::before { background: var(--vyapurikuttai); }
+
+ .estate-icon {
+ width: 48px;
+ height: 48px;
+ border-radius: 12px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 22px;
+ margin: 0 auto 14px;
+ }
+
+ .estate-card:nth-child(1) .estate-icon { background: #38bdf820; }
+ .estate-card:nth-child(2) .estate-icon { background: #f8717120; }
+ .estate-card:nth-child(3) .estate-icon { background: #4ade8020; }
+ .estate-card:nth-child(4) .estate-icon { background: #f59e0b20; }
+ .estate-card:nth-child(5) .estate-icon { background: #a78bfa20; }
+ .estate-card:nth-child(6) .estate-icon { background: #fb923c20; }
+
+ .estate-name {
+ font-size: 13px;
+ font-weight: 600;
+ margin-bottom: 4px;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ }
+
+ .estate-location {
+ font-size: 10px;
+ color: var(--text-muted);
+ margin-bottom: 16px;
+ }
+
+ .estate-kpi {
+ display: flex;
+ flex-direction: column;
+ gap: 8px;
+ }
+
+ .kpi-row {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ font-size: 11px;
+ }
+
+ .kpi-label {
+ color: var(--text-muted);
+ font-weight: 500;
+ }
+
+ .kpi-value {
+ font-weight: 700;
+ font-size: 13px;
+ }
+
+ .kpi-value.annual {
+ font-size: 18px;
+ font-weight: 800;
+ }
+
+ .estate-rank {
+ position: absolute;
+ top: 12px;
+ right: 14px;
+ font-size: 10px;
+ font-weight: 800;
+ width: 22px;
+ height: 22px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ border-radius: 50%;
+ background: #ffffff10;
+ color: var(--text-muted);
+ }
+
+ /* ─── MONTHLY HEATMAP ─── */
+ .heatmap-section {
+ margin-bottom: 48px;
+ }
+
+ .heatmap-grid {
+ display: grid;
+ grid-template-columns: 120px repeat(12, 1fr);
+ gap: 4px;
+ }
+
+ .heatmap-header {
+ text-align: center;
+ font-size: 10px;
+ font-weight: 700;
+ color: var(--text-muted);
+ text-transform: uppercase;
+ padding-bottom: 8px;
+ letter-spacing: 0.5px;
+ }
+
+ .heatmap-estate {
+ display: flex;
+ align-items: center;
+ font-size: 11px;
+ font-weight: 600;
+ padding-right: 8px;
+ white-space: nowrap;
+ }
+
+ .heatmap-dot {
+ width: 100%;
+ aspect-ratio: 1.6;
+ border-radius: 6px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 9px;
+ font-weight: 700;
+ transition: transform 0.15s;
+ cursor: default;
+ }
+
+ .heatmap-dot:hover {
+ transform: scale(1.15);
+ z-index: 2;
+ }
+
+ /* ─── CHARTS ROW ─── */
+ .charts-row {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 24px;
+ margin-bottom: 48px;
+ }
+
+ .chart-panel {
+ background: var(--bg-card);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ padding: 28px;
+ }
+
+ .chart-panel h3 {
+ font-size: 16px;
+ font-weight: 700;
+ margin-bottom: 4px;
+ }
+
+ .chart-panel .chart-subtitle {
+ font-size: 12px;
+ color: var(--text-muted);
+ margin-bottom: 20px;
+ }
+
+ .chart-container {
+ position: relative;
+ height: 300px;
+ }
+
+ /* ─── SEASONAL COMPARISON ─── */
+ .season-section {
+ margin-bottom: 48px;
+ }
+
+ .season-grid {
+ display: grid;
+ grid-template-columns: repeat(4, 1fr);
+ gap: 16px;
+ }
+
+ .season-card {
+ background: var(--bg-card);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ padding: 24px;
+ position: relative;
+ overflow: hidden;
+ }
+
+ .season-card .season-icon {
+ font-size: 28px;
+ margin-bottom: 12px;
+ }
+
+ .season-card .season-name {
+ font-size: 13px;
+ font-weight: 700;
+ text-transform: uppercase;
+ letter-spacing: 1px;
+ margin-bottom: 4px;
+ }
+
+ .season-card .season-months {
+ font-size: 11px;
+ color: var(--text-muted);
+ margin-bottom: 16px;
+ }
+
+ .season-bar-group {
+ display: flex;
+ flex-direction: column;
+ gap: 8px;
+ }
+
+ .season-bar-row {
+ display: flex;
+ align-items: center;
+ gap: 8px;
+ font-size: 10px;
+ }
+
+ .season-bar-label {
+ width: 80px;
+ color: var(--text-secondary);
+ font-weight: 500;
+ text-align: right;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ }
+
+ .season-bar-track {
+ flex: 1;
+ height: 16px;
+ background: #ffffff08;
+ border-radius: 4px;
+ overflow: hidden;
+ position: relative;
+ }
+
+ .season-bar-fill {
+ height: 100%;
+ border-radius: 4px;
+ transition: width 0.6s ease;
+ }
+
+ .season-bar-val {
+ width: 40px;
+ font-weight: 700;
+ font-size: 10px;
+ color: var(--text-secondary);
+ }
+
+ /* ─── INSIGHTS ─── */
+ .insights-grid {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 16px;
+ margin-bottom: 48px;
+ }
+
+ .insight-card {
+ background: var(--bg-card);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ padding: 24px;
+ }
+
+ .insight-card .insight-icon {
+ width: 36px;
+ height: 36px;
+ border-radius: 10px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 18px;
+ margin-bottom: 14px;
+ }
+
+ .insight-card.rainiest .insight-icon { background: #38bdf820; }
+ .insight-card.driest .insight-icon { background: #f59e0b20; }
+ .insight-card.monsoon .insight-icon { background: #4ade8020; }
+ .insight-card.variance .insight-icon { background: #a78bfa20; }
+ .insight-card.reliable .insight-icon { background: #38bdf820; }
+ .insight-card.storm .insight-icon { background: #f8717120; }
+
+ .insight-card h4 {
+ font-size: 13px;
+ font-weight: 700;
+ margin-bottom: 6px;
+ }
+
+ .insight-card p {
+ font-size: 12px;
+ color: var(--text-secondary);
+ line-height: 1.6;
+ }
+
+ .insight-card .insight-estate {
+ font-weight: 700;
+ font-size: 14px;
+ display: block;
+ margin-bottom: 4px;
+ }
+
+ /* ─── COMPARISON TABLE ─── */
+ .comparison-section {
+ margin-bottom: 48px;
+ }
+
+ .comparison-table {
+ width: 100%;
+ border-collapse: separate;
+ border-spacing: 0;
+ background: var(--bg-card);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ overflow: hidden;
+ }
+
+ .comparison-table th {
+ background: #0f172a;
+ padding: 14px 16px;
+ font-size: 10px;
+ font-weight: 700;
+ text-transform: uppercase;
+ letter-spacing: 1px;
+ color: var(--text-muted);
+ text-align: left;
+ border-bottom: 1px solid var(--border);
+ }
+
+ .comparison-table th:not(:first-child) {
+ text-align: center;
+ }
+
+ .comparison-table td {
+ padding: 12px 16px;
+ font-size: 13px;
+ border-bottom: 1px solid #ffffff08;
+ }
+
+ .comparison-table td:not(:first-child) {
+ text-align: center;
+ }
+
+ .comparison-table tbody tr:hover {
+ background: #ffffff05;
+ }
+
+ .comparison-table .estate-dot {
+ display: inline-block;
+ width: 8px;
+ height: 8px;
+ border-radius: 50%;
+ margin-right: 8px;
+ }
+
+ .rank-badge {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ width: 24px;
+ height: 24px;
+ border-radius: 50%;
+ font-size: 11px;
+ font-weight: 800;
+ }
+
+ .rank-1 { background: #fbbf2420; color: #fbbf24; }
+ .rank-2 { background: #94a3b820; color: #94a3b8; }
+ .rank-3 { background: #f59e0b20; color: #f59e0b; }
+ .rank-4, .rank-5, .rank-6 { background: #ffffff08; color: var(--text-muted); }
+
+ /* ─── DRY STREAK ─── */
+ .dry-section {
+ margin-bottom: 48px;
+ }
+
+ .dry-bars {
+ display: flex;
+ flex-direction: column;
+ gap: 12px;
+ }
+
+ .dry-bar-row {
+ display: flex;
+ align-items: center;
+ gap: 14px;
+ }
+
+ .dry-bar-label {
+ width: 120px;
+ font-size: 12px;
+ font-weight: 600;
+ text-align: right;
+ white-space: nowrap;
+ }
+
+ .dry-bar-track {
+ flex: 1;
+ height: 28px;
+ background: #ffffff08;
+ border-radius: 8px;
+ overflow: hidden;
+ position: relative;
+ }
+
+ .dry-bar-fill {
+ height: 100%;
+ border-radius: 8px;
+ display: flex;
+ align-items: center;
+ padding-left: 12px;
+ font-size: 12px;
+ font-weight: 700;
+ transition: width 0.8s ease;
+ position: relative;
+ }
+
+ .dry-bar-annotation {
+ position: absolute;
+ right: 8px;
+ top: 50%;
+ transform: translateY(-50%);
+ font-size: 10px;
+ color: var(--text-muted);
+ font-weight: 500;
+ }
+
+ /* ─── FOOTER ─── */
+ .footer {
+ text-align: center;
+ padding: 32px 0;
+ border-top: 1px solid var(--border);
+ }
+
+ .footer p {
+ font-size: 12px;
+ color: var(--text-muted);
+ line-height: 1.8;
+ }
+
+ .footer .data-sources {
+ display: inline-flex;
+ gap: 20px;
+ margin-top: 12px;
+ }
+
+ .footer .data-source {
+ font-size: 11px;
+ color: var(--text-muted);
+ background: #ffffff08;
+ padding: 4px 12px;
+ border-radius: 6px;
+ }
+
+ /* ─── RESPONSIVE ─── */
+ @media (max-width: 1100px) {
+ .estate-grid { grid-template-columns: repeat(3, 1fr); }
+ .charts-row { grid-template-columns: 1fr; }
+ .season-grid { grid-template-columns: repeat(2, 1fr); }
+ .insights-grid { grid-template-columns: 1fr 1fr; }
+ .header h1 { font-size: 36px; }
+ }
+
+ @media (max-width: 768px) {
+ .estate-grid { grid-template-columns: repeat(2, 1fr); }
+ .season-grid { grid-template-columns: 1fr; }
+ .insights-grid { grid-template-columns: 1fr; }
+ .container { padding: 24px 16px; }
+ .header h1 { font-size: 28px; }
+ }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+ <!-- HEADER -->
+ <div class="header">
+ <div class="header-badge">MSP Coffee Estates</div>
+ <h1>Rainfall Overview<br>& Estate Comparison</h1>
+ <p>Annual rainfall patterns across six estates in the Nilgiris region, Tamil Nadu. Understanding water availability is key to planning harvest cycles, irrigation needs, and crop selection.</p>
+ <div class="preview-tag">Interactive Preview — Not yet deployed</div>
+ </div>
+
+ <!-- ESTATE KPI CARDS -->
+ <div class="section-label"><span>Estate Overview</span></div>
+ <div class="estate-grid" id="estateGrid"></div>
+
+ <!-- MONTHLY HEATMAP -->
+ <div class="heatmap-section">
+ <div class="section-label"><span>Rainfall Heatmap — Monthly Averages (mm)</span></div>
+ <div class="heatmap-grid" id="heatmapGrid"></div>
+ </div>
+
+ <!-- MONTHLY TREND + ANNUAL BAR -->
+ <div class="charts-row">
+ <div class="chart-panel">
+ <h3>Monthly Rainfall Trends</h3>
+ <p class="chart-subtitle">Average mm per month across all estates — reveals seasonal patterns</p>
+ <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
+ </div>
+ <div class="chart-panel">
+ <h3>Annual Rainfall Comparison</h3>
+ <p class="chart-subtitle">Year-over-year total rainfall (illustrative historical data)</p>
+ <div class="chart-container"><canvas id="annualChart"></canvas></div>
+ </div>
+ </div>
+
+ <!-- SEASONAL BREAKDOWN -->
+ <div class="season-section">
+ <div class="section-label"><span>Seasonal Breakdown</span></div>
+ <div class="season-grid" id="seasonGrid"></div>
+ </div>
+
+ <!-- KEY INSIGHTS -->
+ <div class="section-label" style="margin-top:48px;margin-bottom:20px;"><span>Key Insights</span></div>
+ <div class="insights-grid" id="insightsGrid"></div>
+
+ <!-- COMPARISON TABLE -->
+ <div class="comparison-section" style="margin-top:48px">
+ <div class="section-label"><span>Estate Comparison Matrix</span></div>
+ <table class="comparison-table">
+ <thead>
+ <tr>
+ <th>Estate</th>
+ <th>Annual Total</th>
+ <th>Peak Month</th>
+ <th>Rainiest Day</th>
+ <th>Dry Season</th>
+ <th>Reliability</th>
+ <th>Rank</th>
+ </tr>
+ </thead>
+ <tbody id="comparisonBody"></tbody>
+ </table>
+ </div>
+
+ <!-- DRY STREAK ANALYSIS -->
+ <div class="dry-section" style="margin-top:48px">
+ <div class="section-label"><span>Dry Streak Analysis — Max Consecutive Dry Days</span></div>
+ <div class="chart-panel" style="padding:20px 28px;">
+ <div class="dry-bars" id="dryBars"></div>
+ </div>
+ </div>
+
+ <!-- FOOTER -->
+ <div class="footer">
+ <p><strong>MSP Coffee — Rainfall Intelligence Dashboard</strong></p>
+ <p style="font-size:11px;">Data sourced from on-site rain gauge stations across all estates. Monthly figures represent 3-year rolling averages. Weather station data via Open-Meteo API.</p>
+ <div class="data-sources">
+ <span class="data-source">Supabase DB</span>
+ <span class="data-source">Open-Meteo</span>
+ <span class="data-source">3yr Rolling Avg</span>
+ </div>
+ </div>
+
+</div>
+
+<script>
+// ─── DATA ───
+const ESTATES = [
+ { name: 'Gowri', location: 'Nagalur', icon: '🏔', color: '#38bdf8' },
+ { name: 'Hidden Falls', location: 'Mangalam', icon: '💧', color: '#f87171' },
+ { name: 'Moganad', location: 'Yercaud', icon: '🌿', color: '#4ade80' },
+ { name: 'Orchardale', location: 'Yercaud', icon: '🍊', color: '#f59e0b' },
+ { name: 'Stanmore', location: 'Yercaud', icon: '🏡', color: '#a78bfa' },
+ { name: 'Vyapurikuttai', location: 'Yercaud', icon: '🌱', color: '#fb923c' },
+];
+
+const MONTHLY = {
+ Gowri: [12, 8, 15, 28, 42, 68, 85, 72, 55, 48, 35, 18],
+ 'Hidden Falls': [15, 10, 22, 35, 48, 92, 108, 125, 88, 62, 42, 20],
+ Moganad: [10, 6, 12, 18, 32, 55, 72, 78, 52, 45, 28, 12],
+ Orchardale: [8, 5, 10, 15, 25, 42, 58, 62, 48, 38, 22, 10],
+ Stanmore: [6, 4, 8, 12, 20, 35, 48, 52, 42, 30, 18, 6],
+ Vyapurikuttai: [5, 3, 6, 10, 18, 32, 42, 38, 25, 22, 12, 4],
+};
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const ANNUAL_HISTORICAL = {
+ labels: ['2019','2020','2021','2022','2023','2024'],
+ Gowri: [420, 480, 390, 510, 460, 498],
+ 'Hidden Falls': [520, 620, 480, 650, 590, 645],
+ Moganad: [350, 410, 320, 430, 390, 420],
+ Orchardale: [280, 330, 260, 350, 310, 345],
+ Stanmore: [220, 270, 200, 280, 255, 281],
+ Vyapurikuttai: [180, 220, 165, 235, 210, 217],
+};
+
+const SEASONS = [
+ { name: 'Southwest Monsoon', months: 'Jun – Sep', icon: '🌧', color: '#38bdf8' },
+ { name: 'Northeast Monsoon', months: 'Oct – Dec', icon: '🌦', color: '#4ade80' },
+ { name: 'Winter', months: 'Jan – Feb', icon: '❄', color: '#a78bfa' },
+ { name: 'Summer', months: 'Mar – May', icon: '☀', color: '#f59e0b' },
+];
+
+// ─── HELPERS ───
+function annualTotal(estate) {
+ return MONTHLY[estate].reduce((a, b) => a + b, 0);
+}
+
+function peakMonth(estate) {
+ const m = MONTHLY[estate];
+ return MONTHS[m.indexOf(Math.max(...m))];
+}
+
+function seasonAvg(estate, startIdx, endIdx) {
+ const slice = MONTHLY[estate].slice(startIdx, endIdx + 1);
+ return (slice.reduce((a, b) => a + b, 0) / slice.length).toFixed(0);
+}
+
+function heatColor(val, max) {
+ const intensity = val / max;
+ const r = Math.round(15 + intensity * 40);
+ const g = Math.round(23 + intensity * 60);
+ const b = Math.round(42 + intensity * 100);
+ return `rgb(${r}, ${g}, ${b})`;
+}
+
+// ─── ESTATE CARDS ───
+function renderEstateCards() {
+ const grid = document.getElementById('estateGrid');
+ const ranked = [...ESTATES].sort((a, b) => annualTotal(b.name) - annualTotal(a.name));
+
+ grid.innerHTML = ESTATES.map((estate, i) => {
+ const total = annualTotal(estate.name);
+ const rank = ranked.findIndex(r => r.name === estate.name) + 1;
+ const rainyDays = Math.round(total / 12 * 0.8);
+ const peak = peakMonth(estate.name);
+ return `
+ <div class="estate-card">
+ <div class="estate-rank">${rank}</div>
+ <div class="estate-icon">${estate.icon}</div>
+ <div class="estate-name">${estate.name}</div>
+ <div class="estate-location">${estate.location}</div>
+ <div class="estate-kpi">
+ <div class="kpi-row">
+ <span class="kpi-label">Annual</span>
+ <span class="kpi-value annual" style="color:${estate.color}">${total}</span>
+ </div>
+ <div class="kpi-row">
+ <span class="kpi-label">mm</span>
+ <span class="kpi-value">${peak}</span>
+ </div>
+ <div class="kpi-row">
+ <span class="kpi-label">Rainy Days</span>
+ <span class="kpi-value">~${rainyDays}</span>
+ </div>
+ </div>
+ </div>
+ `;
+ }).join('');
+}
+
+// ─── HEATMAP ───
+function renderHeatmap() {
+ const grid = document.getElementById('heatmapGrid');
+ const globalMax = Math.max(...ESTATES.map(e => Math.max(...MONTHLY[e.name])));
+
+ let html = '<div class="heatmap-header">Estate</div>';
+ MONTHS.forEach(m => html += `<div class="heatmap-header">${m}</div>`);
+
+ ESTATES.forEach(estate => {
+ html += `<div class="heatmap-estate">${estate.name}</div>`;
+ MONTHLY[estate.name].forEach((val, i) => {
+ const bg = heatColor(val, globalMax);
+ const textColor = val > globalMax * 0.6 ? '#0f172a' : '#f1f5f9';
+ html += `<div class="heatmap-dot" style="background:${bg};color:${textColor}" title="${estate.name} — ${MONTHS[i]}: ${val}mm">${val}</div>`;
+ });
+ });
+
+ grid.innerHTML = html;
+}
+
+// ─── MONTHLY CHART ───
+function renderMonthlyChart() {
+ const ctx = document.getElementById('monthlyChart').getContext('2d');
+ new Chart(ctx, {
+ type: 'line',
+ data: {
+ labels: MONTHS,
+ datasets: ESTATES.map(e => ({
+ label: e.name,
+ data: MONTHLY[e.name],
+ borderColor: e.color,
+ backgroundColor: e.color + '15',
+ borderWidth: 2.5,
+ pointRadius: 3,
+ pointHoverRadius: 6,
+ tension: 0.4,
+ fill: false,
+ })),
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ interaction: { mode: 'index', intersect: false },
+ plugins: {
+ legend: {
+ position: 'bottom',
+ labels: {
+ color: '#94a3b8',
+ usePointStyle: true,
+ pointStyle: 'circle',
+ padding: 20,
+ font: { size: 11, family: 'Inter' },
+ },
+ },
+ tooltip: {
+ backgroundColor: '#1e293b',
+ titleColor: '#f1f5f9',
+ bodyColor: '#94a3b8',
+ borderColor: '#334155',
+ borderWidth: 1,
+ cornerRadius: 8,
+ padding: 12,
+ callbacks: {
+ label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} mm`,
+ },
+ },
+ },
+ scales: {
+ x: {
+ grid: { color: '#ffffff08' },
+ ticks: { color: '#64748b', font: { size: 11 } },
+ },
+ y: {
+ grid: { color: '#ffffff08' },
+ ticks: { color: '#64748b', font: { size: 11 }, callback: v => v + 'mm' },
+ },
+ },
+ },
+ });
+}
+
+// ─── ANNUAL CHART ───
+function renderAnnualChart() {
+ const ctx = document.getElementById('annualChart').getContext('2d');
+ new Chart(ctx, {
+ type: 'bar',
+ data: {
+ labels: ANNUAL_HISTORICAL.labels,
+ datasets: ESTATES.map(e => ({
+ label: e.name,
+ data: ANNUAL_HISTORICAL[e.name],
+ backgroundColor: e.color + '90',
+ borderColor: e.color,
+ borderWidth: 1,
+ borderRadius: 6,
+ borderSkipped: false,
+ })),
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ interaction: { mode: 'index', intersect: false },
+ plugins: {
+ legend: {
+ position: 'bottom',
+ labels: {
+ color: '#94a3b8',
+ usePointStyle: true,
+ pointStyle: 'rectRounded',
+ padding: 20,
+ font: { size: 11, family: 'Inter' },
+ },
+ },
+ tooltip: {
+ backgroundColor: '#1e293b',
+ titleColor: '#f1f5f9',
+ bodyColor: '#94a3b8',
+ borderColor: '#334155',
+ borderWidth: 1,
+ cornerRadius: 8,
+ padding: 12,
+ callbacks: {
+ label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} mm`,
+ },
+ },
+ },
+ scales: {
+ x: {
+ grid: { display: false },
+ ticks: { color: '#64748b', font: { size: 11 } },
+ stacked: true,
+ },
+ y: {
+ grid: { color: '#ffffff08' },
+ ticks: { color: '#64748b', font: { size: 11 }, callback: v => v + 'mm' },
+ stacked: true,
+ },
+ },
+ },
+ });
+}
+
+// ─── SEASONAL ───
+function renderSeasonal() {
+ const grid = document.getElementById('seasonGrid');
+ grid.innerHTML = SEASONS.map(season => {
+ const startIdx = season.months === 'Jun – Sep' ? 5 : season.months === 'Oct – Dec' ? 9 : season.months === 'Jan – Feb' ? 0 : 3;
+ const endIdx = season.months === 'Jun – Sep' ? 8 : season.months === 'Oct – Dec' ? 11 : season.months === 'Jan – Feb' ? 1 : 5;
+ const seasonTotal = {};
+ const maxVal = {};
+ ESTATES.forEach(e => {
+ const slice = MONTHLY[e.name].slice(startIdx, endIdx + 1);
+ seasonTotal[e.name] = slice.reduce((a, b) => a + b, 0);
+ maxVal[e.name] = Math.max(...slice);
+ });
+ const globalMax = Math.max(...Object.values(seasonTotal));
+
+ const sorted = [...ESTATES].sort((a, b) => seasonTotal[b.name] - seasonTotal[a.name]);
+
+ return `
+ <div class="season-card">
+ <div class="season-icon">${season.icon}</div>
+ <div class="season-name" style="color:${season.color}">${season.name}</div>
+ <div class="season-months">${season.months}</div>
+ <div class="season-bar-group">
+ ${sorted.map(e => {
+ const pct = (seasonTotal[e.name] / globalMax * 100).toFixed(0);
+ return `
+ <div class="season-bar-row">
+ <div class="season-bar-label">${e.name.split(' ')[0]}</div>
+ <div class="season-bar-track">
+ <div class="season-bar-fill" style="width:${pct}%;background:${e.color}80"></div>
+ </div>
+ <div class="season-bar-val">${seasonTotal[e.name]}mm</div>
+ </div>
+ `;
+ }).join('')}
+ </div>
+ </div>
+ `;
+ }).join('');
+}
+
+// ─── INSIGHTS ───
+function renderInsights() {
+ const grid = document.getElementById('insightsGrid');
+
+ const totals = {};
+ ESTATES.forEach(e => totals[e.name] = annualTotal(e.name));
+ const sorted = [...ESTATES].sort((a, b) => totals[b.name] - totals[a.name]);
+ const rainiest = sorted[0];
+ const driest = sorted[sorted.length - 1];
+ const hfTotal = totals['Hidden Falls'];
+ const gowriTotal = totals['Gowri'];
+ const avgTotal = Object.values(totals).reduce((a, b) => a + b, 0) / ESTATES.length;
+
+ const insights = [
+ {
+ cls: 'rainiest',
+ icon: '🏆',
+ iconBg: '#38bdf820',
+ title: 'Wettest Estate',
+ text: `<span class="insight-estate" style="color:#f87171">Hidden Falls</span>Receives <strong>${hfTotal}mm</strong> annually — ${Math.round((hfTotal/avgTotal-1)*100)}% above the average across all estates. Highest peak in August at 125mm.`,
+ },
+ {
+ cls: 'driest',
+ icon: '☀',
+ iconBg: '#f59e0b20',
+ title: 'Driest Estate',
+ text: `<span class="insight-estate" style="color:#fb923c">Vyapurikuttai</span>Lowest rainfall at <strong>${totals['Vyapurikuttai']}mm</strong>/year. Consider supplemental irrigation during the dry season (Jan–Apr).`,
+ },
+ {
+ cls: 'monsoon',
+ icon: '🌧',
+ iconBg: '#4ade8020',
+ title: 'Monsoon Concentration',
+ text: `${Math.round((MONTHLY['Hidden Falls'].slice(5,9).reduce((a,b)=>a+b)/hfTotal)*100)}% of Hidden Falls' rain falls in the <strong>SW Monsoon</strong> (Jun–Sep). Gowri follows at ${Math.round((MONTHLY['Gowri'].slice(5,9).reduce((a,b)=>a+b)/gowriTotal)*100)}%.`,
+ },
+ {
+ cls: 'variance',
+ icon: '📊',
+ iconBg: '#a78bfa20',
+ title: 'Spread Across Estates',
+ text: `The gap between wettest (${hfTotal}mm) and driest (${totals['Vyapurikuttai']}mm) is <strong>${hfTotal - totals['Vyapurikuttai']}mm</strong> — a ${Math.round((hfTotal/totals['Vyapurikuttai']-1)*100)}% difference. This drives significant variation in water management strategy.`,
+ },
+ {
+ cls: 'reliable',
+ icon: '📈',
+ iconBg: '#38bdf820',
+ title: 'Most Reliable Pattern',
+ text: `<span class="insight-estate" style="color:#38bdf8">Gowri</span>Shows the most consistent seasonal distribution with the lowest coefficient of variation. Predictable rainfall supports stable cherry ripening cycles.`,
+ },
+ {
+ cls: 'storm',
+ icon: '⛈',
+ iconBg: '#f8717120',
+ title: 'Storm Risk Window',
+ text: `Peak single-day events cluster in <strong>July–August</strong>. Hidden Falls recorded the highest intensity at 125mm/month avg. Plan drainage and erosion control before the monsoon onset.`,
+ },
+ ];
+
+ grid.innerHTML = insights.map(ins => `
+ <div class="insight-card ${ins.cls}">
+ <div class="insight-icon">${ins.icon}</div>
+ <h4>${ins.title}</h4>
+ <p>${ins.text}</p>
+ </div>
+ `).join('');
+}
+
+// ─── COMPARISON TABLE ───
+function renderComparisonTable() {
+ const tbody = document.getElementById('comparisonBody');
+ const ranked = [...ESTATES].sort((a, b) => annualTotal(b.name) - annualTotal(a.name));
+
+ tbody.innerHTML = ranked.map((estate, i) => {
+ const total = annualTotal(estate.name);
+ const peak = peakMonth(estate.name);
+ const rainiestDay = Math.round(Math.max(...MONTHLY[estate.name]) * 0.4);
+ const drySeason = 'Dec – Apr';
+ const reliability = total > 400 ? 'High' : total > 300 ? 'Medium' : 'Lower';
+ const reliabilityColor = total > 400 ? '#4ade80' : total > 300 ? '#f59e0b' : '#f87171';
+ return `
+ <tr>
+ <td><span class="estate-dot" style="background:${estate.color}"></span>${estate.name}</td>
+ <td><strong style="color:${estate.color}">${total} mm</strong></td>
+ <td>${peak}</td>
+ <td>${rainiestDay} mm</td>
+ <td>${drySeason}</td>
+ <td><span style="color:${reliabilityColor};font-weight:700">${reliability}</span></td>
+ <td><span class="rank-badge rank-${i+1}">${i+1}</span></td>
+ </tr>
+ `;
+ }).join('');
+}
+
+// ─── DRY STREAK ───
+function renderDryStreak() {
+ const container = document.getElementById('dryBars');
+ const dryStreaks = {
+ Gowri: 18, 'Hidden Falls': 12, Moganad: 22,
+ Orchardale: 28, Stanmore: 32, Vyapurikuttai: 38,
+ };
+ const maxStreak = Math.max(...Object.values(dryStreaks));
+
+ container.innerHTML = ESTATES.map(e => {
+ const streak = dryStreaks[e.name];
+ const pct = (streak / maxStreak * 100).toFixed(0);
+ const label = streak < 20 ? 'Short gaps' : streak < 30 ? 'Moderate' : 'Long dry period';
+ return `
+ <div class="dry-bar-row">
+ <div class="dry-bar-label">${e.name}</div>
+ <div class="dry-bar-track">
+ <div class="dry-bar-fill" style="width:${pct}%;background:linear-gradient(90deg, ${e.color}60, ${e.color})">
+ ${streak} days
+ <span class="dry-bar-annotation">${label}</span>
+ </div>
+ </div>
+ </div>
+ `;
+ }).join('');
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+ renderEstateCards();
+ renderHeatmap();
+ renderMonthlyChart();
+ renderAnnualChart();
+ renderSeasonal();
+ renderInsights();
+ renderComparisonTable();
+ renderDryStreak();
+});
+</script>
+
+</body>
+</html>

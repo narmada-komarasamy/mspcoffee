@@ -1,18 +1,9 @@
-import { NextResponse } from 'next/server';
-import { adminClient } from '@/lib/supabase/admin';
-
-type AppUserRow = {
-  id: string;
-  role: string;
-  pin: string;
-  active: boolean | null;
-};
+import { requireApiUser } from '@/lib/auth/api';
 
 export const RAINFALL_ROLES = ['admin', 'supervisor', 'worker', 'ceo'];
 export const RAINFALL_DELETE_ROLES = ['admin', 'supervisor', 'ceo'];
 export const VALID_ESTATES = ['Gowri', 'Hidden Falls', 'Moganad', 'Orchardale', 'Stanmore', 'Vyapurikuttai'];
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type RainfallPayload = {
   date: string;
@@ -22,29 +13,7 @@ export type RainfallPayload = {
 };
 
 export async function requireRainfallUser(request: Request, allowedRoles = RAINFALL_ROLES) {
-  const userId = request.headers.get('x-msp-user-id')?.trim();
-  const userPin = request.headers.get('x-msp-user-pin')?.trim();
-
-  if (!userId || !userPin || !UUID_RE.test(userId)) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  const supabase = adminClient();
-  const { data: user, error: userError } = await supabase
-    .from('app_users')
-    .select('id, role, pin, active')
-    .eq('id', userId)
-    .single<AppUserRow>();
-
-  if (userError || !user || user.pin !== userPin || user.active === false) {
-    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  if (!allowedRoles.includes(user.role)) {
-    return { error: NextResponse.json({ error: 'Rainfall access required' }, { status: 403 }) };
-  }
-
-  return { supabase, user };
+  return requireApiUser(request, allowedRoles);
 }
 
 export function parseRainfallPayload(payload: unknown) {

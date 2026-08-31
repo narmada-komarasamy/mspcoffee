@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Coffee, Home, LogOut, Maximize2, Menu, Minimize2, Plane, Vote, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 const THEMES = {
   forest: { dark: '#1b4a1b', mid: '#2d6e2d' },
@@ -15,9 +14,9 @@ const THEMES = {
 } as const;
 
 type ThemeKey = keyof typeof THEMES;
-type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
+type AppUser = { id: string; name: string; role: string; estate: string | null };
 
-const PREVIEW_USER: AppUser = { id: 'family-decisions-preview', name: 'Preview', pin: '0000', role: 'preview', estate: null };
+const PREVIEW_USER: AppUser = { id: 'family-decisions-preview', name: 'Preview', role: 'preview', estate: null };
 const isLocalPreview = process.env.NODE_ENV === 'development';
 
 const navItems = [
@@ -37,34 +36,39 @@ export default function FamilyLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const stored = localStorage.getItem('msp_user');
-      if (!stored) {
+      fetch('/api/auth/me')
+        .then(async (response) => {
+          if (!response.ok) {
+            localStorage.removeItem('msp_user');
+            if (isLocalPreview && pathname === '/family-decisions') {
+              setUser(PREVIEW_USER);
+              return;
+            }
+            router.push('/login');
+            return;
+          }
+
+          const body = await response.json() as { user?: AppUser };
+          if (!body.user) {
+            localStorage.removeItem('msp_user');
+            router.push('/login');
+            return;
+          }
+
+          const verified = { ...body.user, role: body.user.role.trim().toLowerCase() };
+          setUser(verified);
+          localStorage.setItem('msp_user', JSON.stringify(verified));
+        })
+        .catch(() => {
         if (isLocalPreview && pathname === '/family-decisions') {
           setUser(PREVIEW_USER);
           return;
         }
         router.push('/login');
-        return;
-      }
+        });
 
-      const cached = JSON.parse(stored) as AppUser;
       const storedTheme = localStorage.getItem('msp_theme') as ThemeKey | null;
       if (storedTheme && THEMES[storedTheme]) setThemeKey(storedTheme);
-
-      supabase
-        .from('app_users')
-        .select('id, name, role, estate')
-        .eq('id', cached.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            setUser(cached);
-            return;
-          }
-          const verified = { ...cached, role: data.role, name: data.name, estate: data.estate };
-          setUser(verified);
-          localStorage.setItem('msp_user', JSON.stringify(verified));
-        });
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -83,7 +87,7 @@ export default function FamilyLayout({ children }: { children: React.ReactNode }
 
   const handleLogout = () => {
     localStorage.removeItem('msp_user');
-    document.cookie = 'msp_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    void fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
 

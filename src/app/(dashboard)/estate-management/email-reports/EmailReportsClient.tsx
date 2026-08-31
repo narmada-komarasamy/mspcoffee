@@ -88,74 +88,12 @@ function localScheduleDefault() {
   return date.toISOString().slice(0, 16);
 }
 
-const APP_USER_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
-
 function authHeaders(): Record<string, string> {
-  const stored = localStorage.getItem('msp_user');
-  if (!stored) return {};
-  let user: { id?: string; pin?: string; role?: string };
-  try {
-    user = JSON.parse(stored) as { id?: string; pin?: string; role?: string };
-  } catch {
-    return {};
-  }
-
-  return user.id && APP_USER_ID_RE.test(user.id) && user.pin
-    ? { 'x-msp-user-id': user.id, 'x-msp-user-pin': user.pin }
-    : {};
+  return {};
 }
 
-function currentUserCredentials() {
-  const stored = localStorage.getItem('msp_user');
-  if (!stored) return null;
-  try {
-    const user = JSON.parse(stored) as { id?: string; name?: string; pin?: string };
-    if (!user.pin) return null;
-    const userId = user.id && APP_USER_ID_RE.test(user.id) ? user.id : undefined;
-    return userId || user.name ? { userId, name: user.name, pin: user.pin } : null;
-  } catch {
-    return null;
-  }
-}
-
-function hasEmailAuth() {
-  return Boolean(authHeaders()['x-msp-user-pin']);
-}
-
-async function refreshPinSession(): Promise<{ ok: true } | { ok: false; error: string }> {
-  const credentials = currentUserCredentials();
-  if (!credentials) {
-    return {
-      ok: false,
-      error: 'This browser session does not include secure email credentials. Sign out, sign back in as admin, then retry.',
-    };
-  }
-
-  const response = await fetch('/api/auth/pin-session', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify(credentials),
-  });
-
-  const body = await response.json().catch(() => null) as { user?: unknown; error?: string } | null;
-
-  if (!response.ok) {
-    return {
-      ok: false,
-      error: body?.error ?? 'Could not refresh the admin email session.',
-    };
-  }
-
-  if (body?.user) {
-    localStorage.setItem('msp_user', JSON.stringify(body.user));
-    window.dispatchEvent(new Event('msp-user-updated'));
-  }
-  return { ok: true };
-}
-
-async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
-  const response = await fetch(input, {
+async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  return fetch(input, {
     ...init,
     credentials: 'same-origin',
     headers: {
@@ -163,20 +101,6 @@ async function emailFetch(input: RequestInfo | URL, init: RequestInit = {}, retr
       ...authHeaders(),
     },
   });
-
-  if (response.status === 401 && retry) {
-    const refreshed = await refreshPinSession();
-    if (refreshed.ok) return emailFetch(input, init, false);
-    return new Response(
-      JSON.stringify({ error: `Email session repair failed: ${refreshed.error}` }),
-      {
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-      }
-    );
-  }
-
-  return response;
 }
 
 function friendlyEmailError(error: string | undefined, fallback: string) {
@@ -246,23 +170,8 @@ export function EmailReportsClient() {
     if (!authorized) return;
 
     let cancelled = false;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const loadProviderStatus = async (attempt = 0) => {
-      if (!hasEmailAuth() && attempt < 4) {
-        retryTimer = setTimeout(() => void loadProviderStatus(attempt + 1), 350);
-        return;
-      }
-
+    const loadProviderStatus = async () => {
       try {
-        if (!hasEmailAuth()) {
-          const refreshed = await refreshPinSession();
-          if (!refreshed.ok && !cancelled) {
-            setMessage(refreshed.error);
-            return;
-          }
-        }
-
         const response = await emailFetch('/api/email/status');
         const body = await response.json().catch(() => null) as unknown;
         if (cancelled) return;
@@ -291,7 +200,6 @@ export function EmailReportsClient() {
 
     return () => {
       cancelled = true;
-      if (retryTimer) clearTimeout(retryTimer);
       window.removeEventListener('msp-user-updated', handleUserUpdated);
     };
   }, [authorized]);
@@ -375,14 +283,6 @@ export function EmailReportsClient() {
   }
 
   async function buildPreview() {
-    if (!hasEmailAuth()) {
-      const refreshed = await refreshPinSession();
-      if (!refreshed.ok && !hasEmailAuth()) {
-        setMessage(refreshed.error);
-        return null;
-      }
-    }
-
     setLoadingPreview(true);
     setMessage('');
     setPreview(null);
@@ -418,14 +318,6 @@ export function EmailReportsClient() {
   }
 
   async function submitBatch(action: 'send_now' | 'schedule') {
-    if (!hasEmailAuth()) {
-      const refreshed = await refreshPinSession();
-      if (!refreshed.ok && !hasEmailAuth()) {
-        setMessage(refreshed.error);
-        return;
-      }
-    }
-
     if (!hasRecipients) {
       setMessage('Add at least one recipient email address');
       return;

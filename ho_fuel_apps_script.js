@@ -20,11 +20,35 @@
  *   Row 3+: Data
  */
 
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-const HO_SUPABASE_URL = "https://aeawxovvyvpcjkhyxgcq.supabase.co";
-const HO_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYXd4b3Z2eXZwY2praHl4Z2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDY1MTgsImV4cCI6MjA5MDUyMjUxOH0.V8Bu91H6lidK1A4qqyPAotp7KFRaF9dm2iEFZvWxWPg";
-const HO_TABLE_NAME   = "ho_fuel_log";
-const HO_SHEET_NAME   = "HO Fuel";  // exact tab name — adjust if different
+// ─── Script Properties (secrets live here, not in code) ──────────────────────
+/**
+ * Run ONCE. Replace placeholder values with real values before running.
+ * After running, the values are stored in Script Properties.
+ */
+function setupHoFuelProperties() {
+  PropertiesService.getScriptProperties().setProperties({
+    HO_SUPABASE_URL: "https://aeawxovvyvpcjkhyxgcq.supabase.co",
+    HO_SUPABASE_KEY: "<paste anon key here>",
+    HO_TABLE_NAME:   "ho_fuel_log",
+    HO_SHEET_NAME:   "HO Fuel",
+  }, true);
+  Logger.log("HO Fuel script properties set. Delete this function body after running once.");
+}
+
+function hoCfg() {
+  const p = PropertiesService.getScriptProperties();
+  const get = key => {
+    const value = p.getProperty(key);
+    if (!value) throw new Error("Missing script property: " + key + ". Run setupHoFuelProperties() once.");
+    return value;
+  };
+  return {
+    supabaseUrl: get("HO_SUPABASE_URL"),
+    supabaseKey: get("HO_SUPABASE_KEY"),
+    tableName:   get("HO_TABLE_NAME"),
+    sheetName:   get("HO_SHEET_NAME"),
+  };
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -50,8 +74,9 @@ const HO_SHEET_NAME   = "HO Fuel";  // exact tab name — adjust if different
  */
 
 function syncHoFuelToSupabase() {
+  const config = hoCfg();
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(HO_SHEET_NAME) || ss.getSheets()[0];
+  const sheet = ss.getSheetByName(config.sheetName) || ss.getSheets()[0];
   if (!sheet) {
     Logger.log("No sheets found in spreadsheet.");
     return;
@@ -158,8 +183,8 @@ function syncHoFuelToSupabase() {
 
   // ── Step 1: Delete all existing rows ──────────────────────────────────────
   const delResp = UrlFetchApp.fetch(
-    HO_SUPABASE_URL + "/rest/v1/" + HO_TABLE_NAME + "?id=gte.0",
-    { method: "DELETE", headers: hoHeaders(), muteHttpExceptions: true }
+    config.supabaseUrl + "/rest/v1/" + config.tableName + "?id=gte.0",
+    { method: "DELETE", headers: hoHeaders(config.supabaseKey), muteHttpExceptions: true }
   );
   Logger.log("DELETE status: " + delResp.getResponseCode());
 
@@ -170,10 +195,10 @@ function syncHoFuelToSupabase() {
   for (let i = 0; i < rows.length; i += BATCH) {
     const batch = rows.slice(i, i + BATCH);
     const resp  = UrlFetchApp.fetch(
-      HO_SUPABASE_URL + "/rest/v1/" + HO_TABLE_NAME,
+      config.supabaseUrl + "/rest/v1/" + config.tableName,
       {
         method: "POST",
-        headers: { ...hoHeaders(), "Prefer": "return=minimal" },
+        headers: { ...hoHeaders(config.supabaseKey), "Prefer": "return=minimal" },
         payload: JSON.stringify(batch),
         muteHttpExceptions: true,
       }
@@ -214,10 +239,10 @@ function setupHoTrigger() {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function hoHeaders() {
+function hoHeaders(key) {
   return {
-    "apikey":        HO_SUPABASE_KEY,
-    "Authorization": "Bearer " + HO_SUPABASE_KEY,
+    "apikey":        key,
+    "Authorization": "Bearer " + key,
     "Content-Type":  "application/json",
   };
 }

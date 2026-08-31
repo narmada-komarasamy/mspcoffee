@@ -8,6 +8,7 @@ import {
   Plus, X, Printer, Send, ArrowDownToLine, Pencil, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { signedStorageUrl } from "@/lib/storage/urls";
 import css from "./coffee-storage.module.css";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1993,8 +1994,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
         alert(`Invoice upload failed: ${uploadErr.message}. Sale not recorded.`);
         return;
       }
-      const { data: urlData } = supabase.storage.from("invoices").getPublicUrl(path);
-      invoiceUrl = urlData.publicUrl;
+      invoiceUrl = signedStorageUrl("invoices", path);
     }
 
     const allocationPayload: SaleLotAllocation[] = saleAllocations.map(row => ({ green_lot_id: row.lot.id, kg: row.kg }));

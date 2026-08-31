@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { buildDailyOperationsDigest, normalizeDigestBlocks } from '@/lib/email/daily-operations';
 import { renderEmail } from '@/lib/email/render';
 import { requireEmailUser } from '../../_auth';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 function todayInIndia() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -15,6 +16,13 @@ function todayInIndia() {
 export async function POST(request: Request) {
   const auth = await requireEmailUser(request);
   if ('error' in auth) return auth.error;
+
+  const limited = checkRateLimit({
+    key: rateLimitKey('email-daily-operations-preview', auth.user.id),
+    limit: 60,
+    windowMs: 60 * 60 * 1000,
+  });
+  if ('error' in limited) return limited.error;
 
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const date = typeof body?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.date)

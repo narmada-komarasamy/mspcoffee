@@ -13,12 +13,12 @@ import s from "./infographic.module.css";
 const ESTATES = ["Gowri", "Hidden Falls", "Moganad", "Orchardale", "Stanmore", "Vyapurikuttai"] as const;
 
 const ESTATE_COLORS: Record<string, string> = {
- Gowri: "#38bdf8",
- "Hidden Falls": "#f87171",
- Moganad: "#4ade80",
- Orchardale: "#f59e0b",
- Stanmore: "#a78bfa",
- Vyapurikuttai: "#fb923c",
+ Gowri: "#2563eb",
+ "Hidden Falls": "#dc2626",
+ Moganad: "#059669",
+ Orchardale: "#d97706",
+ Stanmore: "#7c3aed",
+ Vyapurikuttai: "#ea580c",
 };
 
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -43,6 +43,19 @@ function getSeason(m: number) {
  if (m <= 2) return { name: "Winter", emoji: "☀️", color: "#d97706" };
  return { name: "Summer", emoji: "🔥", color: "#dc2626" };
 }
+
+// MSP theme chart style (matches globals.css cream/green palette)
+const TT_STYLE = {
+ background: "rgba(255,255,255,0.98)",
+ border: "1px solid #e5dfc8",
+ borderRadius: 8,
+ fontSize: 12,
+ fontFamily: "var(--t-font, 'Exo 2', system-ui, sans-serif)",
+ color: "#1a1a1a",
+};
+const GRID_COLOR = "#e5dfc8";
+const AXIS_TICK = "#374151";
+const AXIS_TICK_LIGHT = "#6b7280";
 
 // ── main component ────────────────────────────────────────────────────────────
 export default function RainfallInfographic() {
@@ -445,12 +458,12 @@ function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
  return (
  <ResponsiveContainer width="100%" height={280}>
  <LineChart data={chartData}>
- <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
- <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} />
- <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} unit="mm" />
+ <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+ <XAxis dataKey="name" tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} />
+ <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit="mm" />
  <Tooltip
- contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
- labelStyle={{ color: "#f1f5f9" }}
+ contentStyle={TT_STYLE}
+ labelStyle={{ color: "#1b4a1b", fontWeight: 700 }}
  />
  <Legend wrapperStyle={{ fontSize: 11 }} />
  {activeEstates.map(e => (
@@ -477,12 +490,12 @@ function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
  return (
  <ResponsiveContainer width="100%" height={280}>
  <BarChart data={chartData}>
- <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
- <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#94a3b8" }} />
- <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} unit="mm" />
+ <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+ <XAxis dataKey="year" tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} />
+ <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit="mm" />
  <Tooltip
- contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
- labelStyle={{ color: "#f1f5f9" }}
+ contentStyle={TT_STYLE}
+ labelStyle={{ color: "#1b4a1b", fontWeight: 700 }}
  />
  <Legend wrapperStyle={{ fontSize: 10 }} />
  {ESTATES.map(e => (
@@ -512,11 +525,11 @@ function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) 
  const maxVal = allVals.length ? Math.max(...allVals) : 1;
 
  const cellColor = (v: number) => {
- if (v === 0) return "#1e293b";
+ if (v === 0) return "#f5eedc";
  const t = v / maxVal;
- const r = Math.round(30 + t * (37 - 30));
- const g = Math.round(41 + t * (99 - 41));
- const b = Math.round(59 + t * (235 - 59));
+ const r = Math.round(45 + t * (27 - 45));
+ const g = Math.round(158 + t * (74 - 158));
+ const b = Math.round(74 + t * (31 - 74));
  return `rgb(${r},${g},${b})`;
  };
 
@@ -565,13 +578,13 @@ function PatternScatter({ data, scatterData }: { data: ReturnType<typeof useMemo
  return (
  <ResponsiveContainer width="100%" height={260}>
  <ScatterChart>
- <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
- <XAxis dataKey="x" name="Total mm" tick={{ fontSize: 10, fill: "#94a3b8" }} unit="mm" />
- <YAxis dataKey="y" name="Variation" tick={{ fontSize: 10, fill: "#94a3b8" }} />
+ <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+ <XAxis dataKey="x" name="Total mm" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit="mm" />
+ <YAxis dataKey="y" name="Variation" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} />
  <ZAxis dataKey="z" range={[80, 400]} />
  <Tooltip
  cursor={{ strokeDasharray: "3 3" }}
- contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+ contentStyle={TT_STYLE}
  formatter={(v: any, name: string) => {
  if (name === "x") return [`${v} mm`, "Total"];
  if (name === "y") return [`${v}`, "Variation"];
@@ -581,7 +594,7 @@ function PatternScatter({ data, scatterData }: { data: ReturnType<typeof useMemo
  />
  <Scatter data={scatterData}>
  {data.map((entry, i) => (
- <Cell key={entry.estate} fill={ESTATE_COLORS[entry.estate]} stroke="#0f172a" strokeWidth={2} />
+ <Cell key={entry.estate} fill={ESTATE_COLORS[entry.estate]} stroke="#ffffff" strokeWidth={2} />
  ))}
  </Scatter>
  </ScatterChart>
@@ -593,11 +606,11 @@ function DryStreakChart({ data }: { data: ReturnType<typeof useMemo> }) {
  return (
  <ResponsiveContainer width="100%" height={240}>
  <BarChart data={data} layout="vertical">
- <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
- <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} unit=" days" />
- <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#cbd5e1" }} width={90} />
+ <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+ <XAxis type="number" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit=" days" />
+ <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={90} />
  <Tooltip
- contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+ contentStyle={TT_STYLE}
  formatter={(v: any, name: string) => {
  if (name === "maxStreak") return [`${v} days`, "Max streak"];
  if (name === "avgStreak") return [`${v} days`, "Avg streak"];
@@ -605,8 +618,8 @@ function DryStreakChart({ data }: { data: ReturnType<typeof useMemo> }) {
  }}
  />
  <Legend wrapperStyle={{ fontSize: 10 }} />
- <Bar dataKey="maxStreak" fill="#ef4444" name="Max streak" radius={[0, 3, 3, 0]} barSize={14} />
- <Bar dataKey="avgStreak" fill="#f59e0b" name="Avg streak" radius={[0, 3, 3, 0]} barSize={14} />
+ <Bar dataKey="maxStreak" fill="#dc2626" name="Max streak" radius={[0, 3, 3, 0]} barSize={14} />
+ <Bar dataKey="avgStreak" fill="#d97706" name="Avg streak" radius={[0, 3, 3, 0]} barSize={14} />
  </BarChart>
  </ResponsiveContainer>
  );
@@ -626,11 +639,11 @@ function SeasonalStacked({ data }: { data: Row[] }) {
  return (
  <ResponsiveContainer width="100%" height={260}>
  <BarChart data={chartData}>
- <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
- <XAxis dataKey="estate" tick={{ fontSize: 10, fill: "#cbd5e1" }} />
- <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} unit="mm" />
+ <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+ <XAxis dataKey="estate" tick={{ fontSize: 10, fill: "#1b4a1b" }} />
+ <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit="mm" />
  <Tooltip
- contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+ contentStyle={TT_STYLE}
  />
  <Legend wrapperStyle={{ fontSize: 10 }} />
  <Bar dataKey="SW Monsoon" stackId="s" fill="#2563eb" />
@@ -646,16 +659,16 @@ function YoYDeltaChart({ estateStats }: { estateStats: ReturnType<typeof useMemo
  return (
  <ResponsiveContainer width="100%" height={280}>
  <BarChart data={estateStats} layout="vertical">
- <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
- <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} unit="%" />
- <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#cbd5e1" }} width={100} />
+ <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+ <XAxis type="number" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit="%" />
+ <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={100} />
  <Tooltip
- contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 12 }}
+ contentStyle={TT_STYLE}
  formatter={(v: number) => [`${v >= 0 ? "+" : ""}${v}%`, "YoY Change"]}
  />
  <Bar dataKey="yoyDelta" radius={[0, 4, 4, 0]} barSize={18}>
  {estateStats.map(entry => (
- <Cell key={entry.estate} fill={entry.yoyDelta !== null && entry.yoyDelta >= 0 ? "#16a34a" : "#dc2626"} />
+ <Cell key={entry.estate} fill={entry.yoyDelta !== null && entry.yoyDelta >= 0 ? "#059669" : "#dc2626"} />
  ))}
  </Bar>
  </BarChart>

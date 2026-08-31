@@ -77,6 +77,18 @@ function RolePill({ role }: { role: string }) {
   );
 }
 
+async function queryActivityRows(filterDays: string) {
+  const since = new Date();
+  since.setDate(since.getDate() - parseInt(filterDays, 10));
+
+  return supabase
+    .from('user_activity')
+    .select('*')
+    .gte('entered_at', since.toISOString())
+    .order('entered_at', { ascending: false })
+    .limit(2000);
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function ActivityLogPage() {
@@ -101,7 +113,7 @@ export default function ActivityLogPage() {
 
   // Load all registered users for the filter dropdown
   useEffect(() => {
-    supabase.from('app_users').select('name').order('name')
+    supabase.from('profiles').select('name').order('name')
       .then(({ data }) => {
         if (data) setAllUsers(data.map((u: { name: string }) => u.name));
       });
@@ -109,21 +121,27 @@ export default function ActivityLogPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const since = new Date();
-    since.setDate(since.getDate() - parseInt(filterDays, 10));
-
-    const { data, error } = await supabase
-      .from('user_activity')
-      .select('*')
-      .gte('entered_at', since.toISOString())
-      .order('entered_at', { ascending: false })
-      .limit(2000);
-
+    const { data, error } = await queryActivityRows(filterDays);
     if (!error && data) setRows(data as ActivityRow[]);
     setLoading(false);
   }, [filterDays]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRows() {
+      const { data, error } = await queryActivityRows(filterDays);
+      if (cancelled) return;
+      if (!error && data) setRows(data as ActivityRow[]);
+      setLoading(false);
+    }
+
+    void loadRows();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filterDays]);
 
   // ── Derived stats ────────────────────────────────────────────────────────
 

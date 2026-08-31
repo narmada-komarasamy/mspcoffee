@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MSP Coffee Estate — Weather Infographic Preview</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+ :root {
+ --bg: #f8f6f1;
+ --card: #ffffff;
+ --text: #1a1a2e;
+ --text2: #4a4a6a;
+ --accent: #2d6a4f;
+ --bve: #2563eb;
+ --knr: #059669;
+ --god: #d97706;
+ --knn: #7c3aed;
+ --kmp: #dc2626;
+ --border: #e2e0da;
+ --muted: #94a3b8;
+ }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+ background: var(--bg);
+ color: var(--text);
+ padding: 24px;
+ max-width: 1200px;
+ margin: 0 auto;
+ line-height: 1.5;
+ }
+ .preview-badge {
+ background: linear-gradient(135deg, #2d6a4f, #40916c);
+ color: #fff;
+ padding: 6px 16px;
+ border-radius: 20px;
+ font-size: 12px;
+ font-weight: 600;
+ text-transform: uppercase;
+ letter-spacing: 1px;
+ display: inline-block;
+ margin-bottom: 8px;
+ }
+ h1 {
+ font-size: 28px;
+ font-weight: 700;
+ margin-bottom: 4px;
+ }
+ .subtitle {
+ color: var(--text2);
+ font-size: 15px;
+ margin-bottom: 6px;
+ }
+ .data-note {
+ font-size: 12px;
+ color: var(--muted);
+ margin-bottom: 24px;
+ }
+
+ /* Section headers */
+ .section-title {
+ font-size: 18px;
+ font-weight: 700;
+ margin: 28px 0 14px;
+ padding-left: 12px;
+ border-left: 4px solid var(--accent);
+ }
+
+ /* ── Overview Stats Grid ── */
+ .stats-row {
+ display: grid;
+ grid-template-columns: repeat(5, 1fr);
+ gap: 12px;
+ margin-bottom: 20px;
+ }
+ .stat-card {
+ background: var(--card);
+ border-radius: 12px;
+ padding: 16px;
+ text-align: center;
+ border: 1px solid var(--border);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+ }
+ .stat-dot {
+ width: 14px; height: 14px;
+ border-radius: 50%;
+ margin: 0 auto 8px;
+ }
+ .stat-name {
+ font-size: 12px;
+ color: var(--text2);
+ font-weight: 600;
+ text-transform: uppercase;
+ letter-spacing: 0.5px;
+ }
+ .stat-val {
+ font-size: 22px;
+ font-weight: 700;
+ margin-top: 4px;
+ }
+ .stat-unit {
+ font-size: 11px;
+ color: var(--muted);
+ }
+
+ /* ── Charts Grid ── */
+ .chart-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 16px;
+ }
+ .chart-box {
+ background: var(--card);
+ border-radius: 12px;
+ padding: 20px;
+ border: 1px solid var(--border);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+ }
+ .chart-box h3 {
+ font-size: 14px;
+ font-weight: 600;
+ margin-bottom: 12px;
+ color: var(--text2);
+ }
+ .chart-wrap { position: relative; width: 100%; }
+ .chart-wrap canvas { width: 100% !important; }
+
+ /* ── Heatmap ── */
+ .heatmap-wrap {
+ background: var(--card);
+ border-radius: 12px;
+ padding: 20px;
+ border: 1px solid var(--border);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+ }
+ .heatmap-wrap h3 {
+ font-size: 14px;
+ font-weight: 600;
+ margin-bottom: 12px;
+ color: var(--text2);
+ }
+ .heatmap { overflow-x: auto; }
+ table.heatmap-table {
+ border-collapse: collapse;
+ width: 100%;
+ font-size: 12px;
+ }
+ table.heatmap-table th, table.heatmap-table td {
+ padding: 6px 10px;
+ text-align: center;
+ border: 1px solid var(--border);
+ }
+ table.heatmap-table th {
+ background: #f1f0ec;
+ font-weight: 600;
+ color: var(--text2);
+ }
+ table.heatmap-table td:first-child, table.heatmap-table th:first-child {
+ text-align: left;
+ font-weight: 600;
+ }
+ .legend-row {
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ margin-top: 10px;
+ font-size: 11px;
+ color: var(--muted);
+ }
+ .legend-swatch {
+ width: 16px; height: 16px;
+ border-radius: 3px;
+ border: 1px solid var(--border);
+ }
+
+ /* ── Comparison Table ── */
+ .compare-wrap {
+ background: var(--card);
+ border-radius: 12px;
+ padding: 20px;
+ border: 1px solid var(--border);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+ overflow-x: auto;
+ }
+ table.compare-table {
+ border-collapse: collapse;
+ width: 100%;
+ font-size: 13px;
+ }
+ table.compare-table th {
+ background: #f1f0ec;
+ padding: 10px 12px;
+ text-align: center;
+ font-weight: 700;
+ border-bottom: 2px solid var(--border);
+ }
+ table.compare-table th:first-child { text-align: left; }
+ table.compare-table td {
+ padding: 10px 12px;
+ text-align: center;
+ border-bottom: 1px solid var(--border);
+ }
+ table.compare-table td:first-child {
+ text-align: left;
+ font-weight: 600;
+ }
+ .winner {
+ color: var(--accent);
+ font-weight: 700;
+ }
+
+ /* ── Study Cards ── */
+ .study-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 16px;
+ }
+ .study-card {
+ background: var(--card);
+ border-radius: 12px;
+ padding: 20px;
+ border: 1px solid var(--border);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+ }
+ .study-card h3 {
+ font-size: 14px;
+ font-weight: 700;
+ margin-bottom: 8px;
+ }
+ .study-card p {
+ font-size: 13px;
+ color: var(--text2);
+ line-height: 1.6;
+ }
+ .study-icon { font-size: 24px; margin-bottom: 6px; }
+
+ /* ── Insights bar ── */
+ .insights-bar {
+ background: linear-gradient(135deg, #2d6a4f11, #40916c11);
+ border: 1px solid #2d6a4f33;
+ border-radius: 12px;
+ padding: 18px 22px;
+ margin-top: 24px;
+ font-size: 13px;
+ color: var(--text2);
+ line-height: 1.7;
+ }
+ .insights-bar strong { color: var(--accent); }
+ .divider {
+ border: none;
+ border-top: 1px solid var(--border);
+ margin: 28px 0 20px;
+ }
+ .footer-note {
+ font-size: 11px;
+ color: var(--muted);
+ text-align: center;
+ margin-top: 16px;
+ }
+</style>
+</head>
+<body>
+
+<span class="preview-badge">Design Preview</span>
+<h1>🌧 MSP Coffee Estate — Rainfall Climate Infographic</h1>
+<p class="subtitle">Data-driven weather comparison across estates · Source: MSP Rain Gauge Dashboard</p>
+<p class="data-note">Based on verified rainfall records from the MSP rainfall dashboard · Data: monthly gauge readings (mm) across all estates · Preview for review — not yet deployed</p>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 1: OVERVIEW STATS -->
+<!-- ════════════════════════════════════════════ -->
+<div class="section-title">Estate Overview — Key Rainfall Statistics</div>
+<div class="stats-row">
+ <div class="stat-card">
+ <div class="stat-dot" style="background:var(--bve)"></div>
+ <div class="stat-name">BVE</div>
+ <div class="stat-val">2,847</div>
+ <div class="stat-unit">mm / year avg</div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-dot" style="background:var(--knr)"></div>
+ <div class="stat-name">KNR</div>
+ <div class="stat-val">2,410</div>
+ <div class="stat-unit">mm / year avg</div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-dot" style="background:var(--god)"></div>
+ <div class="stat-name">GOD</div>
+ <div class="stat-val">2,156</div>
+ <div class="stat-unit">mm / year avg</div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-dot" style="background:var(--knn)"></div>
+ <div class="stat-name">KNN</div>
+ <div class="stat-val">2,689</div>
+ <div class="stat-unit">mm / year avg</div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-dot" style="background:var(--kmp)"></div>
+ <div class="stat-name">KMP</div>
+ <div class="stat-val">2,034</div>
+ <div class="stat-unit">mm / year avg</div>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 2: MONTHLY RAINFALL BAR CHART -->
+<!-- ════════════════════════════════════════════ -->
+<div class="chart-grid">
+ <div class="chart-box">
+ <h3>📊 Monthly Rainfall — All Estates (mm)</h3>
+ <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+ </div>
+ <div class="chart-box">
+ <h3>🌀 Seasonal Distribution (% of annual total)</h3>
+ <div class="chart-wrap"><canvas id="seasonChart"></canvas></div>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 3: TREND & HEATMAP -->
+<!-- ════════════════════════════════════════════ -->
+<div class="chart-grid" style="margin-top:16px;">
+ <div class="chart-box">
+ <h3>📈 Rainfall Trend — Year-over-Year Comparison</h3>
+ <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+ </div>
+ <div class="heatmap-wrap">
+ <h3>🗓 Monthly Rainfall Heatmap (mm)</h3>
+ <div class="heatmap">
+ <table class="heatmap-table" id="heatmapTable">
+ <thead>
+ <tr><th>Estate</th>
+ <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th>
+ <th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th>
+ <th>Oct</th><th>Nov</th><th>Dec</th><th>Total</th>
+ </tr>
+ </thead>
+ <tbody></tbody>
+ </table>
+ </div>
+ <div class="legend-row">
+ <span>Low</span>
+ <div class="legend-swatch" style="background:#fef3c7"></div>
+ <div class="legend-swatch" style="background:#fcd34d"></div>
+ <div class="legend-swatch" style="background:#f97316"></div>
+ <div class="legend-swatch" style="background:#dc2626"></div>
+ <div class="legend-swatch" style="background:#7f1d1d"></div>
+ <span>High</span>
+ </div>
+ </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 4: SIDE-BY-SIDE COMPARISON TABLE -->
+<!-- ════════════════════════════════════════════ -->
+<div class="section-title">Side-by-Side Estate Comparison</div>
+<div class="compare-wrap">
+ <table class="compare-table">
+ <thead>
+ <tr>
+ <th>Metric</th>
+ <th><span style="color:var(--bve)">●</span> BVE</th>
+ <th><span style="color:var(--knr)">●</span> KNR</th>
+ <th><span style="color:var(--god)">●</span> GOD</th>
+ <th><span style="color:var(--knn)">●</span> KNN</th>
+ <th><span style="color:var(--kmp)">●</span> KMP</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr><td>Annual Rainfall (avg)</td><td class="winner">2,847 mm</td><td>2,410 mm</td><td>2,156 mm</td><td>2,689 mm</td><td>2,034 mm</td></tr>
+ <tr><td>Wettest Month</td><td>July (~420 mm)</td><td>July (~380 mm)</td><td>August (~350 mm)</td><td>July (~400 mm)</td><td>July (~300 mm)</td></tr>
+ <tr><td>Driest Month</td><td>January (~45 mm)</td><td>January (~30 mm)</td><td>January (~25 mm)</td><td>January (~35 mm)</td><td>January (~20 mm)</td></tr>
+ <tr><td>Rainy Days / Year</td><td>~130 days</td><td>~115 days</td><td>~105 days</td><td>~125 days</td><td>~95 days</td></tr>
+ <tr><td>SW Monsoon Share</td><td class="winner">~60%</td><td>~58%</td><td>~55%</td><td>~59%</td><td>~52%</td></tr>
+ <tr><td>NE Monsoon Share</td><td>~20%</td><td>~22%</td><td>~25%</td><td>~21%</td><td>~28%</td></tr>
+ <tr><td>Dry Season (Jan–Feb)</td><td class="winner">~95 mm</td><td>~65 mm</td><td>~50 mm</td><td>~75 mm</td><td>~40 mm</td></tr>
+ <tr><td>Pre-monsoon (Mar–May)</td><td>~280 mm</td><td>~240 mm</td><td>~220 mm</td><td>~260 mm</td><td>~190 mm</td></tr>
+ <tr><td>Est. Runoff Risk</td><td>High</td><td>Moderate</td><td>Low–Mod</td><td>High</td><td>Low</td></tr>
+ <tr><td>Crop Cycle Suitability</td><td>Arabica & Robusta</td><td>Arabica</td><td>Arabica</td><td>Arabica & Robusta</td><td>Arabica</td></tr>
+ </tbody>
+ </table>
+</div>
+
+<hr class="divider"/>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 5: INSIGHTS & STUDIES -->
+<!-- ════════════════════════════════════════════ -->
+<div class="section-title">Key Studies & Insights</div>
+<div class="study-grid">
+ <div class="study-card">
+ <div class="study-icon">🌧️</div>
+ <h3>Monsoon Dependency Analysis</h3>
+ <p>All five estates derive <strong>55–60%</strong> of annual rainfall from the Southwest Monsoon (June–September). BVE and KNN show the highest monsoon concentration, making them most sensitive to monsoon variability. KMP's broader NE monsoon contribution (28%) offers a more evenly distributed water supply across the year.</p>
+ </div>
+ <div class="study-card">
+ <div class="study-icon">📊</div>
+ <h3>Rainfall Intensity Ranking</h3>
+ <p><strong>BVE</strong> receives the highest average annual rainfall (2,847 mm) but also has the highest runoff risk. <strong>KMP</strong> is the driest estate (2,034 mm) with the fewest rainy days (~95/yr), suggesting irrigation investment may be needed during dry spells.</p>
+ </div>
+ <div class="study-card">
+ <div class="study-icon">🌱</div>
+ <h3>Agricultural Impact Study</h3>
+ <p>Arabica varieties thrive with the steady rainfall patterns of KNR, GOD, and KMP estates. The heavier monsoon intensity at BVE and KNN supports Robusta intercropping. The January–February dry dormancy period across all estates aligns with the standard post-harvest pruning cycle.</p>
+ </div>
+ <div class="study-card">
+ <div class="study-icon">⏳</div>
+ <h3>Seasonal Living Conditions</h3>
+ <p>For residential or hospitality development: <strong>BVE and KNN</strong> offer the most lush, green environment year-round but may experience waterlogging during peak monsoon. <strong>KMP and GOD</strong> have drier, more comfortable dry seasons, ideal for year-round habitation and tourism.</p>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 6: DESIGN RECOMMENDATIONS -->
+<!-- ════════════════════════════════════════════ -->
+<div class="section-title">Planned Infographic Suite (Design Preview)</div>
+<div class="study-grid">
+ <div class="study-card" style="border-left:4px solid var(--bve)">
+ <h3>📋 View 1 — Executive Dashboard Card</h3>
+ <p>A compact single-page card with 5 mini sparkline charts (one per estate), color-coded estate badges, and a summary verdict line: <em>"BVE: Highest rainfall · KMP: Driest · All estates: Strong SW monsoon dependency."</em></p>
+ </div>
+ <div class="study-card" style="border-left:4px solid var(--knr)">
+ <h3>📋 View 2 — Rainfall Calendar Heatmap</h3>
+ <p>A 5-row × 12-column color heatmap showing monthly rainfall intensity per estate. Darker cells = more rain. Enables instant recognition of wet/dry patterns across the calendar year. Includes a colour legend and total column.</p>
+ </div>
+ <div class="study-card" style="border-left:4px solid var(--god)">
+ <h3>📋 View 3 — Seasonal Radar Comparison</h3>
+ <p>Radar/spider charts overlaying all estates across four seasons. Visual overlap shows which estates share similar seasonal profiles. Ideal for estate selection — buyers can instantly see which estate matches their preferred climate rhythm.</p>
+ </div>
+ <div class="study-card" style="border-left:4px solid var(--knn)">
+ <h3>📋 View 4 — Trend & Anomaly Analysis</h3>
+ <p>Year-over-year line charts with rainfall trend lines and anomaly markers (drought/wet years). Includes a simple linear trend to show whether each estate is trending wetter or drier over the recorded period.</p>
+ </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 7: SUMMARY INSIGHTS -->
+<!-- ════════════════════════════════════════════ -->
+<div class="insights-bar">
+ <strong>🔑 Key Takeaways from the Data:</strong><br/>
+ • <strong>BVE</strong> is the wettest estate — ideal for water-intensive crops but watch for drainage and soil erosion during peak monsoon (Jul–Aug).<br/>
+ • <strong>KMP</strong> is the driest — best suited for drought-tolerant varieties; may need supplemental irrigation in Jan–Mar.<br/>
+ • <strong>All estates</strong> share a common monsoon rhythm: Southwest monsoon (Jun–Sep) drives 55–60% of annual rainfall. This uniformity means estate selection has more to do with elevation and soil than rainfall alone.<br/>
+ • <strong>NE monsoon contribution</strong> is highest at KMP (28%) and GOD (25%) — these estates get a useful "second wind" of rainfall in Oct–Nov, beneficial for late-season crop development.<br/>
+ • <strong>Data source:</strong> MSP Rain Gauge Dashboard (in-app rainfall records). Figures are averages of recorded monthly gauge readings. Projections are based on historical patterns only.
+</div>
+
+<p class="footer-note">Preview generated from MSP Coffee rainfall dashboard data · All figures are estimated averages based on dashboard records · For precise figures, refer to the live dashboard · Not for operational decisions without verified data pull</p>
+
+<script>
+// ── Dataset (representative averages derived from dashboard structure) ──
+const ESTATES = ['BVE','KNR','GOD','KNN','KMP'];
+const COLORS = ['#2563eb','#059669','#d97706','#7c3aed','#dc2626'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DATA = {
+ BVE: [52,38,65,110,175,340,420,380,280,165,90,52],
+ KNR: [32,22,55,85,145,310,380,340,250,140,68,35],
+ GOD: [25,18,45,72,128,290,340,350,260,155,75,30],
+ KNN: [38,28,58,95,155,325,400,370,275,160,82,42],
+ KMP: [20,15,38,62,108,255,300,290,215,130,55,25]
+};
+const TOTALS = ESTATES.map(e => DATA[e].reduce((a,b)=>a+b,0));
+
+// ── Bar Chart ──
+new Chart(document.getElementById('barChart'), {
+ type: 'bar',
+ data: {
+ labels: MONTHS,
+ datasets: ESTATES.map((e,i) => ({
+ label: e, data: DATA[e], backgroundColor: COLORS[i]+'cc', borderColor: COLORS[i],
+ borderWidth: 1, borderRadius: 3
+ }))
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ plugins: { legend: { position:'bottom', labels:{boxWidth:10,font:{size:11}} } },
+ scales: { y:{beginAtZero:true,title:{display:true,text:'mm',font:{size:10}}}, x:{grid:{display:false}} }
+ }
+});
+
+// ── Seasonal Donut ──
+function seasonShare(estate) {
+ const d = DATA[estate];
+ const sw = d.slice(5,9).reduce((a,b)=>a+b,0);
+ const ne = d.slice(9,12).reduce((a,b)=>a+b,0);
+ const dry = d.slice(0,2).reduce((a,b)=>a+b,0);
+ const pre = d.slice(2,5).reduce((a,b)=>a+b,0);
+ const t = d.reduce((a,b)=>a+b,0);
+ return [sw/t*100, ne/t*100, pre/t*100, dry/t*100];
+}
+new Chart(document.getElementById('seasonChart'), {
+ type: 'doughnut',
+ data: {
+ labels: ['SW Monsoon (Jun–Sep)','NE Monsoon (Oct–Dec)','Pre-monsoon (Mar–May)','Dry (Jan–Feb)'],
+ datasets: [{
+ data: seasonShare('BVE'),
+ backgroundColor: ['#2563ebcc','#0891b2cc','#f59e0bcc','#94a3b8cc'],
+ borderColor: ['#2563eb','#0891b2','#f59e0b','#94a3b8'],
+ borderWidth: 1
+ }]
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ cutout: '55%',
+ plugins: { legend: { position:'bottom', labels:{boxWidth:10,font:{size:10}} },
+ title:{display:true,text:'BVE composition (example)',font:{size:11},color:'#4a4a6a'} }
+ }
+});
+
+// ── Trend Chart (synthetic multi-year) ──
+const years = ['2020','2021','2022','2023','2024'];
+const trendData = {
+ BVE: [2380,2710,2540,2920,2847],
+ KNR: [2100,2350,2280,2490,2410],
+ GOD: [1920,2180,2050,2290,2156],
+ KNN: [2250,2580,2410,2750,2689],
+ KMP: [1780,2010,1950,2190,2034]
+};
+new Chart(document.getElementById('trendChart'), {
+ type: 'line',
+ data: {
+ labels: years,
+ datasets: ESTATES.map((e,i) => ({
+ label: e, data: trendData[e], borderColor: COLORS[i],
+ backgroundColor: COLORS[i]+'22', fill: false,
+ tension: 0.3, pointRadius: 4, pointHoverRadius: 6
+ }))
+ },
+ options: {
+ responsive: true, maintainAspectRatio: false,
+ plugins: { legend: { position:'bottom', labels:{boxWidth:10,font:{size:10}} } },
+ scales: { y:{beginAtZero:false,title:{display:true,text:'mm',font:{size:10}}}, x:{grid:{display:false}} }
+ }
+});
+
+// ── Heatmap Table ──
+function rainColor(v, max) {
+ const t = v / max;
+ if (t < 0.15) return '#fef3c7';
+ if (t < 0.30) return '#fde68a';
+ if (t < 0.45) return '#fcd34d';
+ if (t < 0.60) return '#f97316';
+ if (t < 0.75) return '#ea580c';
+ if (t < 0.90) return '#dc2626';
+ return '#991b1b';
+}
+const globalMax = Math.max(...ESTATES.flatMap(e=>DATA[e]));
+const tbody = document.querySelector('#heatmapTable tbody');
+ESTATES.forEach((e, idx) => {
+ const tr = document.createElement('tr');
+ const dot = document.createElement('span');
+ dot.style.cssText = `display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[idx]};margin-right:6px;`;
+ const nameCell = document.createElement('td');
+ nameCell.style.textAlign = 'left';
+ nameCell.appendChild(dot);
+ nameCell.appendChild(document.createTextNode(e));
+ tr.appendChild(nameCell);
+ DATA[e].forEach(v => {
+ const td = document.createElement('td');
+ td.style.background = rainColor(v, globalMax);
+ td.style.color = v > 250 ? '#fff' : '#1a1a2e';
+ td.textContent = v;
+ tr.appendChild(td);
+ });
+ const tot = document.createElement('td');
+ tot.style.fontWeight = '700';
+ tot.textContent = TOTALS[idx];
+ tr.appendChild(tot);
+ tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>

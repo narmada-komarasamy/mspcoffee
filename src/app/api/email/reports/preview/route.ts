@@ -3,10 +3,18 @@ import { buildRecipientReportPayload, normalizeRecipients, normalizeTemplate } f
 import { renderEmail } from '@/lib/email/render';
 import { getEmailProviderConfig } from '@/lib/email/provider';
 import { requireEmailUser } from '../../_auth';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 export async function POST(request: Request) {
   const auth = await requireEmailUser(request);
   if ('error' in auth) return auth.error;
+
+  const limited = checkRateLimit({
+    key: rateLimitKey('email-report-preview', auth.user.id),
+    limit: 60,
+    windowMs: 60 * 60 * 1000,
+  });
+  if ('error' in limited) return limited.error;
 
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const template = normalizeTemplate(body?.template);

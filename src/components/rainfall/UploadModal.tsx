@@ -14,7 +14,7 @@ type ParsedRow = {
 const VALID_ESTATES = ["Gowri", "Hidden Falls", "Moganad", "Orchardale", "Stanmore", "Vyapurikuttai"];
 
 interface Props {
-  authHeaders: Record<string, string> | null;
+  authHeaders?: Record<string, string> | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -25,6 +25,7 @@ async function readApiError(response: Response, fallback: string) {
 }
 
 export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
+  const requestHeaders = authHeaders ?? { "Content-Type": "application/json" };
   const inputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -93,11 +94,6 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
   };
 
   const handleUpload = async () => {
-    if (!authHeaders) {
-      setErrors((prev) => [...prev, "Sign in again before uploading rainfall data"]);
-      return;
-    }
-
     setStep("uploading");
     const BATCH = 500;
     let count = 0;
@@ -105,7 +101,7 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
       const batch = rows.slice(i, i + BATCH);
       const response = await fetch("/api/rainfall/bulk", {
         method: "POST",
-        headers: authHeaders,
+        headers: requestHeaders,
         body: JSON.stringify({
           rows: batch.map((r) => ({
             date: r.date,

@@ -8,7 +8,7 @@ const sections = [
     href: '/admin-controls/users',
     icon: UserCog,
     title: 'User Management',
-    description: 'Add, edit, deactivate users. Reset PINs and change roles.',
+    description: 'Invite, edit, deactivate users. Send password resets and change roles.',
     available: true,
   },
   {

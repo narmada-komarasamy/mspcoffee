@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Globe, Award, BarChart2, Menu, X, LogOut, Coffee, Warehouse, Maximize2, Minimize2, ClipboardList } from 'lucide-react';
 import { useActivityTracker } from '@/lib/useActivityTracker';
-import { supabase } from '@/lib/supabase';
 
 const THEMES = {
   forest:   { label: 'Forest Green', swatch: '#1b4a1b', dark: '#1b4a1b', mid: '#2d6e2d' },
@@ -19,7 +18,7 @@ type ThemeKey = keyof typeof THEMES;
 const FONT_SIZES = { sm: '13px', md: '15px', lg: '17px' } as const;
 type FontKey = keyof typeof FONT_SIZES;
 
-type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
+type AppUser = { id: string; name: string; role: string; estate: string | null };
 type NavItem = { label: string; href: string; icon: React.ElementType; roles: string[]; children?: NavItem[] };
 
 const navItems: NavItem[] = [
@@ -42,31 +41,28 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   const theme = THEMES[themeKey];
 
   useEffect(() => {
-    const stored = localStorage.getItem('msp_user');
-    if (!stored) { router.push('/login'); return; }
-
-    const cached = JSON.parse(stored) as AppUser;
-
     // Apply theme/font from localStorage (display prefs only)
     const t = localStorage.getItem('msp_theme') as ThemeKey | null;
     const f = localStorage.getItem('msp_font') as FontKey | null;
     if (t && THEMES[t]) setThemeKey(t);
     if (f && FONT_SIZES[f as FontKey]) { setFontKey(f as FontKey); document.documentElement.style.fontSize = FONT_SIZES[f as FontKey]; }
 
-    // Security: re-fetch role from database — never trust localStorage for access control
-    supabase
-      .from('app_users')
-      .select('id, name, role, estate')
-      .eq('id', cached.id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setUser(cached);
+    fetch('/api/auth/me')
+      .then(async (response) => {
+        if (!response.ok) {
+          localStorage.removeItem('msp_user');
+          router.push('/login');
           return;
         }
-        const verified: AppUser = { ...cached, role: data.role, name: data.name, estate: data.estate };
+        const body = await response.json() as { user?: AppUser };
+        if (!body.user) {
+          localStorage.removeItem('msp_user');
+          router.push('/login');
+          return;
+        }
+        const verified: AppUser = { ...body.user, role: body.user.role.trim().toLowerCase() };
         setUser(verified);
-        localStorage.setItem('msp_user', JSON.stringify({ ...cached, role: data.role, name: data.name, estate: data.estate }));
+        localStorage.setItem('msp_user', JSON.stringify(verified));
       });
   }, [router]);
 
@@ -88,7 +84,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   const applyFont  = (k: FontKey)  => { setFontKey(k);  localStorage.setItem('msp_font', k); document.documentElement.style.fontSize = FONT_SIZES[k]; };
   const handleLogout = () => {
     localStorage.removeItem('msp_user');
-    document.cookie = 'msp_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    void fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
 

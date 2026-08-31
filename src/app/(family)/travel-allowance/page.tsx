@@ -11,7 +11,7 @@ const EVENT_RATE = 250;
 
 type Employee = { id: string; name: string };
 type Location = { id: string; name: string };
-type AppUser = { id: string; name: string; pin: string; role: string; estate: string | null };
+type AppUser = { id: string; name: string; role: string; estate: string | null };
 type Entry = {
   id: string;
   entry_date: string;
@@ -98,11 +98,9 @@ function storedAppUser() {
 }
 
 function travelAuthHeaders(user: AppUser | null) {
-  if (!user?.id || !user?.pin) return null;
+  if (!user?.id) return null;
   return {
     'Content-Type': 'application/json',
-    'x-msp-user-id': user.id,
-    'x-msp-user-pin': user.pin,
   };
 }
 
@@ -206,14 +204,12 @@ export default function TravelAllowancePage() {
       try {
         const cached = JSON.parse(stored) as AppUser;
         setCurrentUser(cached);
-        supabase
-          .from('app_users')
-          .select('id, name, role, estate')
-          .eq('id', cached.id)
-          .single()
-          .then(({ data }) => {
-            if (!data) return;
-            const verified = { ...cached, role: data.role, name: data.name, estate: data.estate };
+        fetch('/api/auth/me')
+          .then(async (response) => {
+            if (!response.ok) return;
+            const body = await response.json() as { user?: AppUser };
+            if (!body.user) return;
+            const verified = { ...body.user, role: body.user.role.trim().toLowerCase() };
             setCurrentUser(verified);
             localStorage.setItem('msp_user', JSON.stringify(verified));
           });
@@ -639,13 +635,8 @@ export default function TravelAllowancePage() {
       formData.set('receipt', paymentFiles[row.key]!);
     }
 
-    const authHeaders = {
-      'x-msp-user-id': headers['x-msp-user-id'],
-      'x-msp-user-pin': headers['x-msp-user-pin'],
-    };
     const response = await fetch('/api/travel-allowance/payments', {
       method: 'POST',
-      headers: authHeaders,
       body: formData,
     });
 

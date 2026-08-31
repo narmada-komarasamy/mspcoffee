@@ -14,18 +14,7 @@ type Props = {
 };
 
 function getAuthHeaders(): Record<string, string> {
-  const stored = localStorage.getItem('msp_user');
-  if (!stored) return {};
-  let user: { id?: string; pin?: string };
-  try {
-    user = JSON.parse(stored) as { id?: string; pin?: string };
-  } catch {
-    return {};
-  }
-
-  return user.id && user.pin
-    ? { 'x-msp-user-id': user.id, 'x-msp-user-pin': user.pin }
-    : {};
+  return {};
 }
 
 function splitEmails(value: string) {

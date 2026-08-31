@@ -6,16 +6,10 @@
  * Returns { insights, summary, refreshedAt }.
  */
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
-
-// Use anon key directly — no cookies needed, tables have anon RLS policies
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
-  );
-}
+import { requireApiUser } from '@/lib/auth/api';
+import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,9 +32,7 @@ function daysAgo(n: number) {
 function r1(n: number) { return Math.round(n * 10) / 10; }
 
 // ── Build compact context from Supabase data ───────────────────────────────────
-async function buildContext() {
-  const supabase = getSupabase();
-
+async function buildContext(supabase: SupabaseClient) {
   const today      = new Date().toISOString().split('T')[0];
   const w7ago      = daysAgo(7);
   const w14ago     = daysAgo(14);
@@ -168,9 +160,19 @@ Avg score by estate: ${cupByEstate.map(e => `${e.estate}: ${e.avg} (${e.lots} lo
 }
 
 // ── Main handler ───────────────────────────────────────────────────────────────
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { ctx } = await buildContext();
+    const auth = await requireApiUser(request);
+    if ('error' in auth) return auth.error;
+
+    const limited = checkRateLimit({
+      key: rateLimitKey('ai-insights', auth.user.id),
+      limit: 20,
+      windowMs: 60 * 60 * 1000,
+    });
+    if ('error' in limited) return limited.error;
+
+    const { ctx } = await buildContext(auth.supabase);
 
     const client = new Anthropic();
     const msg = await client.messages.create({

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { MeetingPrintPreview } from "@/components/MeetingPrintPreview";
+import { signedStorageUrl } from "@/lib/storage/urls";
 import css from "./board-meetings.module.css";
 
 type Participant = {
@@ -99,7 +100,7 @@ type Meeting = {
 
 type MeetingForm = Omit<Meeting, "id" | "created_at" | "updated_at" | "board_meeting_participants" | "board_meeting_agenda_items" | "board_meeting_actions" | "board_meeting_files">;
 
-type AppUser = { id: string; name: string; pin?: string; role: string; estate: string | null };
+type AppUser = { id: string; name: string; role: string; estate: string | null };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -176,11 +177,9 @@ function fileFor(files: MeetingFile[] | undefined, fileType: MeetingFile["file_t
 }
 
 function authHeaders(user: AppUser | null) {
-  if (!user?.id || !user?.pin) return null;
+  if (!user?.id) return null;
   return {
     "Content-Type": "application/json",
-    "x-msp-user-id": user.id,
-    "x-msp-user-pin": user.pin,
   };
 }
 
@@ -438,7 +437,7 @@ export default function BoardMeetingsPage() {
 
   const uploadFile = async (fileType: MeetingFile["file_type"], file: File | null) => {
     if (!file || !selectedId) return;
-    if (!user?.id || !user?.pin) {
+    if (!user?.id) {
       setMessage({ type: "error", text: "Please log in again before uploading files." });
       return;
     }
@@ -451,10 +450,6 @@ export default function BoardMeetingsPage() {
     formData.append("file", file);
     const response = await fetch("/api/board-meetings/files", {
       method: "POST",
-      headers: {
-        "x-msp-user-id": user.id,
-        "x-msp-user-pin": user.pin,
-      },
       body: formData,
     });
 
@@ -798,7 +793,7 @@ export default function BoardMeetingsPage() {
                 return (
                   <div className={css.fileBox} key={type}>
                     <div className={css.fileBoxTitle}><Icon size={14} /> {label}</div>
-                    {existing?.public_url ? <a href={existing.public_url} target="_blank" rel="noreferrer">{existing.file_name}</a> : <div className={css.muted}>No file uploaded</div>}
+                    {existing?.file_path ? <a href={signedStorageUrl("board-meetings", existing.file_path)} target="_blank" rel="noreferrer">{existing.file_name}</a> : <div className={css.muted}>No file uploaded</div>}
                     <div style={{ marginTop: 8 }}>
                       <input className={css.fileInput} type="file" disabled={!selectedId || uploading === type} onChange={(e) => uploadFile(type, e.target.files?.[0] ?? null)} />
                       {uploading === type && <div className={css.muted}><Upload size={12} /> Uploading...</div>}
