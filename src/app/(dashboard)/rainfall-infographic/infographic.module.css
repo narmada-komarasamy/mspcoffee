@@ -1,0 +1,186 @@
+:export { }
+
+.root {
+ max-width: 1280px;
+ margin: 0 auto;
+ padding: 24px 16px 40px;
+ font-family: var(--t-font, 'Exo 2', system-ui, sans-serif);
+ color: var(--t-text, #1a1a1a);
+ background: var(--t-bg, #fdf8ee);
+}
+
+/* ── loading ── */
+.loadingWrap {
+ display: flex; flex-direction: column; align-items: center; justify-content: center;
+ min-height: 400px; gap: 16px; color: var(--t-muted, #6b7280);
+}
+.spinner {
+ width: 36px; height: 36px;
+ border: 3px solid var(--t-border, #e5dfc8); border-top-color: var(--t-accent, #4a9e4a);
+ border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── header ── */
+.header {
+ display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+ margin-bottom: 20px;
+}
+.title {
+ font-size: 1.6rem; font-weight: 900; color: var(--t-heading, #1b4a1b); letter-spacing: -0.02em;
+}
+.subtitle {
+ font-size: 0.8rem; color: var(--t-muted, #6b7280); margin-top: 2px;
+}
+.headerKpis {
+ display: flex; gap: 12px; flex-wrap: wrap;
+}
+.hKpi {
+ background: var(--t-card, #ffffff); border: 1px solid var(--t-border, #e5dfc8); border-radius: 8px;
+ padding: 8px 14px; text-align: center;
+}
+.hKpiVal {
+ display: block; font-size: 1.1rem; font-weight: 800; color: var(--t-heading, #1b4a1b);
+}
+.hKpiLbl {
+ font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--t-muted, #6b7280);
+}
+
+/* ── estate filter ── */
+.estateFilter {
+ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+}
+.filterBtn {
+ background: var(--t-card, #ffffff); color: var(--t-text, #1a1a1a); border: 1px solid var(--t-border, #e5dfc8); border-radius: 20px;
+ padding: 6px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+ display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s;
+}
+.filterBtn:hover { border-color: var(--t-accent, #4a9e4a); }
+.filterBtnActive { color: #ffffff !important; font-weight: 800; }
+.filterDot {
+ display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* ── rows ── */
+.row2 {
+ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+}
+@media (max-width: 900px) { .row2 { grid-template-columns: 1fr; } }
+
+.card {
+ background: var(--t-card, #ffffff); border: 1px solid var(--t-border, #e5dfc8); border-radius: 12px;
+ padding: 16px 18px; box-shadow: var(--msp-shadow-card, 0 4px 24px rgba(0,0,0,0.4));
+}
+.cardWide { grid-column: 1 / -1; }
+.cardLabel {
+ font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em;
+ color: var(--t-heading, #1b4a1b); font-weight: 700; margin-bottom: 12px;
+}
+.cardHint {
+ font-size: 0.65rem; color: var(--t-muted, #6b7280); margin-bottom: 8px; line-height: 1.4;
+}
+
+/* ── KPI grid ── */
+.kpiGrid {
+ display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.kpiItem {
+ background: var(--t-subtle, #f5eedc); border-radius: 8px; padding: 10px 12px;
+ border-left: 3px solid;
+}
+.kpiTop {
+ display: flex; align-items: center; justify-content: space-between;
+}
+.kpiRank {
+ font-size: 0.6rem; font-weight: 700; color: var(--t-label, #374151); background: var(--t-border, #e5dfc8);
+ width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+}
+.kpiEstate {
+ font-size: 0.72rem; font-weight: 700;
+}
+.kpiMid {
+ display: flex; align-items: baseline; gap: 6px; margin: 4px 0;
+}
+.kpiTotal {
+ font-size: 1.1rem; font-weight: 900; color: var(--t-heading, #1b4a1b);
+}
+.kpiTotal small { font-size: 0.65rem; color: var(--t-muted, #6b7280); font-weight: 600; }
+.kpiYoy {
+ font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+}
+.kpiUp { color: #2d6e2d; background: rgba(45,110,45,0.12); }
+.kpiDown { color: #e8524a; background: rgba(232,82,74,0.12); }
+.kpiBot {
+ display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--t-muted, #6b7280);
+}
+
+/* ── season grid ── */
+.seasonGrid {
+ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+}
+.seasonCard {
+ background: var(--t-subtle, #f5eedc); border: 1px solid var(--t-border, #e5dfc8); border-top: 3px solid;
+ border-radius: 8px; padding: 10px 12px; text-align: center;
+}
+.seasonEmoji { font-size: 1.4rem; }
+.seasonName { font-size: 0.7rem; font-weight: 700; margin-top: 3px; color: var(--t-heading, #1b4a1b); }
+.seasonMonths { font-size: 0.65rem; font-weight: 600; margin-top: 2px; }
+.seasonNote { font-size: 0.6rem; color: var(--t-muted, #6b7280); margin-top: 3px; line-height: 1.3; }
+
+/* ── heatmap ── */
+.heatWrap { overflow-x: auto; }
+.heatHeader {
+ display: flex; margin-bottom: 4px;
+}
+.heatCorner { width: 110px; flex-shrink: 0; }
+.heatMonths { display: flex; gap: 2px; flex: 1; }
+.heatMonthCell { flex: 1; text-align: center; font-size: 0.6rem; color: var(--t-heading, #1b4a1b); font-weight: 600; }
+.heatRow { display: flex; align-items: center; margin-bottom: 4px; }
+.heatYear { width: 38px; font-size: 0.65rem; color: var(--t-heading, #1b4a1b); font-weight: 600; flex-shrink: 0; text-align: right; padding-right: 6px; }
+.heatEstateLabel { width: 70px; font-size: 0.6rem; color: var(--t-muted, #6b7280); flex-shrink: 0; text-align: right; padding-right: 4px; }
+.heatCells { display: flex; gap: 2px; flex: 1; }
+.heatCell {
+ flex: 1; aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+ min-width: 18px; font-size: 0.55rem;
+}
+.heatVal { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 600; }
+.heatLegend {
+ display: flex; align-items: center; gap: 4px; margin-top: 8px; justify-content: flex-end;
+ font-size: 0.6rem; color: var(--t-muted, #6b7280);
+}
+.heatSwatch {
+ width: 24px; height: 10px; border-radius: 2px;
+}
+
+/* ── comparison table ── */
+.tableWrap { overflow-x: auto; }
+.cmpTable { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+.cmpTable th {
+ text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--t-border, #e5dfc8);
+ color: var(--t-muted, #6b7280); font-weight: 700; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em;
+ white-space: nowrap;
+}
+.cmpTable td {
+ padding: 6px 8px; border-bottom: 1px solid var(--t-subtle, #f5eedc); color: var(--t-text, #1a1a1a); white-space: nowrap;
+}
+.cmpDot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.rankBadge {
+ display: inline-flex; align-items: center; justify-content: center;
+ width: 22px; height: 22px; background: var(--t-border, #e5dfc8); border-radius: 50%;
+ font-size: 0.65rem; font-weight: 700; color: var(--t-heading, #1b4a1b);
+}
+.numCell { font-variant-numeric: tabular-nums; font-family: var(--t-font-mono, monospace); font-size: 0.68rem; }
+
+/* ── yoy colors (mirror kpi) ── */
+.yoyVal { font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+
+/* ── source note ── */
+.sourceNote {
+ font-size: 0.62rem; color: var(--t-muted, #6b7280); margin-top: 10px; line-height: 1.4;
+}
+
+/* ── footer ── */
+.footer {
+ text-align: center; font-size: 0.62rem; color: var(--t-muted, #6b7280); margin-top: 20px;
+ padding-top: 16px; border-top: 1px solid var(--t-border, #e5dfc8);
+}

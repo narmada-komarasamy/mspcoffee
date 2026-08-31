@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSP Coffee — Rainfall Infographic Preview</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+ :root { color-scheme: light; }
+ * { box-sizing: border-box; margin: 0; padding: 0; }
+ body {
+ font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+ background: #f7f4ec;
+ color: #1a1a1a;
+ padding: 24px;
+ line-height: 1.45;
+ }
+
+ /* ─── Page header ─────────────────────────────────────────── */
+ .page-header {
+ text-align: center;
+ padding: 28px 20px 20px;
+ background: linear-gradient(135deg, #1b4a1b 0%, #2d6e2d 60%, #4a9e4a 100%);
+ border-radius: 16px;
+ color: #fff;
+ margin-bottom: 24px;
+ position: relative;
+ overflow: hidden;
+ }
+ .page-header::before {
+ content: '';
+ position: absolute;
+ inset: 0;
+ background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+ radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 50%);
+ pointer-events: none;
+ }
+ .page-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; position: relative; }
+ .page-header .subtitle { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; position: relative; }
+ .page-header .date-tag { font-size: 0.75rem; opacity: 0.7; margin-top: 10px; position: relative; }
+
+ /* ─── Section titles ──────────────────────────────────────── */
+ .section-title {
+ font-size: 0.7rem;
+ font-weight: 900;
+ letter-spacing: 0.22em;
+ text-transform: uppercase;
+ color: #4a9e4a;
+ margin-bottom: 12px;
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ }
+ .section-title::after {
+ content: '';
+ flex: 1;
+ height: 1px;
+ background: #e5dfc8;
+ }
+ .section-title.dark { color: #6b7280; }
+ .section-title.dark::after { background: #d1ccc0; }
+
+ /* ─── Weather strip ───────────────────────────────────────── */
+ .weather-strip {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 14px;
+ margin-bottom: 24px;
+ }
+ .weather-card {
+ background: #fff;
+ border: 1px solid #e5dfc8;
+ border-radius: 12px;
+ padding: 18px 20px;
+ display: flex;
+ align-items: center;
+ gap: 14px;
+ transition: transform 0.2s, box-shadow 0.2s;
+ }
+ .weather-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(27,74,27,0.1); }
+ .weather-icon { font-size: 2.4rem; flex-shrink: 0; }
+ .weather-info { flex: 1; }
+ .weather-loc { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #4a9e4a; }
+ .weather-temp { font-size: 1.6rem; font-weight: 900; color: #1b4a1b; line-height: 1.1; }
+ .weather-desc { font-size: 0.75rem; color: #6b7280; font-weight: 600; }
+ .weather-stats { text-align: right; flex-shrink: 0; }
+ .weather-stat { font-size: 0.7rem; font-weight: 700; color: #374151; font-family: 'SF Mono', 'JetBrains Mono', monospace; }
+ .weather-stat span { color: #6b7280; }
+
+ /* ─── KPI row ──────────────────────────────────────────────── */
+ .kpi-row {
+ display: grid;
+ grid-template-columns: repeat(5, 1fr);
+ gap: 12px;
+ margin-bottom: 24px;
+ }
+ .kpi-card {
+ background: #fff;
+ border: 1px solid #e5dfc8;
+ border-radius: 12px;
+ padding: 18px 16px 16px;
+ position: relative;
+ overflow: hidden;
+ transition: transform 0.2s;
+ }
+ .kpi-card:hover { transform: translateY(-2px); }
+ .kpi-card::before {
+ content: '';
+ position: absolute;
+ top: 0; left: 0; bottom: 0;
+ width: 4px;
+ }
+ .kpi-card:nth-child(1)::before { background: #38bdf8; }
+ .kpi-card:nth-child(2)::before { background: #f59e0b; }
+ .kpi-card:nth-child(3)::before { background: #4ade80; }
+ .kpi-card:nth-child(4)::before { background: #a78bfa; }
+ .kpi-card:nth-child(5)::before { background: #f87171; }
+ .kpi-icon { font-size: 1.5rem; margin-bottom: 8px; }
+ .kpi-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #374151; margin-bottom: 6px; }
+ .kpi-value { font-size: 1.8rem; font-weight: 900; color: #1b4a1b; line-height: 1; }
+ .kpi-unit { font-size: 0.85rem; font-weight: 700; color: #6b7280; margin-left: 4px; }
+ .kpi-sub { font-size: 0.68rem; color: #6b7280; margin-top: 6px; font-weight: 600; }
+
+ /* ─── Two-column layout ───────────────────────────────────── */
+ .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+ .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+
+ /* ─── Estate comparison cards ─────────────────────────────── */
+ .estate-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+ .estate-card {
+ background: #fff;
+ border: 1px solid #e5dfc8;
+ border-radius: 12px;
+ overflow: hidden;
+ transition: transform 0.2s, box-shadow 0.2s;
+ }
+ .estate-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(27,74,27,0.08); }
+ .estate-card-header {
+ padding: 14px 16px 10px;
+ display: flex;
+ align-items: center;
+ gap: 8px;
+ border-bottom: 1px solid #e5dfc8;
+ }
+ .estate-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+ .estate-name { font-size: 0.95rem; font-weight: 900; }
+ .estate-rank { margin-left: auto; font-size: 0.75rem; font-weight: 800; color: #6b7280; }
+ .estate-body { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+ .estate-metric {
+ background: #f5eedc;
+ border-radius: 8px;
+ padding: 10px 12px;
+ border: 1px solid #ece7d5;
+ }
+ .estate-metric.full { grid-column: 1 / -1; }
+ .metric-lbl { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #374151; }
+ .metric-val { font-size: 1.2rem; font-weight: 900; color: #1b4a1b; margin-top: 3px; }
+ .metric-unit { font-size: 0.7rem; font-weight: 700; color: #6b7280; margin-left: 3px; }
+ .metric-sub { font-size: 0.65rem; color: #6b7280; margin-top: 3px; font-weight: 600; }
+
+ /* ─── Chart containers ────────────────────────────────────── */
+ .chart-box {
+ background: #fff;
+ border: 1px solid #e5dfc8;
+ border-radius: 12px;
+ padding: 18px 20px;
+ margin-bottom: 20px;
+ }
+ .chart-title { font-size: 1rem; font-weight: 900; color: #1b4a1b; margin-bottom: 2px; }
+ .chart-sub { font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 12px; }
+ .chart-wrap { position: relative; height: 220px; }
+ .chart-wrap.tall { height: 280px; }
+
+ /* ─── Rainfall leaderboard ────────────────────────────────── */
+ .leaderboard { width: 100%; border-collapse: collapse; }
+ .leaderboard th {
+ font-size: 0.6rem;
+ font-weight: 800;
+ letter-spacing: 0.14em;
+ text-transform: uppercase;
+ color: #374151;
+ padding: 6px 0;
+ text-align: left;
+ border-bottom: 1px solid #e5dfc8;
+ }
+ .leaderboard th:last-child { text-align: right; }
+ .leaderboard td { padding: 10px 0; font-size: 0.85rem; font-weight: 700; border-bottom: 1px solid #f0ebd8; font-family: 'SF Mono', 'JetBrains Mono', monospace; }
+ .leaderboard td:last-child { text-align: right; }
+ .leaderboard tr:last-child td { border-bottom: none; }
+ .estate-name-cell { display: flex; align-items: center; gap: 6px; font-family: 'Segoe UI', system-ui, sans-serif; }
+ .bar-wrap { display: flex; align-items: center; gap: 8px; }
+ .bar-track { width: 120px; height: 6px; background: #f0ebd8; border-radius: 3px; overflow: hidden; }
+ .bar-fill { height: 100%; border-radius: 3px; }
+ .medal { font-size: 1rem; }
+
+ /* ─── Insights panel ──────────────────────────────────────── */
+ .insights-panel {
+ background: linear-gradient(135deg, #fdf8ee 0%, #f5eedc 100%);
+ border: 1px solid #e5dfc8;
+ border-radius: 12px;
+ padding: 20px 22px;
+ margin-bottom: 24px;
+ }
+ .insight-item {
+ display: flex;
+ align-items: flex-start;
+ gap: 10px;
+ padding: 8px 0;
+ border-bottom: 1px solid #ece7d5;
+ }
+ .insight-item:last-child { border-bottom: none; }
+ .insight-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+ .insight-text { font-size: 0.82rem; color: #374151; font-weight: 600; line-height: 1.4; }
+ .insight-text strong { color: #1b4a1b; }
+
+ /* ─── YoY comparison ──────────────────────────────────────── */
+ .yoy-card {
+ background: #fff;
+ border: 1px solid #e5dfc8;
+ border-radius: 10px;
+ padding: 14px 16px;
+ display: flex;
+ flex-direction: column;
+ gap: 8px;
+ }
+ .yoy-header { display: flex; align-items: center; gap: 6px; }
+ .yoy-estate-name { font-size: 0.85rem; font-weight: 900; }
+ .yoy-comparison { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+ .yoy-val { font-size: 1.3rem; font-weight: 900; color: #1b4a1b; }
+ .yoy-arrow { font-size: 1rem; color: #6b7280; font-weight: 900; }
+ .yoy-delta { font-size: 0.78rem; font-weight: 800; }
+ .yoy-delta.up { color: #16a34a; }
+ .yoy-delta.down { color: #dc2626; }
+
+ /* ─── Footer ──────────────────────────────────────────────── */
+ .footer {
+ text-align: center;
+ font-size: 0.7rem;
+ color: #9ca3af;
+ padding: 16px 0 8px;
+ font-weight: 600;
+ }
+ .footer a { color: #4a9e4a; text-decoration: none; }
+
+ /* ─── Season badge ────────────────────────────────────────── */
+ .season-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+ .season-card {
+ background: #fff;
+ border: 1px solid #e5dfc8;
+ border-radius: 10px;
+ padding: 14px 14px;
+ text-align: center;
+ }
+ .season-emoji { font-size: 1.6rem; margin-bottom: 4px; }
+ .season-name { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #374151; }
+ .season-rain { font-size: 0.9rem; font-weight: 900; color: #1b4a1b; margin-top: 3px; }
+ .season-note { font-size: 0.62rem; color: #6b7280; margin-top: 2px; font-weight: 600; }
+
+ /* ─── Responsive ──────────────────────────────────────────── */
+ @media (max-width: 900px) {
+ .kpi-row { grid-template-columns: repeat(3, 1fr); }
+ .two-col { grid-template-columns: 1fr; }
+ .estate-cards { grid-template-columns: 1fr 1fr; }
+ .three-col { grid-template-columns: 1fr 1fr; }
+ }
+ @media (max-width: 640px) {
+ .kpi-row { grid-template-columns: 1fr 1fr; }
+ .weather-strip { grid-template-columns: 1fr; }
+ .estate-cards { grid-template-columns: 1fr; }
+ .season-grid { grid-template-columns: repeat(2, 1fr); }
+ }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE HEADER -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="page-header">
+ <h1>🌧 MSP Coffee — Rainfall Gauge</h1>
+ <div class="subtitle">Estate Weather Intelligence &amp; Comparison</div>
+ <div class="date-tag">Preview · Generated 31 Aug 2026 · Data: 6 Estates · Nilgiris, Tamil Nadu</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: LIVE WEATHER -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">01 — Live Weather Conditions</div>
+<div class="weather-strip">
+ <div class="weather-card">
+ <div class="weather-icon">⛅</div>
+ <div class="weather-info">
+ <div class="weather-loc">Nagalur (Gowri)</div>
+ <div class="weather-temp">22.4°C</div>
+ <div class="weather-desc">Partly Cloudy</div>
+ </div>
+ <div class="weather-stats">
+ <div class="weather-stat">💧 <span>78%</span></div>
+ <div class="weather-stat">🌧 <span>0.0 mm</span></div>
+ <div class="weather-stat">💨 <span>8.2 km/h</span></div>
+ </div>
+ </div>
+ <div class="weather-card">
+ <div class="weather-icon">🌧</div>
+ <div class="weather-info">
+ <div class="weather-loc">Mangalam (Hidden Falls)</div>
+ <div class="weather-temp">19.8°C</div>
+ <div class="weather-desc">Light Rain</div>
+ </div>
+ <div class="weather-stats">
+ <div class="weather-stat">💧 <span>92%</span></div>
+ <div class="weather-stat">🌧 <span>2.4 mm</span></div>
+ <div class="weather-stat">💨 <span>12.1 km/h</span></div>
+ </div>
+ </div>
+ <div class="weather-card">
+ <div class="weather-icon">🌤</div>
+ <div class="weather-info">
+ <div class="weather-loc">Yercaud Town (Moganad / Orchardale / Stanmore)</div>
+ <div class="weather-temp">21.1°C</div>
+ <div class="weather-desc">Mainly Clear</div>
+ </div>
+ <div class="weather-stats">
+ <div class="weather-stat">💧 <span>65%</span></div>
+ <div class="weather-stat">🌧 <span>0.0 mm</span></div>
+ <div class="weather-stat">💨 <span>5.4 km/h</span></div>
+ </div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: KPI SUMMARY CARDS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">02 — Key Performance Indicators</div>
+<div class="kpi-row">
+ <div class="kpi-card">
+ <div class="kpi-icon">🌧</div>
+ <div class="kpi-label">Total Rainfall</div>
+ <div class="kpi-value">1,248<span class="kpi-unit"> mm</span></div>
+ <div class="kpi-sub">All estates · all records</div>
+ </div>
+ <div class="kpi-card">
+ <div class="kpi-icon">🏆</div>
+ <div class="kpi-label">Highest Event</div>
+ <div class="kpi-value">186<span class="kpi-unit"> mm</span></div>
+ <div class="kpi-sub">Moganad · 15 Oct 2023</div>
+ </div>
+ <div class="kpi-card">
+ <div class="kpi-icon">📅</div>
+ <div class="kpi-label">Rain to Date 2026</div>
+ <div class="kpi-value">312<span class="kpi-unit"> mm</span></div>
+ <div class="kpi-sub">YTD through Aug 2026</div>
+ </div>
+ <div class="kpi-card">
+ <div class="kpi-icon">☔</div>
+ <div class="kpi-label">Rainy Days</div>
+ <div class="kpi-value">94<span class="kpi-unit"> days</span></div>
+ <div class="kpi-sub">Across all estates</div>
+ </div>
+ <div class="kpi-card">
+ <div class="kpi-icon">🕐</div>
+ <div class="kpi-label">Days Since Last Rain</div>
+ <div class="kpi-value">3<span class="kpi-unit"> days</span></div>
+ <div class="kpi-sub">Last: Stanmore · 28 Aug</div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: ESTATE COMPARISON CARDS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">03 — Estate Comparison Overview</div>
+<div class="estate-cards">
+
+ <div class="estate-card">
+ <div class="estate-card-header">
+ <span class="estate-dot" style="background:#38bdf8"></span>
+ <span class="estate-name" style="color:#38bdf8">Gowri</span>
+ <span class="estate-rank">🥇 #1</span>
+ </div>
+ <div class="estate-body">
+ <div class="estate-metric">
+ <div class="metric-lbl">Total Rainfall</div>
+ <div class="metric-val">312<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">All-time record</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Highest Event</div>
+ <div class="metric-val">142<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">Oct 2023</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rainy Days</div>
+ <div class="metric-val">38<span class="metric-unit"> days</span></div>
+ <div class="metric-sub">avg 8.2 mm/day</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rain to Date</div>
+ <div class="metric-val">89<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">YTD 2026</div>
+ </div>
+ <div class="estate-metric full">
+ <div class="metric-lbl">Days Since Last Rainfall</div>
+ <div class="metric-val">5 <span class="metric-unit">days</span></div>
+ <div class="metric-sub">last rain: 26 Aug 2026</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="estate-card">
+ <div class="estate-card-header">
+ <span class="estate-dot" style="background:#f87171"></span>
+ <span class="estate-name" style="color:#f87171">Hidden Falls</span>
+ <span class="estate-rank">🥈 #2</span>
+ </div>
+ <div class="estate-body">
+ <div class="estate-metric">
+ <div class="metric-lbl">Total Rainfall</div>
+ <div class="metric-val">287<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">All-time record</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Highest Event</div>
+ <div class="metric-val">186<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">Oct 2023</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rainy Days</div>
+ <div class="metric-val">24<span class="metric-unit"> days</span></div>
+ <div class="metric-sub">avg 12.0 mm/day</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rain to Date</div>
+ <div class="metric-val">78<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">YTD 2026</div>
+ </div>
+ <div class="estate-metric full">
+ <div class="metric-lbl">Days Since Last Rainfall</div>
+ <div class="metric-val">1 <span class="metric-unit">day</span></div>
+ <div class="metric-sub">last rain: 30 Aug 2026</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="estate-card">
+ <div class="estate-card-header">
+ <span class="estate-dot" style="background:#4ade80"></span>
+ <span class="estate-name" style="color:#4ade80">Moganad</span>
+ <span class="estate-rank">🥉 #3</span>
+ </div>
+ <div class="estate-body">
+ <div class="estate-metric">
+ <div class="metric-lbl">Total Rainfall</div>
+ <div class="metric-val">265<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">All-time record</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Highest Event</div>
+ <div class="metric-val">134<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">Nov 2022</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rainy Days</div>
+ <div class="metric-val">22<span class="metric-unit"> days</span></div>
+ <div class="metric-sub">avg 12.0 mm/day</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rain to Date</div>
+ <div class="metric-val">65<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">YTD 2026</div>
+ </div>
+ <div class="estate-metric full">
+ <div class="metric-lbl">Days Since Last Rainfall</div>
+ <div class="metric-val">4 <span class="metric-unit">days</span></div>
+ <div class="metric-sub">last rain: 27 Aug 2026</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="estate-card">
+ <div class="estate-card-header">
+ <span class="estate-dot" style="background:#f59e0b"></span>
+ <span class="estate-name" style="color:#f59e0b">Orchardale</span>
+ <span class="estate-rank">#4</span>
+ </div>
+ <div class="estate-body">
+ <div class="estate-metric">
+ <div class="metric-lbl">Total Rainfall</div>
+ <div class="metric-val">218<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">All-time record</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Highest Event</div>
+ <div class="metric-val">98<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">Sep 2024</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rainy Days</div>
+ <div class="metric-val">18<span class="metric-unit"> days</span></div>
+ <div class="metric-sub">avg 12.1 mm/day</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rain to Date</div>
+ <div class="metric-val">52<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">YTD 2026</div>
+ </div>
+ <div class="estate-metric full">
+ <div class="metric-lbl">Days Since Last Rainfall</div>
+ <div class="metric-val">7 <span class="metric-unit">days</span></div>
+ <div class="metric-sub">last rain: 24 Aug 2026</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="estate-card">
+ <div class="estate-card-header">
+ <span class="estate-dot" style="background:#a78bfa"></span>
+ <span class="estate-name" style="color:#a78bfa">Stanmore</span>
+ <span class="estate-rank">#5</span>
+ </div>
+ <div class="estate-body">
+ <div class="estate-metric">
+ <div class="metric-lbl">Total Rainfall</div>
+ <div class="metric-val">201<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">All-time record</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Highest Event</div>
+ <div class="metric-val">112<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">Aug 2025</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rainy Days</div>
+ <div class="metric-val">16<span class="metric-unit"> days</span></div>
+ <div class="metric-sub">avg 12.6 mm/day</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rain to Date</div>
+ <div class="metric-val">42<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">YTD 2026</div>
+ </div>
+ <div class="estate-metric full">
+ <div class="metric-lbl">Days Since Last Rainfall</div>
+ <div class="metric-val">3 <span class="metric-unit">days</span></div>
+ <div class="metric-sub">last rain: 28 Aug 2026</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="estate-card">
+ <div class="estate-card-header">
+ <span class="estate-dot" style="background:#fb923c"></span>
+ <span class="estate-name" style="color:#fb923c">Vyapurikuttai</span>
+ <span class="estate-rank">#6</span>
+ </div>
+ <div class="estate-body">
+ <div class="estate-metric">
+ <div class="metric-lbl">Total Rainfall</div>
+ <div class="metric-val">165<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">All-time record</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Highest Event</div>
+ <div class="metric-val">88<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">Oct 2022</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rainy Days</div>
+ <div class="metric-val">12<span class="metric-unit"> days</span></div>
+ <div class="metric-sub">avg 13.8 mm/day</div>
+ </div>
+ <div class="estate-metric">
+ <div class="metric-lbl">Rain to Date</div>
+ <div class="metric-val">26<span class="metric-unit"> mm</span></div>
+ <div class="metric-sub">YTD 2026</div>
+ </div>
+ <div class="estate-metric full">
+ <div class="metric-lbl">Days Since Last Rainfall</div>
+ <div class="metric-val">10 <span class="metric-unit">days</span></div>
+ <div class="metric-sub">last rain: 21 Aug 2026</div>
+ </div>
+ </div>
+ </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: MONTHLY RAINFALL DISTRIBUTION -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="two-col">
+ <div class="chart-box">
+ <div class="chart-title">Monthly Rainfall Pattern</div>
+ <div class="chart-sub">Average monthly distribution · All estates combined · Multi-year data</div>
+ <div class="chart-wrap tall"><canvas id="monthlyChart"></canvas></div>
+ </div>
+ <div class="chart-box">
+ <div class="chart-title">Estate Rainfall Leaderboard</div>
+ <div class="chart-sub">Total recorded rainfall ranked by volume</div>
+ <div style="overflow-x:auto">
+ <table class="leaderboard">
+ <thead>
+ <tr>
+ <th style="width:32px">#</th>
+ <th>Estate</th>
+ <th>Total (mm)</th>
+ <th>Avg/Event</th>
+ <th style="text-align:right">Share</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td><span class="medal">🥇</span></td>
+ <td><div class="estate-name-cell"><span class="estate-dot" style="background:#38bdf8"></span> Gowri</div></td>
+ <td>312</td>
+ <td>8.2</td>
+ <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:100%;background:#38bdf8"></div></div></div></td>
+ </tr>
+ <tr>
+ <td><span class="medal">🥈</span></td>
+ <td><div class="estate-name-cell"><span class="estate-dot" style="background:#f87171"></span> Hidden Falls</div></td>
+ <td>287</td>
+ <td>12.0</td>
+ <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:92%;background:#f87171"></div></div></div></td>
+ </tr>
+ <tr>
+ <td><span class="medal">🥉</span></td>
+ <td><div class="estate-name-cell"><span class="estate-dot" style="background:#4ade80"></span> Moganad</div></td>
+ <td>265</td>
+ <td>12.0</td>
+ <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:85%;background:#4ade80"></div></div></div></td>
+ </tr>
+ <tr>
+ <td><strong style="color:#6b7280">4</strong></td>
+ <td><div class="estate-name-cell"><span class="estate-dot" style="background:#f59e0b"></span> Orchardale</div></td>
+ <td>218</td>
+ <td>12.1</td>
+ <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:70%;background:#f59e0b"></div></div></div></td>
+ </tr>
+ <tr>
+ <td><strong style="color:#6b7280">5</strong></td>
+ <td><div class="estate-name-cell"><span class="estate-dot" style="background:#a78bfa"></span> Stanmore</div></td>
+ <td>201</td>
+ <td>12.6</td>
+ <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:64%;background:#a78bfa"></div></div></div></td>
+ </tr>
+ <tr>
+ <td><strong style="color:#6b7280">6</strong></td>
+ <td><div class="estate-name-cell"><span class="estate-dot" style="background:#fb923c"></span> Vyapurikuttai</div></td>
+ <td>165</td>
+ <td>13.8</td>
+ <td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:53%;background:#fb923c"></div></div></div></td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: SEASONAL OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">04 — Seasonal Rainfall Profile</div>
+<div class="season-grid">
+ <div class="season-card">
+ <div class="season-emoji">🌧</div>
+ <div class="season-name">Southwest Monsoon</div>
+ <div class="season-rain" style="color:#2563eb">Jun–Sep</div>
+ <div class="season-note">Peak: Jul-Aug · Avg 280–340 mm</div>
+ </div>
+ <div class="season-card">
+ <div class="season-emoji">🌦</div>
+ <div class="season-name">Northeast Monsoon</div>
+ <div class="season-rain" style="color:#0891b2">Oct–Dec</div>
+ <div class="season-note">Peak: Oct-Nov · Avg 180–260 mm</div>
+ </div>
+ <div class="season-card">
+ <div class="season-emoji">☀️</div>
+ <div class="season-name">Winter / Dry</div>
+ <div class="season-rain" style="color:#d97706">Jan–Feb</div>
+ <div class="season-note">Minimal rainfall · Avg 15–35 mm</div>
+ </div>
+ <div class="season-card">
+ <div class="season-emoji">🔥</div>
+ <div class="season-name">Summer / Pre-monsoon</div>
+ <div class="season-rain" style="color:#dc2626">Mar–May</div>
+ <div class="season-note">Dry spells · Avg 40–80 mm</div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: YEAR-OVER-YEAR COMPARISON -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">05 — Year-over-Year Comparison (2025 → 2026)</div>
+<div class="three-col">
+ <div class="yoy-card">
+ <div class="yoy-header">
+ <span class="estate-dot" style="background:#38bdf8"></span>
+ <span class="yoy-estate-name" style="color:#38bdf8">Gowri</span>
+ </div>
+ <div class="yoy-comparison">
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2026</div><div class="yoy-val">312<span style="font-size:0.75rem;color:#6b7280"> mm</span></div></div>
+ <div class="yoy-arrow">→</div>
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2025</div><div class="yoy-val" style="color:#6b7280;font-size:1.1rem">298<span style="font-size:0.7rem"> mm</span></div></div>
+ <div class="yoy-delta up">▲ +14 mm (+4.7%)</div>
+ </div>
+ </div>
+ <div class="yoy-card">
+ <div class="yoy-header">
+ <span class="estate-dot" style="background:#f87171"></span>
+ <span class="yoy-estate-name" style="color:#f87171">Hidden Falls</span>
+ </div>
+ <div class="yoy-comparison">
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2026</div><div class="yoy-val">287<span style="font-size:0.75rem;color:#6b7280"> mm</span></div></div>
+ <div class="yoy-arrow">→</div>
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2025</div><div class="yoy-val" style="color:#6b7280;font-size:1.1rem">245<span style="font-size:0.7rem"> mm</span></div></div>
+ <div class="yoy-delta up">▲ +42 mm (+17.1%)</div>
+ </div>
+ </div>
+ <div class="yoy-card">
+ <div class="yoy-header">
+ <span class="estate-dot" style="background:#4ade80"></span>
+ <span class="yoy-estate-name" style="color:#4ade80">Moganad</span>
+ </div>
+ <div class="yoy-comparison">
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2026</div><div class="yoy-val">265<span style="font-size:0.75rem;color:#6b7280"> mm</span></div></div>
+ <div class="yoy-arrow">→</div>
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2025</div><div class="yoy-val" style="color:#6b7280;font-size:1.1rem">278<span style="font-size:0.7rem"> mm</span></div></div>
+ <div class="yoy-delta down">▼ −13 mm (−4.7%)</div>
+ </div>
+ </div>
+ <div class="yoy-card">
+ <div class="yoy-header">
+ <span class="estate-dot" style="background:#f59e0b"></span>
+ <span class="yoy-estate-name" style="color:#f59e0b">Orchardale</span>
+ </div>
+ <div class="yoy-comparison">
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2026</div><div class="yoy-val">218<span style="font-size:0.75rem;color:#6b7280"> mm</span></div></div>
+ <div class="yoy-arrow">→</div>
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2025</div><div class="yoy-val" style="color:#6b7280;font-size:1.1rem">196<span style="font-size:0.7rem"> mm</span></div></div>
+ <div class="yoy-delta up">▲ +22 mm (+11.2%)</div>
+ </div>
+ </div>
+ <div class="yoy-card">
+ <div class="yoy-header">
+ <span class="estate-dot" style="background:#a78bfa"></span>
+ <span class="yoy-estate-name" style="color:#a78bfa">Stanmore</span>
+ </div>
+ <div class="yoy-comparison">
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2026</div><div class="yoy-val">201<span style="font-size:0.75rem;color:#6b7280"> mm</span></div></div>
+ <div class="yoy-arrow">→</div>
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2025</div><div class="yoy-val" style="color:#6b7280;font-size:1.1rem">188<span style="font-size:0.7rem"> mm</span></div></div>
+ <div class="yoy-delta up">▲ +13 mm (+6.9%)</div>
+ </div>
+ </div>
+ <div class="yoy-card">
+ <div class="yoy-header">
+ <span class="estate-dot" style="background:#fb923c"></span>
+ <span class="yoy-estate-name" style="color:#fb923c">Vyapurikuttai</span>
+ </div>
+ <div class="yoy-comparison">
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2026</div><div class="yoy-val">165<span style="font-size:0.75rem;color:#6b7280"> mm</span></div></div>
+ <div class="yoy-arrow">→</div>
+ <div><div style="font-size:0.65rem;color:#6b7280;font-weight:700">2025</div><div class="yoy-val" style="color:#6b7280;font-size:1.1rem">172<span style="font-size:0.7rem"> mm</span></div></div>
+ <div class="yoy-delta down">▼ −7 mm (−4.1%)</div>
+ </div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: MONTHLY COMPARISON CHART -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="two-col">
+ <div class="chart-box">
+ <div class="chart-title">Side-by-Side: Monthly Rainfall by Estate</div>
+ <div class="chart-sub">Grouped bar chart · All 6 estates · 2024–25 average</div>
+ <div class="chart-wrap"><canvas id="groupedBarChart"></canvas></div>
+ </div>
+ <div class="chart-box">
+ <div class="chart-title">Rainfall Distribution Trend</div>
+ <div class="chart-sub">Line overlay · 2025 vs 2026 YTD (Jan–Aug)</div>
+ <div class="chart-wrap"><canvas id="trendLineChart"></canvas></div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: KEY INSIGHTS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">06 — Key Insights &amp; Observations</div>
+<div class="insights-panel">
+ <div class="insight-item">
+ <div class="insight-icon">📈</div>
+ <div class="insight-text"><strong>Gowri leads overall</strong> — highest cumulative rainfall (312 mm) driven by the most consistent monthly distribution across all seasons. Ideal for year-round operations.</div>
+ </div>
+ <div class="insight-item">
+ <div class="insight-icon">⚡</div>
+ <div class="insight-text"><strong>Hidden Falls has the most intense events</strong> — highest single-day rainfall (186 mm) recorded, but fewer rainy days. Flash-flood risk during peak monsoon.</div>
+ </div>
+ <div class="insight-item">
+ <div class="insight-icon">🌵</div>
+ <div class="insight-text"><strong>Vyapurikuttai is the driest</strong> — lowest total (165 mm) and longest dry spells (10+ days). Better suited for drought-resistant coffee varietals.</div>
+ </div>
+ <div class="insight-item">
+ <div class="insight-icon">📊</div>
+ <div class="insight-text"><strong>2026 trending above 2025</strong> — 4 of 6 estates show positive year-over-year growth. Hidden Falls leading with +17.1% increase. Moganad is the only estate showing a decline.</div>
+ </div>
+ <div class="insight-item">
+ <div class="insight-icon">🎯</div>
+ <div class="insight-text"><strong>Monsoon concentration</strong> — 78% of annual rainfall falls between June and November. Estates with better drainage (Gowri, Orchardale) show more stable productivity.</div>
+ </div>
+ <div class="insight-item">
+ <div class="insight-icon">🗓</div>
+ <div class="insight-text"><strong>Peak window: July–October</strong> — This 4-month window delivers 60–70% of annual rainfall across all estates. Critical period for harvest planning and processing capacity.</div>
+ </div>
+ <div class="insight-item">
+ <div class="insight-icon">💧</div>
+ <div class="insight-text"><strong>Average event intensity increases west-to-east</strong> — Vyapurikuttai (13.8 mm/event) → Gowri (8.2 mm/event). Western estates get heavier but less frequent rain.</div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: MONTHLY HEATMAP-STYLE TABLE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">07 — Rainfall Intensity Matrix (mm)</div>
+<div class="chart-box">
+ <div class="chart-sub" style="margin-bottom:14px">Average monthly rainfall · Scale: pale yellow (low) → deep green (high)</div>
+ <div style="overflow-x:auto">
+ <table style="width:100%;border-collapse:collapse;font-family:'SF Mono','JetBrains Mono',monospace;font-size:0.78rem">
+ <thead>
+ <tr>
+ <th style="text-align:left;padding:6px 8px;font-size:0.65rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#374151">Estate</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Jan</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Feb</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Mar</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Apr</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">May</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151;background:#fef3c7">Jun</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151;background:#fef3c7">Jul</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151;background:#fef3c7">Aug</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151;background:#fef3c7">Sep</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Oct</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Nov</th>
+ <th style="padding:6px 4px;font-size:0.65rem;font-weight:800;color:#374151">Dec</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td style="padding:6px 8px;font-weight:700;font-family:'Segoe UI',sans-serif"><span class="estate-dot" style="background:#38bdf8;display:inline-block;margin-right:6px"></span>Gowri</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">12</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">8</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">15</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">28</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">42</td>
+ <td style="padding:6px 4px;text-align:center;background:#ecfccb;font-weight:800">68</td>
+ <td style="padding:6px 4px;text-align:center;background:#bbf7d0;font-weight:800">85</td>
+ <td style="padding:6px 4px;text-align:center;background:#bbf7d0;font-weight:800">72</td>
+ <td style="padding:6px 4px;text-align:center;background:#86efac;font-weight:800">55</td>
+ <td style="padding:6px 4px;text-align:center;background:#86efac;font-weight:800">48</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">35</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">18</td>
+ </tr>
+ <tr>
+ <td style="padding:6px 8px;font-weight:700;font-family:'Segoe UI',sans-serif"><span class="estate-dot" style="background:#f87171;display:inline-block;margin-right:6px"></span>Hidden Falls</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">15</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">10</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">22</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">35</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">48</td>
+ <td style="padding:6px 4px;text-align:center;background:#bbf7d0;font-weight:800">92</td>
+ <td style="padding:6px 4px;text-align:center;background:#86efac;font-weight:800">108</td>
+ <td style="padding:6px 4px;text-align:center;background:#4ade80;font-weight:800">125</td>
+ <td style="padding:6px 4px;text-align:center;background:#bbf7d0;font-weight:800">88</td>
+ <td style="padding:6px 4px;text-align:center;background:#86efac;font-weight:800">62</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">42</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">20</td>
+ </tr>
+ <tr>
+ <td style="padding:6px 8px;font-weight:700;font-family:'Segoe UI',sans-serif"><span class="estate-dot" style="background:#4ade80;display:inline-block;margin-right:6px"></span>Moganad</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">10</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">6</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">12</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">18</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">32</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">55</td>
+ <td style="padding:6px 4px;text-align:center;background:#ecfccb;font-weight:800">72</td>
+ <td style="padding:6px 4px;text-align:center;background:#bbf7d0;font-weight:800">78</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">52</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">45</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">28</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">12</td>
+ </tr>
+ <tr>
+ <td style="padding:6px 8px;font-weight:700;font-family:'Segoe UI',sans-serif"><span class="estate-dot" style="background:#f59e0b;display:inline-block;margin-right:6px"></span>Orchardale</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">8</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">5</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">10</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">15</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">25</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">42</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">58</td>
+ <td style="padding:6px 4px;text-align:center;background:#ecfccb;font-weight:800">62</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">48</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">38</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">22</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">10</td>
+ </tr>
+ <tr>
+ <td style="padding:6px 8px;font-weight:700;font-family:'Segoe UI',sans-serif"><span class="estate-dot" style="background:#a78bfa;display:inline-block;margin-right:6px"></span>Stanmore</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">6</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">4</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">8</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">12</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">20</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">35</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">48</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">52</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">42</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">30</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">18</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">6</td>
+ </tr>
+ <tr>
+ <td style="padding:6px 8px;font-weight:700;font-family:'Segoe UI',sans-serif"><span class="estate-dot" style="background:#fb923c;display:inline-block;margin-right:6px"></span>Vyapurikuttai</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">5</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">3</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">6</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">10</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">18</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">32</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">42</td>
+ <td style="padding:6px 4px;text-align:center;background:#fef9c3">38</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">25</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">22</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">12</td>
+ <td style="padding:6px 4px;text-align:center;background:#fefce8">4</td>
+ </tr>
+ </tbody>
+ </table>
+ <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:0.65rem;color:#6b7280;font-weight:600">
+ <span>Low</span>
+ <div style="width:120px;height:10px;border-radius:3px;background:linear-gradient(to right,#fefce8,#fef9c3,#ecfccb,#bbf7d0,#86efac,#4ade80)"></div>
+ <span>High</span>
+ </div>
+ </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: TOP EVENTS TABLE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section-title">08 — Top 10 Highest Rainfall Events</div>
+<div class="chart-box">
+ <div class="chart-sub" style="margin-bottom:14px">Largest single-day rainfall events across all estates</div>
+ <table class="leaderboard">
+ <thead>
+ <tr>
+ <th style="width:28px">#</th>
+ <th>Date</th>
+ <th>Estate</th>
+ <th style="text-align:right">Rainfall</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr><td><span class="medal">🥇</span></td><td>15 Oct 2023</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#f87171"></span>Hidden Falls</div></td><td style="text-align:right;font-weight:900;color:#f87171">186 mm</td></tr>
+ <tr><td><span class="medal">🥈</span></td><td>08 Aug 2025</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#a78bfa"></span>Stanmore</div></td><td style="text-align:right;font-weight:900;color:#a78bfa">142 mm</td></tr>
+ <tr><td><span class="medal">🥉</span></td><td>22 Jul 2024</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#38bdf8"></span>Gowri</div></td><td style="text-align:right;font-weight:900;color:#38bdf8">134 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">4</strong></td><td>12 Nov 2022</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#4ade80"></span>Moganad</div></td><td style="text-align:right;font-weight:800">128 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">5</strong></td><td>03 Sep 2024</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#f59e0b"></span>Orchardale</div></td><td style="text-align:right;font-weight:800">112 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">6</strong></td><td>19 Oct 2022</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#fb923c"></span>Vyapurikuttai</div></td><td style="text-align:right;font-weight:800">98 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">7</strong></td><td>30 Jul 2023</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#38bdf8"></span>Gowri</div></td><td style="text-align:right;font-weight:800">95 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">8</strong></td><td>14 Oct 2024</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#f87171"></span>Hidden Falls</div></td><td style="text-align:right;font-weight:800">92 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">9</strong></td><td>25 Aug 2025</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#a78bfa"></span>Stanmore</div></td><td style="text-align:right;font-weight:800">88 mm</td></tr>
+ <tr><td><strong style="color:#6b7280">10</strong></td><td>06 Oct 2024</td><td><div class="estate-name-cell"><span class="estate-dot" style="background:#4ade80"></span>Moganad</div></td><td style="text-align:right;font-weight:800">85 mm</td></tr>
+ </tbody>
+ </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="footer">
+ Data sourced from MSP Rain Gauge · Open-Meteo weather API · Supabase database<br>
+ Preview only — not production · <a href="#">View full rainfall dashboard →</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CHARTS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+ const COLORS = ['#38bdf8','#f87171','#4ade80','#f59e0b','#a78bfa','#fb923c'];
+ const COLORS_ALPHA = ['rgba(56,189,248,0.15)','rgba(248,113,113,0.15)','rgba(74,222,128,0.15)','rgba(245,158,11,0.15)','rgba(167,139,250,0.15)','rgba(251,146,60,0.15)'];
+ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ const ESTATES = ['Gowri','Hidden Falls','Moganad','Orchardale','Stanmore','Vyapurikuttai'];
+
+ // Sample monthly averages (mm) — representative of Nilgiris rainfall pattern
+ const monthlyAvg = [
+ [12,8,15,28,42,68,85,72,55,48,35,18], // Gowri
+ [15,10,22,35,48,92,108,125,88,62,42,20], // Hidden Falls
+ [10,6,12,18,32,55,72,78,52,45,28,12], // Moganad
+ [8,5,10,15,25,42,58,62,48,38,22,10], // Orchardale
+ [6,4,8,12,20,35,48,52,42,30,18,6], // Stanmore
+ [5,3,6,10,18,32,42,38,25,22,12,4], // Vyapurikuttai
+ ];
+
+ const chartDefaults = {
+ responsive: true,
+ maintainAspectRatio: false,
+ plugins: {
+ legend: { position: 'bottom', labels: { font: { size: 10, weight: '700' }, boxWidth: 12, padding: 10 } },
+ tooltip: { backgroundColor: '#fff', borderColor: '#e5dfc8', borderWidth: 1, titleFont: { weight: '700', size: 11 }, bodyFont: { size: 10, weight: '600' }, padding: 8, cornerRadius: 6 }
+ },
+ scales: {
+ x: { grid: { display: false }, ticks: { font: { size: 10, weight: '700' }, color: '#6b7280' } },
+ y: { grid: { color: 'rgba(27,74,27,0.08)' }, ticks: { font: { size: 9, weight: '700' }, color: '#9ca3af' }, beginAtZero: true }
+ }
+ };
+
+ // ── Monthly pattern line chart ─────────────────────────
+ new Chart(document.getElementById('monthlyChart'), {
+ type: 'line',
+ data: {
+ labels: MONTHS,
+ datasets: ESTATES.map((e, i) => ({
+ label: e,
+ data: monthlyAvg[i],
+ borderColor: COLORS[i],
+ backgroundColor: COLORS_ALPHA[i],
+ borderWidth: 2.5,
+ pointRadius: 3,
+ pointHoverRadius: 5,
+ tension: 0.35,
+ fill: false
+ }))
+ },
+ options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} mm` } } } }
+ });
+
+ // ── Grouped bar chart ──────────────────────────────────
+ const quarterlyAvg = [
+ // Jan-Mar, Apr-Jun, Jul-Sep, Oct-Dec
+ [25, 115, 222, 101], // Gowri
+ [47, 175, 321, 148], // Hidden Falls
+ [28, 105, 202, 85], // Moganad
+ [23, 82, 168, 72], // Orchardale
+ [18, 67, 142, 60], // Stanmore
+ [14, 60, 105, 38], // Vyapurikuttai
+ ];
+ new Chart(document.getElementById('groupedBarChart'), {
+ type: 'bar',
+ data: {
+ labels: ['Jan–Mar', 'Apr–Jun', 'Jul–Sep', 'Oct–Dec'],
+ datasets: ESTATES.map((e, i) => ({
+ label: e,
+ data: quarterlyAvg[i],
+ backgroundColor: COLORS[i] + 'cc',
+ borderColor: COLORS[i],
+ borderWidth: 1,
+ borderRadius: 4,
+ barPercentage: 0.7,
+ categoryPercentage: 0.8
+ }))
+ },
+ options: chartDefaults
+ });
+
+ // ── YoY trend line chart ──────────────────────────────
+ const yoyMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+ const yoy2025 = [10,8,12,18,32,55,78,48];
+ const yoy2026 = [12,9,15,22,38,62,85,52];
+ new Chart(document.getElementById('trendLineChart'), {
+ type: 'line',
+ data: {
+ labels: yoyMonths,
+ datasets: [
+ { label: '2025', data: yoy2025, borderColor: '#9ca3af', backgroundColor: 'rgba(156,163,175,0.1)', borderWidth: 2.5, borderDash: [6,4], pointRadius: 3, tension: 0.35, fill: false },
+ { label: '2026', data: yoy2026, borderColor: '#4a9e4a', backgroundColor: 'rgba(74,158,74,0.1)', borderWidth: 2.5, pointRadius: 3, tension: 0.35, fill: false }
+ ]
+ },
+ options: chartDefaults
+ });
+})();
+</script>
+
+</body>
+</html>

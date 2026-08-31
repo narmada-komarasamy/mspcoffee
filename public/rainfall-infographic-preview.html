@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSP Coffee — Rainfall Infographic Preview</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root {
+ --gowri: #38bdf8;
+ --hidden: #f87171;
+ --moganad: #4ade80;
+ --orchardale: #f59e0b;
+ --stanmore: #a78bfa;
+ --vyapur: #fb923c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+ font-family: var(--t-font, 'Exo 2', system-ui, sans-serif);
+ background: var(--t-bg, #fdf8ee);
+ color: var(--t-text, #1a1a1a);
+ padding: 24px;
+ line-height: 1.5;
+}
+.page-title {
+ text-align: center;
+ font-size: 1.6rem;
+ font-weight: 800;
+ margin-bottom: 4px;
+ color: var(--t-heading, #1b4a1b);
+}
+.page-subtitle {
+ text-align: center;
+ font-size: 0.85rem;
+ color: var(--t-muted, #6b7280);
+ margin-bottom: 28px;
+}
+.grid-2 {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 20px;
+ margin-bottom: 20px;
+}
+@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.card {
+ background: var(--t-card, #ffffff);
+ border: 1px solid var(--t-border, #e5dfc8);
+ border-radius: 12px;
+ padding: 20px;
+ box-shadow: var(--msp-shadow-card, 0 4px 24px rgba(0,0,0,0.4));
+}
+.card-title {
+ font-size: 0.75rem;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ color: var(--t-heading, #1b4a1b);
+ margin-bottom: 14px;
+ font-weight: 700;
+}
+.wide { grid-column: 1 / -1; }
+
+/* ── KPI row ── */
+.kpis {
+ display: flex;
+ gap: 12px;
+ flex-wrap: wrap;
+ margin-bottom: 20px;
+}
+.kpi {
+ background: var(--t-card, #ffffff);
+ border: 1px solid var(--t-border, #e5dfc8);
+ border-radius: 10px;
+ padding: 14px 18px;
+ flex: 1 1 140px;
+ text-align: center;
+ position: relative;
+ overflow: hidden;
+}
+.kpi::before {
+ content: '';
+ position: absolute;
+ top: 0; left: 0;
+ width: 100%; height: 3px;
+ background: var(--t-accent, #4a9e4a);
+}
+.kpi-value {
+ font-size: 1.5rem;
+ font-weight: 900;
+ line-height: 1.1;
+ color: var(--t-heading, #1b4a1b);
+}
+.kpi-label {
+ font-size: 0.65rem;
+ text-transform: uppercase;
+ letter-spacing: 0.06em;
+ color: var(--t-label, #374151);
+ margin-top: 4px;
+ font-weight: 700;
+}
+
+/* ── Rank badges ── */
+.rank-grid {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 10px;
+}
+.rank-item {
+ text-align: center;
+ padding: 10px 6px;
+ border-radius: 8px;
+ border: 1px solid var(--t-border, #e5dfc8);
+}
+.rank-num {
+ font-size: 1.4rem;
+ font-weight: 900;
+ color: var(--t-heading, #1b4a1b);
+}
+.rank-estate {
+ font-size: 0.7rem;
+ color: var(--t-muted, #6b7280);
+ margin-top: 2px;
+}
+
+/* ── Peak bar chart ── */
+.peak-row {
+ display: flex;
+ align-items: center;
+ margin-bottom: 8px;
+}
+.peak-label {
+ width: 110px;
+ font-size: 0.72rem;
+ font-weight: 600;
+ flex-shrink: 0;
+ color: var(--t-text, #1a1a1a);
+}
+.peak-month {
+ width: 50px;
+ font-size: 0.65rem;
+ color: var(--t-muted, #6b7280);
+ flex-shrink: 0;
+}
+.peak-bar-wrap {
+ flex: 1;
+ height: 18px;
+ background: var(--t-subtle, #f5eedc);
+ border-radius: 4px;
+ overflow: hidden;
+ position: relative;
+}
+.peak-bar {
+ height: 100%;
+ border-radius: 4px;
+ transition: width 0.6s ease;
+}
+.peak-val {
+ position: absolute;
+ right: 6px;
+ top: 50%;
+ transform: translateY(-50%);
+ font-size: 0.65rem;
+ font-weight: 700;
+ color: #fff;
+ text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* ── Legend ── */
+.legend {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 10px 16px;
+ margin-top: 8px;
+}
+.legend-item {
+ display: flex;
+ align-items: center;
+ gap: 5px;
+ font-size: 0.7rem;
+ color: var(--t-text, #1a1a1a);
+}
+.legend-dot {
+ width: 10px; height: 10px;
+ border-radius: 50%;
+ flex-shrink: 0;
+}
+
+/* ── Season cards ── */
+.season-card {
+ background: var(--t-subtle, #f5eedc);
+ border: 1px solid var(--t-border, #e5dfc8);
+ border-radius: 8px;
+ padding: 12px;
+ text-align: center;
+}
+.season-name {
+ font-size: 0.7rem;
+ font-weight: 700;
+ margin-top: 4px;
+ color: var(--t-heading, #1b4a1b);
+}
+.season-range {
+ font-size: 0.65rem;
+ color: var(--t-muted, #6b7280);
+ margin-top: 2px;
+}
+.season-note {
+ font-size: 0.62rem;
+ color: var(--t-muted, #6b7280);
+ margin-top: 4px;
+ line-height: 1.3;
+}
+
+/* ── Comparison table ── */
+.cmp-table {
+ width: 100%;
+ border-collapse: collapse;
+ font-size: 0.72rem;
+}
+.cmp-table th {
+ text-align: left;
+ padding: 6px 8px;
+ border-bottom: 1px solid var(--t-border, #e5dfc8);
+ color: var(--t-label, #374151);
+ font-weight: 700;
+ font-size: 0.65rem;
+ text-transform: uppercase;
+ letter-spacing: 0.05em;
+}
+.cmp-table td {
+ padding: 7px 8px;
+ border-bottom: 1px solid var(--t-subtle, #f5eedc);
+ color: var(--t-text, #1a1a1a);
+}
+.cmp-table tr:last-child td { border-bottom: none; }
+.cmp-dot {
+ display: inline-block;
+ width: 8px; height: 8px;
+ border-radius: 50%;
+ margin-right: 6px;
+ vertical-align: middle;
+}
+
+.section-note {
+ font-size: 0.68rem;
+ color: var(--t-muted, #6b7280);
+ margin-top: 10px;
+ line-height: 1.4;
+}
+</style>
+</head>
+<body>
+
+<h1 class="page-title">MSP Coffee — Rainfall Infographic Preview</h1>
+<p class="page-subtitle">Data source: MSP Rain Gauge · Period: 2024–2025 · Estates: Gowri · Hidden Falls · Moganad · Orchardale · Stanmore · Vyapurikuttai</p>
+
+<!-- ── KPI Summary ── -->
+<div class="kpis">
+ <div class="kpi">
+ <div class="kpi-value" style="color:#38bdf8">1,571<span style="font-size:.8rem">mm</span></div>
+ <div class="kpi-label">Avg Annual Rainfall</div>
+ </div>
+ <div class="kpi">
+ <div class="kpi-value" style="color:#f59e0b">1,986<span style="font-size:.8rem">mm</span></div>
+ <div class="kpi-label">Peak Estate (Hidden Falls)</div>
+ </div>
+ <div class="kpi">
+ <div class="kpi-value" style="color:#4ade80">1,176<span style="font-size:.8rem">mm</span></div>
+ <div class="kpi-label">Lowest Estate (Orchardale)</div>
+ </div>
+ <div class="kpi">
+ <div class="kpi-value" style="color:#a78bfa">Jul–Aug</div>
+ <div class="kpi-label">Peak Season</div>
+ </div>
+ <div class="kpi">
+ <div class="kpi-value" style="color:#fb923c">↑ 3%</div>
+ <div class="kpi-label">YoY Trend</div>
+ </div>
+</div>
+
+<!-- ── Row 1: Monthly Comparison + Seasonal Profile ── -->
+<div class="grid-2">
+ <div class="card wide">
+ <div class="card-title">Monthly Rainfall Comparison — All Estates (2024–25)</div>
+ <canvas id="monthlyChart" height="220"></canvas>
+ </div>
+ <div class="card">
+ <div class="card-title">Seasonal Rainfall Profile</div>
+ <div class="season-row">
+ <div class="season-card">
+ <div class="season-emoji">🌧️</div>
+ <div class="season-name">Southwest Monsoon</div>
+ <div class="season-range" style="color:#2563eb">Jun – Sep</div>
+ <div class="season-note">Peak: Jul–Aug<br>Avg 280–340 mm</div>
+ </div>
+ <div class="season-card">
+ <div class="season-emoji">🌦️</div>
+ <div class="season-name">NE Monsoon</div>
+ <div class="season-range" style="color:#0891b2">Oct – Dec</div>
+ <div class="season-note">Peak: Oct–Nov<br>Avg 180–260 mm</div>
+ </div>
+ <div class="season-card">
+ <div class="season-emoji">☀️</div>
+ <div class="season-name">Winter / Dry</div>
+ <div class="season-range" style="color:#d97706">Jan – Feb</div>
+ <div class="season-note">Minimal rain<br>Avg 15–35 mm</div>
+ </div>
+ <div class="season-card">
+ <div class="season-emoji">🔥</div>
+ <div class="season-name">Summer / Pre-monsoon</div>
+ <div class="season-range" style="color:#dc2626">Mar – May</div>
+ <div class="season-note">Dry spells<br>Avg 40–80 mm</div>
+ </div>
+ </div>
+ </div>
+</div>
+
+<!-- ── Row 2: Annual totals + YoY + Rank ── -->
+<div class="grid-2">
+ <div class="card">
+ <div class="card-title">Annual Rainfall by Estate (2024–25 vs 2023–24)</div>
+ <canvas id="barChart" height="240"></canvas>
+ <div class="legend">
+ <div class="legend-item"><span class="legend-dot" style="background:#2563eb"></span>2024–25</div>
+ <div class="legend-item"><span class="legend-dot" style="background:#64748b"></span>2023–24</div>
+ </div>
+ </div>
+ <div class="card">
+ <div class="card-title">Rainfall Ranking & Year-over-Year Change</div>
+ <canvas id="yoyChart" height="240"></canvas>
+ </div>
+</div>
+
+<!-- ── Row 3: Peak month + comparison table ── -->
+<div class="grid-2">
+ <div class="card">
+ <div class="card-title">Peak Month by Estate</div>
+ <div id="peakBars"></div>
+ </div>
+ <div class="card">
+ <div class="card-title">Estate Comparison Summary</div>
+ <table class="cmp-table">
+ <thead>
+ <tr><th>Estate</th><th>Total '24–25</th><th>Peak Month</th><th>Peak (mm)</th><th>YoY Δ</th></tr>
+ </thead>
+ <tbody>
+ <tr><td><span class="cmp-dot" style="background:#f87171"></span>Hidden Falls</td><td>1,986</td><td>Aug</td><td>498</td><td style="color:#16a34a">↑ +4%</td></tr>
+ <tr><td><span class="cmp-dot" style="background:#a78bfa"></span>Stanmore</td><td>1,688</td><td>Jul</td><td>412</td><td style="color:#16a34a">↑ +8%</td></tr>
+ <tr><td><span class="cmp-dot" style="background:#fb923c"></span>Vyapurikuttai</td><td>1,501</td><td>Jul</td><td>389</td><td style="color:#16a34a">↑ +5%</td></tr>
+ <tr><td><span class="cmp-dot" style="background:#4ade80"></span>Moganad</td><td>1,405</td><td>Aug</td><td>367</td><td style="color:#16a34a">↑ +2%</td></tr>
+ <tr><td><span class="cmp-dot" style="background:#38bdf8"></span>Gowri</td><td>1,392</td><td>Jul</td><td>356</td><td style="color:#dc2626">↓ −1%</td></tr>
+ <tr><td><span class="cmp-dot" style="background:#f59e0b"></span>Orchardale</td><td>1,176</td><td>Aug</td><td>298</td><td style="color:#16a34a">↑ +6%</td></tr>
+ </tbody>
+ </table>
+ <div class="section-note">Values are aggregates from gauge readings. YoY Δ compares 2024–25 to 2023–24 totals.</div>
+ </div>
+</div>
+
+<div class="section-note" style="text-align:center; margin-top:16px; color:var(--t-muted, #6b7280);">
+ ⚡ Preview mode — Data is illustrative based on MSP rain gauge readings · Production version will pull live from Supabase
+</div>
+
+<script>
+// ── Chart.js global defaults — MSP Cream/Green theme ──
+Chart.defaults.color = '#374151';
+Chart.defaults.borderColor = '#e5dfc8';
+Chart.defaults.font.family = "'Exo 2', system-ui, sans-serif";
+
+const estates = ['Gowri','Hidden Falls','Moganad','Orchardale','Stanmore','Vyapurikuttai'];
+const colors = ['#38bdf8','#f87171','#4ade80','#f59e0b','#a78bfa','#fb923c'];
+const months = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+
+// Monthly data (illustrative)
+const monthlyData = {
+ 'Gowri': [210,195,130,155,140, 75, 22, 18, 35, 48, 92,172],
+ 'Hidden Falls': [268,498,310,260,220, 95, 28, 22, 42, 55,105,183],
+ 'Moganad': [195,367,250,200,185, 88, 20, 15, 38, 50, 98,159],
+ 'Orchardale': [168,298,195,155,140, 65, 15, 12, 28, 40, 78,142],
+ 'Stanmore': [225,392,270,215,195, 92, 25, 18, 40, 52,100,164],
+ 'Vyapurikuttai':[198,356,248,188,175, 82, 22, 16, 35, 48, 95,168],
+};
+
+// Annual totals
+const annual2024 = [1392, 1986, 1405, 1176, 1688, 1501];
+const annual2023 = [1406, 1910, 1378, 1110, 1562, 1430];
+
+// YoY delta
+const yoyDelta = [-1, 4, 2, 6, 8, 5];
+const yoyPct = [-0.1, 4.0, 2.0, 5.9, 8.3, 4.9];
+
+// Peak data
+const peakData = [
+ { estate: 'Hidden Falls', month: 'Aug', val: 498, color: '#f87171' },
+ { estate: 'Stanmore', month: 'Jul', val: 412, color: '#a78bfa' },
+ { estate: 'Vyapurikuttai',month: 'Jul', val: 389, color: '#fb923c' },
+ { estate: 'Moganad', month: 'Aug', val: 367, color: '#4ade80' },
+ { estate: 'Gowri', month: 'Jul', val: 356, color: '#38bdf8' },
+ { estate: 'Orchardale', month: 'Aug', val: 298, color: '#f59e0b' },
+];
+
+// ── Monthly line chart ──
+new Chart(document.getElementById('monthlyChart'), {
+ type: 'line',
+ data: {
+ labels: months,
+ datasets: estates.map((e, i) => ({
+ label: e,
+ data: monthlyData[e],
+ borderColor: colors[i],
+ backgroundColor: colors[i] + '18',
+ borderWidth: 2,
+ pointRadius: 2,
+ pointHoverRadius: 5,
+ tension: 0.35,
+ fill: false,
+ })),
+ },
+ options: {
+ responsive: true,
+ interaction: { mode: 'index', intersect: false },
+ plugins: {
+ legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 10 } } },
+ tooltip: { backgroundColor: '#1b4a1b', titleColor: '#fff', bodyColor: '#f5eedc', borderColor: '#2d6e2d', borderWidth: 1 }
+ },
+ scales: {
+ y: { grid: { color: '#f5eedc' }, ticks: { font: { size: 10 } }, title: { display: true, text: 'mm', color: '#6b7280' } },
+ x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+ }
+ }
+});
+
+// ── Annual bar chart ──
+new Chart(document.getElementById('barChart'), {
+ type: 'bar',
+ data: {
+ labels: estates,
+ datasets: [
+ { label: '2024–25', data: annual2024, backgroundColor: '#2d6e2d', borderRadius: 4, barPercentage: 0.7 },
+ { label: '2023–24', data: annual2023, backgroundColor: '#e4b84a', borderRadius: 4, barPercentage: 0.7 },
+ ]
+ },
+ options: {
+ responsive: true,
+ plugins: {
+ legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, font: { size: 10 } } },
+ tooltip: { backgroundColor: '#1b4a1b', titleColor: '#fff', bodyColor: '#f5eedc', borderColor: '#2d6e2d', borderWidth: 1 }
+ },
+ scales: {
+ y: { grid: { color: '#f5eedc' }, ticks: { font: { size: 10 }, callback: v => v + ' mm' } },
+ x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+ }
+ }
+});
+
+// ── YoY delta chart ──
+new Chart(document.getElementById('yoyChart'), {
+ type: 'bar',
+ data: {
+ labels: estates,
+ datasets: [{
+ label: 'YoY Δ (%)',
+ data: yoyPct,
+ backgroundColor: yoyPct.map(v => v >= 0 ? '#2d6e2d' : '#e8524a'),
+ borderRadius: 4,
+ barPercentage: 0.6,
+ }]
+ },
+ options: {
+ responsive: true,
+ indexAxis: 'y',
+ plugins: {
+ legend: { display: false },
+ tooltip: {
+ backgroundColor: '#1b4a1b',
+ callbacks: { label: ctx => `${ctx.raw >= 0 ? '+' : ''}${ctx.raw}% (${yoyDelta[ctx.dataIndex]} mm)` }
+ }
+ },
+ scales: {
+ x: { grid: { color: '#f5eedc' }, ticks: { font: { size: 10 }, callback: v => v + '%' } },
+ y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+ }
+ }
+});
+
+// ── Peak bars (custom HTML) ──
+const peakWrap = document.getElementById('peakBars');
+const maxPeak = Math.max(...peakData.map(d => d.val));
+peakData.forEach(d => {
+ const pct = ((d.val / maxPeak) * 100).toFixed(0);
+ peakWrap.innerHTML += `
+ <div class="peak-row">
+ <div class="peak-label">${d.estate}</div>
+ <div class="peak-month">${d.month}</div>
+ <div class="peak-bar-wrap">
+ <div class="peak-bar" style="width:${pct}%;background:${d.color}"></div>
+ <div class="peak-val">${d.val} mm</div>
+ </div>
+ </div>`;
+});
+</script>
+</body>
+</html>
