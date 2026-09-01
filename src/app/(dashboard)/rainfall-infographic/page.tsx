@@ -435,13 +435,13 @@ function daysBetween(a: string, b: string) {
 // SUB-COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
+function MonthlyLine({ data, selected = "all" }: { data: Row[]; selected?: string }) {
  const chartData = useMemo(() => {
  const estates = selected === "all" ? ESTATES : [selected];
  // group by year-month
  const map: Record<string, Record<string, number>> = {};
  data.forEach(r => {
- if (!estates.includes(r.estate)) return;
+ if (!estates.includes(r.estate as any)) return;
  const k = `${r.year}-${String(r.month).padStart(2, "0")}`;
  if (!map[k]) map[k] = {};
  map[k][r.estate] = (map[k][r.estate] ?? 0) + r.rainfall_mm;
@@ -475,7 +475,7 @@ function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
  );
 }
 
-function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
+function AnnualBarChart({ data, selected = "all" }: { data: Row[]; selected?: string }) {
  const chartData = useMemo(() => {
  const years = [...new Set(data.map(r => r.year))].sort((a, b) => b - a);
  const src = selected === "all" ? data : data.filter(r => r.estate === selected);
@@ -507,14 +507,14 @@ function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
  );
 }
 
-function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) {
+function RainfallHeatmap({ data, selected = "all" }: { data: Row[]; selected?: string }) {
  const estates = selected === "all" ? ESTATES : [selected];
  const years = useMemo(() => [...new Set(data.map(r => r.year))].sort((a, b) => b - a).slice(0, 5), [data]);
 
  const matrix = useMemo(() => {
- const m: Record<string, Record<string, number>> = {};
+ const m: Record<string, number> = {};
  data.forEach(r => {
- if (!estates.includes(r.estate)) return;
+ if (!estates.includes(r.estate as any)) return;
  const key = `${r.estate}|${r.year}-${String(r.month).padStart(2, "0")}`;
  m[key] = (m[key] ?? 0) + r.rainfall_mm;
  });
@@ -522,7 +522,7 @@ function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) 
  }, [data, estates]);
 
  // find max for color scaling
- const allVals = Object.values(matrix);
+const allVals: number[] = Object.values(matrix).flatMap(Object.values);
  const maxVal = allVals.length ? Math.max(...allVals) : 1;
 
  const cellColor = (v: number) => {
@@ -575,7 +575,7 @@ function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) 
  );
 }
 
-function PatternScatter({ data, scatterData }: { data: ReturnType<typeof useMemo>; scatterData: ReturnType<typeof useMemo> }) {
+function PatternScatter({ data, scatterData }: { data: any[]; scatterData: any[] }) {
  return (
  <ResponsiveContainer width="100%" height={260}>
  <ScatterChart>
@@ -586,12 +586,7 @@ function PatternScatter({ data, scatterData }: { data: ReturnType<typeof useMemo
  <Tooltip
  cursor={{ strokeDasharray: "3 3" }}
  contentStyle={TT_STYLE}
- formatter={(v: any, name: string) => {
- if (name === "x") return [`${v} mm`, "Total"];
- if (name === "y") return [`${v}`, "Variation"];
- if (name === "z") return [`${v} days`, "Rainy Days"];
- return [v, name];
- }}
+ formatter={((v: any, name: string) => [`${v}`, name]) as any}
  />
  <Scatter data={scatterData}>
  {data.map((entry, i) => (
@@ -603,7 +598,7 @@ function PatternScatter({ data, scatterData }: { data: ReturnType<typeof useMemo
  );
 }
 
-function DryStreakChart({ data }: { data: ReturnType<typeof useMemo> }) {
+function DryStreakChart({ data }: { data: any[] }) {
  return (
  <ResponsiveContainer width="100%" height={240}>
  <BarChart data={data} layout="vertical">
@@ -612,13 +607,7 @@ function DryStreakChart({ data }: { data: ReturnType<typeof useMemo> }) {
  <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={90} />
  <Tooltip
  contentStyle={TT_STYLE}
- formatter={(v: any, name: string) => {
- if (name === "maxStreak") return [`${v} days`, "Max streak"];
- if (name === "avgStreak") return [`${v} days`, "Avg streak"];
- return [v, name];
- }}
- />
- <Legend wrapperStyle={{ fontSize: 10 }} />
+ formatter={((v: any, name: string) => [`${v}`, name]) as any} />
  <Bar dataKey="maxStreak" fill="#dc2626" name="Max streak" radius={[0, 3, 3, 0]} barSize={14} />
  <Bar dataKey="avgStreak" fill="#d97706" name="Avg streak" radius={[0, 3, 3, 0]} barSize={14} />
  </BarChart>
@@ -626,7 +615,7 @@ function DryStreakChart({ data }: { data: ReturnType<typeof useMemo> }) {
  );
 }
 
-function SeasonalStacked({ data }: { data: Row[] }) {
+function SeasonalStacked({ data }: { data: any[] }) {
  const chartData = useMemo(() => {
  const out: Record<string, Record<string, number>> = {};
  data.forEach(r => {
@@ -656,7 +645,7 @@ function SeasonalStacked({ data }: { data: Row[] }) {
  );
 }
 
-function YoYDeltaChart({ estateStats }: { estateStats: ReturnType<typeof useMemo> }) {
+function YoYDeltaChart({ estateStats }: { estateStats: any[] }) {
  return (
  <ResponsiveContainer width="100%" height={280}>
  <BarChart data={estateStats} layout="vertical">
@@ -665,7 +654,7 @@ function YoYDeltaChart({ estateStats }: { estateStats: ReturnType<typeof useMemo
  <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={100} />
  <Tooltip
  contentStyle={TT_STYLE}
- formatter={(v: number) => [`${v >= 0 ? "+" : ""}${v}%`, "YoY Change"]}
+ formatter={(v: any) => [`${v >= 0 ? "+" : ""}${v}%`, "YoY Change"]}
  />
  <Bar dataKey="yoyDelta" radius={[0, 4, 4, 0]} barSize={18}>
  {estateStats.map(entry => (
