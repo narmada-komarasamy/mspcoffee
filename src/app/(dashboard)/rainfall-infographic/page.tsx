@@ -656,7 +656,7 @@ function SeasonalStacked({ data }: { data: Row[] }) {
  );
 }
 
-function YoYDeltaChart({ estateStats }: { estateStats: ReturnType<typeof useMemo> }) {
+function YoYDeltaChart({ estateStats }: { estateStats: Array<{ estate: string; yoyDelta: number | null }> }) {
  return (
  <ResponsiveContainer width="100%" height={280}>
  <BarChart data={estateStats} layout="vertical">
