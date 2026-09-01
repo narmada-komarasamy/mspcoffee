@@ -285,23 +285,23 @@ export default function RainfallInfographic() {
  <div className={s.card}>
  <div className={s.cardLabel}>Estate Summary</div>
  <div className={s.kpiGrid}>
- {estateStats.map((s, i) => (
- <div key={s.estate} className={s.kpiItem} style={{ borderLeftColor: ESTATE_COLORS[s.estate] }}>
+ {estateStats.map((est, i) => (
+ <div key={est.estate} className={s.kpiItem} style={{ borderLeftColor: ESTATE_COLORS[est.estate] }}>
  <div className={s.kpiTop}>
  <span className={s.kpiRank}>{i + 1}</span>
- <span className={s.kpiEstate} style={{ color: ESTATE_COLORS[s.estate] }}>{s.estate}</span>
+ <span className={s.kpiEstate} style={{ color: ESTATE_COLORS[est.estate] }}>{est.estate}</span>
  </div>
  <div className={s.kpiMid}>
- <span className={s.kpiTotal}>{s.total}<small>mm</small></span>
- {s.yoyDelta !== null && (
- <span className={`${s.kpiYoy} ${s.yoyDelta >= 0 ? s.kpiUp : s.kpiDown}`}>
- {s.yoyDelta >= 0 ? "▲" : "▼"} {Math.abs(s.yoyDelta)}%
+ <span className={s.kpiTotal}>{est.total}<small>mm</small></span>
+ {est.yoyDelta !== null && (
+ <span className={`${s.kpiYoy} ${est.yoyDelta >= 0 ? s.kpiUp : s.kpiDown}`}>
+ {est.yoyDelta >= 0 ? "▲" : "▼"} {Math.abs(est.yoyDelta)}%
  </span>
  )}
  </div>
  <div className={s.kpiBot}>
- <span>{s.rainyDays} rainy days</span>
- <span>Peak: {MONTH_SHORT[s.peakMonth - 1]} ({s.peakMm}mm)</span>
+ <span>{est.rainyDays} rainy days</span>
+ <span>Peak: {MONTH_SHORT[est.peakMonth - 1]} ({est.peakMm}mm)</span>
  </div>
  </div>
  ))}
@@ -388,18 +388,18 @@ export default function RainfallInfographic() {
  </tr>
  </thead>
  <tbody>
- {estateStats.map((s, i) => (
- <tr key={s.estate}>
+ {estateStats.map((est, i) => (
+ <tr key={est.estate}>
  <td><span className={s.rankBadge}>{i + 1}</span></td>
- <td><span className={s.cmpDot} style={{ background: ESTATE_COLORS[s.estate] }} />{s.estate}</td>
- <td className={s.numCell}>{s.total}</td>
- <td className={s.numCell}>{s.rainyDays}</td>
- <td>{MONTH_SHORT[s.peakMonth - 1]}</td>
- <td className={s.numCell}>{s.peakMm}</td>
+ <td><span className={s.cmpDot} style={{ background: ESTATE_COLORS[est.estate] }} />{est.estate}</td>
+ <td className={s.numCell}>{est.total}</td>
+ <td className={s.numCell}>{est.rainyDays}</td>
+ <td>{MONTH_SHORT[est.peakMonth - 1]}</td>
+ <td className={s.numCell}>{est.peakMm}</td>
  <td className={s.numCell}>
- {s.yoyDelta !== null
- ? <span className={s.yoyVal + " " + (s.yoyDelta >= 0 ? s.kpiUp : s.kpiDown)}>
- {s.yoyDelta >= 0 ? "▲" : "▼"} {Math.abs(s.yoyDelta)}%
+ {est.yoyDelta !== null
+ ? <span className={s.yoyVal + " " + (est.yoyDelta >= 0 ? s.kpiUp : s.kpiDown)}>
+ {est.yoyDelta >= 0 ? "▲" : "▼"} {Math.abs(est.yoyDelta)}%
  </span>
  : "—"}
  </td>
