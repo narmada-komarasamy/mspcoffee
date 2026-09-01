@@ -71,6 +71,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+ { label: 'Rainfall Infographic', href: '/rainfall-infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
