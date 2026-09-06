@@ -663,11 +663,10 @@ function YoYDeltaChart({ estateStats }: { estateStats: Array<{ estate: string; y
  <Tooltip contentStyle={TT_STYLE} formatter={(v: any) => [`${v >= 0 ? "+" : ""}${v}%`, "YoY Change"]} />
  <Bar dataKey="yoyDelta" radius={[0, 4, 4, 0]} barSize={18}>
  {estateStats.map(entry => (
- <Cell key={entry.estate} fill={entry.yoyDelta !== null && entry.yoyDelta >= 0 ? "#059669" : "#dc2626"} />
+ <Cell key={entry.estate} fill={entry.yoyDelta !== null && entry.yoyDelta >= 0 ? "#059669" : "#dc2626" />
  ))}
  </Bar>
  </BarChart>
  </ResponsiveContainer>
  );
 }
-
