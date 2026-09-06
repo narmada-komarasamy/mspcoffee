@@ -191,5 +191,9 @@
 .ymLabel { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--t-label, #374151); }
 .ymSelect { background: var(--t-card, #ffffff); color: var(--t-text, #1a1a1a); border: 1px solid var(--t-border, #e5dfc8); border-radius: 6px; padding: 6px 28px 6px 10px; font-size: 0.78rem; font-weight: 600; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; }
 .ymSelect:disabled { opacity: 0.4; cursor: not-allowed; }
+.unitToggle { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--t-border, #e5dfc8); }
+.unitBtn { background: var(--t-card, #fff); border: none; padding: 6px 14px; font-size: 0.78rem; font-weight: 600; cursor: pointer; color: var(--t-text, #1a1a1a); }
+.unitBtnActive { background: var(--t-accent, #4a9e4a); color: #fff; }
+.unitBtn:hover:not(.unitBtnActive) { background: var(--t-subtle, #f5eedc); }
 .clearFilterBtn { background: none; border: 1px solid var(--t-accent, #4a9e4a); color: var(--t-accent, #4a9e4a); border-radius: 6px; padding: 6px 12px; font-size: 0.72rem; font-weight: 600; cursor: pointer; align-self: flex-end; margin-left: auto; }
 .clearFilterBtn:hover { background: var(--t-accent, #4a9e4a); color: #fff; }

@@ -60,6 +60,9 @@ export default function RainfallInfographic() {
  const [selectedEstate, setSelectedEstate] = useState<string>("all");
  const [selectedYear, setSelectedYear] = useState<string>("all");
  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+ const [unit, setUnit] = useState<"mm" | "in">("mm");
+ const IN_FACTOR = 25.4;
+ const toDisplay = (mm: number) => unit === "mm" ? mm : mm / IN_FACTOR;
 
  // ── live fetch ─────────────────────────────────────────────────────────────
  useEffect(() => {
@@ -105,6 +108,9 @@ export default function RainfallInfographic() {
  return result;
  }, [data, selectedEstate, selectedYear, selectedMonth]);
 
+ // ── display-ready data (unit conversion) ────────────────────────────────────
+ const displayData = useMemo(() => filteredData.map(r => ({ ...r, rainfall_mm: toDisplay(r.rainfall_mm) })), [filteredData, unit]);
+
  // ── seasonal profile data ───────────────────────────────────────────────────
  const seasonalData = useMemo(() => {
  const SEASONS = [
@@ -124,7 +130,7 @@ export default function RainfallInfographic() {
  const wetMonths = s.months.filter(m => monthlyTotals[m] > 0);
  const monthLabels: Record<number, string> = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"};
  const monthsStr = wetMonths.length
- ? wetMonths.map(m => `${monthLabels[m]} (${Math.round(monthlyTotals[m])}mm)`).join(" · ")
+ ? wetMonths.map(m => `${monthLabels[m]} (${Math.round(monthlyTotals[m])}${unit})`).join(" · ")
  : "No rain";
  return {
  ...s,
@@ -135,7 +141,7 @@ export default function RainfallInfographic() {
  : s.defaultNote,
  };
  });
-}, [filteredData]);
+}, [filteredData, unit]);
 
  // ── estate stats (always computed from full data, estate-only filter) ───────
  const estateStats = useMemo(() => {
@@ -267,12 +273,12 @@ export default function RainfallInfographic() {
  <div className={s.header}>
  <div>
  <h1 className={s.title}>MSP Coffee</h1>
- <p className={s.subtitle}>Rainfall Infographic · All Estates · Live Data {filterLabel()}</p>
+ <p className={s.subtitle}>Rainfall Infographic · All Estates · Live Data {filterLabel()} · {unit === "mm" ? "mm" : "inches"}</p>
  </div>
  <div className={s.headerKpis}>
  <div className={s.hKpi}>
- <span className={s.hKpiVal}>{r1(filteredData.filter(r=>r.rainfall_mm>0).reduce((s,r)=>s+r.rainfall_mm,0)/1000).toFixed(1)}k</span>
- <span className={s.hKpiLbl}>Total mm logged</span>
+ <span className={s.hKpiVal}>{r1(displayData.filter(r=>r.rainfall_mm>0).reduce((s,r)=>s+r.rainfall_mm,0)/1000).toFixed(1)}k</span>
+ <span className={s.hKpiLbl}>Total {unit} logged</span>
  </div>
  <div className={s.hKpi}>
  <span className={s.hKpiVal}>{new Set(filteredData.map(r=>r.date)).size}</span>
@@ -312,6 +318,15 @@ export default function RainfallInfographic() {
  {monthsList.map(m => <option key={m} value={String(m)}>{MONTH_NAMES[m - 1]}</option>)}
  </select>
  </div>
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel}>Unit</label>
+ <div className={s.unitToggle}>
+ <button className={`${s.unitBtn} ${unit === "mm" ? s.unitBtnActive : ""}`}
+ onClick={() => setUnit("mm")}>mm</button>
+ <button className={`${s.unitBtn} ${unit === "in" ? s.unitBtnActive : ""}`}
+ onClick={() => setUnit("in")}>in</button>
+ </div>
+ </div>
  {(selectedYear !== "all" || selectedMonth !== "all") && (
  <button className={s.clearFilterBtn} onClick={() => { setSelectedYear("all"); setSelectedMonth("all"); }}>
  Clear year/month filter
@@ -347,7 +362,7 @@ export default function RainfallInfographic() {
  <span className={s.kpiEstate} style={{ color: ESTATE_COLORS[est.estate] }}>{est.estate}</span>
  </div>
  <div className={s.kpiMid}>
- <span className={s.kpiTotal}>{est.total}<small>mm</small></span>
+ <span className={s.kpiTotal}>{est.total}<small>{unit}</small></span>
  {est.yoyDelta !== null && (
  <span className={`${s.kpiYoy} ${est.yoyDelta >= 0 ? s.kpiUp : s.kpiDown}`}>
  {est.yoyDelta >= 0 ? "▲" : "▼"} {Math.abs(est.yoyDelta)}%
@@ -356,7 +371,7 @@ export default function RainfallInfographic() {
  </div>
  <div className={s.kpiBot}>
  <span>{est.rainyDays} rainy days</span>
- <span>Peak: {est.peakMonth ? MONTH_SHORT[est.peakMonth - 1] : "—"} ({est.peakMm}mm)</span>
+ <span>Peak: {est.peakMonth ? MONTH_SHORT[est.peakMonth - 1] : "—"} ({est.peakMm}{unit})</span>
  </div>
  </div>
  ))}
@@ -370,7 +385,7 @@ export default function RainfallInfographic() {
  <div key={season.key} className={s.seasonCard} style={{ borderTopColor: season.color }}>
  <div className={s.seasonEmoji}>{season.emoji}</div>
  <div className={s.seasonName}>{season.label}</div>
- <div className={s.seasonMonths} style={{ color: season.color }}>{season.total > 0 ? `${season.total}mm` : "—"}</div>
+ <div className={s.seasonMonths} style={{ color: season.color }}>{season.total > 0 ? `${season.total}${unit}` : "—"}</div>
  <div className={s.seasonTotal}>Season total</div>
  <div className={s.seasonNote}>{season.monthsStr}</div>
  </div>
@@ -385,11 +400,11 @@ export default function RainfallInfographic() {
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
  <div className={s.cardLabel}>Monthly Rainfall by Estate</div>
- <MonthlyLine data={filteredData} selected={selectedEstate} />
+ <MonthlyLine data={displayData} selected={selectedEstate} unit={unit} />
  </div>
  <div className={s.card}>
  <div className={s.cardLabel}>Annual Totals — Year by Year</div>
- <AnnualBarChart data={filteredData} selected={selectedEstate} />
+ <AnnualBarChart data={displayData} selected={selectedEstate} unit={unit} />
  </div>
  </div>
 
@@ -398,13 +413,13 @@ export default function RainfallInfographic() {
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
- <div className={s.cardLabel}>Rainfall Heatmap — Estate × Month (mm)</div>
- <RainfallHeatmap data={filteredData} selected={selectedEstate} />
+ <div className={s.cardLabel}>Rainfall Heatmap — Estate × Month ({unit})</div>
+ <RainfallHeatmap data={displayData} selected={selectedEstate} unit={unit} />
  </div>
  <div className={s.card}>
  <div className={s.cardLabel}>Estate Rainfall Pattern</div>
  <p className={s.cardHint}>Each dot is an estate. X = total rainfall, Y = seasonal variation. Bigger circle = more rainy days.</p>
- <PatternScatter data={estateStats} scatterData={scatterData} />
+ <PatternScatter data={estateStats} scatterData={scatterData} unit={unit} />
  </div>
  </div>
 
@@ -419,7 +434,7 @@ export default function RainfallInfographic() {
  </div>
  <div className={`${s.card} ${s.cardWide}`}>
  <div className={s.cardLabel}>Seasonal Rainfall Breakdown by Estate</div>
- <SeasonalStacked data={filteredData} />
+ <SeasonalStacked data={displayData} unit={unit} />
  </div>
  </div>
 
@@ -433,8 +448,8 @@ export default function RainfallInfographic() {
  <table className={s.cmpTable}>
  <thead>
  <tr>
- <th>Rank</th><th>Estate</th><th>Total (mm)</th><th>Rainy Days</th>
- <th>Peak Month</th><th>Peak (mm)</th><th>YoY Δ</th><th>Variation</th>
+ <th>Rank</th><th>Estate</th><th>Total ({unit})</th><th>Rainy Days</th>
+ <th>Peak Month</th><th>Peak ({unit})</th><th>YoY Δ</th><th>Variation</th>
  </tr>
  </thead>
  <tbody>
@@ -479,7 +494,7 @@ export default function RainfallInfographic() {
 // SUB-COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
+function MonthlyLine({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
  const chartData = useMemo(() => {
  const estates: readonly string[] = selected === "all" ? ESTATES : [selected];
  const map: Record<string, Record<string, number>> = {};
@@ -504,7 +519,7 @@ function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
  <LineChart data={chartData}>
  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
  <XAxis dataKey="name" tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} />
- <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit="mm" />
+ <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit={unit} />
  <Tooltip contentStyle={TT_STYLE} labelStyle={{ color: "#1b4a1b", fontWeight: 700 }} />
  <Legend wrapperStyle={{ fontSize: 11 }} />
  {activeEstates.map(e => (
@@ -515,7 +530,7 @@ function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
  );
 }
 
-function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
+function AnnualBarChart({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
  const chartData = useMemo(() => {
  const years = [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a);
  const src = selected === "all" ? data : data.filter(r => r.estate === selected);
@@ -533,7 +548,7 @@ function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
  <BarChart data={chartData}>
  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
  <XAxis dataKey="year" tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} />
- <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit="mm" />
+ <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit={unit} />
  <Tooltip contentStyle={TT_STYLE} labelStyle={{ color: "#1b4a1b", fontWeight: 700 }} />
  <Legend wrapperStyle={{ fontSize: 10 }} />
  {ESTATES.map(e => (
@@ -544,7 +559,7 @@ function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
  );
 }
 
-function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) {
+function RainfallHeatmap({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
  const estates: readonly string[] = selected === "all" ? ESTATES : [selected];
  const years = useMemo(() => [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a).slice(0, 5), [data]);
 
@@ -590,7 +605,7 @@ function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) 
  <div className={s.heatCells}>
  {estates.map(estate =>
  monthRow(estate, year).map((c, i) => (
- <div key={i} className={s.heatCell} style={{ background: c.color }} title={`${estate} · ${MONTH_SHORT[i]} ${year}: ${c.value}mm`}>
+ <div key={i} className={s.heatCell} style={{ background: c.color }} title={`${estate} · ${MONTH_SHORT[i]} ${year}: ${c.value}${unit}`}>
  {c.value > 0 && <span className={s.heatVal}>{rnd(c.value)}</span>}
  </div>
  ))
@@ -607,17 +622,17 @@ function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) 
  );
 }
 
-function PatternScatter({ data, scatterData }: { data: Array<{ estate: string }>; scatterData: Array<{ x: number; y: number; z: number; estate: string }> }) {
+function PatternScatter({ data, scatterData, unit }: { data: Array<{ estate: string }>; scatterData: Array<{ x: number; y: number; z: number; estate: string }>; unit: string }) {
  return (
  <ResponsiveContainer width="100%" height={260}>
  <ScatterChart>
  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
- <XAxis dataKey="x" name="Total mm" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit="mm" />
+ <XAxis dataKey="x" name={`Total ${unit}`} tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit={unit} />
  <YAxis dataKey="y" name="Variation" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} />
  <ZAxis dataKey="z" range={[80, 400]} />
  <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={TT_STYLE}
  formatter={(v: any, name: any) => {
- if (name === "x") return [`${v} mm`, "Total"];
+ if (name === "x") return [`${v} ${unit}`, "Total"];
  if (name === "y") return [`${v}`, "Variation"];
  if (name === "z") return [`${v} days`, "Rainy Days"];
  return [v, name];
@@ -655,7 +670,7 @@ function DryStreakChart({ data }: { data: Array<{ estate: string; maxStreak: num
  );
 }
 
-function SeasonalStacked({ data }: { data: Row[] }) {
+function SeasonalStacked({ data, unit }: { data: Row[]; unit: string }) {
  const chartData = useMemo(() => {
  const out: Record<string, Record<string, number>> = {};
  data.forEach(r => {
@@ -671,7 +686,7 @@ function SeasonalStacked({ data }: { data: Row[] }) {
  <BarChart data={chartData}>
  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
  <XAxis dataKey="estate" tick={{ fontSize: 10, fill: "#1b4a1b" }} />
- <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit="mm" />
+ <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit={unit} />
  <Tooltip contentStyle={TT_STYLE} />
  <Legend wrapperStyle={{ fontSize: 10 }} />
  <Bar dataKey="SW Monsoon" stackId="s" fill="#2563eb" />
