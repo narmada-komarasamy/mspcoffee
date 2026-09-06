@@ -109,10 +109,10 @@ export default function RainfallInfographic() {
  const estateStats = useMemo(() => {
  const now = new Date();
  const curYear = now.getFullYear();
- const source = selectedEstate === "all" ? data : data.filter(r => r.estate === selectedEstate);
+ const source = filteredData;
 
  return ESTATES.map(estate => {
- const eData = source.filter(r => r.estate === estate && r.rainfall_mm > 0);
+ const eData = filteredData.filter(r => r.estate === estate && r.rainfall_mm > 0);
  const total = eData.reduce((s, r) => s + r.rainfall_mm, 0);
  const rainyDays = new Set(eData.map(r => r.date)).size;
 
@@ -146,7 +146,7 @@ export default function RainfallInfographic() {
 
  return { estate, total: r1(total), rainyDays, peakMonth, peakMm: rnd(peakMm), seasonal, maxDry, yoyDelta, variationCoeff, mean: rnd(mean) };
  }).sort((a, b) => b.total - a.total);
- }, [data, selectedEstate]);
+ }, [data, selectedEstate, selectedYear, selectedMonth]);
 
  // ── scatter data ────────────────────────────────────────────────────────────
  const scatterData = useMemo(() => estateStats.map(s => ({
