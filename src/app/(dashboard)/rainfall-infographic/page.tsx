@@ -105,6 +105,38 @@ export default function RainfallInfographic() {
  return result;
  }, [data, selectedEstate, selectedYear, selectedMonth]);
 
+ // ── seasonal profile data ───────────────────────────────────────────────────
+ const seasonalData = useMemo(() => {
+ const SEASONS = [
+ { key: "sw", label: "SW Monsoon", months: [6,7,8,9], emoji: "🌧️", color: "#2563eb", defaultNote: "Peak Jul–Aug · Primary crop cycle" },
+ { key: "ne", label: "NE Monsoon", months: [10,11,12], emoji: "🌦️", color: "#0891b2", defaultNote: "Oct–Nov peak · Post-harvest" },
+ { key: "winter", label: "Winter", months: [1,2], emoji: "☀️", color: "#d97706", defaultNote: "Minimal rain · Dormant season" },
+ { key: "summer", label: "Summer", months: [3,4,5], emoji: "🔥", color: "#dc2626", defaultNote: "Dry spells · Pre-monsoon prep" },
+ ];
+ return SEASONS.map(s => {
+ const monthlyTotals: Record<number, number> = {};
+ s.months.forEach(m => { monthlyTotals[m] = 0; });
+ filteredData.forEach(r => {
+ const m = mo(r.date);
+ if (s.months.includes(m)) monthlyTotals[m] = (monthlyTotals[m] ?? 0) + r.rainfall_mm;
+ });
+ const total = Object.values(monthlyTotals).reduce((a, b) => a + b, 0);
+ const wetMonths = s.months.filter(m => monthlyTotals[m] > 0);
+ const monthLabels: Record<number, string> = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"};
+ const monthsStr = wetMonths.length
+ ? wetMonths.map(m => `${monthLabels[m]} (${Math.round(monthlyTotals[m])}mm)`).join(" · ")
+ : "No rain";
+ return {
+ ...s,
+ total: Math.round(total),
+ monthsStr,
+ note: wetMonths.length > 0 && monthsStr !== "No rain"
+ ? `${wetMonths.length} wet month${wetMonths.length > 1 ? "s" : ""}`
+ : s.defaultNote,
+ };
+ });
+}, [filteredData]);
+
  // ── estate stats (always computed from full data, estate-only filter) ───────
  const estateStats = useMemo(() => {
  const now = new Date();
@@ -334,17 +366,13 @@ export default function RainfallInfographic() {
  <div className={s.card}>
  <div className={s.cardLabel}>Seasonal Profile</div>
  <div className={s.seasonGrid}>
- {[
- { emoji: "🌧️", name: "SW Monsoon", months: "Jun–Sep", color: "#2563eb", note: "Peak Jul–Aug · Primary crop cycle" },
- { emoji: "🌦️", name: "NE Monsoon", months: "Oct–Dec", color: "#0891b2", note: "Oct–Nov peak · Post-harvest" },
- { emoji: "☀️", name: "Winter", months: "Jan–Feb", color: "#d97706", note: "Minimal rain · Dormant season" },
- { emoji: "🔥", name: "Summer", months: "Mar–May", color: "#dc2626", note: "Dry spells · Pre-monsoon prep" },
- ].map(season => (
- <div key={season.name} className={s.seasonCard} style={{ borderTopColor: season.color }}>
+ {seasonalData.map(season => (
+ <div key={season.key} className={s.seasonCard} style={{ borderTopColor: season.color }}>
  <div className={s.seasonEmoji}>{season.emoji}</div>
- <div className={s.seasonName}>{season.name}</div>
- <div className={s.seasonMonths} style={{ color: season.color }}>{season.months}</div>
- <div className={s.seasonNote}>{season.note}</div>
+ <div className={s.seasonName}>{season.label}</div>
+ <div className={s.seasonMonths} style={{ color: season.color }}>{season.total > 0 ? `${season.total}mm` : "—"}</div>
+ <div className={s.seasonTotal}>Season total</div>
+ <div className={s.seasonNote}>{season.monthsStr}</div>
  </div>
  ))}
  </div>

@@ -124,6 +124,7 @@
 .seasonEmoji { font-size: 1.4rem; }
 .seasonName { font-size: 0.7rem; font-weight: 700; margin-top: 3px; color: var(--t-heading, #1b4a1b); }
 .seasonMonths { font-size: 0.65rem; font-weight: 600; margin-top: 2px; }
+.seasonTotal { font-size: 0.55rem; color: var(--t-muted, #6b7280); margin-top: 1px; }
 .seasonNote { font-size: 0.6rem; color: var(--t-muted, #6b7280); margin-top: 3px; line-height: 1.3; }
 
 /* ── heatmap ── */
