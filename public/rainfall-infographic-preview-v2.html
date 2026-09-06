@@ -634,6 +634,88 @@
  .container { padding: 24px 16px; }
  .header h1 { font-size: 28px; }
  }
+
+ /* ─── FILTER BAR ─── */
+ .filter-bar {
+ display: flex;
+ align-items: flex-start;
+ gap: 16px;
+ flex-wrap: wrap;
+ padding: 14px 20px;
+ background: var(--bg-card);
+ border: 1px solid var(--border);
+ border-radius: 12px;
+ margin-bottom: 32px;
+ }
+ .filter-label {
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ font-size: 0.72rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ color: var(--text-muted);
+ padding-top: 6px;
+ flex-shrink: 0;
+ }
+ .filter-icon { font-size: 0.85rem; }
+ .filter-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; flex: 1; }
+ .filter-group { display: flex; flex-direction: column; gap: 4px; }
+ .filter-lbl { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+ .filter-select {
+ font-family: 'Inter', sans-serif;
+ font-size: 0.82rem;
+ font-weight: 500;
+ padding: 7px 32px 7px 12px;
+ border-radius: 8px;
+ border: 1px solid var(--border);
+ background: var(--bg-primary);
+ color: var(--text-primary);
+ cursor: pointer;
+ appearance: none;
+ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+ background-repeat: no-repeat;
+ background-position: right 10px center;
+ outline: none;
+ transition: border-color 0.15s;
+ }
+ .filter-select:focus { border-color: var(--accent); }
+ .filter-reset {
+ font-family: 'Inter', sans-serif;
+ font-size: 0.72rem;
+ font-weight: 600;
+ padding: 7px 14px;
+ border-radius: 8px;
+ border: 1px solid var(--border);
+ background: transparent;
+ color: var(--text-muted);
+ cursor: pointer;
+ transition: all 0.15s;
+ white-space: nowrap;
+ }
+ .filter-reset:hover { border-color: #f87171; color: #f87171; }
+ .filter-active-tags { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; margin-top: 4px; padding-left: 0; }
+ .filter-tag {
+ display: inline-flex;
+ align-items: center;
+ gap: 4px;
+ font-size: 0.65rem;
+ font-weight: 600;
+ padding: 3px 10px;
+ border-radius: 6px;
+ background: #38bdf815;
+ color: #38bdf8;
+ border: 1px solid #38bdf830;
+ }
+ .filter-tag-month { background: #4ade8015; color: #4ade80; border-color: #4ade8030; }
+ .filter-tag-remove {
+ cursor: pointer;
+ font-size: 0.7rem;
+ line-height: 1;
+ opacity: 0.7;
+ }
+ .filter-tag-remove:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -646,6 +728,45 @@
  <h1>Rainfall Overview<br>& Estate Comparison</h1>
  <p>Annual rainfall patterns across six estates in the Nilgiris region, Tamil Nadu. Understanding water availability is key to planning harvest cycles, irrigation needs, and crop selection.</p>
  <div class="preview-tag">Interactive Preview — Not yet deployed</div>
+ </div>
+
+ <!-- FILTER BAR -->
+ <div class="filter-bar" id="filterBar">
+ <div class="filter-label"><span class="filter-icon">🔍</span> Filters</div>
+ <div class="filter-controls">
+ <div class="filter-group">
+ <label class="filter-lbl" for="filterYear">Year</label>
+ <select class="filter-select" id="filterYear">
+ <option value="all">All Years</option>
+ <option value="2019">2019</option>
+ <option value="2020">2020</option>
+ <option value="2021">2021</option>
+ <option value="2022">2022</option>
+ <option value="2023">2023</option>
+ <option value="2024">2024</option>
+ </select>
+ </div>
+ <div class="filter-group">
+ <label class="filter-lbl" for="filterMonth">Month</label>
+ <select class="filter-select" id="filterMonth">
+ <option value="all">All Months</option>
+ <option value="0">January</option>
+ <option value="1">February</option>
+ <option value="2">March</option>
+ <option value="3">April</option>
+ <option value="4">May</option>
+ <option value="5">June</option>
+ <option value="6">July</option>
+ <option value="7">August</option>
+ <option value="8">September</option>
+ <option value="9">October</option>
+ <option value="10">November</option>
+ <option value="11">December</option>
+ </select>
+ </div>
+ <button class="filter-reset" id="filterReset" title="Clear all filters">✕ Clear</button>
+ </div>
+ <div class="filter-active-tags" id="filterTags"></div>
  </div>
 
  <!-- ESTATE KPI CARDS -->
@@ -761,21 +882,101 @@ const SEASONS = [
  { name: 'Summer', months: 'Mar – May', icon: '☀', color: '#f59e0b' },
 ];
 
-// ─── HELPERS ───
-function annualTotal(estate) {
- return MONTHLY[estate].reduce((a, b) => a + b, 0);
+// ─── FILTER STATE ──────────────────────────────────────────────────────────────
+let activeYear = 'all';
+let activeMonth = 'all';
+
+const MONTH_IDX = { 'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11 };
+const SEASON_RANGES = { 'Jun – Sep': [5,8], 'Oct – Dec': [9,11], 'Jan – Feb': [0,1], 'Mar – May': [3,5] };
+
+function getFilteredMonthly(estateName) {
+ if (activeMonth !== 'all') {
+ const m = Number(activeMonth);
+ return { labels: [MONTHS[m]], values: [MONTHLY[estateName][m]], monthIndices: [m] };
+ }
+ return { labels: MONTHS, values: MONTHLY[estateName], monthIndices: [0,1,2,3,4,5,6,7,8,9,10,11] };
 }
 
+function getFilteredAnnual(estateName) {
+ if (activeYear !== 'all') {
+ const yr = Number(activeYear);
+ const idx = ANNUAL_HISTORICAL.labels.indexOf(String(yr));
+ if (idx >= 0) {
+ const sliced = ANNUAL_HISTORICAL.labels.slice(0, idx + 1).map((l, i) => ANNUAL_HISTORICAL[estateName][i]);
+ return { labels: ANNUAL_HISTORICAL.labels.slice(0, idx + 1), values: sliced };
+ }
+ }
+ return { labels: ANNUAL_HISTORICAL.labels, values: ANNUAL_HISTORICAL[estateName] };
+}
+
+function getActiveMonthRange() {
+ if (activeMonth !== 'all') {
+ const m = Number(activeMonth);
+ return [m, m];
+ }
+ return [0, 11];
+}
+
+function getActiveYearIdx() {
+ if (activeYear !== 'all') return ANNUAL_HISTORICAL.labels.indexOf(activeYear);
+ return ANNUAL_HISTORICAL.labels.length - 1;
+}
+
+function monthInRange(monthIdx) {
+ const [lo, hi] = getActiveMonthRange();
+ return monthIdx >= lo && monthIdx <= hi;
+}
+
+function renderFilterTags() {
+ const tags = document.getElementById('filterTags');
+ const parts = [];
+ if (activeYear !== 'all') {
+ parts.push(`<span class="filter-tag">Year: ${activeYear}<span class="filter-tag-remove" data-filter="year">&times;</span></span>`);
+ }
+ if (activeMonth !== 'all') {
+ parts.push(`<span class="filter-tag filter-tag-month">Month: ${MONTHS[Number(activeMonth)]}<span class="filter-tag-remove" data-filter="month">&times;</span></span>`);
+ }
+ tags.innerHTML = parts.join('');
+ tags.querySelectorAll('.filter-tag-remove').forEach(btn => {
+ btn.addEventListener('click', () => {
+ const f = btn.dataset.filter;
+ if (f === 'year') { activeYear = 'all'; document.getElementById('filterYear').value = 'all'; }
+ if (f === 'month') { activeMonth = 'all'; document.getElementById('filterMonth').value = 'all'; }
+ applyFilters();
+ });
+ });
+}
+
+let monthlyChartInstance = null;
+let annualChartInstance = null;
+
+function applyFilters() {
+ renderFilterTags();
+ renderEstateCards();
+ renderHeatmap();
+ renderMonthlyChart();
+ renderAnnualChart();
+ renderSeasonal();
+ renderInsights();
+ renderComparisonTable();
+}
+
+// ─── HELPERS ───
+function annualTotalForYear(estate, year) {
+ const d = getFilteredAnnual(estate);
+ return d.values.reduce((a, b) => a + b, 0);
+}
+function annualTotalAll(estate) {
+ return ANNUAL_HISTORICAL[estate].reduce((a, b) => a + b, 0);
+}
 function peakMonth(estate) {
  const m = MONTHLY[estate];
  return MONTHS[m.indexOf(Math.max(...m))];
 }
-
 function seasonAvg(estate, startIdx, endIdx) {
  const slice = MONTHLY[estate].slice(startIdx, endIdx + 1);
  return (slice.reduce((a, b) => a + b, 0) / slice.length).toFixed(0);
 }
-
 function heatColor(val, max) {
  const intensity = val / max;
  const r = Math.round(15 + intensity * 40);
@@ -787,13 +988,15 @@ function heatColor(val, max) {
 // ─── ESTATE CARDS ───
 function renderEstateCards() {
  const grid = document.getElementById('estateGrid');
- const ranked = [...ESTATES].sort((a, b) => annualTotal(b.name) - annualTotal(a.name));
+ const ranked = [...ESTATES].sort((a, b) => (activeYear === 'all' ? annualTotalAll(b.name) : annualTotalForYear(b.name, activeYear)) - (activeYear === 'all' ? annualTotalAll(a.name) : annualTotalForYear(a.name, activeYear)));
 
  grid.innerHTML = ESTATES.map((estate, i) => {
- const total = annualTotal(estate.name);
+ const total = activeYear === 'all' ? annualTotalAll(estate.name) : annualTotalForYear(estate.name, activeYear);
  const rank = ranked.findIndex(r => r.name === estate.name) + 1;
- const rainyDays = Math.round(total / 12 * 0.8);
+ const fm = getFilteredMonthly(estate.name);
+ const rainyDays = Math.round(fm.values.reduce((a, b) => a + b, 0) / Math.max(1, fm.values.filter(v => v > 0).length) * 0.8);
  const peak = peakMonth(estate.name);
+ const yearLabel = activeYear === 'all' ? 'Annual' : activeYear;
  return `
  <div class="estate-card">
  <div class="estate-rank">${rank}</div>
@@ -802,7 +1005,7 @@ function renderEstateCards() {
  <div class="estate-location">${estate.location}</div>
  <div class="estate-kpi">
  <div class="kpi-row">
- <span class="kpi-label">Annual</span>
+ <span class="kpi-label">${yearLabel} Total</span>
  <span class="kpi-value annual" style="color:${estate.color}">${total}</span>
  </div>
  <div class="kpi-row">
@@ -822,33 +1025,53 @@ function renderEstateCards() {
 // ─── HEATMAP ───
 function renderHeatmap() {
  const grid = document.getElementById('heatmapGrid');
- const globalMax = Math.max(...ESTATES.map(e => Math.max(...MONTHLY[e.name])));
+ const [monthLo, monthHi] = getActiveMonthRange();
+ const monthsToShow = [];
+ for (let i = monthLo; i <= monthHi; i++) monthsToShow.push(i);
+
+ const globalMax = Math.max(...ESTATES.map(e => Math.max(...monthsToShow.map(mi => MONTHLY[e.name][mi]))));
 
  let html = '<div class="heatmap-header">Estate</div>';
- MONTHS.forEach(m => html += `<div class="heatmap-header">${m}</div>`);
+ monthsToShow.forEach(mi => html += `<div class="heatmap-header">${MONTHS[mi]}</div>`);
 
  ESTATES.forEach(estate => {
  html += `<div class="heatmap-estate">${estate.name}</div>`;
- MONTHLY[estate.name].forEach((val, i) => {
+ monthsToShow.forEach(mi => {
+ const val = MONTHLY[estate.name][mi];
  const bg = heatColor(val, globalMax);
  const textColor = val > globalMax * 0.6 ? '#0f172a' : '#f1f5f9';
- html += `<div class="heatmap-dot" style="background:${bg};color:${textColor}" title="${estate.name} — ${MONTHS[i]}: ${val}mm">${val}</div>`;
+ html += `<div class="heatmap-dot" style="background:${bg};color:${textColor}" title="${estate.name} — ${MONTHS[mi]}: ${val}mm">${val}</div>`;
  });
  });
 
  grid.innerHTML = html;
+
+ const section = grid.closest('.heatmap-section');
+ const label = section ? section.querySelector('.section-label span') : null;
+ if (label) {
+ const yr = activeYear !== 'all' ? ` · ${activeYear}` : '';
+ const mo = activeMonth !== 'all' ? ` · ${MONTHS[Number(activeMonth)]}` : '';
+ label.textContent = `Rainfall Heatmap — Monthly Averages (mm)${yr}${mo}`;
+ }
 }
 
 // ─── MONTHLY CHART ───
 function renderMonthlyChart() {
  const ctx = document.getElementById('monthlyChart').getContext('2d');
- new Chart(ctx, {
+ const [monthLo, monthHi] = getActiveMonthRange();
+ const labels = []; const estateDatasets = ESTATES.map(e => ({ ...e, values: [] }));
+ for (let i = monthLo; i <= monthHi; i++) {
+ labels.push(MONTHS[i]);
+ ESTATES.forEach(e => estateDatasets.find(d => d.name === e.name).values.push(MONTHLY[e.name][i]));
+ }
+ if (monthlyChartInstance) monthlyChartInstance.destroy();
+ monthlyChartInstance = new Chart(ctx, {
  type: 'line',
  data: {
- labels: MONTHS,
- datasets: ESTATES.map(e => ({
+ labels: labels,
+ datasets: estateDatasets.map(e => ({
  label: e.name,
- data: MONTHLY[e.name],
+ data: e.values,
  borderColor: e.color,
  backgroundColor: e.color + '15',
  borderWidth: 2.5,
@@ -903,20 +1126,21 @@ function renderMonthlyChart() {
 // ─── ANNUAL CHART ───
 function renderAnnualChart() {
  const ctx = document.getElementById('annualChart').getContext('2d');
- new Chart(ctx, {
- type: 'bar',
- data: {
- labels: ANNUAL_HISTORICAL.labels,
- datasets: ESTATES.map(e => ({
+ const yrIdx = getActiveYearIdx();
+ const labels = ANNUAL_HISTORICAL.labels.slice(0, yrIdx + 1);
+ const estateDatasets = ESTATES.map(e => ({
  label: e.name,
- data: ANNUAL_HISTORICAL[e.name],
+ data: ANNUAL_HISTORICAL[e.name].slice(0, yrIdx + 1),
  backgroundColor: e.color + '90',
  borderColor: e.color,
  borderWidth: 1,
  borderRadius: 6,
  borderSkipped: false,
- })),
- },
+ }));
+ if (annualChartInstance) annualChartInstance.destroy();
+ annualChartInstance = new Chart(ctx, {
+ type: 'bar',
+ data: { labels, datasets: estateDatasets },
  options: {
  responsive: true,
  maintainAspectRatio: false,
@@ -964,30 +1188,38 @@ function renderAnnualChart() {
 // ─── SEASONAL ───
 function renderSeasonal() {
  const grid = document.getElementById('seasonGrid');
+ const [monthLo, monthHi] = getActiveMonthRange();
+
  grid.innerHTML = SEASONS.map(season => {
- const startIdx = season.months === 'Jun – Sep' ? 5 : season.months === 'Oct – Dec' ? 9 : season.months === 'Jan – Feb' ? 0 : 3;
- const endIdx = season.months === 'Jun – Sep' ? 8 : season.months === 'Oct – Dec' ? 11 : season.months === 'Jan – Feb' ? 1 : 5;
+ const [sLo, sHi] = SEASON_RANGES[season.months];
+ const startIdx = Math.max(sLo, monthLo);
+ const endIdx = Math.min(sHi, monthHi);
+ const visibleMonths = endIdx >= startIdx;
  const seasonTotal = {};
  const maxVal = {};
  ESTATES.forEach(e => {
+ if (!visibleMonths) { seasonTotal[e.name] = 0; maxVal[e.name] = 0; return; }
  const slice = MONTHLY[e.name].slice(startIdx, endIdx + 1);
  seasonTotal[e.name] = slice.reduce((a, b) => a + b, 0);
  maxVal[e.name] = Math.max(...slice);
  });
- const globalMax = Math.max(...Object.values(seasonTotal));
-
+ const globalMax = Math.max(...Object.values(seasonTotal), 1);
  const sorted = [...ESTATES].sort((a, b) => seasonTotal[b.name] - seasonTotal[a.name]);
+ const label = visibleMonths
+ ? `${seasonTotal[ESTATES[0].name] ? Math.round(Object.values(seasonTotal).reduce((a,b)=>a+b,0)/ESTATES.length) : 0}mm avg · ${season.months}`
+ : `No data in selected month range · ${season.months}`;
 
  return `
  <div class="season-card">
  <div class="season-icon">${season.icon}</div>
  <div class="season-name" style="color:${season.color}">${season.name}</div>
- <div class="season-months">${season.months}</div>
+ <div class="season-months">${label}</div>
  <div class="season-bar-group">
  ${sorted.map(e => {
- const pct = (seasonTotal[e.name] / globalMax * 100).toFixed(0);
+ const pct = globalMax > 0 ? (seasonTotal[e.name] / globalMax * 100).toFixed(0) : '0';
+ const opacity = visibleMonths ? '1' : '0.3';
  return `
- <div class="season-bar-row">
+ <div class="season-bar-row" style="opacity:${opacity}">
  <div class="season-bar-label">${e.name.split(' ')[0]}</div>
  <div class="season-bar-track">
  <div class="season-bar-fill" style="width:${pct}%;background:${e.color}80"></div>
@@ -1007,28 +1239,31 @@ function renderInsights() {
  const grid = document.getElementById('insightsGrid');
 
  const totals = {};
- ESTATES.forEach(e => totals[e.name] = annualTotal(e.name));
+ ESTATES.forEach(e => totals[e.name] = activeYear === 'all' ? annualTotalAll(e.name) : annualTotalForYear(e.name, activeYear));
  const sorted = [...ESTATES].sort((a, b) => totals[b.name] - totals[a.name]);
  const rainiest = sorted[0];
  const driest = sorted[sorted.length - 1];
  const hfTotal = totals['Hidden Falls'];
  const gowriTotal = totals['Gowri'];
- const avgTotal = Object.values(totals).reduce((a, b) => a + b, 0) / ESTATES.length;
+ const avgTotal = ESTATES.length > 0 ? Object.values(totals).reduce((a, b) => a + b, 0) / ESTATES.length : 0;
+ const yrLabel = activeYear !== 'all' ? ` (${activeYear})` : '';
+ const activeData = activeYear === 'all' ? ANNUAL_HISTORICAL : { labels: [activeYear], ...Object.fromEntries(ESTATES.map(e => [e.name, [annualTotalForYear(e.name, activeYear)]])) };
+ const activeLabels = activeData.labels;
 
  const insights = [
  {
  cls: 'rainiest',
  icon: '🏆',
  iconBg: '#38bdf820',
- title: 'Wettest Estate',
- text: `<span class="insight-estate" style="color:#f87171">Hidden Falls</span>Receives <strong>${hfTotal}mm</strong> annually — ${Math.round((hfTotal/avgTotal-1)*100)}% above the average across all estates. Highest peak in August at 125mm.`,
+ title: `Wettest Estate${yrLabel}`,
+ text: `<span class="insight-estate" style="color:#f87171">${rainiest.name}</span>Receives <strong>${hfTotal}mm</strong> — ${avgTotal > 0 ? Math.round((hfTotal/avgTotal-1)*100) : 0}% above average across all estates. Highest peak in August at 125mm.`,
  },
  {
  cls: 'driest',
  icon: '☀',
  iconBg: '#f59e0b20',
- title: 'Driest Estate',
- text: `<span class="insight-estate" style="color:#fb923c">Vyapurikuttai</span>Lowest rainfall at <strong>${totals['Vyapurikuttai']}mm</strong>/year. Consider supplemental irrigation during the dry season (Jan–Apr).`,
+ title: `Driest Estate${yrLabel}`,
+ text: `<span class="insight-estate" style="color:#fb923c">${driest.name}</span>Lowest rainfall at <strong>${totals[driest.name]}mm</strong>. Consider supplemental irrigation during the dry season (Jan–Apr).`,
  },
  {
  cls: 'monsoon',
@@ -1042,7 +1277,7 @@ function renderInsights() {
  icon: '📊',
  iconBg: '#a78bfa20',
  title: 'Spread Across Estates',
- text: `The gap between wettest (${hfTotal}mm) and driest (${totals['Vyapurikuttai']}mm) is <strong>${hfTotal - totals['Vyapurikuttai']}mm</strong> — a ${Math.round((hfTotal/totals['Vyapurikuttai']-1)*100)}% difference. This drives significant variation in water management strategy.`,
+ text: `The gap between wettest (${hfTotal}mm) and driest (${totals[driest.name]}mm) is <strong>${hfTotal - totals[driest.name]}mm</strong> — a ${Math.round((hfTotal/Math.max(1,totals[driest.name])-1)*100)}% difference. This drives variation in water management strategy.`,
  },
  {
  cls: 'reliable',
@@ -1072,15 +1307,17 @@ function renderInsights() {
 // ─── COMPARISON TABLE ───
 function renderComparisonTable() {
  const tbody = document.getElementById('comparisonBody');
- const ranked = [...ESTATES].sort((a, b) => annualTotal(b.name) - annualTotal(a.name));
+ const ranked = [...ESTATES].sort((a, b) => (activeYear === 'all' ? annualTotalAll(b.name) : annualTotalForYear(b.name, activeYear)) - (activeYear === 'all' ? annualTotalAll(a.name) : annualTotalForYear(a.name, activeYear)));
 
  tbody.innerHTML = ranked.map((estate, i) => {
- const total = annualTotal(estate.name);
+ const total = activeYear === 'all' ? annualTotalAll(estate.name) : annualTotalForYear(estate.name, activeYear);
  const peak = peakMonth(estate.name);
- const rainiestDay = Math.round(Math.max(...MONTHLY[estate.name]) * 0.4);
+ const fm = getFilteredMonthly(estate.name);
+ const rainiestDay = fm.values.length > 0 ? Math.round(Math.max(...fm.values) * 0.4) : 0;
  const drySeason = 'Dec – Apr';
  const reliability = total > 400 ? 'High' : total > 300 ? 'Medium' : 'Lower';
  const reliabilityColor = total > 400 ? '#4ade80' : total > 300 ? '#f59e0b' : '#f87171';
+ const yrLabel = activeYear !== 'all' ? activeYear : 'All';
  return `
  <tr>
  <td><span class="estate-dot" style="background:${estate.color}"></span>${estate.name}</td>
@@ -1132,6 +1369,24 @@ document.addEventListener('DOMContentLoaded', () => {
  renderInsights();
  renderComparisonTable();
  renderDryStreak();
+
+ // ── Filter event wiring ──────────────────────────────────────────────────
+ document.getElementById('filterYear').addEventListener('change', function() {
+ activeYear = this.value;
+ applyFilters();
+ });
+ document.getElementById('filterMonth').addEventListener('change', function() {
+ activeMonth = this.value;
+ applyFilters();
+ });
+ document.getElementById('filterReset').addEventListener('click', () => {
+ activeYear = 'all';
+ activeMonth = 'all';
+ document.getElementById('filterYear').value = 'all';
+ document.getElementById('filterMonth').value = 'all';
+ applyFilters();
+ });
+ renderFilterTags();
 });
 </script>
 
