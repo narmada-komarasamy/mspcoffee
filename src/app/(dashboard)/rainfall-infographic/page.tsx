@@ -84,10 +84,11 @@ export default function RainfallInfographic() {
  }, []);
 
  // ── year / month lists ─────────────────────────────────────────────────────
- const yearsList = useMemo(() =>
- [...new Set(data.map(r => r.year))].sort((a, b) => b - a),
- [data]
- );
+ const yearsList = useMemo(() => {
+ const raw = [...new Set(data.map(r => r.year).filter((y): y is number => y != null))].sort((a, b) => b - a);
+ console.log("[rainfall] data rows:", data.length, "yearsList:", raw, "sample keys:", data[0]);
+ return raw;
+ }, [data]);
 
  // When year changes, reset month and rebuild months list from that year
  const monthsList = useMemo(() => {
