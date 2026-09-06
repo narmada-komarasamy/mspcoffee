@@ -290,6 +290,7 @@ export default function RainfallInfographic() {
  {/* ── Estate selector ────────────────────────────────────────────────── */}
  <div className={s.estateFilter}>
  <button className={`${s.filterBtn} ${selectedEstate === "all" ? s.filterBtnActive : ""}`}
+ style={selectedEstate === "all" ? { background: "#6b7280", color: "#fff", borderColor: "#6b7280" } : {}}
  onClick={() => setSelectedEstate("all")}>All Estates</button>
  {ESTATES.map(e => (
  <button key={e} className={`${s.filterBtn} ${selectedEstate === e ? s.filterBtnActive : ""}`}
