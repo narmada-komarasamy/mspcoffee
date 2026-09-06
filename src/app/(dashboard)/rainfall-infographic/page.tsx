@@ -93,10 +93,8 @@ export default function RainfallInfographic() {
  }, [data]);
 
  // When year changes, reset month and rebuild months list from that year
- const monthsList = useMemo(() => {
- const base = selectedYear === "all" ? data : data.filter(r => yr(r.date) === Number(selectedYear));
- return [...new Set(base.map(r => mo(r.date)))].sort((a, b) => a - b);
- }, [data, selectedYear]);
+ // Always show all 12 months
+ const monthsList = useMemo(() => [1,2,3,4,5,6,7,8,9,10,11,12], []);
 
  // ── triple-filtered dataset (the source of truth for all charts) ───────────
  const filteredData = useMemo(() => {
