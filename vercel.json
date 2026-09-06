@@ -1,10 +1,5 @@
 {
- "buildCommand": "npm run build",
- "framework": "nextjs",
- "regions": ["iad1"],
- "env": {
- "NEXT_PUBLIC_SUPABASE_URL": "@nxt_public_supabase_url",
- "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY": "@nxt_public_supabase_publishable_default_key",
- "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
- }
+  "buildCommand": "npm run build",
+  "framework": "nextjs",
+  "regions": ["iad1"]
 }

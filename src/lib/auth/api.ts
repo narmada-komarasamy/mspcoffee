@@ -84,10 +84,8 @@ export async function requireApiUser(request: Request, allowedRoles?: string[]) 
     };
   }
 
-  const headerUserId = request.headers.get('x-msp-user-id')?.trim();
-  const cookieUserId = cookieValue(request, 'msp_user_id');
-  const legacyUserId = [headerUserId, cookieUserId].find((value) => value && APP_USER_ID_RE.test(value)) ?? '';
-  const legacyPin = request.headers.get('x-msp-user-pin')?.trim() || cookieValue(request, 'msp_user_pin');
+  const legacyUserId = cookieValue(request, 'msp_user_id');
+  const legacyPin = cookieValue(request, 'msp_user_pin');
 
   if (legacyUserId && legacyPin && APP_USER_ID_RE.test(legacyUserId)) {
     const { data: user, error } = await supabase
