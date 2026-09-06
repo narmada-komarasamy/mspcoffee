@@ -57,7 +57,7 @@ type AppUser = {
 // hrefs the current user's role is allowed to access (null = not loaded yet)
 type AllowedSet = Set<string> | null;
 
-type NavLeaf  = { label: string; href: string; roles?: string[] };
+type NavLeaf = { label: string; href: string; roles?: string[]; icon?: React.ElementType };
 type NavGroup = { label: string; href?: never; roles?: string[]; children: NavLeaf[] };
 type NavChild = NavLeaf | NavGroup;
 
@@ -70,8 +70,11 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: 'Rain Gauge',           href: '/rainfall',             icon: CloudRain,    roles: ['admin', 'supervisor', 'worker', 'ceo'] },
- { label: 'Rainfall Infographic', href: '/rainfall-infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+ { label: 'Rain Gauge', href: '/rainfall', icon: CloudRain, roles: ['admin', 'supervisor', 'worker', 'ceo'],
+ children: [
+ { label: 'Rainfall Infographic', href: '/rainfall/infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
+ ]
+ },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },

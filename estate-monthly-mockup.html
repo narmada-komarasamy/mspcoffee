@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estate Timeline Cards — Mockup</title>
+<style>
+ * { box-sizing: border-box; margin: 0; padding: 0; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+ background: #f5eedc;
+ color: #1a1a1a;
+ padding: 24px;
+ }
+ h1 { font-size: 1.3rem; color: #1b4a1b; margin-bottom: 4px; }
+ .subtitle { font-size: 0.82rem; color: #6b7280; margin-bottom: 18px; }
+
+ .controls {
+ display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+ margin-bottom: 18px; padding: 14px 16px;
+ background: #fdf6e3; border: 1px solid #e5dfc8; border-radius: 10px;
+ }
+ .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+ .ctrl-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #374151; }
+ .ctrl-select {
+ background: #fff; color: #1a1a1a; border: 1px solid #e5dfc8; border-radius: 6px;
+ padding: 6px 28px 6px 10px; font-size: 0.8rem; font-weight: 600;
+ appearance: none;
+ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+ background-repeat: no-repeat; background-position: right 8px center; cursor: pointer;
+ }
+ .unit-toggle { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid #e5dfc8; }
+ .unit-btn { background: #fff; border: none; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #1a1a1a; }
+ .unit-btn.active { background: #4a9e4a; color: #fff; }
+
+ /* ── 6-card row ── */
+ .estate-row {
+ display: grid;
+ grid-template-columns: repeat(6, 1fr);
+ gap: 10px;
+ align-items: start;
+ }
+
+ /* ── Card ── */
+ .ec {
+ background: #fdf6e3;
+ border: 1px solid #e5dfc8;
+ border-radius: 10px;
+ padding: 10px;
+ position: relative;
+ min-width: 0;
+ display: flex;
+ flex-direction: column;
+ }
+
+ .ec-header {
+ display: flex; align-items: center; gap: 5px;
+ margin-bottom: 8px; padding-bottom: 6px;
+ border-bottom: 1px solid #f0ebd8;
+ }
+ .ec-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+ .ec-name { font-size: 0.72rem; font-weight: 700; color: #1b4a1b; }
+
+ /* ── Timeline ── */
+ .tl { display: flex; flex-direction: column; gap: 0; position: relative; }
+
+ /* Vertical line connecting the years */
+ .tl-line {
+ position: absolute;
+ left: 50%;
+ top: 0; bottom: 0;
+ width: 2px;
+ background: #e5dfc8;
+ transform: translateX(-50%);
+ z-index: 0;
+ }
+
+ /* Year row */
+ .tl-row {
+ display: flex; align-items: center; gap: 0;
+ position: relative; z-index: 1;
+ padding: 3px 0;
+ }
+ .tl-yr {
+ width: 28px; text-align: center;
+ font-size: 0.55rem; font-weight: 700; color: #9ca3af;
+ flex-shrink: 0;
+ }
+ .tl-dot {
+ width: 8px; height: 8px; border-radius: 50%;
+ background: #d1d5db; flex-shrink: 0; margin: 0 2px;
+ }
+ .tl-spacer { flex: 1; }
+
+ /* Selected (center) year */
+ .tl-row.selected {
+ background: #fff;
+ border: 1.5px solid;
+ border-radius: 6px;
+ margin: 2px -4px;
+ padding: 6px 4px;
+ box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+ }
+ .tl-row.selected .tl-dot {
+ width: 10px; height: 10px;
+ box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
+ }
+ .tl-row.selected .tl-yr { font-size: 0.62rem; }
+ .tl-row.prev-yr .tl-dot { background: #d1d5db; }
+ .tl-row.next-yr .tl-dot { background: #d1d5db; }
+
+ /* Values in each row */
+ .tl-mm {
+ font-size: 0.68rem; font-weight: 800;
+ text-align: right; min-width: 32px;
+ }
+ .tl-rd {
+ font-size: 0.48rem; color: #9ca3af; font-weight: 500;
+ text-align: right; min-width: 32px;
+ }
+ .tl-row.selected .tl-mm { font-size: 0.82rem; }
+ .tl-row.selected .tl-rd { font-size: 0.52rem; }
+
+ .mockup-note {
+ margin-top: 20px; padding: 14px 16px;
+ background: #fff; border: 1px dashed #c4b99a; border-radius: 8px;
+ font-size: 0.78rem; color: #555; line-height: 1.7;
+ }
+ .mockup-note strong { color: #1b4a1b; }
+
+ .divider {
+ font-size: 0.5rem; color: #d1d5db; text-align: center; padding: 1px 0;
+ letter-spacing: 2px;
+ }
+
+ @media (max-width: 1100px) {
+ .estate-row { grid-template-columns: repeat(3, 1fr); }
+ }
+ @media (max-width: 700px) {
+ .estate-row { grid-template-columns: 1fr; }
+ }
+</style>
+</head>
+<body>
+
+<h1>🌧️ Estate Rainfall — Timeline View</h1>
+<p class="subtitle">Select a year + month. Selected year is highlighted centre. Past years above, future years below.</p>
+
+<div class="controls">
+ <div class="ctrl-group">
+ <label class="ctrl-label">Year</label>
+ <select class="ctrl-select" id="yearSelect" onchange="render()">
+ <option value="2025">2025</option>
+ <option value="2026" selected>2026</option>
+ <option value="2027">2027</option>
+ </select>
+ </div>
+ <div class="ctrl-group">
+ <label class="ctrl-label">Month</label>
+ <select class="ctrl-select" id="monthSelect" onchange="render()">
+ <option value="0">Jan</option><option value="1">Feb</option>
+ <option value="2">Mar</option><option value="3">Apr</option>
+ <option value="4" selected>May</option><option value="5">Jun</option>
+ <option value="6">Jul</option><option value="7">Aug</option>
+ <option value="8">Sep</option><option value="9">Oct</option>
+ <option value="10">Nov</option><option value="11">Dec</option>
+ </select>
+ </div>
+ <div class="ctrl-group">
+ <label class="ctrl-label">Period</label>
+ <select class="ctrl-select" id="periodSelect" onchange="render()">
+ <option value="month" selected>Month</option>
+ <option value="quarter">Quarter</option>
+ <option value="half">Half year</option>
+ <option value="year">Full year</option>
+ </select>
+ </div>
+ <div class="ctrl-group">
+ <label class="ctrl-label">Unit</label>
+ <div class="unit-toggle">
+ <button class="unit-btn active" id="btnMm" onclick="setUnit('mm')">mm</button>
+ <button class="unit-btn" id="btnIn" onclick="setUnit('in')">in</button>
+ </div>
+ </div>
+</div>
+
+<div class="estate-row" id="row"></div>
+
+<div class="mockup-note">
+ <strong>How it works:</strong><br>
+ • <b>Centre box</b> = the year/month you asked for. Highlighted in the estate's colour.<br>
+ • <b>Above</b> = previous years for the same month/period (history).<br>
+ • <b>Below</b> = following years for the same month/period (what happened after).<br>
+ • Each row shows <b>rainfall</b> + <b>rainy days</b> for that period.<br><br>
+ <strong>Extra data we can add once you're happy with the layout:</strong><br>
+ • 5-year average line across the timeline<br>
+ • YTD cumulative column<br>
+ • Trend arrow (wetter/drier vs 5yr avg)<br>
+ • Rank among estates for selected period<br>
+ • Share of total rainfall<br>
+ • Peak single-day rainfall in the period<br>
+</div>
+
+<script>
+const ESTATES = [
+ { name: "Stanmore", color: "#7c3aed" },
+ { name: "Orchardale", color: "#d97706" },
+ { name: "Hidden Falls", color: "#dc2626" },
+ { name: "Gowri", color: "#2563eb" },
+ { name: "Moganad", color: "#059669" },
+ { name: "Vyapurikuttai", color: "#ea580c" },
+];
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const IN = 25.4;
+let unit = "mm";
+
+// Mock data: per estate per year, per month (mm + rainy days)
+const D = {
+"Stanmore": [
+{yr:24,m:4,mm:78,rd:8},{yr:24,m:5,mm:120,rd:11},{yr:24,m:6,mm:180,rd:14},{yr:24,m:7,mm:210,rd:16},{yr:24,m:8,mm:195,rd:15},
+{yr:25,m:4,mm:65,rd:7},{yr:25,m:5,mm:95,rd:9},{yr:25,m:6,mm:160,rd:13},{yr:25,m:7,mm:190,rd:14},{yr:25,m:8,mm:175,rd:12},
+{yr:26,m:4,mm:70,rd:7},{yr:26,m:5,mm:88,rd:9},{yr:26,m:6,mm:145,rd:12},{yr:26,m:7,mm:170,rd:13},{yr:26,m:8,mm:155,rd:11},
+{yr:27,m:4,mm:82,rd:8},{yr:27,m:5,mm:110,rd:10},{yr:27,m:6,mm:175,rd:14},{yr:27,m:7,mm:200,rd:15},{yr:27,m:8,mm:185,rd:14},
+{yr:28,m:4,mm:75,rd:7},{yr:28,m:5,mm:105,rd:10},{yr:28,m:6,mm:165,rd:13},{yr:28,m:7,mm:195,rd:15},{yr:28,m:8,mm:180,rd:13},
+],
+"Orchardale": [
+{yr:24,m:4,mm:55,rd:5},{yr:24,m:5,mm:85,rd:8},{yr:24,m:6,mm:130,rd:11},{yr:24,m:7,mm:155,rd:13},{yr:24,m:8,mm:140,rd:10},
+{yr:25,m:4,mm:48,rd:5},{yr:25,m:5,mm:72,rd:7},{yr:25,m:6,mm:120,rd:10},{yr:25,m:7,mm:145,rd:12},{yr:25,m:8,mm:130,rd:9},
+{yr:26,m:4,mm:52,rd:6},{yr:26,m:5,mm:68,rd:7},{yr:26,m:6,mm:115,rd:10},{yr:26,m:7,mm:140,rd:11},{yr:26,m:8,mm:125,rd:9},
+{yr:27,m:4,mm:60,rd:6},{yr:27,m:5,mm:80,rd:8},{yr:27,m:6,mm:135,rd:11},{yr:27,m:7,mm:160,rd:13},{yr:27,m:8,mm:145,rd:10},
+{yr:28,m:4,mm:58,rd:5},{yr:28,m:5,mm:78,rd:8},{yr:28,m:6,mm:128,rd:10},{yr:28,m:7,mm:150,rd:12},{yr:28,m:8,mm:138,rd:9},
+],
+"Hidden Falls": [
+{yr:24,m:4,mm:90,rd:9},{yr:24,m:5,mm:140,rd:12},{yr:24,m:6,mm:200,rd:15},{yr:24,m:7,mm:235,rd:17},{yr:24,m:8,mm:220,rd:16},
+{yr:25,m:4,mm:85,rd:8},{yr:25,m:5,mm:125,rd:11},{yr:25,m:6,mm:185,rd:14},{yr:25,m:7,mm:220,rd:16},{yr:25,m:8,mm:200,rd:14},
+{yr:26,m:4,mm:80,rd:8},{yr:26,m:5,mm:110,rd:10},{yr:26,m:6,mm:170,rd:13},{yr:26,m:7,mm:200,rd:14},{yr:26,m:8,mm:185,rd:13},
+{yr:27,m:4,mm:95,rd:10},{yr:27,m:5,mm:145,rd:12},{yr:27,m:6,mm:205,rd:16},{yr:27,m:7,mm:240,rd:18},{yr:27,m:8,mm:225,rd:17},
+{yr:28,m:4,mm:88,rd:9},{yr:28,m:5,mm:135,rd:11},{yr:28,m:6,mm:195,rd:15},{yr:28,m:7,mm:230,rd:17},{yr:28,m:8,mm:210,rd:15},
+],
+"Gowri": [
+{yr:24,m:4,mm:62,rd:6},{yr:24,m:5,mm:95,rd:9},{yr:24,m:6,mm:145,rd:12},{yr:24,m:7,mm:170,rd:14},{yr:24,m:8,mm:155,rd:11},
+{yr:25,m:4,mm:58,rd:6},{yr:25,m:5,mm:82,rd:8},{yr:25,m:6,mm:130,rd:11},{yr:25,m:7,mm:160,rd:13},{yr:25,m:8,mm:140,rd:10},
+{yr:26,m:4,mm:55,rd:5},{yr:26,m:5,mm:78,rd:8},{yr:26,m:6,mm:125,rd:10},{yr:26,m:7,mm:150,rd:12},{yr:26,m:8,mm:135,rd:9},
+{yr:27,m:4,mm:65,rd:7},{yr:27,m:5,mm:90,rd:9},{yr:27,m:6,mm:150,rd:12},{yr:27,m:7,mm:175,rd:14},{yr:27,m:8,mm:160,rd:11},
+{yr:28,m:4,mm:60,rd:6},{yr:28,m:5,mm:88,rd:9},{yr:28,m:6,mm:140,rd:11},{yr:28,m:7,mm:168,rd:13},{yr:28,m:8,mm:152,rd:10},
+],
+"Moganad": [
+{yr:24,m:4,mm:45,rd:4},{yr:24,m:5,mm:70,rd:7},{yr:24,m:6,mm:110,rd:10},{yr:24,m:7,mm:135,rd:12},{yr:24,m:8,mm:120,rd:9},
+{yr:25,m:4,mm:40,rd:4},{yr:25,m:5,mm:62,rd:6},{yr:25,m:6,mm:100,rd:9},{yr:25,m:7,mm:125,rd:11},{yr:25,m:8,mm:110,rd:8},
+{yr:26,m:4,mm:42,rd:4},{yr:26,m:5,mm:58,rd:6},{yr:26,m:6,mm:95,rd:8},{yr:26,m:7,mm:118,rd:10},{yr:26,m:8,mm:105,rd:8},
+{yr:27,m:4,mm:48,rd:5},{yr:27,m:5,mm:72,rd:7},{yr:27,m:6,mm:115,rd:10},{yr:27,m:7,mm:140,rd:12},{yr:27,m:8,mm:125,rd:9},
+{yr:28,m:4,mm:46,rd:4},{yr:28,m:5,mm:68,rd:7},{yr:28,m:6,mm:108,rd:9},{yr:28,m:7,mm:132,rd:11},{yr:28,m:8,mm:118,rd:8},
+],
+"Vyapurikuttai": [
+{yr:24,m:4,mm:70,rd:7},{yr:24,m:5,mm:105,rd:10},{yr:24,m:6,mm:160,rd:13},{yr:24,m:7,mm:185,rd:15},{yr:24,m:8,mm:170,rd:12},
+{yr:25,m:4,mm:65,rd:6},{yr:25,m:5,mm:92,rd:9},{yr:25,m:6,mm:145,rd:12},{yr:25,m:7,mm:170,rd:14},{yr:25,m:8,mm:155,rd:11},
+{yr:26,m:4,mm:60,rd:6},{yr:26,m:5,mm:85,rd:8},{yr:26,m:6,mm:138,rd:11},{yr:26,m:7,mm:162,rd:13},{yr:26,m:8,mm:148,rd:10},
+{yr:27,m:4,mm:72,rd:7},{yr:27,m:5,mm:108,rd:10},{yr:27,m:6,mm:165,rd:13},{yr:27,m:7,mm:190,rd:15},{yr:27,m:8,mm:175,rd:12},
+{yr:28,m:4,mm:68,rd:7},{yr:28,m:5,mm:100,rd:9},{yr:28,m:6,mm:155,rd:12},{yr:28,m:7,mm:178,rd:14},{yr:28,m:8,rd:163,rd:11},
+],
+};
+
+let unit = "mm";
+
+function cv(mm) { return unit === "mm" ? mm : +(mm / IN).toFixed(2); }
+
+function setUnit(u) {
+ unit = u;
+ document.getElementById("btnMm").classList.toggle("active", u === "mm");
+ document.getElementById("btnIn").classList.toggle("active", u === "in");
+ render();
+}
+
+function getMonths() {
+ const p = document.getElementById("periodSelect").value;
+ const m = +document.getElementById("monthSelect").value;
+ if (p === "month") return [m];
+ if (p === "quarter") { const b = Math.floor(m/3)*3; return [b,b+1,b+2]; }
+ if (p === "half") return m < 6 ? [0,1,2,3,4,5] : [6,7,8,9,10,11];
+ return [0,1,2,3,4,5,6,7,8,9,10,11];
+}
+
+function monthLabel() {
+ const p = document.getElementById("periodSelect").value;
+ const m = +document.getElementById("monthSelect").value;
+ if (p === "month") return MONTHS[m];
+ if (p === "quarter") { const b = Math.floor(m/3)*3; return MONTHS[b]+"–"+MONTHS[b+2]; }
+ if (p === "half") return m < 6 ? "Jan–Jun" : "Jul–Dec";
+ return "Jan–Dec";
+}
+
+function sumPeriod(estate, year, months) {
+ let mm = 0, rd = 0;
+ for (const r of D[estate]) {
+ if (r.yr === year && months.includes(r.m)) { mm += r.mm; rd += r.rd; }
+ }
+ return { mm, rd };
+}
+
+function render() {
+ const selYear = +document.getElementById("yearSelect").value;
+ const months = getMonths();
+ const mLabel = monthLabel();
+ const row = document.getElementById("row");
+ row.innerHTML = "";
+
+ // Build ordered years: ...2024, 2025, [2026], 2027, 2028...
+ const allYears = [2024, 2025, 2026, 2027, 2028];
+
+ ESTATES.forEach(e => {
+ let timelineHTML = "";
+
+ allYears.forEach(yr => {
+ const val = sumPeriod(e.name, yr, months);
+ const isSelected = yr === selYear;
+ const rowClass = isSelected ? "selected" : (yr < selYear ? "prev-yr" : "next-yr");
+ const dotColor = isSelected ? e.color : "#d1d5db";
+ const mmColor = isSelected ? e.color : (yr < selYear ? "#6b7280" : "#9ca3af");
+
+ timelineHTML += `
+ <div class="tl-row ${rowClass}" style="${isSelected ? 'border-color:'+e.color : ''}">
+ <div class="tl-yr">${String(yr).slice(2)}</div>
+ <div class="tl-dot" style="background:${dotColor};${isSelected?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+e.color:''}"></div>
+ <div class="tl-spacer"></div>
+ <div class="tl-mm" style="color:${mmColor}">${cv(val.mm)}</div>
+ <div class="tl-rd">${val.rd}d</div>
+ </div>
+ ${yr < selYear && yr !== allYears[allYears.length - 1] ? '' : ''}
+ `;
+ });
+
+ row.insertAdjacentHTML("beforeend", `
+ <div class="ec">
+ <div class="ec-header">
+ <div class="ec-dot" style="background:${e.color}"></div>
+ <div class="ec-name">${e.name}</div>
+ </div>
+ <div class="tl" style="position:relative">
+ <div class="tl-line"></div>
+ ${timelineHTML}
+ </div>
+ </div>
+ `);
+ });
+}
+
+document.getElementById("periodSelect").addEventListener("change", render);
+render();
+</script>
+</body>
+</html>

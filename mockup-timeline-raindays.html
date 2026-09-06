@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Timeline Card – Final Design (Rain Days)</title>
+<style>
+ * { box-sizing: border-box; margin: 0; padding: 0; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+ background: #f5f2e8;
+ padding: 32px;
+ display: flex; flex-direction: column; gap: 18px;
+ max-width: 560px; margin: 0 auto;
+ }
+ .note { font-size: 13px; color: #6b7280; margin-bottom: 4px; }
+ .card {
+ background: #fffef9;
+ border: 1px solid #e5dfc8;
+ border-radius: 12px;
+ padding: 18px 20px 14px;
+ box-shadow: 0 1px 4px rgba(0,0,0,.06);
+ }
+ .header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+ .dot { width: 10px; height: 10px; border-radius: 50%; background: #2563eb; }
+ .name { font-size: 18px; font-weight: 700; color: #1b4a1b; }
+ .sub { font-size: 12px; color: #6b7280; margin-bottom: 14px; }
+ .tl-row { display: flex; align-items: center; gap: 0; padding: 3px 0; position: relative; z-index: 1; }
+ .yr { width: 22px; font-size: 11px; color: #9ca3af; text-align: right; flex-shrink: 0; }
+ .yr.sel { color: #2563eb; font-weight: 700; }
+ .tdot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; margin: 0 5px; }
+ .tdot.sel { background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2563eb; }
+ .bar-wrap { flex: 1; height: 16px; background: #f3f0e3; border-radius: 3px; overflow: hidden; margin: 0 6px; }
+ .bar { height: 100%; border-radius: 3px; background: #d4cfb8; }
+ .bar.sel { background: #2563eb; }
+ .amt { font-size: 11px; color: #9ca3af; width: 58px; text-align: right; flex-shrink: 0; line-height: 1.2; }
+ .amt.sel { color: #2563eb; font-weight: 600; }
+ .rd { font-size: 0.55rem; color: #9ca3af; width: 34px; text-align: right; flex-shrink: 0; }
+ .rd-badge {
+ display: inline-block;
+ background: #f3f0e3;
+ color: #9ca3af;
+ border-radius: 3px;
+ padding: 1px 5px;
+ font-size: 0.55rem;
+ font-weight: 500;
+ line-height: 1.4;
+ }
+ .rd-badge.sel {
+ background: #dbeafe;
+ color: #2563eb;
+ font-weight: 600;
+ }
+ .stats {
+ display: flex; flex-wrap: wrap; gap: 6px;
+ margin-top: 10px; padding-top: 10px;
+ border-top: 1px solid #f3f0e3;
+ }
+ .chip { font-size: 11px; color: #6b7280; background: #f9f7f0; border-radius: 4px; padding: 3px 8px; }
+ .chip b { color: #374151; }
+ .chip .sub { font-size: 11px; color: #9ca3af; font-weight: 400; }
+ .trend { font-size: 11px; color: #dc2626; }
+ .sel-box {
+ background: #fffef9;
+ border: 1.5px solid #2563eb;
+ border-radius: 6px;
+ padding: 5px 6px;
+ margin: 2px -6px;
+ box-shadow: 0 1px 4px rgba(0,0,0,.06);
+ }
+</style>
+</head>
+<body>
+<div class="note"><strong>FINAL — Rain days added as pill badges in each row + in the 5yr avg and YTD chips</strong></div>
+<div class="card">
+ <div class="header"><div class="dot"></div><div class="name">Gowri</div></div>
+ <div class="sub">Full year 2025 · Rank #3</div>
+
+ <div class="tl-row"><div class="yr">23</div><div class="tdot"></div><div class="bar-wrap"><div class="bar" style="width:50%"></div></div><div class="amt">53.98in</div><div class="rd"><span class="rd-badge">42d</span></div></div>
+ <div class="tl-row"><div class="yr">24</div><div class="tdot"></div><div class="bar-wrap"><div class="bar" style="width:95%"></div></div><div class="amt">106.73in</div><div class="rd"><span class="rd-badge">58d</span></div></div>
+
+ <div class="sel-box tl-row"><div class="yr sel">25</div><div class="tdot sel"></div><div class="bar-wrap"><div class="bar sel" style="width:77%"></div></div><div class="amt sel">81.89in</div><div class="rd"><span class="rd-badge sel">23d</span></div></div>
+
+ <div class="tl-row"><div class="yr">26</div><div class="tdot"></div><div class="bar-wrap"><div class="bar" style="width:24%"></div></div><div class="amt">26.54in</div><div class="rd"><span class="rd-badge">18d</span></div></div>
+
+ <div class="stats">
+ <div class="chip">5yr avg <b>67.28in</b><span class="sub"> · 45d</span></div>
+ <div class="chip" style="color:#dc2626">↓ 23% vs 2024</div>
+ <div class="chip">YTD <b>81.89in</b><span class="sub"> · 23d</span></div>
+ <div class="chip">Share <b>19%</b></div>
+ </div>
+</div>
+</body>
+</html>
