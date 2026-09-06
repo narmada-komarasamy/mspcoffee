@@ -229,7 +229,7 @@
 }
 .tlRow {
  display: flex; align-items: center; gap: 0;
- padding: 3px 0; position: relative; z-index: 1; border-radius: 6px;
+ padding: 2px 0; position: relative; z-index: 1; border-radius: 6px;
 }
 .tlRowSel {
  background: var(--t-card, #ffffff); border: 1.5px solid; border-radius: 6px;
@@ -244,10 +244,10 @@
 .tlDotInner { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
 .tlDotSel { width: 9px; height: 9px; }
 .tlSpacer { flex: 1; min-width: 0; }
-.tlBarWrap { height: 10px; background: var(--t-subtle, #f5eedc); border-radius: 2px; overflow: hidden; min-width: 0; margin-right: 6px; }
+.tlBarWrap { height: 10px; background: var(--t-subtle, #f5eedc); border-radius: 2px; overflow: hidden; min-width: 40px; width: 100px; margin-right: 6px; flex-shrink: 0; }
 .tlBar { height: 100%; border-radius: 2px; }
 .tlMm {
- font-size: 0.68rem; font-weight: 800; text-align: right; min-width: 36px; flex-shrink: 0;
+ font-size: 0.68rem; font-weight: 800; text-align: right; min-width: 36px; flex-shrink: 0; margin-right: 4px;
 }
 .tlMmSel { font-size: 0.82rem; }
 .tlRd {

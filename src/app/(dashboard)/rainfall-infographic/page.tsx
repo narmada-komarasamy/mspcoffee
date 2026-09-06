@@ -879,7 +879,6 @@ function EstateTimelineRow({ data, year, period, month, unit, estates, estateCol
  <div className={`${s.tlDotInner} ${isSel ? s.tlDotSel : ""}`}
  style={isSel ? { background: c, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${c}` } : {}} />
  </div>
- <div className={s.tlSpacer} />
  <div className={s.tlBarWrap}>
  <div className={s.tlBar} style={{ width: `${barW}%`, background: isSel ? c : "#e5dfc8" }} />
  </div>
