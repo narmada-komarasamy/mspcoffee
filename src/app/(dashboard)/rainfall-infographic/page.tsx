@@ -26,7 +26,9 @@ const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 // ── types ────────────────────────────────────────────────────────────────────
-type Row = { id: number; date: string; estate: string; rainfall_mm: number; inches: number; year: number; month: number };
+type Row = { id: number; date: string; estate: string; rainfall_mm: number; inches: number };
+const yr = (d: string) => new Date(d).getFullYear();
+const mo = (d: string) => new Date(d).getMonth() + 1;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -85,23 +87,23 @@ export default function RainfallInfographic() {
 
  // ── year / month lists ─────────────────────────────────────────────────────
  const yearsList = useMemo(() => {
- const raw = [...new Set(data.map(r => r.year).filter((y): y is number => y != null))].sort((a, b) => b - a);
- console.log("[rainfall] data rows:", data.length, "yearsList:", raw, "sample keys:", data[0]);
+ const raw = [...new Set(data.map(r => yr(r.date)))].sort((a, b) => b - a);
+ console.log("[rainfall] data rows:", data.length, "yearsList:", raw, "sample date:", data[0]?.date);
  return raw;
  }, [data]);
 
  // When year changes, reset month and rebuild months list from that year
  const monthsList = useMemo(() => {
- const base = selectedYear === "all" ? data : data.filter(r => r.year === Number(selectedYear));
- return [...new Set(base.map(r => r.month))].sort((a, b) => a - b);
+ const base = selectedYear === "all" ? data : data.filter(r => yr(r.date) === Number(selectedYear));
+ return [...new Set(base.map(r => mo(r.date)))].sort((a, b) => a - b);
  }, [data, selectedYear]);
 
  // ── triple-filtered dataset (the source of truth for all charts) ───────────
  const filteredData = useMemo(() => {
  let result = data;
  if (selectedEstate !== "all") result = result.filter(r => r.estate === selectedEstate);
- if (selectedYear !== "all") result = result.filter(r => r.year === Number(selectedYear));
- if (selectedMonth !== "all") result = result.filter(r => r.month === Number(selectedMonth));
+ if (selectedYear !== "all") result = result.filter(r => yr(r.date) === Number(selectedYear));
+ if (selectedMonth !== "all") result = result.filter(r => mo(r.date) === Number(selectedMonth));
  return result;
  }, [data, selectedEstate, selectedYear, selectedMonth]);
 
@@ -117,14 +119,14 @@ export default function RainfallInfographic() {
  const rainyDays = new Set(eData.map(r => r.date)).size;
 
  const monthly: Record<number, number> = {};
- eData.forEach(r => { monthly[r.month] = (monthly[r.month] ?? 0) + r.rainfall_mm; });
+ eData.forEach(r => { monthly[mo(r.date)] = (monthly[mo(r.date)] ?? 0) + r.rainfall_mm; });
 
  let peakMonth = 0, peakMm = 0;
  Object.entries(monthly).forEach(([m, v]) => { if (v > peakMm) { peakMm = v; peakMonth = Number(m); } });
 
  const seasonal: Record<number, number> = {};
  eData.forEach(r => {
- const sKey = r.month >= 6 ? 0 : r.month >= 3 ? 1 : r.month >= 10 ? 2 : 3;
+ const sKey =  mo(r.date) >= 6 ? 0 :  mo(r.date) >= 3 ? 1 :  mo(r.date) >= 10 ? 2 : 3;
  seasonal[sKey] = (seasonal[sKey] ?? 0) + r.rainfall_mm;
  });
 
@@ -135,8 +137,8 @@ export default function RainfallInfographic() {
  if (gap > 1) { totalDryDays += gap - 1; maxDry = Math.max(maxDry, gap - 1); }
  }
 
- const curTotal = eData.filter(r => r.year === curYear).reduce((s, r) => s + r.rainfall_mm, 0);
- const priorTotal = eData.filter(r => r.year === curYear - 1 && r.estate === estate).reduce((s, r) => s + r.rainfall_mm, 0);
+ const curTotal = eData.filter(r =>  yr(r.date) === curYear).reduce((s, r) => s + r.rainfall_mm, 0);
+ const priorTotal = eData.filter(r =>  yr(r.date) === curYear - 1 && r.estate === estate).reduce((s, r) => s + r.rainfall_mm, 0);
  const yoyDelta = priorTotal > 0 ? rnd(((curTotal - priorTotal) / priorTotal) * 100) : null;
 
  const vals = Object.values(monthly).filter(v => v > 0);
@@ -177,7 +179,7 @@ export default function RainfallInfographic() {
  const map: Record<string, Record<string, number>> = {};
  filteredData.forEach(r => {
  if (!map[r.estate]) map[r.estate] = {};
- const key = `${MONTH_SHORT[r.month - 1]}-${r.year}`;
+ const key = `${MONTH_SHORT[ mo(r.date) - 1]}-${ yr(r.date)}`;
  map[r.estate][key] = (map[r.estate][key] ?? 0) + r.rainfall_mm;
  });
  return map;
@@ -185,11 +187,11 @@ export default function RainfallInfographic() {
 
  // ── monthly matrix ─────────────────────────────────────────────────────────
  const monthlyMatrix = useMemo(() => {
- const years = [...new Set(filteredData.map(r => r.year))].sort((a, b) => b - a);
+ const years = [...new Set(filteredData.map(r =>  yr(r.date)))].sort((a, b) => b - a);
  return ESTATES.map(estate => {
  const row: Record<string, number | string> = { estate };
  years.forEach(y => {
- const total = filteredData.filter(r => r.estate === estate && r.year === y).reduce((s, r) => s + r.rainfall_mm, 0);
+ const total = filteredData.filter(r => r.estate === estate &&  yr(r.date) === y).reduce((s, r) => s + r.rainfall_mm, 0);
  row[String(y)] = rnd(total);
  });
  const last3 = years.slice(0, 3);
@@ -456,7 +458,7 @@ function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
  const map: Record<string, Record<string, number>> = {};
  data.forEach(r => {
  if (!estates.includes(r.estate)) return;
- const k = `${r.year}-${String(r.month).padStart(2, "0")}`;
+ const k = `${ yr(r.date)}-${String( mo(r.date)).padStart(2, "0")}`;
  if (!map[k]) map[k] = {};
  map[k][r.estate] = (map[k][r.estate] ?? 0) + r.rainfall_mm;
  });
@@ -488,12 +490,12 @@ function MonthlyLine({ data, selected }: { data: Row[]; selected: string }) {
 
 function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
  const chartData = useMemo(() => {
- const years = [...new Set(data.map(r => r.year))].sort((a, b) => b - a);
+ const years = [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a);
  const src = selected === "all" ? data : data.filter(r => r.estate === selected);
  return years.map(y => {
  const row: Record<string, number | string> = { year: String(y) };
  ESTATES.forEach(e => {
- row[e] = rnd(src.filter(r => r.year === y && r.estate === e).reduce((s, r) => s + r.rainfall_mm, 0));
+ row[e] = rnd(src.filter(r =>  yr(r.date) === y && r.estate === e).reduce((s, r) => s + r.rainfall_mm, 0));
  });
  return row;
  });
@@ -517,13 +519,13 @@ function AnnualBarChart({ data, selected }: { data: Row[]; selected: string }) {
 
 function RainfallHeatmap({ data, selected }: { data: Row[]; selected: string }) {
  const estates: readonly string[] = selected === "all" ? ESTATES : [selected];
- const years = useMemo(() => [...new Set(data.map(r => r.year))].sort((a, b) => b - a).slice(0, 5), [data]);
+ const years = useMemo(() => [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a).slice(0, 5), [data]);
 
  const matrix = useMemo(() => {
  const m: Record<string, number> = {};
  data.forEach(r => {
  if (!estates.includes(r.estate)) return;
- const key = `${r.estate}|${r.year}-${String(r.month).padStart(2, "0")}`;
+ const key = `${r.estate}|${ yr(r.date)}-${String( mo(r.date)).padStart(2, "0")}`;
  m[key] = (m[key] ?? 0) + r.rainfall_mm;
  });
  return m;
@@ -631,7 +633,7 @@ function SeasonalStacked({ data }: { data: Row[] }) {
  const out: Record<string, Record<string, number>> = {};
  data.forEach(r => {
  if (!out[r.estate]) out[r.estate] = {};
- const sk = r.month >= 6 ? "SW Monsoon" : r.month >= 10 ? "NE Monsoon" : r.month <= 2 ? "Winter" : "Summer";
+ const sk =  mo(r.date) >= 6 ? "SW Monsoon" :  mo(r.date) >= 10 ? "NE Monsoon" :  mo(r.date) <= 2 ? "Winter" : "Summer";
  out[r.estate][sk] = (out[r.estate][sk] ?? 0) + r.rainfall_mm;
  });
  return ESTATES.map(e => ({ estate: e, ...out[e] }));
