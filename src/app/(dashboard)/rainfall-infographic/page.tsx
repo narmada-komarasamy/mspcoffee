@@ -61,6 +61,9 @@ export default function RainfallInfographic() {
  const [selectedYear, setSelectedYear] = useState<string>("all");
  const [selectedMonth, setSelectedMonth] = useState<string>("all");
  const [unit, setUnit] = useState<"mm" | "in">("mm");
+ const [tlYear, setTlYear] = useState<number>(new Date().getFullYear());
+ const [tlPeriod, setTlPeriod] = useState<"month" | "quarter" | "half" | "year">("month");
+ const [tlMonth, setTlMonth] = useState<number>(new Date().getMonth());
  const IN_FACTOR = 25.4;
  const toDisplay = (mm: number) => unit === "mm" ? mm : mm / IN_FACTOR;
 
@@ -395,7 +398,47 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 2 — Monthly line chart + Annual bar chart */}
+ {/* ROW 2 — Estate Timeline Cards */}
+ {/* ══════════════════════════════════════════════════════════════════════ */}
+ <div className={s.timelineSection}>
+ <div className={s.cardLabel} style={{ marginBottom: 10 }}>Estate Rainfall — Period Comparison</div>
+ <div className={s.ymFilterBar}>
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel} htmlFor="tl-year">Year</label>
+ <select id="tl-year" className={s.ymSelect} value={tlYear} onChange={e => setTlYear(+e.target.value)}>
+ {yearsList.map(y => <option key={y} value={y}>{y}</option>)}
+ </select>
+ </div>
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel} htmlFor="tl-period">Period</label>
+ <select id="tl-period" className={s.ymSelect} value={tlPeriod} onChange={e => setTlPeriod(e.target.value as "month" | "quarter" | "half" | "year")}>
+ <option value="month">Month</option>
+ <option value="quarter">Quarter</option>
+ <option value="half">Half year</option>
+ <option value="year">Full year</option>
+ </select>
+ </div>
+ {tlPeriod !== "year" && (
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel} htmlFor="tl-month">Month</label>
+ <select id="tl-month" className={s.ymSelect} value={tlMonth} onChange={e => setTlMonth(+e.target.value)}>
+ {MONTH_NAMES.map((n, i) => <option key={i} value={i}>{n}</option>)}
+ </select>
+ </div>
+ )}
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel}>Unit</label>
+ <div className={s.unitToggle}>
+ <button className={`${s.unitBtn} ${unit === "mm" ? s.unitBtnActive : ""}`} onClick={() => setUnit("mm")}>mm</button>
+ <button className={`${s.unitBtn} ${unit === "in" ? s.unitBtnActive : ""}`} onClick={() => setUnit("in")}>in</button>
+ </div>
+ </div>
+ </div>
+ <EstateTimelineRow data={data} year={tlYear} period={tlPeriod} month={tlMonth} unit={unit} estates={ESTATES} estateColors={ESTATE_COLORS} />
+ </div>
+
+ {/* ══════════════════════════════════════════════════════════════════════ */}
+ {/* ROW 3 — Monthly line chart + Annual bar chart */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
@@ -714,5 +757,152 @@ function YoYDeltaChart({ estateStats }: { estateStats: Array<{ estate: string; y
  </Bar>
  </BarChart>
  </ResponsiveContainer>
+ );
+}
+
+function EstateTimelineRow({ data, year, period, month, unit, estates, estateColors }: {
+ data: Row[];
+ year: number;
+ period: string;
+ month: number;
+ unit: string;
+ estates: readonly string[];
+ estateColors: Record<string, string>;
+}) {
+ const IN_FACTOR = 25.4;
+ const rnd = (n: number, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
+
+ const getMonthsForPeriod = useCallback(() => {
+ if (period === "month") return [month];
+ if (period === "quarter") {
+ const b = Math.floor(Number(month) / 3) * 3;
+ return [b, b + 1, b + 2];
+ }
+ if (period === "half") return month < 6 ? [0, 1, 2, 3, 4, 5] : [6, 7, 8, 9, 10, 11];
+ return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+ }, [period, month]);
+
+ const getMonthLabel = () => {
+ if (period === "month") return MONTH_NAMES[month];
+ if (period === "quarter") {
+ const b = Math.floor(Number(month) / 3) * 3;
+ return MONTH_NAMES[b] + "–" + MONTH_NAMES[b + 2];
+ }
+ if (period === "half") return month < 6 ? "Jan–Jun" : "Jul–Dec";
+ return "Full year";
+ };
+
+ const allYears = useMemo(() => {
+ const yrs = [...new Set(data.map(r => new Date(r.date).getFullYear()))].sort((a, b) => a - b);
+ return yrs.length > 0 ? yrs : [year - 2, year - 1, year, year + 1, year + 2];
+ }, [data, year]);
+
+ const sumPeriod = useCallback((estateName: string, yr: number, months: number[]) => {
+ const mSet = new Set(months);
+ let mm = 0;
+ const dateSet = new Set<string>();
+ for (const r of data) {
+ if (r.estate === estateName && new Date(r.date).getFullYear() === yr && mSet.has(new Date(r.date).getMonth())) {
+ mm += r.rainfall_mm;
+ if (r.rainfall_mm > 0) dateSet.add(r.date);
+ }
+ }
+ return { mm, rd: dateSet.size };
+ }, [data]);
+
+ const months = getMonthsForPeriod();
+ const periodLabel = getMonthLabel();
+
+ const rankings = useMemo(() => {
+ return estates.map(e => {
+ const cur = sumPeriod(e, year, months);
+ return { name: e, mm: cur.mm, rd: cur.rd };
+ }).sort((a, b) => b.mm - a.mm);
+ }, [estates, year, months, sumPeriod]);
+
+ const rankMap = useMemo(() => {
+ const m: Record<string, number> = {};
+ rankings.forEach((e, i) => { m[e.name] = i + 1; });
+ return m;
+ }, [rankings]);
+
+ return (
+ <div className={s.timelineRow}>
+ {estates.map(e => {
+ const c = estateColors[e];
+ const cur = sumPeriod(e, year, months);
+ const prevYear = year - 1;
+ const prev = sumPeriod(e, prevYear, months);
+ const diffPct = prev.mm > 0 ? Math.round((cur.mm - prev.mm) / prev.mm * 100) : (cur.mm > 0 ? 100 : 0);
+ const trend = diffPct > 0 ? "up" : diffPct < 0 ? "down" : "flat";
+ const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
+
+ const yr5 = allYears.filter(y => y >= year - 2 && y <= year + 2);
+ const yr5Vals = yr5.map(y => sumPeriod(e, y, months).mm).filter(v => v > 0);
+ const avg5 = yr5Vals.length > 0 ? Math.round(yr5Vals.reduce((a, b) => a + b, 0) / yr5Vals.length) : 0;
+
+ const allVals = yr5.map(y => sumPeriod(e, y, months).mm);
+ const maxVal = Math.max(...allVals, 1);
+
+ const rank = rankMap[e];
+ const totalEst = rankings.reduce((s, r) => s + r.mm, 0);
+ const share = totalEst > 0 ? Math.round(cur.mm / totalEst * 100) : 0;
+
+ const ytdEndMonth = period === 'month' ? month : period === 'quarter' ? (Math.floor(Number(month) / 3) * 3 + 2) : period === 'half' ? (month < 6 ? 5 : 11) : 11;
+ const ytdVal = sumPeriod(e, year, Array.from({length: ytdEndMonth + 1}, (_, i) => i)).mm;
+
+ return (
+ <div key={e} className={s.tlCard} style={{ borderTopColor: c, borderLeftColor: c }}>
+ <div className={s.tlHeader}>
+ <div className={s.tlDot} style={{ background: c }} />
+ <div className={s.tlName}>{e}</div>
+ </div>
+ <div className={s.tlPeriod}>{periodLabel} {year} · Rank #{rank}</div>
+
+ <div className={s.tl}>
+ <div className={s.tlLine} />
+ {yr5.map(yr => {
+ const val = sumPeriod(e, yr, months);
+ const isSel = yr === year;
+ const barW = Math.round((val.mm / maxVal) * 100);
+
+ return (
+ <div key={yr} className={`${s.tlRow} ${isSel ? s.tlRowSel : ""}`} style={isSel ? { borderColor: c } : undefined}>
+ <div className={`${s.tlYr} ${isSel ? s.tlYrSel : ""}`}
+ style={isSel ? { color: c } : yr < year ? { color: "#6b7280" } : { color: "#9ca3af" }}>
+ {String(yr).slice(2)}
+ </div>
+ <div className={s.tlDotCol}>
+ <div className={`${s.tlDotInner} ${isSel ? s.tlDotSel : ""}`}
+ style={isSel ? { background: c, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${c}` } : {}} />
+ </div>
+ <div className={s.tlSpacer} />
+ <div className={s.tlBarWrap}>
+ <div className={s.tlBar} style={{ width: `${barW}%`, background: isSel ? c : "#e5dfc8" }} />
+ </div>
+ <div className={`${s.tlMm} ${isSel ? s.tlMmSel : ""}`}
+ style={isSel ? { color: c } : { color: "#9ca3af" }}>
+ {unit === "mm" ? val.mm : rnd(val.mm / IN_FACTOR, 2)}{unit}
+ </div>
+ <div className={s.tlRd}>
+ {val.rd > 0 && <><span className={s.tlRdDot} />{val.rd}d</>}
+ </div>
+ </div>
+ );
+ })}
+ </div>
+
+ <div className={s.tlStats}>
+ <div className={s.tlChip}>5yr avg <b>{unit === "mm" ? avg5 : rnd(avg5 / IN_FACTOR, 2)}{unit}</b></div>
+ <div className={`${s.tlTrend} ${trend === "up" ? s.tlTrendUp : trend === "down" ? s.tlTrendDown : s.tlTrendFlat}`}>
+ {trendIcon} {Math.abs(diffPct)}% vs {prevYear}
+ </div>
+ <div className={s.tlChip}>YTD <b>{unit === "mm" ? ytdVal : rnd(ytdVal / IN_FACTOR, 2)}{unit}</b></div>
+ <div className={s.tlChip}>Share <b>{share}%</b></div>
+ </div>
+ </div>
+ );
+ })}
+ </div>
  );
 }
