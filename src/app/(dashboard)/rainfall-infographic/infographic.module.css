@@ -251,12 +251,26 @@
 }
 .tlMmSel { font-size: 0.82rem; }
 .tlRd {
- display: flex; align-items: center; gap: 3px;
- font-size: 0.55rem; color: var(--t-muted, #9ca3af); font-weight: 500;
- width: 100%; justify-content: flex-end; flex-shrink: 0;
+ display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0;
 }
-.tlRdDot { width: 4px; height: 4px; border-radius: 50%; background: #d1d5db; }
-.tlRowSel .tlRd { font-size: 0.58rem; }
+.tlRdBadge {
+ display: inline-block;
+ background: var(--t-bg, #f3f0e3);
+ color: var(--t-muted, #9ca3af);
+ border-radius: 3px;
+ padding: 1px 5px;
+ font-size: 0.55rem;
+ font-weight: 500;
+ line-height: 1.4;
+}
+.tlRowSel .tlRd {
+}
+.tlRowSel .tlRdBadge {
+ background: #dbeafe;
+ color: #2563eb;
+ font-weight: 600;
+ font-size: 0.58rem;
+}
 
 /* Bottom stats */
 .tlStats {

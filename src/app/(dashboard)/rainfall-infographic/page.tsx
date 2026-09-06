@@ -840,6 +840,8 @@ function EstateTimelineRow({ data, year, period, month, unit, estates, estateCol
  const yr5 = allYears.filter(y => y >= year - 2 && y <= year + 2);
  const yr5Vals = yr5.map(y => sumPeriod(e, y, months).mm).filter(v => v > 0);
  const avg5 = yr5Vals.length > 0 ? Math.round(yr5Vals.reduce((a, b) => a + b, 0) / yr5Vals.length) : 0;
+ const avg5rd = yr5.map(y => sumPeriod(e, y, months).rd);
+ const avg5rdVal = avg5rd.length > 0 ? Math.round(avg5rd.reduce((a, b) => a + b, 0) / avg5rd.length) : 0;
 
  const allVals = yr5.map(y => sumPeriod(e, y, months).mm);
  const maxVal = Math.max(...allVals, 1);
@@ -850,6 +852,7 @@ function EstateTimelineRow({ data, year, period, month, unit, estates, estateCol
 
  const ytdEndMonth = period === 'month' ? month : period === 'quarter' ? (Math.floor(Number(month) / 3) * 3 + 2) : period === 'half' ? (month < 6 ? 5 : 11) : 11;
  const ytdVal = sumPeriod(e, year, Array.from({length: ytdEndMonth + 1}, (_, i) => i)).mm;
+ const ytdRd = sumPeriod(e, year, Array.from({length: ytdEndMonth + 1}, (_, i) => i)).rd;
 
  return (
  <div key={e} className={s.tlCard} style={{ borderTopColor: c, borderLeftColor: c }}>
@@ -885,7 +888,7 @@ function EstateTimelineRow({ data, year, period, month, unit, estates, estateCol
  {unit === "mm" ? val.mm : rnd(val.mm / IN_FACTOR, 2)}{unit}
  </div>
  <div className={s.tlRd}>
- {val.rd > 0 && <><span className={s.tlRdDot} />{val.rd}d</>}
+ {val.rd > 0 && <span className={s.tlRdBadge}>{val.rd}d</span>}
  </div>
  </div>
  );
@@ -893,11 +896,11 @@ function EstateTimelineRow({ data, year, period, month, unit, estates, estateCol
  </div>
 
  <div className={s.tlStats}>
- <div className={s.tlChip}>5yr avg <b>{unit === "mm" ? avg5 : rnd(avg5 / IN_FACTOR, 2)}{unit}</b></div>
+ <div className={s.tlChip}>5yr avg <b>{unit === "mm" ? avg5 : rnd(avg5 / IN_FACTOR, 2)}{unit}</b> <span style={{color:"#9ca3af",fontWeight:400}}>· {avg5rdVal}d</span></div>
  <div className={`${s.tlTrend} ${trend === "up" ? s.tlTrendUp : trend === "down" ? s.tlTrendDown : s.tlTrendFlat}`}>
  {trendIcon} {Math.abs(diffPct)}% vs {prevYear}
  </div>
- <div className={s.tlChip}>YTD <b>{unit === "mm" ? ytdVal : rnd(ytdVal / IN_FACTOR, 2)}{unit}</b></div>
+ <div className={s.tlChip}>YTD <b>{unit === "mm" ? ytdVal : rnd(ytdVal / IN_FACTOR, 2)}{unit}</b> <span style={{color:"#9ca3af",fontWeight:400}}>· {ytdRd}d</span></div>
  <div className={s.tlChip}>Share <b>{share}%</b></div>
  </div>
  </div>
