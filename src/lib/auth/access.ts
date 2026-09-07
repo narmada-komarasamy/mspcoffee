@@ -25,11 +25,8 @@ export const NAV_ITEMS: NavItemDef[] = [
   ]
  },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
- { label: 'HO Fuel', href: '/ho-fuel', iconName: 'Droplets', roles: ['admin', 'supervisor', 'ceo'],
- children: [
- { label: 'Employee Portal', href: '/ho-fuel/employee-portal', iconName: 'Users', roles: ['admin', 'supervisor'] },
- ]
- },
+ { label: 'HO Fuel', href: '/ho-fuel', iconName: 'Droplets', roles: ['admin', 'supervisor', 'ceo'] },
+ { label: 'Employee Portal', href: '/employee-portal', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar', href: '/operations-calendar', iconName: 'CalendarDays', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   { label: 'Email Reports',       href: '/estate-management/email-reports', iconName: 'Mail', roles: ['admin'] },
   {

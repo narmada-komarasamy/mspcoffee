@@ -75,11 +75,8 @@ const navItems: NavItem[] = [
  { label: 'Rainfall Infographic', href: '/rainfall/infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
  ]
  },
- { label: 'HO Fuel', href: '/ho-fuel', icon: Droplets, roles: ['admin', 'supervisor', 'ceo'],
- children: [
- { label: 'Employee Portal', href: '/ho-fuel/employee-portal', icon: Users, roles: ['admin', 'supervisor'] },
- ]
- },
+ { label: 'HO Fuel', href: '/ho-fuel', icon: Droplets, roles: ['admin', 'supervisor', 'ceo'] },
+ { label: 'Employee Portal', href: '/employee-portal', icon: Users, roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   { label: 'Email Reports',        href: '/estate-management/email-reports', icon: Mail, roles: ['admin'] },
