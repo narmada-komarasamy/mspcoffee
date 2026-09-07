@@ -75,8 +75,12 @@ const navItems: NavItem[] = [
  { label: 'Rainfall Infographic', href: '/rainfall/infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
  ]
  },
+ { label: 'HO Fuel', href: '/ho-fuel', icon: Droplets, roles: ['admin', 'supervisor', 'ceo'],
+ children: [
+ { label: 'Employee Portal', href: '/ho-fuel/employee-portal', icon: Users, roles: ['admin', 'supervisor'] },
+ ]
+ },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
-  { label: 'HO Fuel',              href: '/ho-fuel',              icon: Droplets,     roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   { label: 'Email Reports',        href: '/estate-management/email-reports', icon: Mail, roles: ['admin'] },
   {
@@ -199,7 +203,7 @@ const navItems: NavItem[] = [
       },
     ],
   },
-  { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
+   { label: 'Nursery',              href: '/nursery',              icon: Sprout,       roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'AI Insights',          href: '/ai-insights',          icon: Brain,        roles: ['admin', 'supervisor', 'worker', 'ceo'] },
   {
     label: 'Admin Controls', href: '/admin-controls', icon: Shield, roles: ['admin'],
