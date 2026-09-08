@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useMemo, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -30,6 +30,7 @@ type ProduceRecord = {
   damageWeightKg: number;
   damageNotes: string;
   source: 'Manual' | 'WhatsApp Paste';
+  sourceMessage?: string;
   photoUrl?: string;
   location?: string;
   notes: string;
@@ -77,6 +78,20 @@ const sampleRecords: ProduceRecord[] = [
     damageWeightKg: 0,
     damageNotes: 'Little damage',
     source: 'WhatsApp Paste',
+    sourceMessage: `Dhanasingh ME
+Good Morning Sir
+Durian Fruits
+Today 20 Pieces
+Weight 17.500 kgs
+
+Previous 129 Pieces
+Weight 112.200 kgs
+
+Todate 149 Pieces
+Weight 129.700 kgs
+
+Damage 4 Piece
+(Little Damage)`,
     location: 'Solur, Tamil Nadu, India',
     notes: 'Incoming durian report from Dhanasingh ME.',
     followUp: 'Pickup needed',
@@ -213,27 +228,58 @@ function toDateLabel(value: string) {
 }
 
 function parseWhatsAppMessage(message: string, current: Draft): Draft {
+  if (!message.trim()) return current;
+
   const clean = message.replace(/\s+/g, ' ');
-  const product = PRODUCTS.find((entry) => clean.toLowerCase().includes(entry.toLowerCase())) ?? current.product;
-  const estate = ESTATES.find((entry) => clean.toLowerCase().includes(entry.toLowerCase())) ?? current.estate;
+  const lower = clean.toLowerCase();
+  const product = PRODUCTS.find((entry) => lower.includes(entry.toLowerCase())) ?? current.product;
+  const estate = ESTATES.find((entry) => new RegExp(`\\b${entry}\\b`, 'i').test(clean)) ?? current.estate;
   const pieces = clean.match(/today\s+(\d+(?:\.\d+)?)/i)?.[1] ?? clean.match(/(\d+(?:\.\d+)?)\s*pieces?/i)?.[1];
   const weights = [...clean.matchAll(/weight\s+(\d+(?:\.\d+)?)/gi)].map((match) => match[1]);
   const previousQty = clean.match(/previous\s+(\d+(?:\.\d+)?)/i)?.[1];
   const toDateQty = clean.match(/todate\s+(\d+(?:\.\d+)?)/i)?.[1] ?? clean.match(/to date\s+(\d+(?:\.\d+)?)/i)?.[1];
+  const toDateWeight = weights[2];
   const damageQty = clean.match(/damage\s+(\d+(?:\.\d+)?)/i)?.[1];
   const damageNotes = message.match(/\(([^)]+)\)/)?.[1] ?? current.damageNotes;
+  const dateParts = clean.match(/\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b/);
+  const timeParts = clean.match(/\b(\d{1,2}):(\d{2})\s*(AM|PM)?\b/i);
+  const location = clean.match(/\b([A-Z][A-Za-z\s]+,\s*Tamil Nadu(?:,\s*India)?)\b/)?.[1];
+
+  let date = current.date;
+  if (dateParts) {
+    const [, day, month, year] = dateParts;
+    date = `${year.length === 2 ? `20${year}` : year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  let time = current.time;
+  if (timeParts) {
+    const [, hour, minute, meridian] = timeParts;
+    let hourNumber = Number(hour);
+    if (meridian?.toLowerCase() === 'pm' && hourNumber < 12) hourNumber += 12;
+    if (meridian?.toLowerCase() === 'am' && hourNumber === 12) hourNumber = 0;
+    time = `${String(hourNumber).padStart(2, '0')}:${minute}`;
+  }
+
+  const runningTotalNote = [
+    toDateQty ? `Message to-date quantity: ${toDateQty}` : '',
+    toDateWeight ? `Message to-date weight: ${toDateWeight} kg` : '',
+  ].filter(Boolean).join(' / ');
 
   return {
     ...current,
+    date,
+    time,
     estate,
     product,
+    unit: pieces ? 'Pieces' : current.unit,
     qty: pieces ?? current.qty,
     weightKg: weights[0] ?? current.weightKg,
     previousQty: previousQty ?? current.previousQty,
     previousWeightKg: weights[1] ?? current.previousWeightKg,
     damageQty: damageQty ?? current.damageQty,
     damageNotes,
-    notes: toDateQty ? `Message running total: ${toDateQty}` : current.notes,
+    location: location ?? current.location,
+    notes: runningTotalNote || current.notes,
   };
 }
 
@@ -244,6 +290,7 @@ export default function EstateProduceTrackerPage() {
   const [draft, setDraft] = useState<Draft>(blankDraft());
   const [entryMode, setEntryMode] = useState<'manual' | 'whatsapp'>('whatsapp');
   const [whatsAppMessage, setWhatsAppMessage] = useState('');
+  const [pasteStatus, setPasteStatus] = useState('Paste a WhatsApp message to attach it to the next saved record.');
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [filters, setFilters] = useState({ year: '2026', estate: 'All', product: 'All', unit: 'All', search: '' });
 
@@ -299,10 +346,43 @@ export default function EstateProduceTrackerPage() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  const handleMessageParse = () => {
-    setDraft((current) => parseWhatsAppMessage(whatsAppMessage, current));
+  const extractWhatsAppFields = (message: string) => {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
+      setPasteStatus('Paste a WhatsApp message to attach it to the next saved record.');
+      return;
+    }
+    setDraft((current) => parseWhatsAppMessage(trimmedMessage, current));
     setEntryMode('whatsapp');
     setActiveTab('add');
+    setPasteStatus('WhatsApp message attached and fields extracted. Review the form before saving.');
+  };
+
+  const handleMessageParse = () => {
+    extractWhatsAppFields(whatsAppMessage);
+  };
+
+  const handleWhatsAppChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const nextMessage = event.target.value;
+    setWhatsAppMessage(nextMessage);
+    extractWhatsAppFields(nextMessage);
+  };
+
+  const handleWhatsAppPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = event.clipboardData.getData('text');
+    const pastedImage = Array.from(event.clipboardData.files).find((file) => file.type.startsWith('image/'));
+
+    if (pastedImage) {
+      setPhotoPreview(URL.createObjectURL(pastedImage));
+      setPasteStatus('Photo attached. Paste the WhatsApp text also, then review before saving.');
+    }
+
+    if (pastedText.trim()) {
+      const nextMessage = `${whatsAppMessage}${pastedText}`;
+      setWhatsAppMessage(nextMessage);
+      extractWhatsAppFields(nextMessage);
+      event.preventDefault();
+    }
   };
 
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
@@ -327,6 +407,7 @@ export default function EstateProduceTrackerPage() {
       damageWeightKg: parseNumber(draft.damageWeightKg),
       damageNotes: draft.damageNotes,
       source: entryMode === 'whatsapp' ? 'WhatsApp Paste' : 'Manual',
+      sourceMessage: entryMode === 'whatsapp' ? whatsAppMessage.trim() || undefined : undefined,
       photoUrl: photoPreview || undefined,
       location: draft.location,
       notes: draft.notes,
@@ -336,6 +417,9 @@ export default function EstateProduceTrackerPage() {
     setRecords((current) => [next, ...current]);
     setSelectedId(next.id);
     setActiveTab('records');
+    setWhatsAppMessage('');
+    setPasteStatus('Entry saved. Paste the next WhatsApp message when ready.');
+    setPhotoPreview('');
   };
 
   const exportCsv = () => {
@@ -516,11 +600,26 @@ export default function EstateProduceTrackerPage() {
                   <h2 className="font-bold text-stone-900">Paste WhatsApp Message</h2>
                   <textarea
                     value={whatsAppMessage}
-                    onChange={(event) => setWhatsAppMessage(event.target.value)}
+                    onChange={handleWhatsAppChange}
+                    onPaste={handleWhatsAppPaste}
                     placeholder="Paste the incoming report here..."
                     className="mt-3 min-h-36 w-full rounded-md border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm outline-emerald-700"
                   />
-                  <button onClick={handleMessageParse} className="mt-3 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white">Extract Fields</button>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button onClick={handleMessageParse} className="rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white">Extract Fields</button>
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-900">
+                      <Camera className="h-4 w-4" />
+                      Attach Photo
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                    </label>
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-emerald-800">{pasteStatus}</p>
+                  {photoPreview && (
+                    <div className="mt-3 flex items-center gap-3 rounded-md border border-emerald-100 bg-emerald-50 p-2 text-sm text-emerald-900">
+                      <img alt="" src={photoPreview} className="h-14 w-16 rounded object-cover" />
+                      <span>Photo attached to this entry. It will save with the record.</span>
+                    </div>
+                  )}
                   <div className="mt-4 rounded-md border border-stone-200 p-3 text-sm">
                     <p className="font-bold text-stone-900">Parsed Fields Preview</p>
                     {[
@@ -640,6 +739,12 @@ export default function EstateProduceTrackerPage() {
                 <p><span className="font-semibold text-stone-900">Entered by:</span> {selected.enteredBy}</p>
                 <p><span className="font-semibold text-stone-900">Follow-up:</span> {selected.followUp ?? 'None'}</p>
               </div>
+              {selected.sourceMessage && (
+                <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50/70 p-3 text-sm text-stone-700">
+                  <p className="font-semibold text-emerald-950">Attached WhatsApp Message</p>
+                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap font-sans text-xs leading-relaxed">{selected.sourceMessage}</pre>
+                </div>
+              )}
               <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
