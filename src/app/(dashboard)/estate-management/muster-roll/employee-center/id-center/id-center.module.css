@@ -612,10 +612,10 @@
 }
 
 .infoList div:last-child {
-  margin-top: 16px;
-  font-size: 13.3px;
+  margin-top: 22px;
+  font-size: 14.8px;
   font-weight: 750;
-  line-height: 1.08;
+  line-height: 1.07;
 }
 
 .infoList .addressRow {

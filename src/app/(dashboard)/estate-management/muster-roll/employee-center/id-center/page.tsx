@@ -452,7 +452,7 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 540, 430);
   ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 598, 430);
   ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 656, 430);
-  drawCenteredWrappedText(ctx, form.address || "-", backX + cardWidth / 2, 770, 455, 35, 39, 750);
+  drawCenteredWrappedText(ctx, form.address || "-", backX + cardWidth / 2, 800, 430, 40, 44, 750);
   ctx.restore();
 
   try {
