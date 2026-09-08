@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/client";
 import { signedStorageUrl } from "@/lib/storage/urls";
 import css from "./coffee-storage.module.css";
 
+const supabase = createClient();
+
 /* ═══════════════════════════════════════════════════════════════
    TYPES
 ═══════════════════════════════════════════════════════════════ */
