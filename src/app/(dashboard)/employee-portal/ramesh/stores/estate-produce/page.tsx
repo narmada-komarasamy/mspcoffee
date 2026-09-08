@@ -391,6 +391,13 @@ export default function EstateProduceTrackerPage() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  const handleSelectedPhoto = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selected) return;
+    const photoUrl = URL.createObjectURL(file);
+    setRecords((current) => current.map((record) => (record.id === selected.id ? { ...record, photoUrl } : record)));
+  };
+
   const addRecord = () => {
     const next: ProduceRecord = {
       id: `${draft.product.toLowerCase()}-${draft.estate.toLowerCase()}-${Date.now()}`,
@@ -558,7 +565,16 @@ export default function EstateProduceTrackerPage() {
                               <td className="px-3 py-3">{record.previousQty} / {formatKg(record.previousWeightKg)} kg</td>
                               <td className="px-3 py-3">{record.qty + record.previousQty} / {formatKg(record.weightKg + record.previousWeightKg)} kg</td>
                               <td className={`px-3 py-3 font-semibold ${record.damageQty ? 'text-red-600' : 'text-emerald-700'}`}>{record.damageQty} pcs</td>
-                              <td className="px-3 py-3">{record.photoUrl ? <img alt="" src={record.photoUrl} className="h-10 w-12 rounded object-cover" /> : <Camera className="h-4 w-4 text-stone-400" />}</td>
+                              <td className="px-3 py-3">
+                                {record.photoUrl ? (
+                                  <img alt="" src={record.photoUrl} className="h-10 w-12 rounded object-cover" />
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-stone-400">
+                                    <Camera className="h-4 w-4" />
+                                    No photo
+                                  </span>
+                                )}
+                              </td>
                               <td className="px-3 py-3">{record.followUp ?? '-'}</td>
                               <td className="px-3 py-3 text-stone-600">{record.notes || record.damageNotes || '-'}</td>
                             </tr>
@@ -733,6 +749,11 @@ export default function EstateProduceTrackerPage() {
                   <p>{formatKg(selected.weightKg)} kg</p>
                 </div>
               </div>
+              <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
+                <Camera className="h-4 w-4" />
+                {selected.photoUrl ? 'Replace Photo' : 'Attach Photo'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
+              </label>
               <div className="mt-4 space-y-2 text-sm text-stone-600">
                 <p><span className="font-semibold text-stone-900">Damage:</span> {selected.damageQty} pcs {selected.damageNotes}</p>
                 <p><span className="font-semibold text-stone-900">Location:</span> {selected.location ?? '-'}</p>
