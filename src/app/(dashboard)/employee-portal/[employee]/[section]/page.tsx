@@ -7,12 +7,15 @@ import {
   ClipboardList,
   FileText,
   ListChecks,
+  Package,
+  ReceiptText,
+  Warehouse,
 } from 'lucide-react';
 import {
   EMPLOYEE_PORTAL_PEOPLE,
-  EMPLOYEE_PORTAL_SECTIONS,
   findEmployee,
   findEmployeeSection,
+  sectionsForEmployee,
 } from '@/lib/employee-portal';
 
 type PageProps = {
@@ -26,6 +29,9 @@ const sectionIcons = {
   'task-sheet': ListChecks,
   reports: FileText,
   checklist: CheckSquare,
+  quotations: ReceiptText,
+  stores: Warehouse,
+  estimates: Package,
 };
 
 const starterRows = {
@@ -44,11 +50,26 @@ const starterRows = {
     ['Pending', 'Manager follow-up', 'Can appear on calendar'],
     ['Done', 'Completed checklist item', 'Stored for reports'],
   ],
+  quotations: [
+    ['Draft', 'Prepare quotation request', 'Due date can appear on calendar'],
+    ['Sent', 'Supplier follow-up', 'Ready for reminder'],
+    ['Review', 'Manager approval', 'Linked to approval date'],
+  ],
+  stores: [
+    ['Open', 'Store issue request', 'Can be dated on calendar'],
+    ['Pending', 'Stock follow-up', 'Ready for reminder'],
+    ['Closed', 'Material movement noted', 'Available for reports'],
+  ],
+  estimates: [
+    ['Draft', 'Prepare work estimate', 'Due date can appear on calendar'],
+    ['Review', 'Cost and scope check', 'Linked to employee calendar'],
+    ['Approved', 'Ready for work planning', 'Can create calendar task'],
+  ],
 } as const;
 
 export function generateStaticParams() {
   return EMPLOYEE_PORTAL_PEOPLE.flatMap((employee) =>
-    EMPLOYEE_PORTAL_SECTIONS.map((section) => ({
+    sectionsForEmployee(employee.slug).map((section) => ({
       employee: employee.slug,
       section: section.slug,
     })),
@@ -59,8 +80,9 @@ export default async function EmployeePortalSectionPage({ params }: PageProps) {
   const { employee: employeeSlug, section: sectionSlug } = await params;
   const employee = findEmployee(employeeSlug);
   const section = findEmployeeSection(sectionSlug);
+  const employeeSections = sectionsForEmployee(employeeSlug);
 
-  if (!employee || !section) notFound();
+  if (!employee || !section || !employeeSections.some((entry) => entry.slug === section.slug)) notFound();
 
   const Icon = sectionIcons[section.slug as keyof typeof sectionIcons] ?? ClipboardList;
   const rows = starterRows[section.slug as keyof typeof starterRows] ?? starterRows['task-sheet'];

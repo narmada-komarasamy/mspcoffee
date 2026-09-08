@@ -36,8 +36,9 @@ import {
 } from 'lucide-react';
 import {
   EMPLOYEE_PORTAL_PEOPLE,
+  EMPLOYEE_PRODUCTIVITY_SECTIONS,
   EMPLOYEE_PORTAL_ROLES,
-  EMPLOYEE_PORTAL_SECTIONS,
+  RAMESH_WORK_AREAS,
 } from '@/lib/employee-portal';
 
 const THEMES = {
@@ -63,7 +64,7 @@ type AppUser = {
 type AllowedSet = Set<string> | null;
 
 type NavLeaf = { label: string; href: string; roles?: string[]; icon?: React.ElementType };
-type NavGroup = { label: string; href?: never; roles?: string[]; children: NavLeaf[] };
+type NavGroup = { label: string; href?: never; roles?: string[]; children: NavChild[] };
 type NavChild = NavLeaf | NavGroup;
 
 type NavItem = {
@@ -75,6 +76,14 @@ type NavItem = {
 };
 
 const employeePortalRoles = [...EMPLOYEE_PORTAL_ROLES];
+
+function employeeSectionLink(employeeSlug: string, section: { label: string; slug: string }): NavLeaf {
+  return {
+    label: section.label,
+    href: `/employee-portal/${employeeSlug}/${section.slug}`,
+    roles: employeePortalRoles,
+  };
+}
 
 const navItems: NavItem[] = [
  { label: 'Rain Gauge', href: '/rainfall', icon: CloudRain, roles: ['admin', 'supervisor', 'worker', 'ceo'],
@@ -88,15 +97,25 @@ const navItems: NavItem[] = [
    href: '/employee-portal',
    icon: Users,
    roles: employeePortalRoles,
-   children: EMPLOYEE_PORTAL_PEOPLE.map((employee) => ({
-     label: employee.name,
-     roles: employeePortalRoles,
-     children: EMPLOYEE_PORTAL_SECTIONS.map((section) => ({
-       label: section.label,
-       href: `/employee-portal/${employee.slug}/${section.slug}`,
+   children: EMPLOYEE_PORTAL_PEOPLE.map((employee) => {
+     const children: NavChild[] = [
+       {
+         label: 'Productivity',
+         roles: employeePortalRoles,
+         children: EMPLOYEE_PRODUCTIVITY_SECTIONS.map((section) => employeeSectionLink(employee.slug, section)),
+       },
+     ];
+
+     if (employee.slug === 'ramesh') {
+       children.push(...RAMESH_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)));
+     }
+
+     return {
+       label: employee.name,
        roles: employeePortalRoles,
-     })),
-   })),
+       children,
+     };
+   }),
  },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
@@ -245,10 +264,24 @@ function childAllowed(child: NavChild, role: string) {
 function visibleChild(child: NavChild, role: string): NavChild | null {
   if (!childAllowed(child, role)) return null;
   if ('children' in child) {
-    const children = child.children.filter((grandchild) => childAllowed(grandchild, role));
+    const children = child.children
+      .map((grandchild) => visibleChild(grandchild, role))
+      .filter((grandchild): grandchild is NavChild => Boolean(grandchild));
     return children.length ? { ...child, children } : null;
   }
   return child;
+}
+
+function childContainsPath(child: NavChild, pathname: string): boolean {
+  if ('children' in child) {
+    return child.children.some((nested) => childContainsPath(nested, pathname));
+  }
+
+  return pathname === child.href;
+}
+
+function flattenChildren(children: NavChild[] = []): NavLeaf[] {
+  return children.flatMap((child) => ('children' in child ? flattenChildren(child.children) : [child]));
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -382,7 +415,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     navItems.forEach(item => {
       const matchesChild = item.children?.some(c => {
         if ('href' in c && c.href === pathname) return true;
-        if ('children' in c) return c.children.some(gc => gc.href === pathname);
+        if ('children' in c) return childContainsPath(c, pathname);
         return false;
       });
       if (matchesChild) {
@@ -390,9 +423,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
       // Also auto-expand the season group if a grandchild matches
       item.children?.forEach(child => {
-        if ('children' in child && child.children.some(gc => gc.href === pathname)) {
+        if ('children' in child && childContainsPath(child, pathname)) {
           const groupKey = `${item.href}__${child.label}`;
           setExpandedNav(prev => ({ ...prev, [groupKey]: true }));
+          child.children.forEach((nested) => {
+            if ('children' in nested && childContainsPath(nested, pathname)) {
+              setExpandedNav((prev) => ({ ...prev, [`${groupKey}__${nested.label}`]: true }));
+            }
+          });
         }
       });
     });
@@ -412,9 +450,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return item.roles.includes(user.role);
   });
   const allLeaves = [
-    ...navItems.flatMap(i => i.children ?? []).flatMap(c =>
-      'children' in c ? c.children : [c]
-    ),
+    ...navItems.flatMap((i) => flattenChildren(i.children)),
     ...navItems.flatMap(i => i.children ?? []).filter(c => 'href' in c),
   ];
   const currentTitle =
@@ -504,7 +540,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         if ('children' in child) {
                           const groupKey     = `${item.href}__${child.label}`;
                           const groupExp     = expandedNav[groupKey] ?? false;
-                          const groupActive  = child.children.some(gc => pathname === gc.href);
+                          const groupActive  = childContainsPath(child, pathname);
                           return (
                             <div key={child.label}>
                               <button
@@ -518,6 +554,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               {groupExp && (
                                 <div className="ml-2 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                                   {child.children.map(gc => {
+                                    if ('children' in gc) {
+                                      const nestedKey = `${groupKey}__${gc.label}`;
+                                      const nestedExp = expandedNav[nestedKey] ?? false;
+                                      const nestedActive = childContainsPath(gc, pathname);
+
+                                      return (
+                                        <div key={gc.label}>
+                                          <button
+                                            onClick={() => setExpandedNav(prev => ({ ...prev, [nestedKey]: !prev[nestedKey] }))}
+                                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-bold transition w-full text-left"
+                                            style={{ color: nestedActive ? '#e8c84a' : 'rgba(255,255,255,0.6)' }}>
+                                            <span className="flex-1">{gc.label}</span>
+                                            <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200"
+                                              style={{ transform: nestedExp ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.5 }} />
+                                          </button>
+                                          {nestedExp && (
+                                            <div className="ml-2 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                                              {gc.children.map((nestedLeaf) => {
+                                                if ('children' in nestedLeaf) return null;
+                                                const nestedLeafActive = pathname === nestedLeaf.href;
+
+                                                return (
+                                                  <Link key={nestedLeaf.href} href={nestedLeaf.href} onClick={() => setSidebarOpen(false)}
+                                                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition"
+                                                    style={nestedLeafActive ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.85)' }}>
+                                                    <span className="h-1.5 w-1.5 rounded-full shrink-0"
+                                                      style={{ background: nestedLeafActive ? '#e8c84a' : 'rgba(255,255,255,0.7)' }} />
+                                                    {nestedLeaf.label}
+                                                  </Link>
+                                                );
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+
                                     const gcActive = pathname === gc.href;
                                     return (
                                       <Link key={gc.href} href={gc.href} onClick={() => setSidebarOpen(false)}

@@ -22,6 +22,22 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 type Profile = { name: string; role: string; estate: string | null };
 
+type NavLeaf = { label: string; href: string; roles?: Role[] };
+type NavGroup = { label: string; href?: never; roles?: Role[]; children: NavChild[] };
+type NavChild = NavLeaf | NavGroup;
+
+function childContainsPath(child: NavChild, pathname: string): boolean {
+  if ('children' in child) {
+    return child.children.some((nested) => childContainsPath(nested, pathname));
+  }
+
+  return pathname === child.href;
+}
+
+function flattenChildren(children: NavChild[] = []): NavLeaf[] {
+  return children.flatMap((child) => ('children' in child ? flattenChildren(child.children) : [child]));
+}
+
 /* ── Colour themes (mirrors the HTML catalogue) ──────────────────────────── */
 const THEMES: Record<string, { label: string; swatch: string; sidebar: string; sidebarMid: string; accent: string; accentText: string }> = {
   forest:   { label: 'Forest Green', swatch: '#1b4a1b', sidebar: '#1b4a1b', sidebarMid: '#2d6e2d', accent: '#e8c84a', accentText: '#1b4a1b' },
@@ -93,8 +109,13 @@ export default function DashboardShell({
         init[item.href] = true;
         // Also auto-expand season sub-groups
         item.children.forEach(child => {
-          if ('children' in child && child.children.some(gc => gc.href === pathname)) {
+          if ('children' in child && childContainsPath(child, pathname)) {
             init[`${item.href}__${child.label}`] = true;
+            child.children.forEach((nested) => {
+              if ('children' in nested && childContainsPath(nested, pathname)) {
+                init[`${item.href}__${child.label}__${nested.label}`] = true;
+              }
+            });
           }
         });
       }
@@ -103,9 +124,7 @@ export default function DashboardShell({
   });
 
   const allNavLeaves = [
-    ...NAV_ITEMS.flatMap(i => i.children ?? []).flatMap(c =>
-      'children' in c ? c.children : [c]
-    ),
+    ...NAV_ITEMS.flatMap(i => flattenChildren(i.children)),
     ...NAV_ITEMS.flatMap(i => i.children ?? []).filter(c => 'href' in c),
   ];
   const currentTitle =
@@ -166,7 +185,7 @@ export default function DashboardShell({
             const isExpanded  = expandedNav[item.href] ?? false;
             const childActive = hasChildren && item.children!.some(c =>
               ('href' in c && pathname === c.href) ||
-              ('children' in c && c.children.some(gc => pathname === gc.href))
+              ('children' in c && childContainsPath(c, pathname))
             );
 
             if (hasChildren) {
@@ -198,7 +217,7 @@ export default function DashboardShell({
                         if ('children' in child) {
                           const groupKey    = `${item.href}__${child.label}`;
                           const groupExp    = expandedNav[groupKey] ?? false;
-                          const groupActive = child.children.some(gc => pathname === gc.href);
+                          const groupActive = childContainsPath(child, pathname);
                           return (
                             <div key={child.label}>
                               <button
@@ -215,6 +234,52 @@ export default function DashboardShell({
                               {groupExp && (
                                 <div className="ml-2 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                                   {child.children.map(gc => {
+                                    if ('children' in gc) {
+                                      const nestedKey = `${groupKey}__${gc.label}`;
+                                      const nestedExp = expandedNav[nestedKey] ?? false;
+                                      const nestedActive = childContainsPath(gc, pathname);
+
+                                      return (
+                                        <div key={gc.label}>
+                                          <button
+                                            onClick={() => setExpandedNav(prev => ({ ...prev, [nestedKey]: !prev[nestedKey] }))}
+                                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-bold transition w-full text-left"
+                                            style={{ color: nestedActive ? theme.accent : 'rgba(255,255,255,0.55)' }}
+                                          >
+                                            <span className="flex-1">{gc.label}</span>
+                                            <ChevronDown
+                                              className="h-3 w-3 shrink-0 transition-transform duration-200"
+                                              style={{ transform: nestedExp ? 'rotate(180deg)' : 'rotate(0deg)', opacity: 0.5 }}
+                                            />
+                                          </button>
+                                          {nestedExp && (
+                                            <div className="ml-2 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                                              {gc.children.map((nestedLeaf) => {
+                                                if ('children' in nestedLeaf) return null;
+                                                const nestedLeafActive = pathname === nestedLeaf.href;
+
+                                                return (
+                                                  <Link
+                                                    key={nestedLeaf.href}
+                                                    href={nestedLeaf.href}
+                                                    onClick={() => setSidebarOpen(false)}
+                                                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition"
+                                                    style={nestedLeafActive
+                                                      ? { background: 'rgba(255,255,255,0.15)', color: theme.accent }
+                                                      : { color: 'rgba(255,255,255,0.65)' }
+                                                    }
+                                                  >
+                                                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: nestedLeafActive ? theme.accent : 'rgba(255,255,255,0.4)' }} />
+                                                    {nestedLeaf.label}
+                                                  </Link>
+                                                );
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+
                                     const gcActive = pathname === gc.href;
                                     return (
                                       <Link

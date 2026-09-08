@@ -1,11 +1,18 @@
 import Link from 'next/link';
-import { CalendarDays, CheckSquare, FileText, ListChecks, Users } from 'lucide-react';
-import { EMPLOYEE_PORTAL_PEOPLE, EMPLOYEE_PORTAL_SECTIONS } from '@/lib/employee-portal';
+import { CalendarDays, CheckSquare, FileText, ListChecks, Package, ReceiptText, Users, Warehouse } from 'lucide-react';
+import {
+  EMPLOYEE_PORTAL_PEOPLE,
+  EMPLOYEE_PRODUCTIVITY_SECTIONS,
+  RAMESH_WORK_AREAS,
+} from '@/lib/employee-portal';
 
 const sectionIcons = {
   'task-sheet': ListChecks,
   reports: FileText,
   checklist: CheckSquare,
+  quotations: ReceiptText,
+  stores: Warehouse,
+  estimates: Package,
 };
 
 export default function EmployeePortalPage() {
@@ -42,8 +49,28 @@ export default function EmployeePortalPage() {
         {EMPLOYEE_PORTAL_PEOPLE.map((employee) => (
           <div key={employee.slug} className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
             <h2 className="text-lg font-bold text-stone-900">{employee.name}</h2>
-            <div className="mt-4 space-y-2">
-              {EMPLOYEE_PORTAL_SECTIONS.map((section) => {
+            <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50/60 p-3">
+              <h3 className="text-sm font-bold text-emerald-900">Productivity</h3>
+              <div className="mt-3 space-y-2">
+                {EMPLOYEE_PRODUCTIVITY_SECTIONS.map((section) => {
+                  const Icon = sectionIcons[section.slug as keyof typeof sectionIcons] ?? FileText;
+
+                  return (
+                    <Link
+                      key={section.slug}
+                      href={`/employee-portal/${employee.slug}/${section.slug}`}
+                      className="flex items-center gap-3 rounded-md border border-stone-100 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-900"
+                    >
+                      <Icon className="h-4 w-4 text-emerald-700" />
+                      {section.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+            {employee.slug === 'ramesh' && (
+              <div className="mt-3 space-y-2">
+                {RAMESH_WORK_AREAS.map((section) => {
                 const Icon = sectionIcons[section.slug as keyof typeof sectionIcons] ?? FileText;
 
                 return (
@@ -57,7 +84,8 @@ export default function EmployeePortalPage() {
                   </Link>
                 );
               })}
-            </div>
+              </div>
+            )}
           </div>
         ))}
       </section>

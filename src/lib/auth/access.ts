@@ -6,14 +6,15 @@
 
 import {
   EMPLOYEE_PORTAL_PEOPLE,
+  EMPLOYEE_PRODUCTIVITY_SECTIONS,
   EMPLOYEE_PORTAL_ROLES,
-  EMPLOYEE_PORTAL_SECTIONS,
+  RAMESH_WORK_AREAS,
 } from '@/lib/employee-portal';
 
 export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo' | 'hr';
 
 export type NavLeafDef  = { label: string; href: string; roles?: Role[] };
-export type NavGroupDef = { label: string; href?: never; roles?: Role[]; children: NavLeafDef[] };
+export type NavGroupDef = { label: string; href?: never; roles?: Role[]; children: NavChildDef[] };
 export type NavChildDef = NavLeafDef | NavGroupDef;
 
 export type NavItemDef = {
@@ -26,15 +27,33 @@ export type NavItemDef = {
 
 const employeePortalRoles: Role[] = [...EMPLOYEE_PORTAL_ROLES];
 
-const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employee) => ({
-  label: employee.name,
-  roles: employeePortalRoles,
-  children: EMPLOYEE_PORTAL_SECTIONS.map((section) => ({
+function employeeSectionLink(employeeSlug: string, section: { label: string; slug: string }): NavLeafDef {
+  return {
     label: section.label,
-    href: `/employee-portal/${employee.slug}/${section.slug}`,
+    href: `/employee-portal/${employeeSlug}/${section.slug}`,
     roles: employeePortalRoles,
-  })),
-}));
+  };
+}
+
+const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employee) => {
+  const children: NavChildDef[] = [
+    {
+      label: 'Productivity',
+      roles: employeePortalRoles,
+      children: EMPLOYEE_PRODUCTIVITY_SECTIONS.map((section) => employeeSectionLink(employee.slug, section)),
+    },
+  ];
+
+  if (employee.slug === 'ramesh') {
+    children.push(...RAMESH_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)));
+  }
+
+  return {
+    label: employee.name,
+    roles: employeePortalRoles,
+    children,
+  };
+});
 
 export const NAV_ITEMS: NavItemDef[] = [
  { label: 'Rain Gauge', href: '/rainfall', iconName: 'CloudRain', roles: ['admin', 'supervisor', 'worker', 'ceo'],
@@ -177,16 +196,26 @@ export const NAV_ITEMS: NavItemDef[] = [
  * they are governed by page-level requireRole() checks instead.
  */
 export function canAccess(pathname: string, role: Role): boolean {
+  function childAccess(child: NavChildDef, fallbackRoles: Role[]): boolean | null {
+    if ('children' in child) {
+      for (const nested of child.children) {
+        const result = childAccess(nested, child.roles ?? fallbackRoles);
+        if (result !== null) return result;
+      }
+      return null;
+    }
+
+    if (pathname === child.href || pathname.startsWith(child.href + '/')) {
+      return (child.roles ?? fallbackRoles).includes(role);
+    }
+
+    return null;
+  }
+
   for (const item of NAV_ITEMS) {
     for (const child of item.children ?? []) {
-      if ('children' in child) {
-        const grandchild = child.children.find((entry) => pathname === entry.href || pathname.startsWith(entry.href + '/'));
-        if (grandchild) return (grandchild.roles ?? item.roles).includes(role);
-        continue;
-      }
-      if (pathname === child.href || pathname.startsWith(child.href + '/')) {
-        return (child.roles ?? item.roles).includes(role);
-      }
+      const result = childAccess(child, item.roles);
+      if (result !== null) return result;
     }
   }
 

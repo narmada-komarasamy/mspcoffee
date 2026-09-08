@@ -13,7 +13,7 @@ export type EmployeePortalPerson = {
   slug: string;
 };
 
-export const EMPLOYEE_PORTAL_SECTIONS: EmployeePortalSection[] = [
+export const EMPLOYEE_PRODUCTIVITY_SECTIONS: EmployeePortalSection[] = [
   {
     label: 'Task Sheet',
     slug: 'task-sheet',
@@ -29,6 +29,29 @@ export const EMPLOYEE_PORTAL_SECTIONS: EmployeePortalSection[] = [
     slug: 'checklist',
     description: 'Repeatable follow-up items with optional due dates for the calendar.',
   },
+];
+
+export const RAMESH_WORK_AREAS: EmployeePortalSection[] = [
+  {
+    label: 'Quotations',
+    slug: 'quotations',
+    description: 'Quotation requests, supplier follow-ups, and dated approval notes.',
+  },
+  {
+    label: 'Stores',
+    slug: 'stores',
+    description: 'Store issue tracking, stock follow-ups, and material movement notes.',
+  },
+  {
+    label: 'Estimates',
+    slug: 'estimates',
+    description: 'Estimate preparation, review status, and calendar-linked due dates.',
+  },
+];
+
+export const EMPLOYEE_PORTAL_SECTIONS: EmployeePortalSection[] = [
+  ...EMPLOYEE_PRODUCTIVITY_SECTIONS,
+  ...RAMESH_WORK_AREAS,
 ];
 
 export const EMPLOYEE_PORTAL_PEOPLE: EmployeePortalPerson[] = [
@@ -47,4 +70,12 @@ export function findEmployee(slug: string) {
 
 export function findEmployeeSection(slug: string) {
   return EMPLOYEE_PORTAL_SECTIONS.find((section) => section.slug === slug);
+}
+
+export function sectionsForEmployee(employeeSlug: string) {
+  if (employeeSlug === 'ramesh') {
+    return [...EMPLOYEE_PRODUCTIVITY_SECTIONS, ...RAMESH_WORK_AREAS];
+  }
+
+  return EMPLOYEE_PRODUCTIVITY_SECTIONS;
 }
