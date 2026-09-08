@@ -4,6 +4,12 @@
  * Keep this file serializable — no React imports, no server-only imports.
  */
 
+import {
+  EMPLOYEE_PORTAL_PEOPLE,
+  EMPLOYEE_PORTAL_ROLES,
+  EMPLOYEE_PORTAL_SECTIONS,
+} from '@/lib/employee-portal';
+
 export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo' | 'hr';
 
 export type NavLeafDef  = { label: string; href: string; roles?: Role[] };
@@ -18,6 +24,18 @@ export type NavItemDef = {
   children?: NavChildDef[];
 };
 
+const employeePortalRoles: Role[] = [...EMPLOYEE_PORTAL_ROLES];
+
+const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employee) => ({
+  label: employee.name,
+  roles: employeePortalRoles,
+  children: EMPLOYEE_PORTAL_SECTIONS.map((section) => ({
+    label: section.label,
+    href: `/employee-portal/${employee.slug}/${section.slug}`,
+    roles: employeePortalRoles,
+  })),
+}));
+
 export const NAV_ITEMS: NavItemDef[] = [
  { label: 'Rain Gauge', href: '/rainfall', iconName: 'CloudRain', roles: ['admin', 'supervisor', 'worker', 'ceo'],
   children: [
@@ -26,7 +44,13 @@ export const NAV_ITEMS: NavItemDef[] = [
  },
   { label: 'Fleet Fuel Expenses', href: '/fuel-expenses',   iconName: 'Fuel',         roles: ['admin', 'supervisor', 'ceo'] },
  { label: 'HO Fuel', href: '/ho-fuel', iconName: 'Droplets', roles: ['admin', 'supervisor', 'ceo'] },
- { label: 'Employee Portal', href: '/employee-portal', iconName: 'Users', roles: ['admin', 'supervisor', 'ceo'] },
+ {
+  label: 'Employee Portal',
+  href: '/employee-portal',
+  iconName: 'Users',
+  roles: employeePortalRoles,
+  children: employeePortalChildren,
+ },
   { label: 'Operations Calendar', href: '/operations-calendar', iconName: 'CalendarDays', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   { label: 'Email Reports',       href: '/estate-management/email-reports', iconName: 'Mail', roles: ['admin'] },
   {

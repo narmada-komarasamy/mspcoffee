@@ -34,6 +34,11 @@ import {
   Minimize2,
   CalendarDays,
 } from 'lucide-react';
+import {
+  EMPLOYEE_PORTAL_PEOPLE,
+  EMPLOYEE_PORTAL_ROLES,
+  EMPLOYEE_PORTAL_SECTIONS,
+} from '@/lib/employee-portal';
 
 const THEMES = {
   forest:   { label: 'Forest Green', swatch: '#1b4a1b', dark: '#1b4a1b', mid: '#2d6e2d' },
@@ -69,6 +74,8 @@ type NavItem = {
   children?: NavChild[];
 };
 
+const employeePortalRoles = [...EMPLOYEE_PORTAL_ROLES];
+
 const navItems: NavItem[] = [
  { label: 'Rain Gauge', href: '/rainfall', icon: CloudRain, roles: ['admin', 'supervisor', 'worker', 'ceo'],
  children: [
@@ -76,7 +83,21 @@ const navItems: NavItem[] = [
  ]
  },
  { label: 'HO Fuel', href: '/ho-fuel', icon: Droplets, roles: ['admin', 'supervisor', 'ceo'] },
- { label: 'Employee Portal', href: '/employee-portal', icon: Users, roles: ['admin', 'supervisor', 'ceo'] },
+ {
+   label: 'Employee Portal',
+   href: '/employee-portal',
+   icon: Users,
+   roles: employeePortalRoles,
+   children: EMPLOYEE_PORTAL_PEOPLE.map((employee) => ({
+     label: employee.name,
+     roles: employeePortalRoles,
+     children: EMPLOYEE_PORTAL_SECTIONS.map((section) => ({
+       label: section.label,
+       href: `/employee-portal/${employee.slug}/${section.slug}`,
+       roles: employeePortalRoles,
+     })),
+   })),
+ },
   { label: 'Fleet Fuel Expenses',  href: '/fuel-expenses',        icon: Fuel,         roles: ['admin', 'supervisor', 'ceo'] },
   { label: 'Operations Calendar',  href: '/operations-calendar',  icon: CalendarDays, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
   { label: 'Email Reports',        href: '/estate-management/email-reports', icon: Mail, roles: ['admin'] },
