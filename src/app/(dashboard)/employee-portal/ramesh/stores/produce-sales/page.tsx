@@ -7,10 +7,13 @@ import {
   Calculator,
   CheckCircle2,
   Download,
+  Eye,
   FileText,
   IndianRupee,
+  Mail,
   PackageCheck,
   Plus,
+  Printer,
   Search,
   ShoppingBag,
 } from 'lucide-react';
@@ -179,6 +182,166 @@ function dateLabel(value: string) {
   });
 }
 
+function invoiceNumber(sale: SaleRecord) {
+  const year = new Date(`${sale.date}T00:00:00`).getFullYear();
+  const numberSeed = sale.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return `EP-${year}-${String((numberSeed % 9999) + 1).padStart(4, '0')}`;
+}
+
+function integerToWords(value: number): string {
+  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+  if (value === 0) return 'zero';
+  if (value < 10) return ones[value];
+  if (value < 20) return teens[value - 10];
+  if (value < 100) return `${tens[Math.floor(value / 10)]}${value % 10 ? ` ${ones[value % 10]}` : ''}`;
+  if (value < 1000) return `${ones[Math.floor(value / 100)]} hundred${value % 100 ? ` and ${integerToWords(value % 100)}` : ''}`;
+  if (value < 100000) return `${integerToWords(Math.floor(value / 1000))} thousand${value % 1000 ? ` ${integerToWords(value % 1000)}` : ''}`;
+  if (value < 10000000) return `${integerToWords(Math.floor(value / 100000))} lakh${value % 100000 ? ` ${integerToWords(value % 100000)}` : ''}`;
+  return `${integerToWords(Math.floor(value / 10000000))} crore${value % 10000000 ? ` ${integerToWords(value % 10000000)}` : ''}`;
+}
+
+function amountInWords(value: number) {
+  return `Rupees ${integerToWords(Math.round(value))} only`;
+}
+
+function invoiceHtml(sale: SaleRecord) {
+  const no = invoiceNumber(sale);
+  const words = amountInWords(sale.totalAmount);
+
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>${no} Bill</title>
+<style>
+  body { font-family: Georgia, 'Times New Roman', serif; color: #111; margin: 0; background: #f6f1e8; }
+  .sheet { width: 794px; min-height: 1123px; margin: 20px auto; padding: 54px 64px; background: white; box-shadow: 0 12px 40px rgba(0,0,0,.12); }
+  .header { display: flex; align-items: center; gap: 22px; border-bottom: 1px solid #222; padding-bottom: 12px; }
+  .mark { width: 72px; height: 72px; display: grid; place-items: center; background: #222; color: white; font-weight: 900; font-family: Arial, sans-serif; }
+  h1 { margin: 0; font-size: 31px; letter-spacing: 1px; }
+  .address { text-align: center; font-size: 14px; margin-top: 4px; }
+  .meta { display: flex; justify-content: space-between; margin-top: 40px; font-size: 15px; line-height: 1.45; }
+  .bill { text-align: center; margin: 30px 0 16px; text-decoration: underline; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border: 1px solid #333; padding: 7px 8px; vertical-align: top; }
+  th { text-align: left; background: #f7f7f7; }
+  .num { text-align: right; }
+  .words { margin: 22px 0 28px; font-size: 15px; }
+  .payment { display: grid; grid-template-columns: 1.1fr .9fr; gap: 0; border: 1px solid #333; }
+  .payment > div { padding: 12px; min-height: 118px; }
+  .payment > div + div { border-left: 1px solid #333; }
+  .section-title { text-decoration: underline; font-weight: 700; margin-bottom: 8px; }
+  .thanks { margin-top: 34px; line-height: 1.8; }
+  .footer { margin-top: 90px; border-top: 1px solid #333; padding-top: 10px; display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px; font-size: 12px; line-height: 1.35; }
+  @media print { body { background: white; } .sheet { margin: 0; box-shadow: none; width: auto; min-height: auto; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="header">
+    <div class="mark">MSP<br/>COFFEE</div>
+    <div style="flex:1">
+      <h1>MSP COFFEE PRIVATE LIMITED</h1>
+      <div class="address">370/2 Moganad Estate, Yercaud 636602, Tamil Nadu, India</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div>
+      <div>${dateLabel(sale.date)}</div>
+      <br/>
+      <strong>${sale.buyerName}</strong><br/>
+      ${sale.buyerAddress.replace(/\n/g, '<br/>') || 'Buyer address'}<br/>
+      ${sale.buyerPhone ? `Cell : ${sale.buyerPhone}` : ''}
+    </div>
+    <div>
+      <strong>Bill No:</strong> ${no}<br/><br/>
+      <u>${sale.dispatchMethod}</u>
+    </div>
+  </div>
+  <div class="bill">BILL</div>
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Particulars</th><th>Kgs</th><th>Rate</th><th></th><th>Amount</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+        <td>${sale.product} (${sale.piecesSold} Nos)</td>
+        <td>${kg(sale.weightSoldKg)} Kgs</td>
+        <td>Rs.${sale.ratePerKg}/-</td>
+        <td>=</td>
+        <td class="num">${sale.produceAmount.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+        <td>Courier and Packing Charges</td>
+        <td></td><td></td><td>=</td>
+        <td class="num">${sale.courierPacking.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td></td><td></td><td></td><td><strong>Total</strong></td><td></td>
+        <td class="num"><strong>${sale.totalAmount.toFixed(2)}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="words">(${words})</div>
+  <div class="payment">
+    <div>
+      <div class="section-title">Payment Details:-</div>
+      Cheque or Demand Draft<br/>
+      Infavour of <strong>"M/s.Moganad Estate"</strong>, Payable at Yercaud.<br/><br/>
+      <u>Post to</u> &nbsp; The Manager,<br/>
+      MSP Coffee (P) Ltd.,<br/>
+      Moganad Estate, Semmanatham Post,<br/>
+      Yercaud - 636 602, Salem District.<br/>
+      Tamil Nadu.<br/>
+      Tel: +91-4281-290640.
+    </div>
+    <div>
+      <div class="section-title">Payment Details:-</div>
+      <u>Pay online</u><br/><br/>
+      Account Name = Moganad Estate<br/>
+      Current A/c No = 1226 2010 00418<br/>
+      Bank Name = Canara Bank<br/>
+      Branch Name = Yercaud<br/>
+      Bank IFSC Code = CNRB0001226<br/><br/>
+      GPay Number = To be added
+    </div>
+  </div>
+  <div class="thanks">
+    Thanking you,<br/><br/>
+    Yours truly,<br/>
+    For MSP Coffee P Ltd.,<br/><br/><br/>
+    Manager.
+  </div>
+  <div class="footer">
+    <div>
+      GSTIN : 33AABCM4455B1ZZ<br/>
+      PAN NO : AABCM4455B<br/>
+      CIN : U15492TZ1996PTC007450
+    </div>
+    <div>
+      PHONE : +91 4281 290640<br/>
+      EMAIL : mail@mspcoffee.com<br/>
+      WEB : www.mspcoffee.com<br/>
+      Instagram : msp.coffee
+    </div>
+    <div>
+      Registered Office:<br/>
+      370/2 Moganad Estate,<br/>
+      Semmanatham post,<br/>
+      Yercaud 636002,<br/>
+      Salem District, Tamil Nadu
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 export default function ProduceSalesPage() {
   const [batches, setBatches] = useState(initialBatches);
   const [sales, setSales] = useState(initialSales);
@@ -186,6 +349,7 @@ export default function ProduceSalesPage() {
   const [selectedSaleId, setSelectedSaleId] = useState(initialSales[0].id);
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<'All' | PaymentStatus>('All');
+  const [emailDraftOpen, setEmailDraftOpen] = useState(false);
 
   const selectedBatch = batches.find((batch) => batch.id === draft.batchId) ?? batches[0];
   const selectedSale = sales.find((sale) => sale.id === selectedSaleId) ?? sales[0];
@@ -227,6 +391,18 @@ export default function ProduceSalesPage() {
       availableWeightKg: batch.receivedWeightKg - batch.soldWeightKg,
     }));
   }, [batches]);
+
+  const emailDraft = useMemo(() => {
+    if (!selectedSale) return null;
+    const no = invoiceNumber(selectedSale);
+
+    return {
+      to: selectedSale.buyerPhone ? `${selectedSale.buyerName} <buyer email to add>` : 'buyer email to add',
+      subject: `${no} Bill from MSP Coffee Private Limited`,
+      attachment: `${no.toLowerCase()}-bill.pdf`,
+      body: `Dear ${selectedSale.buyerName},\n\nPlease find attached the bill for ${selectedSale.product}.\n\nBill No: ${no}\nAmount: ${money(selectedSale.totalAmount)}\nPayment Status: ${selectedSale.paymentStatus}\n\nRegards,\nMSP Coffee Private Limited`,
+    };
+  }, [selectedSale]);
 
   const updateDraft = (key: keyof DraftSale, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -294,6 +470,27 @@ export default function ProduceSalesPage() {
     URL.revokeObjectURL(url);
   };
 
+  const printInvoice = () => {
+    if (!selectedSale) return;
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1100');
+    if (!printWindow) return;
+    printWindow.document.write(invoiceHtml(selectedSale));
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const downloadInvoiceHtml = () => {
+    if (!selectedSale) return;
+    const no = invoiceNumber(selectedSale);
+    const url = URL.createObjectURL(new Blob([invoiceHtml(selectedSale)], { type: 'text/html;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${no.toLowerCase()}-bill.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5">
       <section className="flex flex-wrap items-start justify-between gap-4">
@@ -309,6 +506,10 @@ export default function ProduceSalesPage() {
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50">
             <Download className="h-4 w-4" />
             Export
+          </button>
+          <button onClick={printInvoice} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50">
+            <Printer className="h-4 w-4" />
+            Print Bill
           </button>
         </div>
       </section>
@@ -490,6 +691,137 @@ export default function ProduceSalesPage() {
               </table>
             </div>
           </section>
+
+          {selectedSale && (
+            <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-emerald-950">
+                  <Eye className="h-5 w-5" />
+                  Invoice Preview
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={printInvoice} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900">
+                    <Printer className="h-4 w-4" />
+                    Print
+                  </button>
+                  <button onClick={downloadInvoiceHtml} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                  <button onClick={() => setEmailDraftOpen((open) => !open)} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
+                    <Mail className="h-4 w-4" />
+                    Email Draft
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-x-auto rounded-lg bg-stone-100 p-4">
+                <div className="mx-auto min-h-[720px] w-[680px] bg-white p-8 text-sm text-stone-950 shadow-sm">
+                  <div className="flex items-center gap-5 border-b border-stone-900 pb-3">
+                    <div className="grid h-16 w-16 shrink-0 place-items-center bg-stone-900 text-center text-xs font-black leading-tight text-white">
+                      MSP<br />COFFEE
+                    </div>
+                    <div className="flex-1 text-center">
+                      <h3 className="text-2xl font-bold tracking-wide">MSP COFFEE PRIVATE LIMITED</h3>
+                      <p className="mt-1 text-xs">370/2 Moganad Estate, Yercaud 636602, Tamil Nadu, India</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 grid grid-cols-2 gap-8">
+                    <div className="leading-6">
+                      <p>{dateLabel(selectedSale.date)}</p>
+                      <p className="mt-5 font-bold">{selectedSale.buyerName}</p>
+                      <p className="whitespace-pre-line">{selectedSale.buyerAddress || 'Buyer address'}</p>
+                      <p>{selectedSale.buyerPhone ? `Cell : ${selectedSale.buyerPhone}` : ''}</p>
+                    </div>
+                    <div className="text-right leading-6">
+                      <p><span className="font-bold">Bill No:</span> {invoiceNumber(selectedSale)}</p>
+                      <p className="mt-5 underline">{selectedSale.dispatchMethod}</p>
+                    </div>
+                  </div>
+
+                  <p className="mt-8 text-center font-bold underline">BILL</p>
+                  <table className="mt-4 w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-stone-50">
+                        {['Date', 'Particulars', 'Kgs', 'Rate', '', 'Amount'].map((head) => (
+                          <th key={head} className="border border-stone-700 px-2 py-2 text-left">{head}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border border-stone-700 px-2 py-2">{new Date(`${selectedSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+                        <td className="border border-stone-700 px-2 py-2">{selectedSale.product} ({selectedSale.piecesSold} Nos)</td>
+                        <td className="border border-stone-700 px-2 py-2">{kg(selectedSale.weightSoldKg)} Kgs</td>
+                        <td className="border border-stone-700 px-2 py-2">Rs.{selectedSale.ratePerKg}/-</td>
+                        <td className="border border-stone-700 px-2 py-2">=</td>
+                        <td className="border border-stone-700 px-2 py-2 text-right">{selectedSale.produceAmount.toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-stone-700 px-2 py-2">{new Date(`${selectedSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+                        <td className="border border-stone-700 px-2 py-2">Courier and Packing Charges</td>
+                        <td className="border border-stone-700 px-2 py-2"></td>
+                        <td className="border border-stone-700 px-2 py-2"></td>
+                        <td className="border border-stone-700 px-2 py-2">=</td>
+                        <td className="border border-stone-700 px-2 py-2 text-right">{selectedSale.courierPacking.toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td className="border border-stone-700 px-2 py-2"></td>
+                        <td className="border border-stone-700 px-2 py-2"></td>
+                        <td className="border border-stone-700 px-2 py-2"></td>
+                        <td className="border border-stone-700 px-2 py-2 font-bold">Total</td>
+                        <td className="border border-stone-700 px-2 py-2"></td>
+                        <td className="border border-stone-700 px-2 py-2 text-right font-bold">{selectedSale.totalAmount.toFixed(2)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p className="mt-5">({amountInWords(selectedSale.totalAmount)})</p>
+
+                  <div className="mt-7 grid grid-cols-2 border border-stone-700">
+                    <div className="border-r border-stone-700 p-3 leading-6">
+                      <p className="font-bold underline">Payment Details:-</p>
+                      <p>Cheque or Demand Draft</p>
+                      <p>Infavour of <strong>&quot;M/s.Moganad Estate&quot;</strong>, Payable at Yercaud.</p>
+                      <p className="mt-3"><u>Post to</u> The Manager, MSP Coffee (P) Ltd., Moganad Estate, Yercaud - 636 602.</p>
+                    </div>
+                    <div className="p-3 leading-6">
+                      <p className="font-bold underline">Payment Details:-</p>
+                      <p><u>Pay online</u></p>
+                      <p>Account Name = Moganad Estate</p>
+                      <p>Current A/c No = 1226 2010 00418</p>
+                      <p>Bank Name = Canara Bank</p>
+                      <p>Branch Name = Yercaud</p>
+                      <p>Bank IFSC Code = CNRB0001226</p>
+                      <p>GPay Number = To be added</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 leading-7">
+                    <p>Thanking you,</p>
+                    <p className="mt-4">Yours truly,</p>
+                    <p className="font-bold">For MSP Coffee P Ltd.,</p>
+                    <p className="mt-12">Manager.</p>
+                  </div>
+                </div>
+              </div>
+
+              {emailDraftOpen && emailDraft && (
+                <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
+                  <h3 className="flex items-center gap-2 font-bold text-emerald-950">
+                    <Mail className="h-4 w-4" />
+                    Email Draft Preview
+                  </h3>
+                  <div className="mt-3 grid gap-3 text-sm">
+                    <div className="rounded-md bg-white p-3"><span className="font-bold">To:</span> {emailDraft.to}</div>
+                    <div className="rounded-md bg-white p-3"><span className="font-bold">Subject:</span> {emailDraft.subject}</div>
+                    <div className="rounded-md bg-white p-3"><span className="font-bold">Attachment:</span> {emailDraft.attachment}</div>
+                    <pre className="whitespace-pre-wrap rounded-md bg-white p-3 font-sans text-sm">{emailDraft.body}</pre>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
         </main>
 
         <aside className="space-y-4">
@@ -552,7 +884,7 @@ export default function ProduceSalesPage() {
             <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               <div className="flex items-start gap-2">
                 <Banknote className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Invoice generation will use these fields in Stage 2.</span>
+                <span>Bill preview, print, download, and email draft are ready for the selected sale.</span>
               </div>
             </div>
           </section>
