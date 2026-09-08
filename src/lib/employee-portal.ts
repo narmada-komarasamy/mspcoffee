@@ -55,6 +55,12 @@ export const RAMESH_STORES_TOOLS: EmployeePortalTool[] = [
     href: '/employee-portal/ramesh/stores/estate-produce',
     description: 'Incoming fruits and estate products available for sale, with search and comparisons.',
   },
+  {
+    label: 'Produce Sales',
+    slug: 'produce-sales',
+    href: '/employee-portal/ramesh/stores/produce-sales',
+    description: 'Sales entries, available stock balance, revenue totals, and payment status tracking.',
+  },
 ];
 
 export const EMPLOYEE_PORTAL_SECTIONS: EmployeePortalSection[] = [
