@@ -595,8 +595,8 @@
   display: flex;
   width: 96%;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 0;
+  gap: 8px;
+  margin-top: 8px;
   text-align: left;
 }
 
@@ -612,8 +612,8 @@
 }
 
 .infoList div:last-child {
-  margin-top: 2px;
-  font-size: 13.6px;
+  margin-top: 22px;
+  font-size: 13.9px;
   font-weight: 750;
   line-height: 1.12;
 }

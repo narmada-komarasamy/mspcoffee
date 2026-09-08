@@ -443,17 +443,17 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.textAlign = "left";
   ctx.fillStyle = standardCardTheme.accent;
   ctx.font = "900 38px Segoe UI, Arial, sans-serif";
-  ctx.fillText("●", backX + 126, 510);
-  ctx.fillText("●", backX + 126, 565);
-  ctx.fillText("☎", backX + 121, 620);
-  ctx.fillText("●", backX + 118, 776);
+  ctx.fillText("●", backX + 126, 540);
+  ctx.fillText("●", backX + 126, 598);
+  ctx.fillText("☎", backX + 121, 656);
+  ctx.fillText("●", backX + 118, 784);
 
   ctx.fillStyle = "#fff";
-  ctx.font = "700 25px Segoe UI, Arial, sans-serif";
-  ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 510, 430);
-  ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 565, 430);
-  ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 620, 430);
-  drawLeftText(ctx, form.address || "-", backX + 185, 776, 360, 36, 42, 750);
+  ctx.font = "700 26px Segoe UI, Arial, sans-serif";
+  ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 540, 430);
+  ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 598, 430);
+  ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 656, 430);
+  drawLeftText(ctx, form.address || "-", backX + 185, 784, 360, 37, 43, 750);
   ctx.restore();
 
   try {
