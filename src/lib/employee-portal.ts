@@ -8,6 +8,10 @@ export type EmployeePortalSection = {
   description: string;
 };
 
+export type EmployeePortalTool = EmployeePortalSection & {
+  href: string;
+};
+
 export type EmployeePortalPerson = {
   name: string;
   slug: string;
@@ -31,16 +35,11 @@ export const EMPLOYEE_PRODUCTIVITY_SECTIONS: EmployeePortalSection[] = [
   },
 ];
 
-export const RAMESH_WORK_AREAS: EmployeePortalSection[] = [
+export const RAMESH_DIRECT_WORK_AREAS: EmployeePortalSection[] = [
   {
     label: 'Quotations',
     slug: 'quotations',
     description: 'Quotation requests, supplier follow-ups, and dated approval notes.',
-  },
-  {
-    label: 'Stores',
-    slug: 'stores',
-    description: 'Store issue tracking, stock follow-ups, and material movement notes.',
   },
   {
     label: 'Estimates',
@@ -49,9 +48,19 @@ export const RAMESH_WORK_AREAS: EmployeePortalSection[] = [
   },
 ];
 
+export const RAMESH_STORES_TOOLS: EmployeePortalTool[] = [
+  {
+    label: 'Estate Produce',
+    slug: 'estate-produce',
+    href: '/employee-portal/ramesh/stores/estate-produce',
+    description: 'Incoming fruits and estate products available for sale, with search and comparisons.',
+  },
+];
+
 export const EMPLOYEE_PORTAL_SECTIONS: EmployeePortalSection[] = [
   ...EMPLOYEE_PRODUCTIVITY_SECTIONS,
-  ...RAMESH_WORK_AREAS,
+  ...RAMESH_DIRECT_WORK_AREAS,
+  ...RAMESH_STORES_TOOLS,
 ];
 
 export const EMPLOYEE_PORTAL_PEOPLE: EmployeePortalPerson[] = [
@@ -74,7 +83,7 @@ export function findEmployeeSection(slug: string) {
 
 export function sectionsForEmployee(employeeSlug: string) {
   if (employeeSlug === 'ramesh') {
-    return [...EMPLOYEE_PRODUCTIVITY_SECTIONS, ...RAMESH_WORK_AREAS];
+    return [...EMPLOYEE_PRODUCTIVITY_SECTIONS, ...RAMESH_DIRECT_WORK_AREAS];
   }
 
   return EMPLOYEE_PRODUCTIVITY_SECTIONS;

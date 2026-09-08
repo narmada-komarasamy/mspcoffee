@@ -38,7 +38,8 @@ import {
   EMPLOYEE_PORTAL_PEOPLE,
   EMPLOYEE_PRODUCTIVITY_SECTIONS,
   EMPLOYEE_PORTAL_ROLES,
-  RAMESH_WORK_AREAS,
+  RAMESH_DIRECT_WORK_AREAS,
+  RAMESH_STORES_TOOLS,
 } from '@/lib/employee-portal';
 
 const THEMES = {
@@ -107,7 +108,18 @@ const navItems: NavItem[] = [
      ];
 
      if (employee.slug === 'ramesh') {
-       children.push(...RAMESH_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)));
+       children.push(
+         ...RAMESH_DIRECT_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)),
+         {
+           label: 'Stores',
+           roles: employeePortalRoles,
+           children: RAMESH_STORES_TOOLS.map((tool) => ({
+             label: tool.label,
+             href: tool.href,
+             roles: employeePortalRoles,
+           })),
+         },
+       );
      }
 
      return {

@@ -8,7 +8,8 @@ import {
   EMPLOYEE_PORTAL_PEOPLE,
   EMPLOYEE_PRODUCTIVITY_SECTIONS,
   EMPLOYEE_PORTAL_ROLES,
-  RAMESH_WORK_AREAS,
+  RAMESH_DIRECT_WORK_AREAS,
+  RAMESH_STORES_TOOLS,
 } from '@/lib/employee-portal';
 
 export type Role = 'admin' | 'supervisor' | 'worker' | 'ceo' | 'hr';
@@ -45,7 +46,18 @@ const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employ
   ];
 
   if (employee.slug === 'ramesh') {
-    children.push(...RAMESH_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)));
+    children.push(
+      ...RAMESH_DIRECT_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)),
+      {
+        label: 'Stores',
+        roles: employeePortalRoles,
+        children: RAMESH_STORES_TOOLS.map((tool) => ({
+          label: tool.label,
+          href: tool.href,
+          roles: employeePortalRoles,
+        })),
+      },
+    );
   }
 
   return {

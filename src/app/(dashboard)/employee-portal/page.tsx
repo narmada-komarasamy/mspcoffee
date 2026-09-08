@@ -3,7 +3,8 @@ import { CalendarDays, CheckSquare, FileText, ListChecks, Package, ReceiptText, 
 import {
   EMPLOYEE_PORTAL_PEOPLE,
   EMPLOYEE_PRODUCTIVITY_SECTIONS,
-  RAMESH_WORK_AREAS,
+  RAMESH_DIRECT_WORK_AREAS,
+  RAMESH_STORES_TOOLS,
 } from '@/lib/employee-portal';
 
 const sectionIcons = {
@@ -70,7 +71,7 @@ export default function EmployeePortalPage() {
             </div>
             {employee.slug === 'ramesh' && (
               <div className="mt-3 space-y-2">
-                {RAMESH_WORK_AREAS.map((section) => {
+                {RAMESH_DIRECT_WORK_AREAS.map((section) => {
                 const Icon = sectionIcons[section.slug as keyof typeof sectionIcons] ?? FileText;
 
                 return (
@@ -84,6 +85,21 @@ export default function EmployeePortalPage() {
                   </Link>
                 );
               })}
+                <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3">
+                  <h3 className="text-sm font-bold text-emerald-900">Stores</h3>
+                  <div className="mt-3 space-y-2">
+                    {RAMESH_STORES_TOOLS.map((tool) => (
+                      <Link
+                        key={tool.slug}
+                        href={tool.href}
+                        className="flex items-center gap-3 rounded-md border border-stone-100 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-900"
+                      >
+                        <Warehouse className="h-4 w-4 text-emerald-700" />
+                        {tool.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
