@@ -446,14 +446,14 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.fillText("●", backX + 126, 510);
   ctx.fillText("●", backX + 126, 565);
   ctx.fillText("☎", backX + 121, 620);
-  ctx.fillText("●", backX + 118, 690);
+  ctx.fillText("●", backX + 118, 748);
 
   ctx.fillStyle = "#fff";
   ctx.font = "700 25px Segoe UI, Arial, sans-serif";
   ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 510, 430);
   ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 565, 430);
   ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 620, 430);
-  drawLeftText(ctx, form.address || "-", backX + 170, 690, 470, 32, 38, 700);
+  drawLeftText(ctx, form.address || "-", backX + 170, 748, 470, 38, 44, 750);
   ctx.restore();
 
   try {
