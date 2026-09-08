@@ -215,7 +215,7 @@ const drawRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, widt
   ctx.closePath();
 };
 
-const drawLeftText = (
+const drawCenteredWrappedText = (
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
@@ -241,7 +241,7 @@ const drawLeftText = (
   });
   if (line) lines.push(line);
 
-  ctx.textAlign = "left";
+  ctx.textAlign = "center";
   lines.slice(0, 4).forEach((item, index) => {
     ctx.fillText(item, x, y + index * lineHeight, maxWidth);
   });
@@ -446,14 +446,13 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.fillText("●", backX + 126, 540);
   ctx.fillText("●", backX + 126, 598);
   ctx.fillText("☎", backX + 121, 656);
-  ctx.fillText("●", backX + 118, 784);
 
   ctx.fillStyle = "#fff";
   ctx.font = "700 26px Segoe UI, Arial, sans-serif";
   ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 540, 430);
   ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 598, 430);
   ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 656, 430);
-  drawLeftText(ctx, form.address || "-", backX + 185, 784, 360, 37, 43, 750);
+  drawCenteredWrappedText(ctx, form.address || "-", backX + cardWidth / 2, 770, 455, 35, 39, 750);
   ctx.restore();
 
   try {
@@ -951,7 +950,7 @@ function IdCardBack({ form }: { form: CardForm }) {
           <div><span className={css.infoIcon}>●</span><span>Employee No : {form.employeeNumber || "-"}</span></div>
           <div><span className={css.infoIcon}>●</span><span>Blood Group : {form.bloodGroup || "-"}</span></div>
           <div><span className={css.infoIcon}>☎</span><span>Mobile : {form.mobile || "-"}</span></div>
-          <div><span className={css.infoIcon}>●</span><span>{form.address || "-"}</span></div>
+          <div className={css.addressRow}><span>{form.address || "-"}</span></div>
         </div>
       </div>
     </article>
