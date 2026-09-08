@@ -346,7 +346,7 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
 
   const photoCenterX = frontX + cardWidth / 2;
   const photoCenterY = 555;
-  const photoRadius = 142;
+  const photoRadius = 160;
   const ring = ctx.createLinearGradient(photoCenterX - photoRadius, photoCenterY - photoRadius, photoCenterX + photoRadius, photoCenterY + photoRadius);
   ring.addColorStop(0, theme.accentSoft);
   ring.addColorStop(0.42, theme.accent);
@@ -363,14 +363,14 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.stroke();
   ctx.fillStyle = "#efe9db";
   ctx.beginPath();
-  ctx.arc(photoCenterX, photoCenterY, 126, 0, Math.PI * 2);
+  ctx.arc(photoCenterX, photoCenterY, 143, 0, Math.PI * 2);
   ctx.fill();
   if (photoImage) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(photoCenterX, photoCenterY, 126, 0, Math.PI * 2);
+    ctx.arc(photoCenterX, photoCenterY, 143, 0, Math.PI * 2);
     ctx.clip();
-    drawCoverImage(ctx, photoImage, photoCenterX - 126, photoCenterY - 126, 252, 252);
+    drawCoverImage(ctx, photoImage, photoCenterX - 143, photoCenterY - 143, 286, 286);
     ctx.restore();
   } else {
     ctx.fillStyle = "#fff";
@@ -443,17 +443,17 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.textAlign = "left";
   ctx.fillStyle = standardCardTheme.accent;
   ctx.font = "900 38px Segoe UI, Arial, sans-serif";
-  ctx.fillText("●", backX + 126, 516);
-  ctx.fillText("●", backX + 126, 576);
-  ctx.fillText("☎", backX + 121, 636);
-  ctx.fillText("●", backX + 126, 696);
+  ctx.fillText("●", backX + 126, 510);
+  ctx.fillText("●", backX + 126, 565);
+  ctx.fillText("☎", backX + 121, 620);
+  ctx.fillText("●", backX + 126, 676);
 
   ctx.fillStyle = "#fff";
   ctx.font = "700 25px Segoe UI, Arial, sans-serif";
-  ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 516, 430);
-  ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 576, 430);
-  ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 636, 430);
-  drawLeftText(ctx, form.address || "-", backX + 185, 696, 430, 23, 28, 600);
+  ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 510, 430);
+  ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 565, 430);
+  ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 620, 430);
+  drawLeftText(ctx, form.address || "-", backX + 185, 676, 430, 25, 30, 600);
   ctx.restore();
 
   try {
