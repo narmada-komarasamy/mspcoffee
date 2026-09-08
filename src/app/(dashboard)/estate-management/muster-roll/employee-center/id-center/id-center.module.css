@@ -593,17 +593,17 @@
 
 .infoList {
   display: flex;
-  width: 92%;
+  width: 96%;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   margin-top: 0;
   text-align: left;
 }
 
 .infoList div {
   display: grid;
-  grid-template-columns: 20px 1fr;
-  gap: 6px;
+  grid-template-columns: 16px 1fr;
+  gap: 7px;
   align-items: start;
   color: #fff;
   font-size: 10.2px;
@@ -612,10 +612,10 @@
 }
 
 .infoList div:last-child {
-  margin-top: 3px;
-  font-size: 12.6px;
+  margin-top: 2px;
+  font-size: 13.6px;
   font-weight: 750;
-  line-height: 1.18;
+  line-height: 1.12;
 }
 
 .infoIcon {
