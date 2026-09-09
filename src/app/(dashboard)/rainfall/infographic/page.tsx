@@ -230,10 +230,14 @@ export default function RainfallInfographic() {
  });
  }, [activeEstates, filteredData]);
 
- const analysisYear = selectedYear !== "all" ? Number(selectedYear) : tlYear;
- const analysisMonth = selectedMonth !== "all" ? Number(selectedMonth) : null;
- const trendFilterLabel = `${selectedYear !== "all" ? selectedYear : "All years"} · ${selectedMonth !== "all" ? MONTH_NAMES[Number(selectedMonth) - 1] : "All months"}`;
- const yoyLabel = `${analysisMonth ? MONTH_NAMES[analysisMonth - 1] : "Full year"} ${analysisYear}`;
+const analysisYear = selectedYear !== "all" ? Number(selectedYear) : tlYear;
+const analysisMonth = selectedMonth !== "all" ? Number(selectedMonth) : null;
+const trendFilterLabel = `${selectedYear !== "all" ? selectedYear : "All years"} · ${selectedMonth !== "all" ? MONTH_NAMES[Number(selectedMonth) - 1] : "All months"}`;
+const yoyLabel = `${analysisMonth ? MONTH_NAMES[analysisMonth - 1] : "Full year"} ${analysisYear}`;
+ const dryPeriod = useMemo(() => selectedYear !== "all" ? {
+ year: Number(selectedYear),
+ month: selectedMonth !== "all" ? Number(selectedMonth) : null,
+ } : null, [selectedMonth, selectedYear]);
  const analysisYoYStats = useMemo(() => {
  const totalFor = (estate: string, targetYear: number) => data
  .filter(r => r.estate === estate && yr(r.date) === targetYear && (!analysisMonth || mo(r.date) === analysisMonth))
@@ -514,7 +518,7 @@ export default function RainfallInfographic() {
  <div className={s.card}>
  <div className={s.cardLabel}>Dry Streak Analysis</div>
  <p className={s.cardHint}>Longest consecutive dry days per estate. Higher = longer dry spells.</p>
- <DryStreakChart data={dryStreakData} />
+ <DryStreakChart data={dryStreakData} period={dryPeriod} estates={activeEstates} sourceData={data} />
  </div>
  <div className={s.card}>
  <div className={s.cardLabel}>Year-over-Year Change — {yoyLabel}</div>
@@ -719,15 +723,52 @@ function MonthlyEstateMatrix({ data, estates, year, unit }: { data: Row[]; estat
  );
 }
 
-function DryStreakChart({ data }: { data: Array<{ estate: string; maxStreak: number; avgStreak: number; count: number; dist: Record<number, number> }> }) {
- const hasStreaks = data.some((entry) => entry.maxStreak > 0 || entry.avgStreak > 0);
+function DryStreakChart({
+ data,
+ period,
+ estates,
+ sourceData,
+}: {
+ data: Array<{ estate: string; maxStreak: number; avgStreak: number; count: number; dist: Record<number, number> }>;
+ period: { year: number; month: number | null } | null;
+ estates: readonly string[];
+ sourceData: Row[];
+}) {
+ const chartData = useMemo(() => {
+ if (!period?.month) return data;
+ const daysInMonth = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
+ return estates.map((estate) => {
+ const rainyDays = new Set(sourceData
+ .filter((row) => row.estate === estate && yr(row.date) === period.year && mo(row.date) === period.month && row.rainfall_mm > 0)
+ .map((row) => dateParts(row.date).day));
+ const streaks: number[] = [];
+ let current = 0;
+ for (let day = 1; day <= daysInMonth; day++) {
+ if (rainyDays.has(day)) {
+ if (current > 0) streaks.push(current);
+ current = 0;
+ } else {
+ current += 1;
+ }
+ }
+ if (current > 0) streaks.push(current);
+ return {
+ estate,
+ maxStreak: streaks.length ? Math.max(...streaks) : 0,
+ avgStreak: streaks.length ? rnd(streaks.reduce((sum, value) => sum + value, 0) / streaks.length) : 0,
+ count: streaks.length,
+ dist: {},
+ };
+ });
+ }, [data, estates, period, sourceData]);
+ const hasStreaks = chartData.some((entry) => entry.maxStreak > 0 || entry.avgStreak > 0);
  if (!hasStreaks) {
  return <div className={s.emptyChart}>No rainy-day streaks found for this selection.</div>;
  }
 
  return (
  <ResponsiveContainer width="100%" height={240}>
- <BarChart data={data} layout="vertical">
+ <BarChart data={chartData} layout="vertical">
  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
  <XAxis type="number" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit=" days" />
  <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={90} />
