@@ -216,6 +216,8 @@ export default function RainfallInfographic() {
  });
  }, [filteredData]);
 
+ const matrixYear = selectedYear !== "all" ? Number(selectedYear) : yearsList[0];
+
  // ══════════════════════════════════════════════════════════════════════════
  // LOAD STATE
  // ══════════════════════════════════════════════════════════════════════════
@@ -414,26 +416,26 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 3 — Monthly line chart + Annual bar chart */}
+ {/* ROW 3 — Ranking + Monthly Matrix */}
+ {/* ══════════════════════════════════════════════════════════════════════ */}
+ <div className={s.insightPair}>
+ <div className={s.card}>
+ <div className={s.cardLabel}>Estate Annual Ranking</div>
+ <EstateAnnualRanking stats={estateStats} unit={unit} />
+ </div>
+ <div className={s.card}>
+ <div className={s.cardLabel}>Monthly Estate Matrix — {matrixYear ?? "Latest"} ({unitLabel})</div>
+ <MonthlyEstateMatrix data={displayData} selected={selectedEstate} year={matrixYear} unit={unit} />
+ </div>
+ </div>
+
+ {/* ══════════════════════════════════════════════════════════════════════ */}
+ {/* ROW 4 — Monthly line chart + Scatter */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
  <div className={s.cardLabel}>Monthly Rainfall by Estate</div>
  <MonthlyLine data={displayData} selected={selectedEstate} unit={unit} />
- </div>
- <div className={s.card}>
- <div className={s.cardLabel}>Annual Totals — Year by Year</div>
- <AnnualBarChart data={displayData} selected={selectedEstate} unit={unit} />
- </div>
- </div>
-
- {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 3 — Heatmap + Scatter */}
- {/* ══════════════════════════════════════════════════════════════════════ */}
- <div className={s.row2}>
- <div className={`${s.card} ${s.cardWide}`}>
- <div className={s.cardLabel}>Rainfall Heatmap — Estate × Month ({unit})</div>
- <RainfallHeatmap data={displayData} selected={selectedEstate} unit={unit} />
  </div>
  <div className={s.card}>
  <div className={s.cardLabel}>Estate Rainfall Pattern</div>
@@ -443,7 +445,7 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 4 — Dry streak + Seasonal stacked */}
+ {/* ROW 5 — Dry streak + Seasonal stacked */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={s.card}>
@@ -458,7 +460,7 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 5 — Matrix table + YoY delta */}
+ {/* ROW 6 — Matrix table + YoY delta */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
@@ -549,92 +551,100 @@ function MonthlyLine({ data, selected, unit }: { data: Row[]; selected: string; 
  );
 }
 
-function AnnualBarChart({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
- const chartData = useMemo(() => {
- const years = [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a);
- const src = selected === "all" ? data : data.filter(r => r.estate === selected);
- return years.map(y => {
- const row: Record<string, number | string> = { year: String(y) };
- ESTATES.forEach(e => {
- row[e] = rnd(src.filter(r =>  yr(r.date) === y && r.estate === e).reduce((s, r) => s + r.rainfall_mm, 0));
- });
- return row;
- });
- }, [data, selected]);
+function EstateAnnualRanking({ stats, unit }: { stats: Array<{ estate: string; total: number; rainyDays: number }>; unit: string }) {
+ const maxTotal = Math.max(...stats.map((entry) => entry.total), 1);
 
  return (
- <ResponsiveContainer width="100%" height={280}>
- <BarChart data={chartData}>
- <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
- <XAxis dataKey="year" tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} />
- <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit={unit} />
- <Tooltip contentStyle={TT_STYLE} labelStyle={{ color: "#1b4a1b", fontWeight: 700 }} />
- <Legend wrapperStyle={{ fontSize: 10 }} />
- {ESTATES.map(e => (
- <Bar key={e} dataKey={e} fill={ESTATE_COLORS[e]} radius={[2, 2, 0, 0]} stackId="a" />
- ))}
- </BarChart>
- </ResponsiveContainer>
+ <div className={s.rankChart}>
+ {stats.map((entry) => {
+ const width = Math.max(4, Math.round((entry.total / maxTotal) * 100));
+ const color = ESTATE_COLORS[entry.estate];
+ return (
+ <div key={entry.estate} className={s.rankRow}>
+ <div className={s.rankEstate}>
+ <span className={s.rankDot} style={{ background: color }} />
+ <span>{entry.estate}</span>
+ </div>
+ <div className={s.rankTrack} aria-label={`${entry.estate}: ${entry.total} ${unit}`}>
+ <div className={s.rankBar} style={{ width: `${width}%`, background: color }} />
+ </div>
+ <div className={s.rankValue}>
+ <span>{entry.total}</span>
+ <small>{unit}</small>
+ </div>
+ <div className={s.rankDays}>{entry.rainyDays} rainy days</div>
+ </div>
+ );
+ })}
+ <div className={s.rankAxis}>
+ <span>0</span>
+ <span>Estate total rainfall</span>
+ <span>{rnd(maxTotal)} {unit}</span>
+ </div>
+ </div>
  );
 }
 
-function RainfallHeatmap({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
+function MonthlyEstateMatrix({ data, selected, year, unit }: { data: Row[]; selected: string; year: number | undefined; unit: string }) {
  const estates = useMemo<readonly string[]>(() => selected === "all" ? ESTATES : [selected], [selected]);
- const years = useMemo(() => [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a).slice(0, 5), [data]);
-
- const matrix = useMemo(() => {
- const m: Record<string, number> = {};
- data.forEach(r => {
- if (!estates.includes(r.estate)) return;
- const key = `${r.estate}|${ yr(r.date)}-${String( mo(r.date)).padStart(2, "0")}`;
- m[key] = (m[key] ?? 0) + r.rainfall_mm;
+ const rows = useMemo(() => {
+ if (!year) return [];
+ return estates.map((estate) => {
+ const months = MONTH_SHORT.map((monthName, index) => {
+ const total = rnd(data
+ .filter((row) => row.estate === estate && yr(row.date) === year && mo(row.date) === index + 1)
+ .reduce((sum, row) => sum + row.rainfall_mm, 0), unit === "mm" ? 0 : 2);
+ return { monthName, total };
  });
- return m;
- }, [data, estates]);
+ const total = rnd(months.reduce((sum, month) => sum + month.total, 0), unit === "mm" ? 0 : 2);
+ return { estate, months, total };
+ });
+ }, [data, estates, year, unit]);
 
- const allVals = Object.values(matrix);
- const maxVal = allVals.length ? Math.max(...allVals) : 1;
-
- const cellColor = (v: number) => {
- if (v === 0) return "#f5eedc";
- const t = v / maxVal;
- const r = Math.round(45 + t * (27 - 45));
- const g = Math.round(158 + t * (74 - 158));
- const b = Math.round(74 + t * (31 - 74));
- return `rgb(${r},${g},${b})`;
+ const maxMonth = Math.max(...rows.flatMap((row) => row.months.map((month) => month.total)), 1);
+ const levelClass = (value: number) => {
+ if (value <= 0) return s.matrixEmpty;
+ const ratio = value / maxMonth;
+ if (ratio >= 0.75) return s.matrixLevel4;
+ if (ratio >= 0.45) return s.matrixLevel3;
+ if (ratio >= 0.2) return s.matrixLevel2;
+ return s.matrixLevel1;
  };
 
- const monthRow = (estate: string, year: number) =>
- Array.from({ length: 12 }, (_, i) => {
- const key = `${estate}|${year}-${String(i + 1).padStart(2, "0")}`;
- const v = matrix[key] ?? 0;
- return { month: MONTH_SHORT[i], value: v, color: cellColor(v) };
- });
+ if (!year) return <div className={s.emptyChart}>No year available</div>;
 
  return (
- <div className={s.heatWrap}>
- <div className={s.heatHeader}>
- <div className={s.heatCorner}>Estate / Month</div>
- <div className={s.heatMonths}>{MONTH_SHORT.map(m => <div key={m} className={s.heatMonthCell}>{m}</div>)}</div>
+ <div className={s.matrixWrap}>
+ <div className={s.matrixGrid}>
+ <div className={s.matrixHead}>Estate</div>
+ {MONTH_SHORT.map((month) => <div key={month} className={s.matrixHead}>{month}</div>)}
+ <div className={s.matrixHead}>Total</div>
+ {rows.map((row) => (
+ <div key={row.estate} className={s.matrixRow}>
+ <div className={s.matrixEstate}>
+ <span className={s.rankDot} style={{ background: ESTATE_COLORS[row.estate] }} />
+ <span>{row.estate}</span>
  </div>
- {years.map(year => (
- <div key={year} className={s.heatRow}>
- <div className={s.heatYear}>{year}</div>
- {estates.map(estate => (<div key={estate} className={s.heatEstateLabel}>{estate.split(" ")[0]}</div>))}
- <div className={s.heatCells}>
- {estates.map(estate =>
- monthRow(estate, year).map((c, i) => (
- <div key={i} className={s.heatCell} style={{ background: c.color }} title={`${estate} · ${MONTH_SHORT[i]} ${year}: ${c.value}${unit}`}>
- {c.value > 0 && <span className={s.heatVal}>{rnd(c.value)}</span>}
- </div>
- ))
- )}
- </div>
+ {row.months.map((month) => (
+ <div
+ key={month.monthName}
+ className={`${s.matrixCell} ${levelClass(month.total)}`}
+ aria-label={`${row.estate}, ${month.monthName} ${year}: ${month.total} ${unit}`}
+ >
+ {month.total > 0 ? month.total : ""}
  </div>
  ))}
- <div className={s.heatLegend}>
+ <div className={s.matrixTotal}>{row.total}</div>
+ </div>
+ ))}
+ </div>
+ <div className={s.matrixLegend}>
  <span>Less</span>
- {[0, 0.25, 0.5, 0.75, 1].map(t => (<div key={t} className={s.heatSwatch} style={{ background: cellColor(maxVal * t) }} />))}
+ <span className={`${s.matrixSwatch} ${s.matrixEmpty}`} />
+ <span className={`${s.matrixSwatch} ${s.matrixLevel1}`} />
+ <span className={`${s.matrixSwatch} ${s.matrixLevel2}`} />
+ <span className={`${s.matrixSwatch} ${s.matrixLevel3}`} />
+ <span className={`${s.matrixSwatch} ${s.matrixLevel4}`} />
  <span>More</span>
  </div>
  </div>

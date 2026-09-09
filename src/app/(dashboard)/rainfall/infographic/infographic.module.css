@@ -65,6 +65,14 @@
  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
 }
 @media (max-width: 900px) { .row2 { grid-template-columns: 1fr; } }
+.insightPair {
+ display: grid;
+ grid-template-columns: minmax(280px, 0.9fr) minmax(520px, 1.35fr);
+ gap: 16px;
+ margin-bottom: 16px;
+ align-items: stretch;
+}
+@media (max-width: 1050px) { .insightPair { grid-template-columns: 1fr; } }
 
 .card {
  background: var(--t-card, #ffffff); border: 1px solid var(--t-border, #e5dfc8); border-radius: 12px;
@@ -126,6 +134,154 @@
 .seasonMonths { font-size: 0.65rem; font-weight: 600; margin-top: 2px; }
 .seasonTotal { font-size: 0.55rem; color: var(--t-muted, #6b7280); margin-top: 1px; }
 .seasonNote { font-size: 0.6rem; color: var(--t-muted, #6b7280); margin-top: 3px; line-height: 1.3; }
+
+/* ── ranking + matrix ── */
+.rankChart {
+ display: grid;
+ gap: 10px;
+}
+.rankRow {
+ display: grid;
+ grid-template-columns: minmax(90px, 110px) minmax(110px, 1fr) minmax(58px, 70px);
+ gap: 9px;
+ align-items: center;
+}
+.rankEstate {
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ min-width: 0;
+ color: var(--t-text, #1a1a1a);
+ font-size: 0.68rem;
+ font-weight: 800;
+}
+.rankEstate span:last-child {
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+.rankDot {
+ width: 8px;
+ height: 8px;
+ border-radius: 999px;
+ flex: 0 0 auto;
+}
+.rankTrack {
+ height: 18px;
+ background: var(--t-subtle, #f5eedc);
+ border-radius: 4px;
+ overflow: hidden;
+}
+.rankBar {
+ height: 100%;
+ border-radius: 4px;
+}
+.rankValue {
+ display: flex;
+ justify-content: flex-end;
+ align-items: baseline;
+ gap: 2px;
+ color: var(--t-heading, #1b4a1b);
+ font-family: var(--t-font-mono, monospace);
+ font-size: 0.72rem;
+ font-weight: 900;
+ font-variant-numeric: tabular-nums;
+}
+.rankValue small {
+ color: var(--t-muted, #6b7280);
+ font-size: 0.56rem;
+ font-weight: 700;
+}
+.rankDays {
+ grid-column: 2 / -1;
+ margin-top: -6px;
+ color: var(--t-muted, #6b7280);
+ font-size: 0.58rem;
+}
+.rankAxis {
+ display: flex;
+ justify-content: space-between;
+ gap: 8px;
+ margin: 4px 70px 0 120px;
+ color: var(--t-muted, #6b7280);
+ font-size: 0.58rem;
+}
+.matrixWrap {
+ overflow-x: auto;
+ padding-bottom: 2px;
+}
+.matrixGrid {
+ display: grid;
+ grid-template-columns: minmax(104px, 1.15fr) repeat(12, minmax(34px, 0.72fr)) minmax(52px, 0.7fr);
+ gap: 3px;
+ min-width: 690px;
+}
+.matrixRow {
+ display: contents;
+}
+.matrixHead,
+.matrixEstate,
+.matrixCell,
+.matrixTotal {
+ min-height: 30px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ border-radius: 5px;
+ font-size: 0.62rem;
+ font-variant-numeric: tabular-nums;
+}
+.matrixHead {
+ color: var(--t-heading, #1b4a1b);
+ font-weight: 800;
+}
+.matrixEstate {
+ justify-content: flex-start;
+ gap: 6px;
+ padding: 0 8px;
+ background: var(--t-subtle, #f5eedc);
+ color: var(--t-text, #1a1a1a);
+ font-weight: 800;
+}
+.matrixEstate span:last-child {
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
+}
+.matrixCell {
+ color: var(--t-heading, #1b4a1b);
+ font-family: var(--t-font-mono, monospace);
+ font-weight: 800;
+}
+.matrixTotal {
+ background: rgba(74,158,74,0.14);
+ color: var(--t-heading, #1b4a1b);
+ font-family: var(--t-font-mono, monospace);
+ font-weight: 900;
+}
+.matrixEmpty { background: var(--t-subtle, #f5eedc); color: transparent; }
+.matrixLevel1 { background: rgba(74,158,74,0.18); }
+.matrixLevel2 { background: rgba(74,158,74,0.38); }
+.matrixLevel3 { background: rgba(45,110,45,0.72); color: #fff; }
+.matrixLevel4 { background: rgba(27,74,27,0.92); color: #fff; }
+.matrixLegend {
+ display: flex;
+ align-items: center;
+ justify-content: flex-end;
+ gap: 5px;
+ margin-top: 10px;
+ color: var(--t-muted, #6b7280);
+ font-size: 0.58rem;
+}
+.matrixSwatch {
+ width: 24px;
+ height: 10px;
+ border-radius: 2px;
+}
+@media (max-width: 700px) {
+ .rankRow { grid-template-columns: minmax(92px, 1fr) minmax(100px, 1.3fr) minmax(54px, 64px); }
+ .rankAxis { margin-left: 102px; margin-right: 66px; }
+}
 
 /* ── heatmap ── */
 .heatWrap { overflow-x: auto; }
