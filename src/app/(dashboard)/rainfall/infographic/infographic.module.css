@@ -384,26 +384,26 @@
  background: var(--t-border, #e5dfc8); border-radius: 1px;
 }
 .tlRow {
- display: flex; align-items: center; gap: 0;
- padding: 2px 0; position: relative; z-index: 1; border-radius: 6px;
+ display: grid; grid-template-columns: 42px minmax(46px, 1fr) 58px 34px; align-items: center; gap: 6px;
+ padding: 3px 0; position: relative; z-index: 1; border-radius: 6px;
 }
 .tlRowSel {
  background: var(--t-card, #ffffff); border: 1.5px solid; border-radius: 6px;
  padding: 5px 6px; margin: 2px -6px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .tlYr {
- width: 26px; text-align: right; font-size: 0.6rem; font-weight: 700;
- color: var(--t-muted, #6b7280); flex-shrink: 0; padding-right: 6px;
+ text-align: right; font-size: 0.62rem; font-weight: 800;
+ color: var(--t-muted, #6b7280);
 }
 .tlYrSel { font-size: 0.68rem; }
 .tlDotCol { width: 16px; display: flex; justify-content: center; flex-shrink: 0; }
 .tlDotInner { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
 .tlDotSel { width: 9px; height: 9px; }
 .tlSpacer { flex: 1; min-width: 0; }
-.tlBarWrap { height: 10px; background: var(--t-subtle, #f5eedc); border-radius: 2px; overflow: hidden; min-width: 40px; width: 100px; margin-right: 6px; flex-shrink: 0; }
+.tlBarWrap { height: 10px; background: var(--t-subtle, #f5eedc); border-radius: 2px; overflow: hidden; min-width: 46px; }
 .tlBar { height: 100%; border-radius: 2px; }
 .tlMm {
- font-size: 0.68rem; font-weight: 800; text-align: right; min-width: 36px; flex-shrink: 0; margin-right: 4px;
+ font-size: 0.66rem; font-weight: 800; text-align: right;
 }
 .tlMmSel { font-size: 0.82rem; }
 .tlRd {
@@ -435,7 +435,7 @@
 }
 .tlChip { font-size: 0.55rem; padding: 2px 6px; border-radius: 3px; background: var(--t-subtle, #f5eedc); color: var(--t-label, #374151); font-weight: 600; }
 .tlChip b { color: var(--t-text, #1a1a1a); }
-.tlTrend { font-size: 0.58rem; font-weight: 700; }
+.tlTrend { font-size: 0.58rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; background: var(--t-subtle, #f5eedc); }
 .tlTrendUp { color: #dc2626; }
 .tlTrendDown { color: #2563eb; }
 .tlTrendFlat { color: var(--t-muted, #9ca3af); }
