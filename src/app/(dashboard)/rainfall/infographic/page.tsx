@@ -59,7 +59,7 @@ type TooltipName = string | number | undefined;
 export default function RainfallInfographic() {
  const [data, setData] = useState<Row[]>([]);
  const [loading, setLoading] = useState(true);
- const [selectedEstate, setSelectedEstate] = useState<string>("all");
+ const [selectedEstates, setSelectedEstates] = useState<string[]>([]);
  const [selectedYear, setSelectedYear] = useState<string>("all");
  const [selectedMonth, setSelectedMonth] = useState<string>("all");
  const [unit, setUnit] = useState<"mm" | "in">("mm");
@@ -105,15 +105,19 @@ export default function RainfallInfographic() {
  // When year changes, reset month and rebuild months list from that year
  // Always show all 12 months
  const monthsList = useMemo(() => [1,2,3,4,5,6,7,8,9,10,11,12], []);
+ const activeEstates = useMemo<readonly string[]>(
+ () => selectedEstates.length > 0 ? selectedEstates : ESTATES,
+ [selectedEstates]
+ );
 
  // ── triple-filtered dataset (the source of truth for all charts) ───────────
  const filteredData = useMemo(() => {
  let result = data;
- if (selectedEstate !== "all") result = result.filter(r => r.estate === selectedEstate);
+ if (selectedEstates.length > 0) result = result.filter(r => selectedEstates.includes(r.estate));
  if (selectedYear !== "all") result = result.filter(r => yr(r.date) === Number(selectedYear));
  if (selectedMonth !== "all") result = result.filter(r => mo(r.date) === Number(selectedMonth));
  return result;
- }, [data, selectedEstate, selectedYear, selectedMonth]);
+ }, [data, selectedEstates, selectedYear, selectedMonth]);
 
  // ── display-ready data (unit conversion) ────────────────────────────────────
  const displayData = useMemo(() => filteredData.map(r => ({ ...r, rainfall_mm: toDisplay(r.rainfall_mm) })), [filteredData, toDisplay]);
@@ -155,7 +159,7 @@ export default function RainfallInfographic() {
  const now = new Date();
  const curYear = now.getFullYear();
 
- return ESTATES.map(estate => {
+ return activeEstates.map(estate => {
  const eData = filteredData.filter(r => r.estate === estate && r.rainfall_mm > 0);
  const total = eData.reduce((s, r) => s + r.rainfall_mm, 0);
  const rainyDays = new Set(eData.map(r => r.date)).size;
@@ -190,7 +194,7 @@ export default function RainfallInfographic() {
 
  return { estate, total: formatRain(total), rainyDays, peakMonth, peakMm: formatRain(peakMm), seasonal, maxDry, yoyDelta, variationCoeff, mean: formatRain(mean) };
  }).sort((a, b) => b.total - a.total);
- }, [filteredData, formatRain]);
+ }, [activeEstates, filteredData, formatRain]);
 
  // ── scatter data ────────────────────────────────────────────────────────────
  const scatterData = useMemo(() => estateStats.map(s => ({
@@ -199,7 +203,7 @@ export default function RainfallInfographic() {
 
  // ── dry streaks ────────────────────────────────────────────────────────────
  const dryStreakData = useMemo(() => {
- return ESTATES.map(estate => {
+ return activeEstates.map(estate => {
  const dates = filteredData.filter(r => r.estate === estate && r.rainfall_mm > 0).map(r => r.date).sort();
  const streaks: number[] = [];
  for (let i = 1; i < dates.length; i++) {
@@ -214,9 +218,12 @@ export default function RainfallInfographic() {
  dist: {},
  };
  });
- }, [filteredData]);
+ }, [activeEstates, filteredData]);
 
  const matrixYear = selectedYear !== "all" ? Number(selectedYear) : yearsList[0];
+ const toggleEstate = (estate: string) => {
+ setSelectedEstates((prev) => prev.includes(estate) ? prev.filter((item) => item !== estate) : [...prev, estate]);
+ };
 
  // ══════════════════════════════════════════════════════════════════════════
  // LOAD STATE
@@ -241,7 +248,7 @@ export default function RainfallInfographic() {
  // active filter label helper
  const filterLabel = () => {
  const parts: string[] = [];
- if (selectedEstate !== "all") parts.push(selectedEstate);
+ if (selectedEstates.length > 0) parts.push(selectedEstates.join(", "));
  if (selectedYear !== "all") parts.push(selectedYear.toString());
  if (selectedMonth !== "all") parts.push(MONTH_SHORT[Number(selectedMonth) - 1]);
  return parts.length ? `· Filtered: ${parts.join(" · ")}` : "";
@@ -317,13 +324,13 @@ export default function RainfallInfographic() {
 
  {/* ── Estate selector ────────────────────────────────────────────────── */}
  <div className={s.estateFilter}>
- <button className={`${s.filterBtn} ${selectedEstate === "all" ? s.filterBtnActive : ""}`}
- style={selectedEstate === "all" ? { background: "#6b7280", color: "#fff", borderColor: "#6b7280" } : {}}
- onClick={() => setSelectedEstate("all")}>All Estates</button>
+ <button className={`${s.filterBtn} ${selectedEstates.length === 0 ? s.filterBtnActive : ""}`}
+ style={selectedEstates.length === 0 ? { background: "#6b7280", color: "#fff", borderColor: "#6b7280" } : {}}
+ onClick={() => setSelectedEstates([])}>All Estates</button>
  {ESTATES.map(e => (
- <button key={e} className={`${s.filterBtn} ${selectedEstate === e ? s.filterBtnActive : ""}`}
- style={selectedEstate === e ? { background: ESTATE_COLORS[e], color: "#000", borderColor: ESTATE_COLORS[e] } : {}}
- onClick={() => setSelectedEstate(e)}>
+ <button key={e} className={`${s.filterBtn} ${selectedEstates.includes(e) ? s.filterBtnActive : ""}`}
+ style={selectedEstates.includes(e) ? { background: ESTATE_COLORS[e], color: "#000", borderColor: ESTATE_COLORS[e] } : {}}
+ onClick={() => toggleEstate(e)}>
  <span className={s.filterDot} style={{ background: ESTATE_COLORS[e] }} />{e}
  </button>
  ))}
@@ -425,7 +432,7 @@ export default function RainfallInfographic() {
  </div>
  <div className={s.card}>
  <div className={s.cardLabel}>Monthly Estate Matrix — {matrixYear ?? "Latest"} ({unitLabel})</div>
- <MonthlyEstateMatrix data={displayData} selected={selectedEstate} year={matrixYear} unit={unit} />
+ <MonthlyEstateMatrix data={displayData} estates={activeEstates} year={matrixYear} unit={unit} />
  </div>
  </div>
 
@@ -435,7 +442,7 @@ export default function RainfallInfographic() {
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
  <div className={s.cardLabel}>Monthly Rainfall by Estate</div>
- <MonthlyLine data={displayData} selected={selectedEstate} unit={unit} />
+ <MonthlyLine data={displayData} estates={activeEstates} unit={unit} />
  </div>
  <div className={s.card}>
  <div className={s.cardLabel}>Estate Rainfall Pattern</div>
@@ -515,9 +522,8 @@ export default function RainfallInfographic() {
 // SUB-COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function MonthlyLine({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
+function MonthlyLine({ data, estates, unit }: { data: Row[]; estates: readonly string[]; unit: string }) {
  const chartData = useMemo(() => {
- const estates: readonly string[] = selected === "all" ? ESTATES : [selected];
  const map: Record<string, Record<string, number>> = {};
  data.forEach(r => {
  if (!estates.includes(r.estate)) return;
@@ -531,9 +537,7 @@ function MonthlyLine({ data, selected, unit }: { data: Row[]; selected: string; 
  const [, mo] = k.split("-");
  return { name: `${MONTH_SHORT[Number(mo) - 1]}`, ...v };
  });
- }, [data, selected]);
-
- const activeEstates: readonly string[] = selected === "all" ? ESTATES : [selected];
+ }, [data, estates]);
 
  return (
  <ResponsiveContainer width="100%" height={280}>
@@ -543,7 +547,7 @@ function MonthlyLine({ data, selected, unit }: { data: Row[]; selected: string; 
  <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit={unit} />
  <Tooltip contentStyle={TT_STYLE} labelStyle={{ color: "#1b4a1b", fontWeight: 700 }} />
  <Legend wrapperStyle={{ fontSize: 11 }} />
- {activeEstates.map(e => (
+ {estates.map(e => (
  <Line key={e} type="monotone" dataKey={e} stroke={ESTATE_COLORS[e]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
  ))}
  </LineChart>
@@ -585,8 +589,7 @@ function EstateAnnualRanking({ stats, unit }: { stats: Array<{ estate: string; t
  );
 }
 
-function MonthlyEstateMatrix({ data, selected, year, unit }: { data: Row[]; selected: string; year: number | undefined; unit: string }) {
- const estates = useMemo<readonly string[]>(() => selected === "all" ? ESTATES : [selected], [selected]);
+function MonthlyEstateMatrix({ data, estates, year, unit }: { data: Row[]; estates: readonly string[]; year: number | undefined; unit: string }) {
  const rows = useMemo(() => {
  if (!year) return [];
  return estates.map((estate) => {
