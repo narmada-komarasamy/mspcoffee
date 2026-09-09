@@ -120,6 +120,7 @@ export default function RainfallInfographic() {
 
  // ── display-ready data (unit conversion) ────────────────────────────────────
  const displayData = useMemo(() => filteredData.map(r => ({ ...r, rainfall_mm: toDisplay(r.rainfall_mm) })), [filteredData, toDisplay]);
+ const displayAllData = useMemo(() => data.map(r => ({ ...r, rainfall_mm: toDisplay(r.rainfall_mm) })), [data, toDisplay]);
 
  // ── seasonal profile data ───────────────────────────────────────────────────
  const seasonalData = useMemo(() => {
@@ -195,6 +196,15 @@ export default function RainfallInfographic() {
  }).sort((a, b) => b.total - a.total);
  }, [activeEstates, filteredData, formatRain]);
 
+ const annualRankingStats = useMemo(() => {
+ return activeEstates.map(estate => {
+ const eData = data.filter(r => r.estate === estate && yr(r.date) === tlYear && r.rainfall_mm > 0);
+ const total = eData.reduce((sum, row) => sum + row.rainfall_mm, 0);
+ const rainyDays = new Set(eData.map(row => row.date)).size;
+ return { estate, total: formatRain(total), rainyDays };
+ }).sort((a, b) => b.total - a.total);
+ }, [activeEstates, data, formatRain, tlYear]);
+
  // ── dry streaks ────────────────────────────────────────────────────────────
  const dryStreakData = useMemo(() => {
  return activeEstates.map(estate => {
@@ -214,7 +224,6 @@ export default function RainfallInfographic() {
  });
  }, [activeEstates, filteredData]);
 
- const matrixYear = selectedYear !== "all" ? Number(selectedYear) : yearsList[0];
  const toggleEstate = (estate: string) => {
  setSelectedEstates((prev) => prev.includes(estate) ? prev.filter((item) => item !== estate) : [...prev, estate]);
  };
@@ -410,12 +419,12 @@ export default function RainfallInfographic() {
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.insightPair}>
  <div className={s.card}>
- <div className={s.cardLabel}>Estate Annual Ranking</div>
- <EstateAnnualRanking stats={estateStats} unit={unit} />
+ <div className={s.cardLabel}>Estate Annual Ranking — {tlYear}</div>
+ <EstateAnnualRanking stats={annualRankingStats} unit={unit} />
  </div>
  <div className={s.card}>
- <div className={s.cardLabel}>Monthly Estate Matrix — {matrixYear ?? "Latest"} ({unitLabel})</div>
- <MonthlyEstateMatrix data={displayData} estates={activeEstates} year={matrixYear} unit={unit} />
+ <div className={s.cardLabel}>Monthly Estate Matrix — {tlYear} ({unitLabel})</div>
+ <MonthlyEstateMatrix data={displayAllData} estates={activeEstates} year={tlYear} unit={unit} />
  </div>
  </div>
 
