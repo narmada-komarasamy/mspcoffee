@@ -822,10 +822,8 @@ function SameMonthComparison({ data, year, month, unit, estates, estateColors }:
  </div>
  <div className={`${s.tlMm} ${isSel ? s.tlMmSel : ""}`}
  style={isSel ? { color: c } : { color: "#9ca3af" }}>
- {formatValue(val.mm)}{unit}
- </div>
- <div className={s.tlRd}>
- {val.rd > 0 && <span className={s.tlRdBadge}>{val.rd}d</span>}
+ <span>{formatValue(val.mm)}{unit}</span>
+ {val.rd > 0 && <small>{val.rd}d</small>}
  </div>
  </div>
  );
