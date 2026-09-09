@@ -361,9 +361,9 @@
  color: var(--t-muted, #6b7280); margin-bottom: 10px;
 }
 .timelineRow {
- display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;
+ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
 }
-@media (max-width: 1100px) { .timelineRow { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); } }
+@media (max-width: 1100px) { .timelineRow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .timelineRow { grid-template-columns: 1fr; } }
 .tlCard {
  background: var(--t-card, #ffffff); border: 1px solid var(--t-border, #e5dfc8); border-radius: 10px;

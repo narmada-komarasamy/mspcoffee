@@ -6,7 +6,7 @@ const supabase = createClient();
 import {
  LineChart, Line, BarChart, Bar, XAxis, YAxis,
  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
- Cell, ScatterChart, Scatter, ZAxis,
+ Cell,
 } from "recharts";
 import s from "./infographic.module.css";
 
@@ -194,11 +194,6 @@ export default function RainfallInfographic() {
  return { estate, total: formatRain(total), rainyDays, peakMonth, peakMm: formatRain(peakMm), seasonal, maxDry, yoyDelta, variationCoeff, mean: formatRain(mean) };
  }).sort((a, b) => b.total - a.total);
  }, [activeEstates, filteredData, formatRain]);
-
- // ── scatter data ────────────────────────────────────────────────────────────
- const scatterData = useMemo(() => estateStats.map(s => ({
- x: s.total, y: s.variationCoeff, z: s.rainyDays, estate: s.estate,
- })), [estateStats]);
 
  // ── dry streaks ────────────────────────────────────────────────────────────
  const dryStreakData = useMemo(() => {
@@ -425,17 +420,12 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 4 — Monthly line chart + Scatter */}
+ {/* ROW 4 — Monthly line chart */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
  <div className={s.cardLabel}>Monthly Rainfall by Estate</div>
  <MonthlyLine data={displayData} estates={activeEstates} unit={unit} />
- </div>
- <div className={s.card}>
- <div className={s.cardLabel}>Estate Rainfall Pattern</div>
- <p className={s.cardHint}>Each dot is an estate. X = total rainfall, Y = seasonal variation. Bigger circle = more rainy days.</p>
- <PatternScatter data={estateStats} scatterData={scatterData} unit={unit} />
  </div>
  </div>
 
@@ -639,34 +629,6 @@ function MonthlyEstateMatrix({ data, estates, year, unit }: { data: Row[]; estat
  <span>More</span>
  </div>
  </div>
- );
-}
-
-function PatternScatter({ data, scatterData, unit }: { data: Array<{ estate: string }>; scatterData: Array<{ x: number; y: number; z: number; estate: string }>; unit: string }) {
- return (
- <ResponsiveContainer width="100%" height={260}>
- <ScatterChart>
- <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
- <XAxis dataKey="x" name={`Total ${unit}`} tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit={unit} />
- <YAxis dataKey="y" name="Variation" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} />
- <ZAxis dataKey="z" range={[80, 400]} />
- <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={TT_STYLE}
- formatter={(v: TooltipValue, name: TooltipName) => {
- const key = String(name ?? "");
- const value = v ?? "—";
- if (key === "x") return [`${value} ${unit}`, "Total"];
- if (key === "y") return [`${value}`, "Variation"];
- if (key === "z") return [`${value} days`, "Rainy Days"];
- return [value, key];
- }}
- />
- <Scatter data={scatterData}>
- {data.map((entry) => (
- <Cell key={entry.estate} fill={ESTATE_COLORS[entry.estate]} stroke="#ffffff" strokeWidth={2} />
- ))}
- </Scatter>
- </ScatterChart>
- </ResponsiveContainer>
  );
 }
 
