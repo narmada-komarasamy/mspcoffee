@@ -50,7 +50,8 @@ const TT_STYLE = {
 };
 const GRID_COLOR = "#e5dfc8";
 const AXIS_TICK_LIGHT = "#6b7280";
-type TooltipValue = string | number | Array<string | number>;
+type TooltipValue = string | number | readonly (string | number)[] | undefined;
+type TooltipName = string | number | undefined;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -649,11 +650,13 @@ function PatternScatter({ data, scatterData, unit }: { data: Array<{ estate: str
  <YAxis dataKey="y" name="Variation" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} />
  <ZAxis dataKey="z" range={[80, 400]} />
  <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={TT_STYLE}
- formatter={(v: TooltipValue, name: string) => {
- if (name === "x") return [`${v} ${unit}`, "Total"];
- if (name === "y") return [`${v}`, "Variation"];
- if (name === "z") return [`${v} days`, "Rainy Days"];
- return [v, name];
+ formatter={(v: TooltipValue, name: TooltipName) => {
+ const key = String(name ?? "");
+ const value = v ?? "—";
+ if (key === "x") return [`${value} ${unit}`, "Total"];
+ if (key === "y") return [`${value}`, "Variation"];
+ if (key === "z") return [`${value} days`, "Rainy Days"];
+ return [value, key];
  }}
  />
  <Scatter data={scatterData}>
@@ -674,10 +677,12 @@ function DryStreakChart({ data }: { data: Array<{ estate: string; maxStreak: num
  <XAxis type="number" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit=" days" />
  <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={90} />
  <Tooltip contentStyle={TT_STYLE}
- formatter={(v: TooltipValue, name: string) => {
- if (name === "maxStreak") return [`${v} days`, "Max streak"];
- if (name === "avgStreak") return [`${v} days`, "Avg streak"];
- return [v, name];
+ formatter={(v: TooltipValue, name: TooltipName) => {
+ const key = String(name ?? "");
+ const value = v ?? "—";
+ if (key === "maxStreak") return [`${value} days`, "Max streak"];
+ if (key === "avgStreak") return [`${value} days`, "Avg streak"];
+ return [value, key];
  }}
  />
  <Legend wrapperStyle={{ fontSize: 10 }} />
