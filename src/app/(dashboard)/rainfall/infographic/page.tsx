@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
 import {
- LineChart, Line, BarChart, Bar, XAxis, YAxis,
+ BarChart, Bar, XAxis, YAxis,
  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
  Cell,
 } from "recharts";
@@ -456,16 +456,6 @@ const yoyLabel = `${analysisMonth ? MONTH_NAMES[analysisMonth - 1] : "Full year"
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 4 — Monthly line chart */}
- {/* ══════════════════════════════════════════════════════════════════════ */}
- <div className={s.row2}>
- <div className={`${s.card} ${s.cardWide}`}>
- <div className={s.cardLabel}>Monthly Rainfall by Estate</div>
- <MonthlyLine data={displayData} estates={activeEstates} unit={unit} />
- </div>
- </div>
-
- {/* ══════════════════════════════════════════════════════════════════════ */}
  {/* ROW 5 — Dry streak + Year-over-year */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.analysisSection}>
@@ -588,39 +578,6 @@ const yoyLabel = `${analysisMonth ? MONTH_NAMES[analysisMonth - 1] : "Full year"
 // ══════════════════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
-
-function MonthlyLine({ data, estates, unit }: { data: Row[]; estates: readonly string[]; unit: string }) {
- const chartData = useMemo(() => {
- const map: Record<string, Record<string, number>> = {};
- data.forEach(r => {
- if (!estates.includes(r.estate)) return;
- const k = `${ yr(r.date)}-${String( mo(r.date)).padStart(2, "0")}`;
- if (!map[k]) map[k] = {};
- map[k][r.estate] = (map[k][r.estate] ?? 0) + r.rainfall_mm;
- });
- return Object.entries(map)
- .sort(([a], [b]) => a.localeCompare(b))
- .map(([k, v]) => {
- const [year, month] = k.split("-");
- return { name: `${MONTH_SHORT[Number(month) - 1]} ${year.slice(2)}`, ...v };
- });
- }, [data, estates]);
-
- return (
- <ResponsiveContainer width="100%" height={280}>
- <LineChart data={chartData}>
- <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
- <XAxis dataKey="name" tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} />
- <YAxis tick={{ fontSize: 11, fill: AXIS_TICK_LIGHT }} unit={unit} />
- <Tooltip contentStyle={TT_STYLE} labelStyle={{ color: "#1b4a1b", fontWeight: 700 }} />
- <Legend wrapperStyle={{ fontSize: 11 }} />
- {estates.map(e => (
- <Line key={e} type="monotone" dataKey={e} stroke={ESTATE_COLORS[e]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
- ))}
- </LineChart>
- </ResponsiveContainer>
- );
-}
 
 function EstateAnnualRanking({ stats, unit }: { stats: Array<{ estate: string; total: number; rainyDays: number }>; unit: string }) {
  const maxTotal = Math.max(...stats.map((entry) => entry.total), 1);
