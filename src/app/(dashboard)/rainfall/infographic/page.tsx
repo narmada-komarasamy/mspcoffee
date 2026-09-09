@@ -50,6 +50,7 @@ const TT_STYLE = {
 };
 const GRID_COLOR = "#e5dfc8";
 const AXIS_TICK_LIGHT = "#6b7280";
+type TooltipValue = string | number | Array<string | number>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -65,7 +66,9 @@ export default function RainfallInfographic() {
  const [tlPeriod, setTlPeriod] = useState<"month" | "quarter" | "half" | "year">("month");
  const [tlMonth, setTlMonth] = useState<number>(new Date().getMonth());
  const IN_FACTOR = 25.4;
- const toDisplay = (mm: number) => unit === "mm" ? mm : mm / IN_FACTOR;
+ const unitLabel = unit === "mm" ? "mm" : "inches";
+ const toDisplay = useCallback((mm: number) => unit === "mm" ? mm : mm / IN_FACTOR, [unit]);
+ const formatRain = useCallback((mm: number, digits = unit === "mm" ? 0 : 2) => rnd(toDisplay(mm), digits), [toDisplay, unit]);
 
  // ── live fetch ─────────────────────────────────────────────────────────────
  useEffect(() => {
@@ -112,7 +115,7 @@ export default function RainfallInfographic() {
  }, [data, selectedEstate, selectedYear, selectedMonth]);
 
  // ── display-ready data (unit conversion) ────────────────────────────────────
- const displayData = useMemo(() => filteredData.map(r => ({ ...r, rainfall_mm: toDisplay(r.rainfall_mm) })), [filteredData, unit]);
+ const displayData = useMemo(() => filteredData.map(r => ({ ...r, rainfall_mm: toDisplay(r.rainfall_mm) })), [filteredData, toDisplay]);
 
  // ── seasonal profile data ───────────────────────────────────────────────────
  const seasonalData = useMemo(() => {
@@ -133,24 +136,23 @@ export default function RainfallInfographic() {
  const wetMonths = s.months.filter(m => monthlyTotals[m] > 0);
  const monthLabels: Record<number, string> = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"};
  const monthsStr = wetMonths.length
- ? wetMonths.map(m => `${monthLabels[m]} (${Math.round(monthlyTotals[m])}${unit})`).join(" · ")
+ ? wetMonths.map(m => `${monthLabels[m]} (${formatRain(monthlyTotals[m])}${unit})`).join(" · ")
  : "No rain";
  return {
  ...s,
- total: Math.round(total),
+ total: formatRain(total),
  monthsStr,
  note: wetMonths.length > 0 && monthsStr !== "No rain"
  ? `${wetMonths.length} wet month${wetMonths.length > 1 ? "s" : ""}`
  : s.defaultNote,
  };
  });
-}, [filteredData, unit]);
+}, [filteredData, formatRain, unit]);
 
  // ── estate stats (always computed from full data, estate-only filter) ───────
  const estateStats = useMemo(() => {
  const now = new Date();
  const curYear = now.getFullYear();
- const source = filteredData;
 
  return ESTATES.map(estate => {
  const eData = filteredData.filter(r => r.estate === estate && r.rainfall_mm > 0);
@@ -170,10 +172,10 @@ export default function RainfallInfographic() {
  });
 
  const dates = eData.map(r => r.date).sort();
- let maxDry = 0, totalDryDays = 0;
+ let maxDry = 0;
  for (let i = 1; i < dates.length; i++) {
  const gap = daysBetween(dates[i-1], dates[i]);
- if (gap > 1) { totalDryDays += gap - 1; maxDry = Math.max(maxDry, gap - 1); }
+ if (gap > 1) { maxDry = Math.max(maxDry, gap - 1); }
  }
 
  const curTotal = eData.filter(r =>  yr(r.date) === curYear).reduce((s, r) => s + r.rainfall_mm, 0);
@@ -185,9 +187,9 @@ export default function RainfallInfographic() {
  const stdDev = vals.length ? Math.sqrt(vals.reduce((s, v) => s + (v - mean)**2, 0) / vals.length) : 0;
  const variationCoeff = mean > 0 ? rnd(stdDev / mean, 2) : 0;
 
- return { estate, total: r1(total), rainyDays, peakMonth, peakMm: rnd(peakMm), seasonal, maxDry, yoyDelta, variationCoeff, mean: rnd(mean) };
+ return { estate, total: formatRain(total), rainyDays, peakMonth, peakMm: formatRain(peakMm), seasonal, maxDry, yoyDelta, variationCoeff, mean: formatRain(mean) };
  }).sort((a, b) => b.total - a.total);
- }, [data, selectedEstate, selectedYear, selectedMonth]);
+ }, [filteredData, formatRain]);
 
  // ── scatter data ────────────────────────────────────────────────────────────
  const scatterData = useMemo(() => estateStats.map(s => ({
@@ -210,33 +212,6 @@ export default function RainfallInfographic() {
  count: streaks.length,
  dist: {},
  };
- });
- }, [filteredData]);
-
- // ── heatmap ────────────────────────────────────────────────────────────────
- const heatmapData = useMemo(() => {
- const map: Record<string, Record<string, number>> = {};
- filteredData.forEach(r => {
- if (!map[r.estate]) map[r.estate] = {};
- const key = `${MONTH_SHORT[ mo(r.date) - 1]}-${ yr(r.date)}`;
- map[r.estate][key] = (map[r.estate][key] ?? 0) + r.rainfall_mm;
- });
- return map;
- }, [filteredData]);
-
- // ── monthly matrix ─────────────────────────────────────────────────────────
- const monthlyMatrix = useMemo(() => {
- const years = [...new Set(filteredData.map(r =>  yr(r.date)))].sort((a, b) => b - a);
- return ESTATES.map(estate => {
- const row: Record<string, number | string> = { estate };
- years.forEach(y => {
- const total = filteredData.filter(r => r.estate === estate &&  yr(r.date) === y).reduce((s, r) => s + r.rainfall_mm, 0);
- row[String(y)] = rnd(total);
- });
- const last3 = years.slice(0, 3);
- const avg = last3.length ? rnd(last3.reduce((s, y) => s + (row[String(y)] as number), 0) / last3.length) : 0;
- row.avg = avg;
- return row;
  });
  }, [filteredData]);
 
@@ -276,12 +251,12 @@ export default function RainfallInfographic() {
  <div className={s.header}>
  <div>
  <h1 className={s.title}>MSP Coffee</h1>
- <p className={s.subtitle}>Rainfall Infographic · All Estates · Live Data {filterLabel()} · {unit === "mm" ? "mm" : "inches"}</p>
+ <p className={s.subtitle}>Rainfall Infographic · All Estates · Live Data {filterLabel()} · {unitLabel}</p>
  </div>
  <div className={s.headerKpis}>
  <div className={s.hKpi}>
  <span className={s.hKpiVal}>{r1(displayData.filter(r=>r.rainfall_mm>0).reduce((s,r)=>s+r.rainfall_mm,0)/1000).toFixed(1)}k</span>
- <span className={s.hKpiLbl}>Total {unit} logged</span>
+ <span className={s.hKpiLbl}>Total {unitLabel} logged</span>
  </div>
  <div className={s.hKpi}>
  <span className={s.hKpiVal}>{new Set(filteredData.map(r=>r.date)).size}</span>
@@ -491,8 +466,8 @@ export default function RainfallInfographic() {
  <table className={s.cmpTable}>
  <thead>
  <tr>
- <th>Rank</th><th>Estate</th><th>Total ({unit})</th><th>Rainy Days</th>
- <th>Peak Month</th><th>Peak ({unit})</th><th>YoY Δ</th><th>Variation</th>
+ <th>Rank</th><th>Estate</th><th>Total ({unitLabel})</th><th>Rainy Days</th>
+ <th>Peak Month</th><th>Peak ({unitLabel})</th><th>YoY Δ</th><th>Variation</th>
  </tr>
  </thead>
  <tbody>
@@ -603,7 +578,7 @@ function AnnualBarChart({ data, selected, unit }: { data: Row[]; selected: strin
 }
 
 function RainfallHeatmap({ data, selected, unit }: { data: Row[]; selected: string; unit: string }) {
- const estates: readonly string[] = selected === "all" ? ESTATES : [selected];
+ const estates = useMemo<readonly string[]>(() => selected === "all" ? ESTATES : [selected], [selected]);
  const years = useMemo(() => [...new Set(data.map(r =>  yr(r.date)))].sort((a, b) => b - a).slice(0, 5), [data]);
 
  const matrix = useMemo(() => {
@@ -674,7 +649,7 @@ function PatternScatter({ data, scatterData, unit }: { data: Array<{ estate: str
  <YAxis dataKey="y" name="Variation" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} />
  <ZAxis dataKey="z" range={[80, 400]} />
  <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={TT_STYLE}
- formatter={(v: any, name: any) => {
+ formatter={(v: TooltipValue, name: string) => {
  if (name === "x") return [`${v} ${unit}`, "Total"];
  if (name === "y") return [`${v}`, "Variation"];
  if (name === "z") return [`${v} days`, "Rainy Days"];
@@ -699,7 +674,7 @@ function DryStreakChart({ data }: { data: Array<{ estate: string; maxStreak: num
  <XAxis type="number" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit=" days" />
  <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={90} />
  <Tooltip contentStyle={TT_STYLE}
- formatter={(v: any, name: any) => {
+ formatter={(v: TooltipValue, name: string) => {
  if (name === "maxStreak") return [`${v} days`, "Max streak"];
  if (name === "avgStreak") return [`${v} days`, "Avg streak"];
  return [v, name];
@@ -749,7 +724,10 @@ function YoYDeltaChart({ estateStats }: { estateStats: Array<{ estate: string; y
  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
  <XAxis type="number" tick={{ fontSize: 10, fill: AXIS_TICK_LIGHT }} unit="%" />
  <YAxis dataKey="estate" type="category" tick={{ fontSize: 10, fill: "#1b4a1b" }} width={100} />
- <Tooltip contentStyle={TT_STYLE} formatter={(v: any) => [`${v >= 0 ? "+" : ""}${v}%`, "YoY Change"]} />
+ <Tooltip contentStyle={TT_STYLE} formatter={(v: TooltipValue) => {
+ const value = Number(v);
+ return [`${value >= 0 ? "+" : ""}${v}%`, "YoY Change"];
+ }} />
  <Bar dataKey="yoyDelta" radius={[0, 4, 4, 0]} barSize={18}>
  {estateStats.map(entry => (
  <Cell key={entry.estate} fill={yoyFill(entry.yoyDelta)} />
