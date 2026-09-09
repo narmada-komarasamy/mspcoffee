@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
-import { SlidersHorizontal } from "lucide-react";
 import {
  LineChart, Line, BarChart, Bar, XAxis, YAxis,
  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -28,16 +27,26 @@ const MONTH_NAMES = ["January","February","March","April","May","June","July","A
 
 // ── types ────────────────────────────────────────────────────────────────────
 type Row = { id: number; date: string; estate: string; rainfall_mm: number; inches: number };
-const yr = (d: string) => new Date(d).getFullYear();
-const mo = (d: string) => new Date(d).getMonth() + 1;
+const dateParts = (d: string) => {
+ const [year, month, day] = d.slice(0, 10).split("-").map(Number);
+ return { year, month, day };
+};
+const yr = (d: string) => dateParts(d).year;
+const mo = (d: string) => dateParts(d).month;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const rnd = (n: number, d = 1) => Math.round(n * 10**d) / 10**d;
+const seasonForMonth = (month: number) => {
+ if (month >= 10) return "NE Monsoon";
+ if (month >= 6) return "SW Monsoon";
+ if (month >= 3) return "Summer";
+ return "Winter";
+};
 
 function daysBetween(a: string, b: string) {
- const da = new Date(a), db = new Date(b);
- return Math.round((db.getTime() - da.getTime()) / 864e5);
+ const da = dateParts(a), db = dateParts(b);
+ return Math.round((Date.UTC(db.year, db.month - 1, db.day) - Date.UTC(da.year, da.month - 1, da.day)) / 864e5);
 }
 
 // chart theme
@@ -66,7 +75,6 @@ export default function RainfallInfographic() {
  const [unit, setUnit] = useState<"mm" | "in">("mm");
  const [tlYear, setTlYear] = useState<number>(new Date().getFullYear());
  const [tlMonth, setTlMonth] = useState<number>(new Date().getMonth());
- const [showAnalysisFilters, setShowAnalysisFilters] = useState(false);
  const IN_FACTOR = 25.4;
  const unitLabel = unit === "mm" ? "mm" : "inches";
  const toDisplay = useCallback((mm: number) => unit === "mm" ? mm : mm / IN_FACTOR, [unit]);
@@ -98,12 +106,9 @@ export default function RainfallInfographic() {
 
  // ── year / month lists ─────────────────────────────────────────────────────
  const yearsList = useMemo(() => {
- const raw = [...new Set(data.map(r => yr(r.date)))].sort((a, b) => b - a);
- console.log("[rainfall] data rows:", data.length, "yearsList:", raw, "sample date:", data[0]?.date);
- return raw;
+ return [...new Set(data.map(r => yr(r.date)))].sort((a, b) => b - a);
  }, [data]);
 
- // When year changes, reset month and rebuild months list from that year
  // Always show all 12 months
  const monthsList = useMemo(() => [1,2,3,4,5,6,7,8,9,10,11,12], []);
  const activeEstates = useMemo<readonly string[]>(
@@ -158,8 +163,7 @@ export default function RainfallInfographic() {
 
  // ── estate stats (always computed from full data, estate-only filter) ───────
  const estateStats = useMemo(() => {
- const now = new Date();
- const curYear = now.getFullYear();
+ const comparisonYear = selectedYear !== "all" ? Number(selectedYear) : yearsList[0];
 
  return activeEstates.map(estate => {
  const eData = filteredData.filter(r => r.estate === estate && r.rainfall_mm > 0);
@@ -172,9 +176,9 @@ export default function RainfallInfographic() {
  let peakMonth = 0, peakMm = 0;
  Object.entries(monthly).forEach(([m, v]) => { if (v > peakMm) { peakMm = v; peakMonth = Number(m); } });
 
- const seasonal: Record<number, number> = {};
+ const seasonal: Record<string, number> = {};
  eData.forEach(r => {
- const sKey =  mo(r.date) >= 6 ? 0 :  mo(r.date) >= 3 ? 1 :  mo(r.date) >= 10 ? 2 : 3;
+ const sKey = seasonForMonth(mo(r.date));
  seasonal[sKey] = (seasonal[sKey] ?? 0) + r.rainfall_mm;
  });
 
@@ -185,8 +189,8 @@ export default function RainfallInfographic() {
  if (gap > 1) { maxDry = Math.max(maxDry, gap - 1); }
  }
 
- const curTotal = eData.filter(r =>  yr(r.date) === curYear).reduce((s, r) => s + r.rainfall_mm, 0);
- const priorTotal = eData.filter(r =>  yr(r.date) === curYear - 1 && r.estate === estate).reduce((s, r) => s + r.rainfall_mm, 0);
+ const curTotal = comparisonYear ? eData.filter(r => yr(r.date) === comparisonYear).reduce((s, r) => s + r.rainfall_mm, 0) : 0;
+ const priorTotal = comparisonYear ? eData.filter(r => yr(r.date) === comparisonYear - 1).reduce((s, r) => s + r.rainfall_mm, 0) : 0;
  const yoyDelta = priorTotal > 0 ? rnd(((curTotal - priorTotal) / priorTotal) * 100) : null;
 
  const vals = Object.values(monthly).filter(v => v > 0);
@@ -196,7 +200,7 @@ export default function RainfallInfographic() {
 
  return { estate, total: formatRain(total), rainyDays, peakMonth, peakMm: formatRain(peakMm), seasonal, maxDry, yoyDelta, variationCoeff, mean: formatRain(mean) };
  }).sort((a, b) => b.total - a.total);
- }, [activeEstates, filteredData, formatRain]);
+ }, [activeEstates, filteredData, formatRain, selectedYear, yearsList]);
 
  const annualRankingStats = useMemo(() => {
  return activeEstates.map(estate => {
@@ -466,17 +470,7 @@ export default function RainfallInfographic() {
  <div className={s.cardLabel}>Trend Filters</div>
  <p className={s.cardHint}>Showing {trendFilterLabel} · {selectedEstates.length ? selectedEstates.join(", ") : "All estates"}</p>
  </div>
- <button
- className={s.filterToggleBtn}
- type="button"
- aria-expanded={showAnalysisFilters}
- onClick={() => setShowAnalysisFilters((value) => !value)}
- >
- <SlidersHorizontal size={15} />
- Filters
- </button>
  </div>
- {showAnalysisFilters && (
  <div className={s.analysisFilters}>
  <div className={s.ymSelectWrap}>
  <label className={s.ymLabel} htmlFor="analysis-year-select">Year</label>
@@ -516,7 +510,6 @@ export default function RainfallInfographic() {
  ))}
  </div>
  </div>
- )}
  <div className={s.row2}>
  <div className={s.card}>
  <div className={s.cardLabel}>Dry Streak Analysis</div>
@@ -576,7 +569,7 @@ export default function RainfallInfographic() {
  </tbody>
  </table>
  </div>
- <div className={s.sourceNote}>Data sourced live from Supabase `rainfall` table. YoY Δ compares current year to prior year.</div>
+ <div className={s.sourceNote}>Data sourced live from Supabase `rainfall` table. YoY Δ compares the selected year to the prior year.</div>
  </div>
  </div>
 
@@ -604,8 +597,8 @@ function MonthlyLine({ data, estates, unit }: { data: Row[]; estates: readonly s
  return Object.entries(map)
  .sort(([a], [b]) => a.localeCompare(b))
  .map(([k, v]) => {
- const [, mo] = k.split("-");
- return { name: `${MONTH_SHORT[Number(mo) - 1]}`, ...v };
+ const [year, month] = k.split("-");
+ return { name: `${MONTH_SHORT[Number(month) - 1]} ${year.slice(2)}`, ...v };
  });
  }, [data, estates]);
 
@@ -675,6 +668,7 @@ function MonthlyEstateMatrix({ data, estates, year, unit }: { data: Row[]; estat
  }, [data, estates, year, unit]);
 
  const maxMonth = Math.max(...rows.flatMap((row) => row.months.map((month) => month.total)), 1);
+ const hasRain = rows.some((row) => row.total > 0);
  const levelClass = (value: number) => {
  if (value <= 0) return s.matrixEmpty;
  const ratio = value / maxMonth;
@@ -685,6 +679,7 @@ function MonthlyEstateMatrix({ data, estates, year, unit }: { data: Row[]; estat
  };
 
  if (!year) return <div className={s.emptyChart}>No year available</div>;
+ if (!hasRain) return <div className={s.emptyChart}>No rainfall recorded for these estates in {year}.</div>;
 
  return (
  <div className={s.matrixWrap}>
@@ -725,6 +720,11 @@ function MonthlyEstateMatrix({ data, estates, year, unit }: { data: Row[]; estat
 }
 
 function DryStreakChart({ data }: { data: Array<{ estate: string; maxStreak: number; avgStreak: number; count: number; dist: Record<number, number> }> }) {
+ const hasStreaks = data.some((entry) => entry.maxStreak > 0 || entry.avgStreak > 0);
+ if (!hasStreaks) {
+ return <div className={s.emptyChart}>No rainy-day streaks found for this selection.</div>;
+ }
+
  return (
  <ResponsiveContainer width="100%" height={240}>
  <BarChart data={data} layout="vertical">
@@ -753,7 +753,7 @@ function SeasonalStacked({ data, unit }: { data: Row[]; unit: string }) {
  const out: Record<string, Record<string, number>> = {};
  data.forEach(r => {
  if (!out[r.estate]) out[r.estate] = {};
- const sk =  mo(r.date) >= 6 ? "SW Monsoon" :  mo(r.date) >= 10 ? "NE Monsoon" :  mo(r.date) <= 2 ? "Winter" : "Summer";
+ const sk = seasonForMonth(mo(r.date));
  out[r.estate][sk] = (out[r.estate][sk] ?? 0) + r.rainfall_mm;
  });
  return ESTATES.map(e => ({ estate: e, ...out[e] }));
@@ -778,6 +778,11 @@ function SeasonalStacked({ data, unit }: { data: Row[]; unit: string }) {
 
 function YoYDeltaChart({ estateStats }: { estateStats: Array<{ estate: string; yoyDelta: number | null }> }) {
  const yoyFill = (v: number | null) => v !== null && v >= 0 ? "#059669" : "#dc2626";
+ const hasComparison = estateStats.some((entry) => entry.yoyDelta !== null);
+ if (!hasComparison) {
+ return <div className={s.emptyChart}>No prior-year rainfall data available for this comparison.</div>;
+ }
+
  return (
  <ResponsiveContainer width="100%" height={280}>
  <BarChart data={estateStats} layout="vertical">
@@ -816,7 +821,7 @@ function SameMonthComparison({ data, year, month, unit, estates, estateColors }:
  let mm = 0;
  const dateSet = new Set<string>();
  for (const r of data) {
- if (r.estate === estateName && new Date(r.date).getFullYear() === targetYear && new Date(r.date).getMonth() === month) {
+ if (r.estate === estateName && yr(r.date) === targetYear && mo(r.date) === month + 1) {
  mm += r.rainfall_mm;
  if (r.rainfall_mm > 0) dateSet.add(r.date);
  }
