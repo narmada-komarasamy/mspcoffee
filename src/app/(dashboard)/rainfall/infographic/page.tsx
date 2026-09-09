@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
+import { SlidersHorizontal } from "lucide-react";
 import {
  LineChart, Line, BarChart, Bar, XAxis, YAxis,
  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -65,6 +66,7 @@ export default function RainfallInfographic() {
  const [unit, setUnit] = useState<"mm" | "in">("mm");
  const [tlYear, setTlYear] = useState<number>(new Date().getFullYear());
  const [tlMonth, setTlMonth] = useState<number>(new Date().getMonth());
+ const [showAnalysisFilters, setShowAnalysisFilters] = useState(false);
  const IN_FACTOR = 25.4;
  const unitLabel = unit === "mm" ? "mm" : "inches";
  const toDisplay = useCallback((mm: number) => unit === "mm" ? mm : mm / IN_FACTOR, [unit]);
@@ -223,6 +225,23 @@ export default function RainfallInfographic() {
  };
  });
  }, [activeEstates, filteredData]);
+
+ const analysisYear = selectedYear !== "all" ? Number(selectedYear) : tlYear;
+ const analysisMonth = selectedMonth !== "all" ? Number(selectedMonth) : null;
+ const trendFilterLabel = `${selectedYear !== "all" ? selectedYear : "All years"} · ${selectedMonth !== "all" ? MONTH_NAMES[Number(selectedMonth) - 1] : "All months"}`;
+ const yoyLabel = `${analysisMonth ? MONTH_NAMES[analysisMonth - 1] : "Full year"} ${analysisYear}`;
+ const analysisYoYStats = useMemo(() => {
+ const totalFor = (estate: string, targetYear: number) => data
+ .filter(r => r.estate === estate && yr(r.date) === targetYear && (!analysisMonth || mo(r.date) === analysisMonth))
+ .reduce((sum, row) => sum + row.rainfall_mm, 0);
+
+ return activeEstates.map(estate => {
+ const currentTotal = totalFor(estate, analysisYear);
+ const priorTotal = totalFor(estate, analysisYear - 1);
+ const yoyDelta = priorTotal > 0 ? rnd(((currentTotal - priorTotal) / priorTotal) * 100) : null;
+ return { estate, yoyDelta };
+ }).sort((a, b) => (b.yoyDelta ?? -Infinity) - (a.yoyDelta ?? -Infinity));
+ }, [activeEstates, analysisMonth, analysisYear, data]);
 
  const toggleEstate = (estate: string) => {
  setSelectedEstates((prev) => prev.includes(estate) ? prev.filter((item) => item !== estate) : [...prev, estate]);
@@ -439,14 +458,82 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 5 — Dry streak + Seasonal stacked */}
+ {/* ROW 5 — Dry streak + Year-over-year */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
+ <div className={s.analysisSection}>
+ <div className={s.analysisHeader}>
+ <div>
+ <div className={s.cardLabel}>Trend Filters</div>
+ <p className={s.cardHint}>Showing {trendFilterLabel} · {selectedEstates.length ? selectedEstates.join(", ") : "All estates"}</p>
+ </div>
+ <button
+ className={s.filterToggleBtn}
+ type="button"
+ aria-expanded={showAnalysisFilters}
+ onClick={() => setShowAnalysisFilters((value) => !value)}
+ >
+ <SlidersHorizontal size={15} />
+ Filters
+ </button>
+ </div>
+ {showAnalysisFilters && (
+ <div className={s.analysisFilters}>
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel} htmlFor="analysis-year-select">Year</label>
+ <select
+ id="analysis-year-select"
+ className={s.ymSelect}
+ value={selectedYear}
+ onChange={e => { setSelectedYear(e.target.value); if (e.target.value === "all") setSelectedMonth("all"); }}
+ >
+ <option value="all">Center Year</option>
+ {yearsList.map(y => <option key={y} value={String(y)}>{y}</option>)}
+ </select>
+ </div>
+ <div className={s.ymSelectWrap}>
+ <label className={s.ymLabel} htmlFor="analysis-month-select">Month</label>
+ <select
+ id="analysis-month-select"
+ className={s.ymSelect}
+ value={selectedMonth}
+ onChange={e => setSelectedMonth(e.target.value)}
+ disabled={selectedYear === "all"}
+ >
+ <option value="all">Full Year</option>
+ {monthsList.map(m => <option key={m} value={String(m)}>{MONTH_NAMES[m - 1]}</option>)}
+ </select>
+ </div>
+ <div className={s.analysisEstateFilter}>
+ <button className={`${s.filterBtn} ${selectedEstates.length === 0 ? s.filterBtnActive : ""}`}
+ style={selectedEstates.length === 0 ? { background: "#6b7280", color: "#fff", borderColor: "#6b7280" } : {}}
+ onClick={() => setSelectedEstates([])}>All Estates</button>
+ {ESTATES.map(e => (
+ <button key={e} className={`${s.filterBtn} ${selectedEstates.includes(e) ? s.filterBtnActive : ""}`}
+ style={selectedEstates.includes(e) ? { background: ESTATE_COLORS[e], color: "#000", borderColor: ESTATE_COLORS[e] } : {}}
+ onClick={() => toggleEstate(e)}>
+ <span className={s.filterDot} style={{ background: ESTATE_COLORS[e] }} />{e}
+ </button>
+ ))}
+ </div>
+ </div>
+ )}
  <div className={s.row2}>
  <div className={s.card}>
  <div className={s.cardLabel}>Dry Streak Analysis</div>
  <p className={s.cardHint}>Longest consecutive dry days per estate. Higher = longer dry spells.</p>
  <DryStreakChart data={dryStreakData} />
  </div>
+ <div className={s.card}>
+ <div className={s.cardLabel}>Year-over-Year Change — {yoyLabel}</div>
+ <YoYDeltaChart estateStats={analysisYoYStats} />
+ </div>
+ </div>
+ </div>
+
+ {/* ══════════════════════════════════════════════════════════════════════ */}
+ {/* ROW 6 — Seasonal stacked */}
+ {/* ══════════════════════════════════════════════════════════════════════ */}
+ <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
  <div className={s.cardLabel}>Seasonal Rainfall Breakdown by Estate</div>
  <SeasonalStacked data={displayData} unit={unit} />
@@ -454,7 +541,7 @@ export default function RainfallInfographic() {
  </div>
 
  {/* ══════════════════════════════════════════════════════════════════════ */}
- {/* ROW 6 — Matrix table + YoY delta */}
+ {/* ROW 7 — Matrix table */}
  {/* ══════════════════════════════════════════════════════════════════════ */}
  <div className={s.row2}>
  <div className={`${s.card} ${s.cardWide}`}>
@@ -490,10 +577,6 @@ export default function RainfallInfographic() {
  </table>
  </div>
  <div className={s.sourceNote}>Data sourced live from Supabase `rainfall` table. YoY Δ compares current year to prior year.</div>
- </div>
- <div className={s.card}>
- <div className={s.cardLabel}>Year-over-Year Change</div>
- <YoYDeltaChart estateStats={estateStats} />
  </div>
  </div>
 

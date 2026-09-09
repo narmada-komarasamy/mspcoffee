@@ -86,6 +86,63 @@
 .cardHint {
  font-size: 0.65rem; color: var(--t-muted, #6b7280); margin-bottom: 8px; line-height: 1.4;
 }
+.analysisSection {
+ margin-bottom: 16px;
+}
+.analysisHeader {
+ display: flex;
+ align-items: flex-start;
+ justify-content: space-between;
+ gap: 14px;
+ margin-bottom: 10px;
+}
+.analysisHeader .cardLabel {
+ margin-bottom: 4px;
+}
+.analysisHeader .cardHint {
+ margin-bottom: 0;
+}
+.filterToggleBtn {
+ min-height: 34px;
+ display: inline-flex;
+ align-items: center;
+ gap: 7px;
+ border: 1px solid var(--t-border, #e5dfc8);
+ border-radius: 8px;
+ background: var(--t-card, #ffffff);
+ color: var(--t-heading, #1b4a1b);
+ padding: 7px 12px;
+ font-size: 0.72rem;
+ font-weight: 800;
+ cursor: pointer;
+}
+.filterToggleBtn:hover,
+.filterToggleBtn[aria-expanded="true"] {
+ border-color: var(--t-accent, #4a9e4a);
+ background: rgba(74,158,74,0.12);
+}
+.analysisFilters {
+ display: flex;
+ align-items: flex-end;
+ flex-wrap: wrap;
+ gap: 12px;
+ margin-bottom: 14px;
+ padding: 12px 14px;
+ background: var(--t-subtle, #f5eedc);
+ border: 1px solid var(--t-border, #e5dfc8);
+ border-radius: 10px;
+}
+.analysisEstateFilter {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: 8px;
+ min-width: min(100%, 520px);
+}
+@media (max-width: 700px) {
+ .analysisHeader { align-items: stretch; flex-direction: column; }
+ .filterToggleBtn { justify-content: center; }
+}
 
 /* ── KPI grid ── */
 .kpiGrid {
