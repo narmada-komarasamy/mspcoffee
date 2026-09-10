@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  UUID_RE,
+  ESTATE_PRODUCE_RECORD_ID_RE,
   badRequest,
   buildRecordPayload,
   mapRecord,
@@ -19,7 +19,7 @@ function estateProduceSetupError(message: string) {
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!UUID_RE.test(id)) return badRequest('Invalid record id');
+  if (!ESTATE_PRODUCE_RECORD_ID_RE.test(id)) return badRequest('Invalid record id');
 
   const auth = await requireEstateProduceUser(request);
   if ('error' in auth) return auth.error;
@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!UUID_RE.test(id)) return badRequest('Invalid record id');
+  if (!ESTATE_PRODUCE_RECORD_ID_RE.test(id)) return badRequest('Invalid record id');
 
   const auth = await requireEstateProduceUser(request, ['admin']);
   if ('error' in auth) return auth.error;

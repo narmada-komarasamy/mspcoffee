@@ -9,6 +9,7 @@ export const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 export const SOURCES = ['Manual', 'WhatsApp Paste'];
 export const ESTATE_PRODUCE_ROLES = ['admin', 'supervisor', 'worker', 'ceo', 'hr'];
 export const BUCKET = 'estate-produce';
+export const ESTATE_PRODUCE_RECORD_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/;
 
