@@ -281,6 +281,8 @@ export default function EstateProduceTrackerPage() {
   const [aiStatus, setAiStatus] = useState('');
   const [photoModalRecord, setPhotoModalRecord] = useState<ProduceRecord | null>(null);
   const [deleteConfirmRecord, setDeleteConfirmRecord] = useState<ProduceRecord | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState('');
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [savingRecord, setSavingRecord] = useState(false);
@@ -550,9 +552,18 @@ export default function EstateProduceTrackerPage() {
   };
 
   const deleteSelectedRecord = async () => {
-    if (!isAdmin || !deleteConfirmRecord) return;
+    if (!deleteConfirmRecord) return;
+    if (!isAdmin) {
+      setDeleteStatus('Only Admin can delete produce records. Please log in as Admin and try again.');
+      return;
+    }
+    setDeleteBusy(true);
+    setDeleteStatus('');
     try {
-      const response = await fetch(`/api/estate-produce/records/${deleteConfirmRecord.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/estate-produce/records/${deleteConfirmRecord.id}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      });
       const body = await response.json().catch(() => ({})) as { error?: string };
       if (!response.ok) throw new Error(body.error || 'Delete failed');
       setRecords((current) => {
@@ -561,8 +572,14 @@ export default function EstateProduceTrackerPage() {
         return next;
       });
       setDeleteConfirmRecord(null);
+      setDeleteStatus('');
     } catch (error) {
-      setAiStatus(error instanceof Error ? error.message : 'Delete failed');
+      const message = error instanceof Error ? error.message : 'Delete failed';
+      setDeleteStatus(message === 'Access denied' || message === 'Unauthorized'
+        ? 'Delete needs an active Admin login. Please log out, log back in as Admin, and try again.'
+        : message);
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -1028,7 +1045,10 @@ export default function EstateProduceTrackerPage() {
                   </label>
                   {isAdmin && (
                     <button
-                      onClick={() => setDeleteConfirmRecord(selected)}
+                      onClick={() => {
+                        setDeleteStatus('');
+                        setDeleteConfirmRecord(selected);
+                      }}
                       className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1113,14 +1133,31 @@ export default function EstateProduceTrackerPage() {
                 <p className="mt-2 text-sm text-stone-600">
                   This will remove {deleteConfirmRecord.product} from {deleteConfirmRecord.estate} dated {toDateLabel(deleteConfirmRecord.date)} from this tracker.
                 </p>
+                {deleteStatus && (
+                  <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">
+                    {deleteStatus}
+                  </p>
+                )}
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setDeleteConfirmRecord(null)} className="rounded-md border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700">
+              <button
+                disabled={deleteBusy}
+                onClick={() => {
+                  setDeleteConfirmRecord(null);
+                  setDeleteStatus('');
+                }}
+                className="rounded-md border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 Cancel
               </button>
-              <button onClick={deleteSelectedRecord} className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white">
-                Delete Record
+              <button
+                disabled={deleteBusy}
+                onClick={deleteSelectedRecord}
+                className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deleteBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {deleteBusy ? 'Deleting...' : 'Delete Record'}
               </button>
             </div>
           </div>
