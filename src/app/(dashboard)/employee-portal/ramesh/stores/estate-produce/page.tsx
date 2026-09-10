@@ -192,7 +192,7 @@ function parseWhatsAppMessage(message: string, current: Draft): Draft {
 
   const runningTotalNote = [
     toDateQty ? `Message to-date quantity: ${toDateQty}` : '',
-    toDateWeight ? `Message to-date weight: ${toDateWeight} kg` : '',
+    toDateWeight ? `Message to-date total weight: ${toDateWeight} kg` : '',
   ].filter(Boolean).join(' / ');
 
   return {
@@ -552,7 +552,7 @@ export default function EstateProduceTrackerPage() {
   };
 
   const exportCsv = () => {
-    const headers = ['Date', 'Estate', 'Product', 'Qty', 'Unit', 'Weight kg', 'Previous qty', 'Previous weight kg', 'Damage qty', 'Damage weight kg', 'Follow-up', 'Notes'];
+    const headers = ['Date', 'Estate', 'Product', 'Qty', 'Unit', 'Total weight kg', 'Previous qty', 'Previous total weight kg', 'Damage qty', 'Damage weight kg', 'Follow-up', 'Notes'];
     const rows = filteredRecords.map((record) => [
       record.date,
       record.estate,
@@ -626,9 +626,9 @@ export default function EstateProduceTrackerPage() {
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               {[
                 ['Today Pieces', totals.qty.toLocaleString('en-IN'), 'pcs'],
-                ['Today Weight', formatKg(totals.weight), 'kg'],
+                ['Today Total Weight', formatKg(totals.weight), 'kg'],
                 ['To Date Pieces', (totals.qty + totals.previousQty).toLocaleString('en-IN'), 'pcs'],
-                ['To Date Weight', formatKg(totals.weight + totals.previousWeight), 'kg'],
+                ['To Date Total Weight', formatKg(totals.weight + totals.previousWeight), 'kg'],
                 ['Damaged', totals.damageQty.toLocaleString('en-IN'), `pcs / ${formatKg(totals.damageWeight)} kg`],
               ].map(([label, value, unit]) => (
                 <div key={label} className="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
@@ -679,7 +679,7 @@ export default function EstateProduceTrackerPage() {
                       <table className="w-full min-w-[980px] text-left text-sm">
                         <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                           <tr>
-                            {['Date', 'Estate', 'Product', 'Qty', 'Weight', 'Previous', 'To Date', 'Damage', 'Photo', 'Follow-up', 'Notes'].map((heading) => (
+                            {['Date', 'Estate', 'Product', 'Qty', 'Total Weight', 'Previous', 'To Date', 'Damage', 'Photo', 'Follow-up', 'Notes'].map((heading) => (
                               <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                             ))}
                           </tr>
@@ -752,9 +752,9 @@ export default function EstateProduceTrackerPage() {
                     <select value={draft.product} onChange={(event) => updateDraft('product', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{PRODUCTS.map((product) => <option key={product}>{product}</option>)}</select>
                     <select value={draft.unit} onChange={(event) => updateDraft('unit', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select>
                     <input value={draft.qty} onChange={(event) => updateDraft('qty', event.target.value)} placeholder="Quantity" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
-                    <input value={draft.weightKg} onChange={(event) => updateDraft('weightKg', event.target.value)} placeholder="Weight kg" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                    <input value={draft.weightKg} onChange={(event) => updateDraft('weightKg', event.target.value)} placeholder="Total weight kg" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input value={draft.previousQty} onChange={(event) => updateDraft('previousQty', event.target.value)} placeholder="Previous quantity" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
-                    <input value={draft.previousWeightKg} onChange={(event) => updateDraft('previousWeightKg', event.target.value)} placeholder="Previous weight kg" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                    <input value={draft.previousWeightKg} onChange={(event) => updateDraft('previousWeightKg', event.target.value)} placeholder="Previous total weight kg" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input value={draft.damageQty} onChange={(event) => updateDraft('damageQty', event.target.value)} placeholder="Damage quantity" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input value={draft.damageWeightKg} onChange={(event) => updateDraft('damageWeightKg', event.target.value)} placeholder="Damage weight kg" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input value={draft.location} onChange={(event) => updateDraft('location', event.target.value)} placeholder="Location" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
@@ -833,7 +833,7 @@ export default function EstateProduceTrackerPage() {
                       ['Product', draft.product],
                       ['Estate', draft.estate],
                       ['Qty', `${draft.qty} ${draft.unit}`],
-                      ['Weight', `${draft.weightKg} kg`],
+                      ['Total Weight', `${draft.weightKg} kg`],
                       ['Damage', `${draft.damageQty || 0} pcs ${draft.damageNotes ? `(${draft.damageNotes})` : ''}`],
                     ].map(([label, value]) => (
                       <div key={label} className="mt-2 flex justify-between gap-4 border-b border-stone-100 pb-1">
