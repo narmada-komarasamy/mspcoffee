@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ record: mapRecord(data as EstateProduceRow) });
+  return NextResponse.json({ record: mapRecord(data as unknown as EstateProduceRow) });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
