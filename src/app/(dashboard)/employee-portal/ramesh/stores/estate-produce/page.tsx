@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   Image as ImageIcon,
   Loader2,
+  Pencil,
   Plus,
   Search,
   Sparkles,
@@ -171,6 +172,21 @@ function toDateLabel(value: string) {
   });
 }
 
+function dateToDisplayValue(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-');
+    return `${day}/${month}/${year}`;
+  }
+  return value;
+}
+
+function displayToDateValue(value: string) {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return value;
+  const [, day, month, year] = match;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
 function parseWhatsAppMessage(message: string, current: Draft): Draft {
   if (!message.trim()) return current;
 
@@ -267,6 +283,27 @@ function recordWithWhatsAppValues(record: ProduceRecord): ProduceRecord {
   };
 }
 
+function draftFromRecord(record: ProduceRecord): Draft {
+  return {
+    date: record.date,
+    time: record.time,
+    estate: record.estate,
+    product: record.product,
+    unit: record.unit,
+    qty: String(record.qty),
+    weightKg: String(record.weightKg),
+    previousQty: String(record.previousQty),
+    previousWeightKg: String(record.previousWeightKg),
+    damageQty: String(record.damageQty),
+    damageWeightKg: String(record.damageWeightKg),
+    damageNotes: record.damageNotes,
+    location: record.location ?? '',
+    notes: record.notes,
+    addFollowUp: Boolean(record.followUp),
+    followUp: record.followUp ?? 'Pickup needed',
+  };
+}
+
 export default function EstateProduceTrackerPage() {
   const [activeTab, setActiveTab] = useState<'records' | 'add' | 'comparisons' | 'photos'>('records');
   const [records, setRecords] = useState<ProduceRecord[]>([]);
@@ -286,6 +323,7 @@ export default function EstateProduceTrackerPage() {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [savingRecord, setSavingRecord] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [filters, setFilters] = useState({ year: '2026', estate: 'All', product: 'All', unit: 'All', search: '' });
   const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
@@ -368,6 +406,34 @@ export default function EstateProduceTrackerPage() {
 
   const updateDraft = (key: keyof Draft, value: string | boolean) => {
     setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const startEditRecord = (record: ProduceRecord) => {
+    setEditingRecordId(record.id);
+    setDraft(draftFromRecord(record));
+    setWhatsAppMessage(record.sourceMessage ?? '');
+    setEntryMode(record.source === 'WhatsApp Paste' ? 'whatsapp' : 'manual');
+    setPhotoPreview(record.photoUrl ?? '');
+    setDraftPhoto(undefined);
+    setDraftAiCount(record.aiPhotoCount);
+    setPasteStatus('Editing this saved record. Review the fields before updating.');
+    setActiveTab('add');
+  };
+
+  const cancelEditRecord = () => {
+    setEditingRecordId('');
+    setDraft(blankDraft());
+    setWhatsAppMessage('');
+    setPhotoPreview('');
+    setDraftPhoto(undefined);
+    setDraftAiCount(undefined);
+    setPasteStatus('Paste a WhatsApp message to attach it to the next saved record.');
+  };
+
+  const startNewRecord = () => {
+    cancelEditRecord();
+    setEntryMode('whatsapp');
+    setActiveTab('add');
   };
 
   const extractWhatsAppFields = (message: string) => {
@@ -587,7 +653,7 @@ export default function EstateProduceTrackerPage() {
     }
   };
 
-  const addRecord = async () => {
+  const saveRecord = async () => {
     setSavingRecord(true);
     setStatusMessage('');
     const payload = {
@@ -614,18 +680,22 @@ export default function EstateProduceTrackerPage() {
       followUp: draft.addFollowUp ? draft.followUp : undefined,
     };
     try {
-      const response = await fetch('/api/estate-produce/records', {
-        method: 'POST',
+      const response = await fetch(editingRecordId ? `/api/estate-produce/records/${editingRecordId}` : '/api/estate-produce/records', {
+        method: editingRecordId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(payload),
       });
       const body = await response.json().catch(() => ({})) as { record?: ProduceRecord; error?: string };
       if (!response.ok || !body.record) throw new Error(body.error || 'Could not save entry');
-      setRecords((current) => [body.record!, ...current]);
+      setRecords((current) => editingRecordId
+        ? current.map((record) => record.id === editingRecordId ? body.record! : record)
+        : [body.record!, ...current]);
       setSelectedId(body.record.id);
       setActiveTab('records');
       setWhatsAppMessage('');
-      setPasteStatus('Entry saved to Supabase. Paste the next WhatsApp message when ready.');
+      setEditingRecordId('');
+      setPasteStatus(editingRecordId ? 'Record updated in Supabase.' : 'Entry saved to Supabase. Paste the next WhatsApp message when ready.');
       setDraft(blankDraft());
       setPhotoPreview('');
       setDraftPhoto(undefined);
@@ -672,7 +742,7 @@ export default function EstateProduceTrackerPage() {
           <h1 className="mt-2 text-3xl font-bold text-emerald-950">Estate Produce Tracker</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setActiveTab('add')} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900">
+          <button onClick={startNewRecord} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900">
             <Plus className="h-4 w-4" />
             Add Entry
           </button>
@@ -698,7 +768,7 @@ export default function EstateProduceTrackerPage() {
           ].map(([key, label, Icon]) => (
             <button
               key={key as string}
-              onClick={() => setActiveTab(key as typeof activeTab)}
+              onClick={() => key === 'add' ? startNewRecord() : setActiveTab(key as typeof activeTab)}
               className={`inline-flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition ${
                 activeTab === key ? 'border-emerald-800 text-emerald-900' : 'border-transparent text-stone-600 hover:text-emerald-800'
               }`}
@@ -766,7 +836,7 @@ export default function EstateProduceTrackerPage() {
                       <table className="w-full min-w-[880px] text-left text-sm">
                         <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                           <tr>
-                            {['Date', 'Estate', 'Product', 'Qty', 'Total Weight', 'Damage', 'Photo', 'Follow-up', 'Notes'].map((heading) => (
+                            {['Date', 'Estate', 'Product', 'Qty', 'Total Weight', 'Damage', 'Photo', 'Follow-up', 'Notes', 'Action'].map((heading) => (
                               <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                             ))}
                           </tr>
@@ -806,11 +876,26 @@ export default function EstateProduceTrackerPage() {
                               </td>
                               <td className="px-3 py-3">{record.followUp ?? '-'}</td>
                               <td className="px-3 py-3 text-stone-600">{record.notes || record.damageNotes || '-'}</td>
+                              <td className="px-3 py-3">
+                                {isAdmin ? (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      startEditRecord(record);
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    Edit
+                                  </button>
+                                ) : '-'}
+                              </td>
                             </tr>
                           ))}
                           {!loadingRecords && filteredRecords.length === 0 && (
                             <tr>
-                              <td colSpan={9} className="px-3 py-8 text-center text-sm text-stone-500">
+                              <td colSpan={10} className="px-3 py-8 text-center text-sm text-stone-500">
                                 No estate produce records yet. Add the first entry to save it in Supabase.
                               </td>
                             </tr>
@@ -826,12 +911,20 @@ export default function EstateProduceTrackerPage() {
             {activeTab === 'add' && (
               <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
                 <section className="rounded-lg border border-stone-200 bg-white p-4">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="font-bold text-stone-900">{editingRecordId ? 'Edit Entry' : 'Add Entry'}</h2>
+                    {editingRecordId && (
+                      <button onClick={cancelEditRecord} className="rounded-md border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700">
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
                   <div className="mb-4 flex gap-2">
                     <button onClick={() => setEntryMode('manual')} className={`rounded-md px-4 py-2 text-sm font-semibold ${entryMode === 'manual' ? 'bg-emerald-800 text-white' : 'border border-emerald-200 text-emerald-900'}`}>Manual</button>
                     <button onClick={() => setEntryMode('whatsapp')} className={`rounded-md px-4 py-2 text-sm font-semibold ${entryMode === 'whatsapp' ? 'bg-emerald-800 text-white' : 'border border-emerald-200 text-emerald-900'}`}>WhatsApp Paste</button>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input type="date" value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                    <input value={dateToDisplayValue(draft.date)} onChange={(event) => updateDraft('date', displayToDateValue(event.target.value))} placeholder="dd/mm/yyyy" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input type="time" value={draft.time} onChange={(event) => updateDraft('time', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <select value={draft.estate} onChange={(event) => updateDraft('estate', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{ESTATES.map((estate) => <option key={estate}>{estate}</option>)}</select>
                     <select value={draft.product} onChange={(event) => updateDraft('product', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{PRODUCTS.map((product) => <option key={product}>{product}</option>)}</select>
@@ -941,9 +1034,9 @@ export default function EstateProduceTrackerPage() {
                       ))}
                     </div>
                   )}
-                  <button disabled={savingRecord} onClick={addRecord} className="mt-4 inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+                  <button disabled={savingRecord} onClick={saveRecord} className="mt-4 inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
                     {savingRecord ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    {savingRecord ? 'Saving...' : 'Save Entry'}
+                    {savingRecord ? 'Saving...' : editingRecordId ? 'Update Entry' : 'Save Entry'}
                   </button>
                 </section>
               </div>
@@ -1048,16 +1141,25 @@ export default function EstateProduceTrackerPage() {
                     <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
                   </label>
                   {isAdmin && (
-                    <button
-                      onClick={() => {
-                        setDeleteStatus('');
-                        setDeleteConfirmRecord(selected);
-                      }}
-                      className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </button>
+                    <>
+                      <button
+                        onClick={() => startEditRecord(selected)}
+                        className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteStatus('');
+                          setDeleteConfirmRecord(selected);
+                        }}
+                        className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
+                    </>
                   )}
                   <div className="mt-4 space-y-2 text-sm text-stone-600">
                     <p><span className="font-semibold text-stone-900">Damage:</span> {selected.damageQty} pcs {selected.damageNotes}</p>
