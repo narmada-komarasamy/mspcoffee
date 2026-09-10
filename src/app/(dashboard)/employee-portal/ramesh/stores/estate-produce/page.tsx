@@ -336,12 +336,9 @@ export default function EstateProduceTrackerPage() {
       }),
       { qty: 0, weight: 0, damageQty: 0, damageWeight: 0 },
     );
-    const latestRecord = filteredRecords[0];
-
     return {
       ...receivedTotals,
-      latestToDateQty: latestRecord ? latestRecord.previousQty + latestRecord.qty : 0,
-      latestToDateWeight: latestRecord ? latestRecord.previousWeightKg + latestRecord.weightKg : 0,
+      recordCount: filteredRecords.length,
     };
   }, [filteredRecords]);
 
@@ -697,8 +694,7 @@ export default function EstateProduceTrackerPage() {
               {[
                 ['Today Pieces', totals.qty.toLocaleString('en-IN'), 'pcs'],
                 ['Today Total Weight', formatKg(totals.weight), 'kg'],
-                ['Latest To-Date Pieces', totals.latestToDateQty.toLocaleString('en-IN'), 'pcs'],
-                ['Latest To-Date Weight', formatKg(totals.latestToDateWeight), 'kg'],
+                ['Records', totals.recordCount.toLocaleString('en-IN'), 'entries'],
                 ['Damaged', totals.damageQty.toLocaleString('en-IN'), `pcs / ${formatKg(totals.damageWeight)} kg`],
               ].map(([label, value, unit]) => (
                 <div key={label} className="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
@@ -746,10 +742,10 @@ export default function EstateProduceTrackerPage() {
                 {activeTab === 'records' && (
                   <div className="overflow-hidden rounded-lg border border-stone-200">
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[980px] text-left text-sm">
+                      <table className="w-full min-w-[880px] text-left text-sm">
                         <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                           <tr>
-                            {['Date', 'Estate', 'Product', 'Qty', 'Total Weight', 'Previous', 'To Date', 'Damage', 'Photo', 'Follow-up', 'Notes'].map((heading) => (
+                            {['Date', 'Estate', 'Product', 'Qty', 'Total Weight', 'Damage', 'Photo', 'Follow-up', 'Notes'].map((heading) => (
                               <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                             ))}
                           </tr>
@@ -762,8 +758,6 @@ export default function EstateProduceTrackerPage() {
                               <td className="px-3 py-3">{record.product}</td>
                               <td className="px-3 py-3">{record.qty} {record.unit.toLowerCase()}</td>
                               <td className="px-3 py-3">{formatKg(record.weightKg)} kg</td>
-                              <td className="px-3 py-3">{record.previousQty} / {formatKg(record.previousWeightKg)} kg</td>
-                              <td className="px-3 py-3">{record.qty + record.previousQty} / {formatKg(record.weightKg + record.previousWeightKg)} kg</td>
                               <td className={`px-3 py-3 font-semibold ${record.damageQty ? 'text-red-600' : 'text-emerald-700'}`}>{record.damageQty} pcs</td>
                               <td className="px-3 py-3">
                                 {record.photoUrl ? (
@@ -795,7 +789,7 @@ export default function EstateProduceTrackerPage() {
                           ))}
                           {!loadingRecords && filteredRecords.length === 0 && (
                             <tr>
-                              <td colSpan={11} className="px-3 py-8 text-center text-sm text-stone-500">
+                              <td colSpan={9} className="px-3 py-8 text-center text-sm text-stone-500">
                                 No estate produce records yet. Add the first entry to save it in Supabase.
                               </td>
                             </tr>
