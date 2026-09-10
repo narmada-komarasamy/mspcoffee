@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, ClipboardEvent, useMemo, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -8,12 +8,28 @@ import {
   Camera,
   CheckCircle2,
   Download,
+  Eye,
   FileSpreadsheet,
   Image as ImageIcon,
+  Loader2,
   Plus,
   Search,
+  Sparkles,
+  Trash2,
   Upload,
+  X,
 } from 'lucide-react';
+
+type AppUser = { id: string; name: string; role: string; estate: string | null };
+
+type AiPhotoCount = {
+  min: number | null;
+  max: number | null;
+  best: number | null;
+  confidence: string;
+  notes: string;
+  accepted?: boolean;
+};
 
 type ProduceRecord = {
   id: string;
@@ -32,6 +48,7 @@ type ProduceRecord = {
   source: 'Manual' | 'WhatsApp Paste';
   sourceMessage?: string;
   photoUrl?: string;
+  aiPhotoCount?: AiPhotoCount;
   location?: string;
   notes: string;
   followUp?: string;
@@ -61,6 +78,16 @@ const ESTATES = ['ME', 'SE', 'HFE', 'ORD', 'BVE'];
 const PRODUCTS = ['Durian', 'Pepper', 'Cloves', 'Nutmeg', 'Other Produce'];
 const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 const FOLLOW_UPS = ['Pickup needed', 'Sale follow-up', 'Payment follow-up', 'Damage inspection', 'Estimate/quotation due'];
+
+function storedAppUser(): AppUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = window.localStorage.getItem('msp_user');
+    return stored ? JSON.parse(stored) as AppUser : null;
+  } catch {
+    return null;
+  }
+}
 
 const sampleRecords: ProduceRecord[] = [
   {
@@ -219,6 +246,27 @@ function parseNumber(value: string) {
   return Number(value.replace(/,/g, '')) || 0;
 }
 
+function readImageFile(file: File) {
+  return new Promise<{ base64: string; mediaType: string; photoUrl: string }>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? '');
+      const [, base64 = ''] = dataUrl.split(',');
+      resolve({ base64, mediaType: file.type, photoUrl: dataUrl });
+    };
+    reader.onerror = () => reject(new Error('Could not read the image file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function aiCountLabel(count?: AiPhotoCount) {
+  if (!count) return '';
+  if (count.min !== null && count.max !== null && count.min !== count.max) return `${count.min}-${count.max} pieces`;
+  if (count.best !== null) return `${count.best} pieces`;
+  if (count.min !== null) return `${count.min} pieces`;
+  return 'Unable to count confidently';
+}
+
 function toDateLabel(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
     day: '2-digit',
@@ -292,7 +340,20 @@ export default function EstateProduceTrackerPage() {
   const [whatsAppMessage, setWhatsAppMessage] = useState('');
   const [pasteStatus, setPasteStatus] = useState('Paste a WhatsApp message to attach it to the next saved record.');
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [draftAiCount, setDraftAiCount] = useState<AiPhotoCount | undefined>();
+  const [aiStatus, setAiStatus] = useState('');
+  const [photoModalRecord, setPhotoModalRecord] = useState<ProduceRecord | null>(null);
+  const [deleteConfirmRecord, setDeleteConfirmRecord] = useState<ProduceRecord | null>(null);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [filters, setFilters] = useState({ year: '2026', estate: 'All', product: 'All', unit: 'All', search: '' });
+  const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
+
+  useEffect(() => {
+    const loadUser = () => setCurrentUser(storedAppUser());
+    loadUser();
+    window.addEventListener('msp-user-updated', loadUser);
+    return () => window.removeEventListener('msp-user-updated', loadUser);
+  }, []);
 
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
@@ -368,13 +429,55 @@ export default function EstateProduceTrackerPage() {
     extractWhatsAppFields(nextMessage);
   };
 
-  const handleWhatsAppPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+  const runPhotoCount = async (base64: string, mediaType: string, product: string) => {
+    const response = await fetch('/api/estate-produce/photo-count', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64, mediaType, product }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(body.error || 'AI count failed');
+    }
+
+    return await response.json() as AiPhotoCount;
+  };
+
+  const analyzeDraftPhoto = async (base64: string, mediaType: string) => {
+    setDraftAiCount(undefined);
+    setAiStatus('AI is checking the visible count...');
+    try {
+      const count = await runPhotoCount(base64, mediaType, draft.product);
+      setDraftAiCount(count);
+      setAiStatus(`AI counted approximately ${aiCountLabel(count)}. Admin can accept it after review.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI count failed';
+      setAiStatus(`${message}. You can still save the photo and enter quantity manually.`);
+    }
+  };
+
+  const analyzeRecordPhoto = async (recordId: string, base64: string, mediaType: string, product: string) => {
+    setAiStatus('AI is checking the visible count...');
+    try {
+      const count = await runPhotoCount(base64, mediaType, product);
+      setRecords((current) => current.map((record) => (record.id === recordId ? { ...record, aiPhotoCount: count } : record)));
+      setAiStatus(`AI counted approximately ${aiCountLabel(count)}. Admin can accept it after review.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI count failed';
+      setAiStatus(`${message}. Photo is still attached.`);
+    }
+  };
+
+  const handleWhatsAppPaste = async (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = event.clipboardData.getData('text');
     const pastedImage = Array.from(event.clipboardData.files).find((file) => file.type.startsWith('image/'));
 
     if (pastedImage) {
-      setPhotoPreview(URL.createObjectURL(pastedImage));
+      const image = await readImageFile(pastedImage);
+      setPhotoPreview(image.photoUrl);
       setPasteStatus('Photo attached. Paste the WhatsApp text also, then review before saving.');
+      analyzeDraftPhoto(image.base64, image.mediaType);
     }
 
     if (pastedText.trim()) {
@@ -385,17 +488,63 @@ export default function EstateProduceTrackerPage() {
     }
   };
 
-  const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
+  const handlePhoto = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setPhotoPreview(URL.createObjectURL(file));
+    const image = await readImageFile(file);
+    setPhotoPreview(image.photoUrl);
+    setPasteStatus('Photo attached to this entry. Review the AI count and fields before saving.');
+    analyzeDraftPhoto(image.base64, image.mediaType);
   };
 
-  const handleSelectedPhoto = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleSelectedPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selected) return;
-    const photoUrl = URL.createObjectURL(file);
-    setRecords((current) => current.map((record) => (record.id === selected.id ? { ...record, photoUrl } : record)));
+    const image = await readImageFile(file);
+    setRecords((current) => current.map((record) => (record.id === selected.id ? { ...record, photoUrl: image.photoUrl, aiPhotoCount: undefined } : record)));
+    analyzeRecordPhoto(selected.id, image.base64, image.mediaType, selected.product);
+  };
+
+  const useDraftAiCount = () => {
+    if (!isAdmin || !draftAiCount?.best) return;
+    setDraft((current) => ({
+      ...current,
+      qty: String(draftAiCount.best),
+      notes: [current.notes, `AI photo count accepted: ${aiCountLabel(draftAiCount)} (${draftAiCount.confidence || 'unknown'} confidence). ${draftAiCount.notes}`]
+        .filter(Boolean)
+        .join('\n'),
+    }));
+    setDraftAiCount((current) => current ? { ...current, accepted: true } : current);
+  };
+
+  const useSelectedAiCount = () => {
+    if (!isAdmin || !selected.aiPhotoCount?.best) return;
+    const accepted = { ...selected.aiPhotoCount, accepted: true };
+    setRecords((current) => current.map((record) => {
+      if (record.id !== selected.id) return record;
+      const note = `AI photo count accepted: ${aiCountLabel(accepted)} (${accepted.confidence || 'unknown'} confidence). ${accepted.notes}`;
+      return {
+        ...record,
+        qty: accepted.best ?? record.qty,
+        aiPhotoCount: accepted,
+        notes: [record.notes, note].filter(Boolean).join('\n'),
+      };
+    }));
+  };
+
+  const deleteSelectedRecord = () => {
+    if (!isAdmin || !deleteConfirmRecord) return;
+    if (records.length <= 1) {
+      setAiStatus('Keep at least one record in this preview tracker. Database delete can allow empty lists later.');
+      setDeleteConfirmRecord(null);
+      return;
+    }
+    setRecords((current) => {
+      const next = current.filter((record) => record.id !== deleteConfirmRecord.id);
+      setSelectedId(next[0]?.id ?? '');
+      return next;
+    });
+    setDeleteConfirmRecord(null);
   };
 
   const addRecord = () => {
@@ -416,6 +565,7 @@ export default function EstateProduceTrackerPage() {
       source: entryMode === 'whatsapp' ? 'WhatsApp Paste' : 'Manual',
       sourceMessage: entryMode === 'whatsapp' ? whatsAppMessage.trim() || undefined : undefined,
       photoUrl: photoPreview || undefined,
+      aiPhotoCount: draftAiCount,
       location: draft.location,
       notes: draft.notes,
       followUp: draft.addFollowUp ? draft.followUp : undefined,
@@ -427,6 +577,8 @@ export default function EstateProduceTrackerPage() {
     setWhatsAppMessage('');
     setPasteStatus('Entry saved. Paste the next WhatsApp message when ready.');
     setPhotoPreview('');
+    setDraftAiCount(undefined);
+    setAiStatus('');
   };
 
   const exportCsv = () => {
@@ -567,7 +719,21 @@ export default function EstateProduceTrackerPage() {
                               <td className={`px-3 py-3 font-semibold ${record.damageQty ? 'text-red-600' : 'text-emerald-700'}`}>{record.damageQty} pcs</td>
                               <td className="px-3 py-3">
                                 {record.photoUrl ? (
-                                  <img alt="" src={record.photoUrl} className="h-10 w-12 rounded object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setPhotoModalRecord(record);
+                                      setSelectedId(record.id);
+                                    }}
+                                    className="group relative h-10 w-12 overflow-hidden rounded"
+                                    title="Open photo"
+                                  >
+                                    <img alt="" src={record.photoUrl} className="h-full w-full object-cover" />
+                                    <span className="absolute inset-0 hidden items-center justify-center bg-black/35 text-white group-hover:flex">
+                                      <Eye className="h-4 w-4" />
+                                    </span>
+                                  </button>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-stone-400">
                                     <Camera className="h-4 w-4" />
@@ -632,8 +798,48 @@ export default function EstateProduceTrackerPage() {
                   <p className="mt-2 text-xs font-semibold text-emerald-800">{pasteStatus}</p>
                   {photoPreview && (
                     <div className="mt-3 flex items-center gap-3 rounded-md border border-emerald-100 bg-emerald-50 p-2 text-sm text-emerald-900">
-                      <img alt="" src={photoPreview} className="h-14 w-16 rounded object-cover" />
+                      <button type="button" onClick={() => setPhotoModalRecord({
+                        id: 'draft-photo-preview',
+                        date: draft.date,
+                        time: draft.time,
+                        estate: draft.estate,
+                        product: draft.product,
+                        unit: draft.unit,
+                        qty: parseNumber(draft.qty),
+                        weightKg: parseNumber(draft.weightKg),
+                        previousQty: parseNumber(draft.previousQty),
+                        previousWeightKg: parseNumber(draft.previousWeightKg),
+                        damageQty: parseNumber(draft.damageQty),
+                        damageWeightKg: parseNumber(draft.damageWeightKg),
+                        damageNotes: draft.damageNotes,
+                        source: entryMode === 'whatsapp' ? 'WhatsApp Paste' : 'Manual',
+                        photoUrl: photoPreview,
+                        aiPhotoCount: draftAiCount,
+                        location: draft.location,
+                        notes: draft.notes,
+                        enteredBy: 'Admin',
+                      })}>
+                        <img alt="" src={photoPreview} className="h-14 w-16 rounded object-cover" />
+                      </button>
                       <span>Photo attached to this entry. It will save with the record.</span>
+                    </div>
+                  )}
+                  {(draftAiCount || aiStatus) && (
+                    <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                      <div className="flex items-start gap-2">
+                        {aiStatus.includes('checking') ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" /> : <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />}
+                        <div>
+                          <p className="font-semibold">AI Photo Count</p>
+                          <p>{draftAiCount ? `AI counted approximately ${aiCountLabel(draftAiCount)}.` : aiStatus}</p>
+                          {draftAiCount?.notes && <p className="mt-1 text-xs">{draftAiCount.notes}</p>}
+                          {isAdmin && draftAiCount?.best && (
+                            <button onClick={useDraftAiCount} className="mt-2 rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white">
+                              Use AI Count
+                            </button>
+                          )}
+                          {!isAdmin && draftAiCount && <p className="mt-2 text-xs font-semibold">Admin must confirm before this changes quantity.</p>}
+                        </div>
+                      </div>
                     </div>
                   )}
                   <div className="mt-4 rounded-md border border-stone-200 p-3 text-sm">
@@ -706,11 +912,15 @@ export default function EstateProduceTrackerPage() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[selected, ...records.filter((record) => record.id !== selected.id)].slice(0, 6).map((record) => (
                   <div key={record.id} className="rounded-lg border border-stone-200 bg-white p-4">
-                    <div className="flex h-32 items-center justify-center rounded-md bg-emerald-50 text-emerald-800">
+                    <button
+                      type="button"
+                      onClick={() => record.photoUrl && setPhotoModalRecord(record)}
+                      className="flex h-32 w-full items-center justify-center rounded-md bg-emerald-50 text-emerald-800"
+                    >
                       {record.photoUrl ? <img alt="" src={record.photoUrl} className="h-full w-full rounded-md object-cover" /> : <ImageIcon className="h-8 w-8" />}
-                    </div>
+                    </button>
                     <h3 className="mt-3 font-bold text-stone-900">{record.product} / {record.estate}</h3>
-                    <p className="mt-1 text-sm text-stone-500">Photo AI count can be connected here as assisted verification.</p>
+                    <p className="mt-1 text-sm text-stone-500">{record.aiPhotoCount ? `AI count: ${aiCountLabel(record.aiPhotoCount)}` : 'No AI count yet.'}</p>
                   </div>
                 ))}
               </div>
@@ -738,9 +948,13 @@ export default function EstateProduceTrackerPage() {
             <section className="rounded-lg border border-stone-200 bg-white p-4">
               <h2 className="font-bold text-emerald-950">Selected Record</h2>
               <div className="mt-4 flex gap-3">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-800">
+                <button
+                  type="button"
+                  onClick={() => selected.photoUrl && setPhotoModalRecord(selected)}
+                  className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-800"
+                >
                   {selected.photoUrl ? <img alt="" src={selected.photoUrl} className="h-full w-full rounded-md object-cover" /> : <ImageIcon className="h-8 w-8" />}
-                </div>
+                </button>
                 <div className="min-w-0 text-sm">
                   <p className="font-bold text-stone-900">{selected.product}</p>
                   <p className="text-stone-500">{selected.source}</p>
@@ -754,6 +968,15 @@ export default function EstateProduceTrackerPage() {
                 {selected.photoUrl ? 'Replace Photo' : 'Attach Photo'}
                 <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
               </label>
+              {isAdmin && (
+                <button
+                  onClick={() => setDeleteConfirmRecord(selected)}
+                  className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+              )}
               <div className="mt-4 space-y-2 text-sm text-stone-600">
                 <p><span className="font-semibold text-stone-900">Damage:</span> {selected.damageQty} pcs {selected.damageNotes}</p>
                 <p><span className="font-semibold text-stone-900">Location:</span> {selected.location ?? '-'}</p>
@@ -768,8 +991,18 @@ export default function EstateProduceTrackerPage() {
               )}
               <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>Photo AI count: estimate 18-22, verify before save.</span>
+                  {aiStatus.includes('checking') ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                  <div>
+                    <p className="font-semibold">AI Photo Count</p>
+                    <p>{selected.aiPhotoCount ? `AI counted approximately ${aiCountLabel(selected.aiPhotoCount)}.` : 'Attach a photo to run an assisted visible count.'}</p>
+                    {selected.aiPhotoCount?.notes && <p className="mt-1 text-xs">{selected.aiPhotoCount.notes}</p>}
+                    {isAdmin && selected.aiPhotoCount?.best && !selected.aiPhotoCount.accepted && (
+                      <button onClick={useSelectedAiCount} className="mt-2 rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white">
+                        Use AI Count
+                      </button>
+                    )}
+                    {selected.aiPhotoCount?.accepted && <p className="mt-1 text-xs font-semibold text-emerald-800">Admin accepted this AI count.</p>}
+                  </div>
                 </div>
               </div>
               {selected.followUp && (
@@ -782,6 +1015,57 @@ export default function EstateProduceTrackerPage() {
           </aside>
         </div>
       </section>
+
+      {photoModalRecord?.photoUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" role="dialog" aria-modal="true" aria-label="Produce photo preview">
+          <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
+              <div>
+                <p className="font-bold text-emerald-950">{photoModalRecord.product} / {photoModalRecord.estate}</p>
+                <p className="text-sm text-stone-500">{toDateLabel(photoModalRecord.date)} {photoModalRecord.time}</p>
+              </div>
+              <button onClick={() => setPhotoModalRecord(null)} className="rounded-md p-2 text-stone-500 hover:bg-stone-100" aria-label="Close photo preview">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[76vh] overflow-auto bg-stone-950 p-3">
+              <img alt="" src={photoModalRecord.photoUrl} className="mx-auto max-h-[72vh] max-w-full rounded object-contain" />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-4 py-3 text-sm">
+              <span className="text-stone-600">
+                {photoModalRecord.aiPhotoCount ? `AI count: ${aiCountLabel(photoModalRecord.aiPhotoCount)}` : 'No AI count attached yet.'}
+              </span>
+              {photoModalRecord.aiPhotoCount?.notes && <span className="text-stone-500">{photoModalRecord.aiPhotoCount.notes}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Delete produce record">
+          <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-red-50 p-2 text-red-700">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-stone-950">Delete this record?</h2>
+                <p className="mt-2 text-sm text-stone-600">
+                  This will remove {deleteConfirmRecord.product} from {deleteConfirmRecord.estate} dated {toDateLabel(deleteConfirmRecord.date)} from this tracker.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirmRecord(null)} className="rounded-md border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700">
+                Cancel
+              </button>
+              <button onClick={deleteSelectedRecord} className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white">
+                Delete Record
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
