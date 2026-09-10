@@ -227,6 +227,46 @@ function parseWhatsAppMessage(message: string, current: Draft): Draft {
   };
 }
 
+function recordWithWhatsAppValues(record: ProduceRecord): ProduceRecord {
+  if (!record.sourceMessage?.trim()) return record;
+
+  const parsed = parseWhatsAppMessage(record.sourceMessage, {
+    date: record.date,
+    time: record.time,
+    estate: record.estate,
+    product: record.product,
+    unit: record.unit,
+    qty: String(record.qty),
+    weightKg: String(record.weightKg),
+    previousQty: String(record.previousQty),
+    previousWeightKg: String(record.previousWeightKg),
+    damageQty: String(record.damageQty),
+    damageWeightKg: String(record.damageWeightKg),
+    damageNotes: record.damageNotes,
+    location: record.location ?? '',
+    notes: record.notes,
+    addFollowUp: Boolean(record.followUp),
+    followUp: record.followUp ?? 'Pickup needed',
+  });
+
+  return {
+    ...record,
+    date: parsed.date,
+    time: parsed.time,
+    estate: parsed.estate,
+    product: parsed.product,
+    unit: parsed.unit,
+    qty: parseNumber(parsed.qty),
+    weightKg: parseNumber(parsed.weightKg),
+    previousQty: parseNumber(parsed.previousQty),
+    previousWeightKg: parseNumber(parsed.previousWeightKg),
+    damageQty: parseNumber(parsed.damageQty),
+    damageWeightKg: parseNumber(parsed.damageWeightKg),
+    damageNotes: parsed.damageNotes,
+    location: parsed.location,
+  };
+}
+
 export default function EstateProduceTrackerPage() {
   const [activeTab, setActiveTab] = useState<'records' | 'add' | 'comparisons' | 'photos'>('records');
   const [records, setRecords] = useState<ProduceRecord[]>([]);
@@ -281,23 +321,28 @@ export default function EstateProduceTrackerPage() {
     loadRecords();
   }, [loadRecords]);
 
-  const filteredRecords = records;
+  const filteredRecords = useMemo(() => records.map(recordWithWhatsAppValues), [records]);
 
-  const selected = records.find((record) => record.id === selectedId) ?? records[0] ?? null;
-  const photoRecords = selected ? [selected, ...records.filter((record) => record.id !== selected.id)] : records;
+  const selected = filteredRecords.find((record) => record.id === selectedId) ?? filteredRecords[0] ?? null;
+  const photoRecords = selected ? [selected, ...filteredRecords.filter((record) => record.id !== selected.id)] : filteredRecords;
 
   const totals = useMemo(() => {
-    return filteredRecords.reduce(
+    const receivedTotals = filteredRecords.reduce(
       (acc, record) => ({
         qty: acc.qty + record.qty,
         weight: acc.weight + record.weightKg,
-        previousQty: acc.previousQty + record.previousQty,
-        previousWeight: acc.previousWeight + record.previousWeightKg,
         damageQty: acc.damageQty + record.damageQty,
         damageWeight: acc.damageWeight + record.damageWeightKg,
       }),
-      { qty: 0, weight: 0, previousQty: 0, previousWeight: 0, damageQty: 0, damageWeight: 0 },
+      { qty: 0, weight: 0, damageQty: 0, damageWeight: 0 },
     );
+    const latestRecord = filteredRecords[0];
+
+    return {
+      ...receivedTotals,
+      latestToDateQty: latestRecord ? latestRecord.previousQty + latestRecord.qty : 0,
+      latestToDateWeight: latestRecord ? latestRecord.previousWeightKg + latestRecord.weightKg : 0,
+    };
   }, [filteredRecords]);
 
   const chartByYear = useMemo(() => {
@@ -305,7 +350,8 @@ export default function EstateProduceTrackerPage() {
       year,
       weight: records
         .filter((record) => record.date.startsWith(year) && record.product === 'Durian')
-        .reduce((sum, record) => sum + record.weightKg + record.previousWeightKg, 0),
+        .map(recordWithWhatsAppValues)
+        .reduce((sum, record) => sum + record.weightKg, 0),
     }));
   }, [records]);
 
@@ -314,7 +360,8 @@ export default function EstateProduceTrackerPage() {
       estate,
       weight: records
         .filter((record) => record.estate === estate && record.date.startsWith(filters.year === 'All' ? '2026' : filters.year))
-        .reduce((sum, record) => sum + record.weightKg + record.previousWeightKg, 0),
+        .map(recordWithWhatsAppValues)
+        .reduce((sum, record) => sum + record.weightKg, 0),
     }));
   }, [records, filters.year]);
 
@@ -650,8 +697,8 @@ export default function EstateProduceTrackerPage() {
               {[
                 ['Today Pieces', totals.qty.toLocaleString('en-IN'), 'pcs'],
                 ['Today Total Weight', formatKg(totals.weight), 'kg'],
-                ['To Date Pieces', (totals.qty + totals.previousQty).toLocaleString('en-IN'), 'pcs'],
-                ['To Date Total Weight', formatKg(totals.weight + totals.previousWeight), 'kg'],
+                ['Latest To-Date Pieces', totals.latestToDateQty.toLocaleString('en-IN'), 'pcs'],
+                ['Latest To-Date Weight', formatKg(totals.latestToDateWeight), 'kg'],
                 ['Damaged', totals.damageQty.toLocaleString('en-IN'), `pcs / ${formatKg(totals.damageWeight)} kg`],
               ].map(([label, value, unit]) => (
                 <div key={label} className="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
