@@ -55,12 +55,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     .eq('id', id)
     .single<{ photo_path: string | null }>();
 
-  const { error } = await auth.supabase
+  const { data: deletedRecord, error } = await auth.supabase
     .from('estate_produce_records')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select('id')
+    .single<{ id: string }>();
 
   if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
+  if (!deletedRecord) return NextResponse.json({ error: 'Record was not found. Refresh and try again.' }, { status: 404 });
 
   if (record?.photo_path) {
     await auth.supabase.storage.from('estate-produce').remove([record.photo_path]);

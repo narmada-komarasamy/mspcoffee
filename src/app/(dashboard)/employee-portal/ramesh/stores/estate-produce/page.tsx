@@ -571,8 +571,12 @@ export default function EstateProduceTrackerPage() {
         setSelectedId(next[0]?.id ?? '');
         return next;
       });
+      setSelectedId('');
+      setPhotoModalRecord(null);
       setDeleteConfirmRecord(null);
       setDeleteStatus('');
+      setStatusMessage('Record deleted.');
+      await loadRecords();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Delete failed';
       setDeleteStatus(message === 'Access denied' || message === 'Unauthorized'
