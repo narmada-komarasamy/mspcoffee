@@ -9,6 +9,14 @@ import {
   type EstateProduceRow,
 } from '../../_helpers';
 
+function estateProduceSetupError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes('estate_produce_records') || lower.includes('schema cache')) {
+    return 'Estate Produce is not set up in Supabase yet. Run migration supabase/migrations/20260910_estate_produce_tracker.sql in the Supabase SQL Editor, then refresh this page.';
+  }
+  return message;
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!UUID_RE.test(id)) return badRequest('Invalid record id');
@@ -29,7 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .select(recordSelect())
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
 
   return NextResponse.json({ record: mapRecord(data as unknown as EstateProduceRow) });
 }
@@ -52,7 +60,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     .delete()
     .eq('id', id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
 
   if (record?.photo_path) {
     await auth.supabase.storage.from('estate-produce').remove([record.photo_path]);

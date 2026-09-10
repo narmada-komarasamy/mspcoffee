@@ -8,6 +8,14 @@ import {
   type EstateProduceRow,
 } from '../_helpers';
 
+function estateProduceSetupError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes('estate_produce_records') || lower.includes('schema cache')) {
+    return 'Estate Produce is not set up in Supabase yet. Run migration supabase/migrations/20260910_estate_produce_tracker.sql in the Supabase SQL Editor, then refresh this page.';
+  }
+  return message;
+}
+
 export async function GET(request: Request) {
   const auth = await requireEstateProduceUser(request);
   if ('error' in auth) return auth.error;
@@ -38,7 +46,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
 
   return NextResponse.json({ records: ((data ?? []) as unknown as EstateProduceRow[]).map((row) => mapRecord(row)) });
 }
@@ -59,7 +67,7 @@ export async function POST(request: Request) {
     .select(recordSelect())
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
 
   return NextResponse.json({ record: mapRecord(data as unknown as EstateProduceRow) }, { status: 201 });
 }

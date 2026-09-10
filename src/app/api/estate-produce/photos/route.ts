@@ -10,6 +10,14 @@ import { signedStorageUrl } from '@/lib/storage/urls';
 
 const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
+function estateProduceStorageError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes('bucket') || lower.includes('estate-produce')) {
+    return 'Estate Produce photo storage is not set up in Supabase yet. Run migration supabase/migrations/20260910_estate_produce_tracker.sql in the Supabase SQL Editor, then try uploading again.';
+  }
+  return message;
+}
+
 export async function POST(request: Request) {
   const auth = await requireEstateProduceUser(request);
   if ('error' in auth) return auth.error;
@@ -42,7 +50,7 @@ export async function POST(request: Request) {
     });
 
   if (error) {
-    return NextResponse.json({ error: `Photo upload failed: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Photo upload failed: ${estateProduceStorageError(error.message)}` }, { status: 500 });
   }
 
   return NextResponse.json({
