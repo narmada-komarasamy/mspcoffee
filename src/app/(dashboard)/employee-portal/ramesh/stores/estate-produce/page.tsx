@@ -99,23 +99,37 @@ function storedAppUser(): AppUser | null {
   }
 }
 
+function currentDateValue() {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function currentTimeValue() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
 function blankDraft(): Draft {
   return {
-    date: '2026-09-07',
-    time: '07:57',
+    date: currentDateValue(),
+    time: currentTimeValue(),
     estate: 'ME',
     product: 'Durian',
     unit: 'Pieces',
-    qty: '20',
-    weightKg: '17.500',
-    previousQty: '129',
-    previousWeightKg: '112.200',
-    damageQty: '4',
+    qty: '',
+    weightKg: '',
+    previousQty: '',
+    previousWeightKg: '',
+    damageQty: '',
     damageWeightKg: '',
-    damageNotes: 'Little damage',
-    location: 'Solur, Tamil Nadu, India',
+    damageNotes: '',
+    location: '',
     notes: '',
-    addFollowUp: true,
+    addFollowUp: false,
     followUp: 'Pickup needed',
   };
 }
@@ -167,7 +181,7 @@ function parseWhatsAppMessage(message: string, current: Draft): Draft {
   const pieces = clean.match(/today\s+(\d+(?:\.\d+)?)/i)?.[1] ?? clean.match(/(\d+(?:\.\d+)?)\s*pieces?/i)?.[1];
   const weights = [...clean.matchAll(/weight\s+(\d+(?:\.\d+)?)/gi)].map((match) => match[1]);
   const previousQty = clean.match(/previous\s+(\d+(?:\.\d+)?)/i)?.[1];
-  const toDateQty = clean.match(/todate\s+(\d+(?:\.\d+)?)/i)?.[1] ?? clean.match(/to date\s+(\d+(?:\.\d+)?)/i)?.[1];
+  const toDateQty = clean.match(/(?:todate|to date|tdate)\s+(\d+(?:\.\d+)?)/i)?.[1];
   const toDateWeight = weights[2];
   const damageQty = clean.match(/damage\s+(\d+(?:\.\d+)?)/i)?.[1];
   const damageNotes = message.match(/\(([^)]+)\)/)?.[1] ?? current.damageNotes;
@@ -316,7 +330,14 @@ export default function EstateProduceTrackerPage() {
       setPasteStatus('Paste a WhatsApp message to attach it to the next saved record.');
       return;
     }
-    setDraft((current) => parseWhatsAppMessage(trimmedMessage, current));
+    setDraft((current) => parseWhatsAppMessage(trimmedMessage, {
+      ...blankDraft(),
+      estate: current.estate,
+      product: current.product,
+      unit: current.unit,
+      addFollowUp: current.addFollowUp,
+      followUp: current.followUp,
+    }));
     setEntryMode('whatsapp');
     setActiveTab('add');
     setPasteStatus('WhatsApp message attached and fields extracted. Review the form before saving.');
@@ -461,10 +482,11 @@ export default function EstateProduceTrackerPage() {
 
   const useDraftAiCount = () => {
     if (!isAdmin || !draftAiCount?.best) return;
+    const note = `AI visible count accepted: ${aiCountLabel(draftAiCount)} (${draftAiCount.confidence || 'unknown'} confidence). Total weight was not changed by AI; use the WhatsApp/manual total weight. ${draftAiCount.notes}`;
     setDraft((current) => ({
       ...current,
       qty: String(draftAiCount.best),
-      notes: [current.notes, `AI photo count accepted: ${aiCountLabel(draftAiCount)} (${draftAiCount.confidence || 'unknown'} confidence). ${draftAiCount.notes}`]
+      notes: [current.notes, note]
         .filter(Boolean)
         .join('\n'),
     }));
@@ -475,7 +497,7 @@ export default function EstateProduceTrackerPage() {
     if (!selected) return;
     if (!isAdmin || !selected.aiPhotoCount?.best) return;
     const accepted = { ...selected.aiPhotoCount, accepted: true };
-    const note = `AI photo count accepted: ${aiCountLabel(accepted)} (${accepted.confidence || 'unknown'} confidence). ${accepted.notes}`;
+    const note = `AI visible count accepted: ${aiCountLabel(accepted)} (${accepted.confidence || 'unknown'} confidence). Total weight was not changed by AI; use the WhatsApp/manual total weight. ${accepted.notes}`;
     patchRecord(selected.id, {
       qty: accepted.best ?? selected.qty,
       aiPhotoCount: accepted,
@@ -539,6 +561,7 @@ export default function EstateProduceTrackerPage() {
       setActiveTab('records');
       setWhatsAppMessage('');
       setPasteStatus('Entry saved to Supabase. Paste the next WhatsApp message when ready.');
+      setDraft(blankDraft());
       setPhotoPreview('');
       setDraftPhoto(undefined);
       setDraftAiCount(undefined);
