@@ -5,6 +5,7 @@ import {
   mapRecord,
   recordSelect,
   requireEstateProduceUser,
+  type EstateProduceRow,
 } from '../_helpers';
 
 export async function GET(request: Request) {
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ records: (data ?? []).map((row) => mapRecord(row)) });
+  return NextResponse.json({ records: ((data ?? []) as EstateProduceRow[]).map((row) => mapRecord(row)) });
 }
 
 export async function POST(request: Request) {
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
   if (!body) return badRequest('Entry details are required');
 
   const built = buildRecordPayload(body, auth.user.id, auth.user.name);
-  if ('error' in built) return badRequest(built.error);
+  if (!built.ok) return badRequest(built.error);
 
   const { data, error } = await auth.supabase
     .from('estate_produce_records')
@@ -60,5 +61,5 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ record: mapRecord(data) }, { status: 201 });
+  return NextResponse.json({ record: mapRecord(data as EstateProduceRow) }, { status: 201 });
 }

@@ -13,6 +13,10 @@ export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/;
 
 export type EstateProduceAuth = Awaited<ReturnType<typeof requireApiUser>>;
+export type EstateProduceRow = Record<string, unknown>;
+export type RecordPayloadResult =
+  | { ok: true; payload: Record<string, unknown> }
+  | { ok: false; error: string };
 
 export async function requireEstateProduceUser(request: Request, allowedRoles = ESTATE_PRODUCE_ROLES) {
   return requireApiUser(request, allowedRoles);
@@ -76,39 +80,40 @@ export function recordSelect() {
   ].join(', ');
 }
 
-export function mapRecord(row: Record<string, unknown>) {
-  const photoPath = text(row.photo_path);
+export function mapRecord(row: EstateProduceRow | null | undefined) {
+  const sourceRow = row ?? {};
+  const photoPath = text(sourceRow.photo_path);
   return {
-    id: text(row.id),
-    date: text(row.record_date),
-    time: text(row.record_time).slice(0, 5),
-    estate: text(row.estate),
-    product: text(row.product),
-    unit: text(row.unit),
-    qty: numberValue(row.qty),
-    weightKg: numberValue(row.weight_kg),
-    previousQty: numberValue(row.previous_qty),
-    previousWeightKg: numberValue(row.previous_weight_kg),
-    damageQty: numberValue(row.damage_qty),
-    damageWeightKg: numberValue(row.damage_weight_kg),
-    damageNotes: text(row.damage_notes),
-    source: text(row.source) || 'Manual',
-    sourceMessage: text(row.source_message) || undefined,
+    id: text(sourceRow.id),
+    date: text(sourceRow.record_date),
+    time: text(sourceRow.record_time).slice(0, 5),
+    estate: text(sourceRow.estate),
+    product: text(sourceRow.product),
+    unit: text(sourceRow.unit),
+    qty: numberValue(sourceRow.qty),
+    weightKg: numberValue(sourceRow.weight_kg),
+    previousQty: numberValue(sourceRow.previous_qty),
+    previousWeightKg: numberValue(sourceRow.previous_weight_kg),
+    damageQty: numberValue(sourceRow.damage_qty),
+    damageWeightKg: numberValue(sourceRow.damage_weight_kg),
+    damageNotes: text(sourceRow.damage_notes),
+    source: text(sourceRow.source) || 'Manual',
+    sourceMessage: text(sourceRow.source_message) || undefined,
     photoPath: photoPath || undefined,
     photoUrl: photoPath ? signedStorageUrl(BUCKET, photoPath) : undefined,
-    photoFileName: text(row.photo_file_name) || undefined,
-    photoContentType: text(row.photo_content_type) || undefined,
-    aiPhotoCount: nonEmptyJsonObject(row.ai_photo_count),
-    location: text(row.location) || undefined,
-    notes: text(row.notes),
-    followUp: text(row.follow_up) || undefined,
-    enteredBy: text(row.entered_by_name) || 'MSP User',
-    createdAt: text(row.created_at),
-    updatedAt: text(row.updated_at),
+    photoFileName: text(sourceRow.photo_file_name) || undefined,
+    photoContentType: text(sourceRow.photo_content_type) || undefined,
+    aiPhotoCount: nonEmptyJsonObject(sourceRow.ai_photo_count),
+    location: text(sourceRow.location) || undefined,
+    notes: text(sourceRow.notes),
+    followUp: text(sourceRow.follow_up) || undefined,
+    enteredBy: text(sourceRow.entered_by_name) || 'MSP User',
+    createdAt: text(sourceRow.created_at),
+    updatedAt: text(sourceRow.updated_at),
   };
 }
 
-export function buildRecordPayload(body: Record<string, unknown>, userId: string, userName: string, isUpdate = false) {
+export function buildRecordPayload(body: Record<string, unknown>, userId: string, userName: string, isUpdate = false): RecordPayloadResult {
   const date = text(body.date);
   const time = text(body.time);
   const estate = text(body.estate);
@@ -117,13 +122,13 @@ export function buildRecordPayload(body: Record<string, unknown>, userId: string
   const source = text(body.source) || (isUpdate ? '' : 'Manual');
 
   if (!isUpdate || date) {
-    if (!DATE_RE.test(date)) return { error: 'Enter a valid date' };
+    if (!DATE_RE.test(date)) return { ok: false, error: 'Enter a valid date' };
   }
-  if (time && !TIME_RE.test(time)) return { error: 'Enter a valid time' };
-  if ((!isUpdate || estate) && !ESTATES.includes(estate)) return { error: 'Choose a valid estate' };
-  if ((!isUpdate || product) && !product) return { error: 'Product is required' };
-  if ((!isUpdate || unit) && !UNITS.includes(unit)) return { error: 'Choose a valid unit' };
-  if ((!isUpdate || source) && !SOURCES.includes(source)) return { error: 'Choose a valid source' };
+  if (time && !TIME_RE.test(time)) return { ok: false, error: 'Enter a valid time' };
+  if ((!isUpdate || estate) && !ESTATES.includes(estate)) return { ok: false, error: 'Choose a valid estate' };
+  if ((!isUpdate || product) && !product) return { ok: false, error: 'Product is required' };
+  if ((!isUpdate || unit) && !UNITS.includes(unit)) return { ok: false, error: 'Choose a valid unit' };
+  if ((!isUpdate || source) && !SOURCES.includes(source)) return { ok: false, error: 'Choose a valid source' };
 
   const payload: Record<string, unknown> = {
     updated_by: userId,
@@ -156,7 +161,7 @@ export function buildRecordPayload(body: Record<string, unknown>, userId: string
   if (Object.hasOwn(body, 'notes')) payload.notes = nullableText(body.notes);
   if (Object.hasOwn(body, 'followUp')) payload.follow_up = nullableText(body.followUp);
 
-  return { payload };
+  return { ok: true, payload };
 }
 
 export function badRequest(error: string) {

@@ -6,6 +6,7 @@ import {
   mapRecord,
   recordSelect,
   requireEstateProduceUser,
+  type EstateProduceRow,
 } from '../../_helpers';
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +20,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!body) return badRequest('Entry details are required');
 
   const built = buildRecordPayload(body, auth.user.id, auth.user.name, true);
-  if ('error' in built) return badRequest(built.error);
+  if (!built.ok) return badRequest(built.error);
 
   const { data, error } = await auth.supabase
     .from('estate_produce_records')
@@ -30,7 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ record: mapRecord(data) });
+  return NextResponse.json({ record: mapRecord(data as EstateProduceRow) });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
