@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, ClipboardEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -47,12 +47,22 @@ type ProduceRecord = {
   damageNotes: string;
   source: 'Manual' | 'WhatsApp Paste';
   sourceMessage?: string;
+  photoPath?: string;
+  photoFileName?: string;
+  photoContentType?: string;
   photoUrl?: string;
   aiPhotoCount?: AiPhotoCount;
   location?: string;
   notes: string;
   followUp?: string;
   enteredBy: string;
+};
+
+type UploadedPhoto = {
+  path: string;
+  url: string;
+  fileName: string;
+  contentType: string;
 };
 
 type Draft = {
@@ -88,134 +98,6 @@ function storedAppUser(): AppUser | null {
     return null;
   }
 }
-
-const sampleRecords: ProduceRecord[] = [
-  {
-    id: 'durian-me-2026-09-07',
-    date: '2026-09-07',
-    time: '07:57',
-    estate: 'ME',
-    product: 'Durian',
-    unit: 'Pieces',
-    qty: 20,
-    weightKg: 17.5,
-    previousQty: 129,
-    previousWeightKg: 112.2,
-    damageQty: 4,
-    damageWeightKg: 0,
-    damageNotes: 'Little damage',
-    source: 'WhatsApp Paste',
-    sourceMessage: `Dhanasingh ME
-Good Morning Sir
-Durian Fruits
-Today 20 Pieces
-Weight 17.500 kgs
-
-Previous 129 Pieces
-Weight 112.200 kgs
-
-Todate 149 Pieces
-Weight 129.700 kgs
-
-Damage 4 Piece
-(Little Damage)`,
-    location: 'Solur, Tamil Nadu, India',
-    notes: 'Incoming durian report from Dhanasingh ME.',
-    followUp: 'Pickup needed',
-    enteredBy: 'Admin',
-  },
-  {
-    id: 'pepper-me-2026-09-07',
-    date: '2026-09-07',
-    time: '09:10',
-    estate: 'ME',
-    product: 'Pepper',
-    unit: 'Kg',
-    qty: 12,
-    weightKg: 12,
-    previousQty: 86,
-    previousWeightKg: 86,
-    damageQty: 1,
-    damageWeightKg: 0.2,
-    damageNotes: 'Moisture',
-    source: 'Manual',
-    notes: 'Moisture check needed before sale.',
-    followUp: 'Damage inspection',
-    enteredBy: 'Admin',
-  },
-  {
-    id: 'cloves-se-2026-09-06',
-    date: '2026-09-06',
-    time: '11:20',
-    estate: 'SE',
-    product: 'Cloves',
-    unit: 'Kg',
-    qty: 8,
-    weightKg: 8,
-    previousQty: 42,
-    previousWeightKg: 42,
-    damageQty: 0,
-    damageWeightKg: 0,
-    damageNotes: '',
-    source: 'Manual',
-    notes: 'Good quality.',
-    enteredBy: 'Admin',
-  },
-  {
-    id: 'nutmeg-hfe-2026-09-06',
-    date: '2026-09-06',
-    time: '15:00',
-    estate: 'HFE',
-    product: 'Nutmeg',
-    unit: 'Kg',
-    qty: 6,
-    weightKg: 6.2,
-    previousQty: 32,
-    previousWeightKg: 32,
-    damageQty: 0,
-    damageWeightKg: 0,
-    damageNotes: '',
-    source: 'Manual',
-    notes: 'Dry and clean.',
-    enteredBy: 'Admin',
-  },
-  {
-    id: 'pepper-ord-2025-08-22',
-    date: '2025-08-22',
-    time: '10:45',
-    estate: 'ORD',
-    product: 'Pepper',
-    unit: 'Kg',
-    qty: 10,
-    weightKg: 10.3,
-    previousQty: 75,
-    previousWeightKg: 75,
-    damageQty: 0,
-    damageWeightKg: 0,
-    damageNotes: '',
-    source: 'Manual',
-    notes: 'Packed.',
-    enteredBy: 'Admin',
-  },
-  {
-    id: 'cloves-bve-2024-07-18',
-    date: '2024-07-18',
-    time: '08:30',
-    estate: 'BVE',
-    product: 'Cloves',
-    unit: 'Kg',
-    qty: 5,
-    weightKg: 5.1,
-    previousQty: 28,
-    previousWeightKg: 28,
-    damageQty: 0,
-    damageWeightKg: 0,
-    damageNotes: '',
-    source: 'Manual',
-    notes: 'Ready for sale.',
-    enteredBy: 'Admin',
-  },
-];
 
 function blankDraft(): Draft {
   return {
@@ -333,18 +215,22 @@ function parseWhatsAppMessage(message: string, current: Draft): Draft {
 
 export default function EstateProduceTrackerPage() {
   const [activeTab, setActiveTab] = useState<'records' | 'add' | 'comparisons' | 'photos'>('records');
-  const [records, setRecords] = useState<ProduceRecord[]>(sampleRecords);
-  const [selectedId, setSelectedId] = useState(sampleRecords[0].id);
+  const [records, setRecords] = useState<ProduceRecord[]>([]);
+  const [selectedId, setSelectedId] = useState('');
   const [draft, setDraft] = useState<Draft>(blankDraft());
   const [entryMode, setEntryMode] = useState<'manual' | 'whatsapp'>('whatsapp');
   const [whatsAppMessage, setWhatsAppMessage] = useState('');
   const [pasteStatus, setPasteStatus] = useState('Paste a WhatsApp message to attach it to the next saved record.');
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [draftPhoto, setDraftPhoto] = useState<UploadedPhoto | undefined>();
   const [draftAiCount, setDraftAiCount] = useState<AiPhotoCount | undefined>();
   const [aiStatus, setAiStatus] = useState('');
   const [photoModalRecord, setPhotoModalRecord] = useState<ProduceRecord | null>(null);
   const [deleteConfirmRecord, setDeleteConfirmRecord] = useState<ProduceRecord | null>(null);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [loadingRecords, setLoadingRecords] = useState(true);
+  const [savingRecord, setSavingRecord] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [filters, setFilters] = useState({ year: '2026', estate: 'All', product: 'All', unit: 'All', search: '' });
   const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
 
@@ -355,19 +241,36 @@ export default function EstateProduceTrackerPage() {
     return () => window.removeEventListener('msp-user-updated', loadUser);
   }, []);
 
-  const filteredRecords = useMemo(() => {
-    return records.filter((record) => {
-      const matchesYear = filters.year === 'All' || record.date.startsWith(filters.year);
-      const matchesEstate = filters.estate === 'All' || record.estate === filters.estate;
-      const matchesProduct = filters.product === 'All' || record.product === filters.product;
-      const matchesUnit = filters.unit === 'All' || record.unit === filters.unit;
-      const searchText = `${record.estate} ${record.product} ${record.notes} ${record.damageNotes} ${record.location ?? ''}`.toLowerCase();
-      const matchesSearch = filters.search.trim() ? searchText.includes(filters.search.trim().toLowerCase()) : true;
-      return matchesYear && matchesEstate && matchesProduct && matchesUnit && matchesSearch;
-    });
-  }, [records, filters]);
+  const loadRecords = useCallback(async () => {
+    setLoadingRecords(true);
+    setStatusMessage('');
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'All') params.set(key, value);
+      });
+      const response = await fetch(`/api/estate-produce/records?${params.toString()}`);
+      const body = await response.json().catch(() => ({})) as { records?: ProduceRecord[]; error?: string };
+      if (!response.ok) throw new Error(body.error || 'Could not load estate produce records');
+      const nextRecords = body.records ?? [];
+      setRecords(nextRecords);
+      setSelectedId((current) => nextRecords.some((record) => record.id === current) ? current : nextRecords[0]?.id ?? '');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not load estate produce records';
+      setStatusMessage(message);
+    } finally {
+      setLoadingRecords(false);
+    }
+  }, [filters]);
 
-  const selected = records.find((record) => record.id === selectedId) ?? records[0];
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
+
+  const filteredRecords = records;
+
+  const selected = records.find((record) => record.id === selectedId) ?? records[0] ?? null;
+  const photoRecords = selected ? [selected, ...records.filter((record) => record.id !== selected.id)] : records;
 
   const totals = useMemo(() => {
     return filteredRecords.reduce(
@@ -444,6 +347,32 @@ export default function EstateProduceTrackerPage() {
     return await response.json() as AiPhotoCount;
   };
 
+  const uploadPhoto = async (file: File, recordId?: string) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    if (recordId) formData.append('recordId', recordId);
+
+    const response = await fetch('/api/estate-produce/photos', {
+      method: 'POST',
+      body: formData,
+    });
+    const body = await response.json().catch(() => ({})) as UploadedPhoto & { error?: string };
+    if (!response.ok) throw new Error(body.error || 'Photo upload failed');
+    return body;
+  };
+
+  const patchRecord = async (id: string, payload: Record<string, unknown>) => {
+    const response = await fetch(`/api/estate-produce/records/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const body = await response.json().catch(() => ({})) as { record?: ProduceRecord; error?: string };
+    if (!response.ok || !body.record) throw new Error(body.error || 'Record update failed');
+    setRecords((current) => current.map((record) => (record.id === id ? body.record! : record)));
+    return body.record;
+  };
+
   const analyzeDraftPhoto = async (base64: string, mediaType: string) => {
     setDraftAiCount(undefined);
     setAiStatus('AI is checking the visible count...');
@@ -461,7 +390,7 @@ export default function EstateProduceTrackerPage() {
     setAiStatus('AI is checking the visible count...');
     try {
       const count = await runPhotoCount(base64, mediaType, product);
-      setRecords((current) => current.map((record) => (record.id === recordId ? { ...record, aiPhotoCount: count } : record)));
+      await patchRecord(recordId, { aiPhotoCount: count });
       setAiStatus(`AI counted approximately ${aiCountLabel(count)}. Admin can accept it after review.`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'AI count failed';
@@ -474,10 +403,17 @@ export default function EstateProduceTrackerPage() {
     const pastedImage = Array.from(event.clipboardData.files).find((file) => file.type.startsWith('image/'));
 
     if (pastedImage) {
-      const image = await readImageFile(pastedImage);
-      setPhotoPreview(image.photoUrl);
-      setPasteStatus('Photo attached. Paste the WhatsApp text also, then review before saving.');
-      analyzeDraftPhoto(image.base64, image.mediaType);
+      try {
+        const image = await readImageFile(pastedImage);
+        const uploaded = await uploadPhoto(pastedImage);
+        setDraftPhoto(uploaded);
+        setPhotoPreview(uploaded.url || image.photoUrl);
+        setPasteStatus('Photo uploaded to Supabase. Paste the WhatsApp text also, then review before saving.');
+        analyzeDraftPhoto(image.base64, image.mediaType);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Photo upload failed';
+        setPasteStatus(message);
+      }
     }
 
     if (pastedText.trim()) {
@@ -491,18 +427,36 @@ export default function EstateProduceTrackerPage() {
   const handlePhoto = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const image = await readImageFile(file);
-    setPhotoPreview(image.photoUrl);
-    setPasteStatus('Photo attached to this entry. Review the AI count and fields before saving.');
-    analyzeDraftPhoto(image.base64, image.mediaType);
+    try {
+      const image = await readImageFile(file);
+      const uploaded = await uploadPhoto(file);
+      setDraftPhoto(uploaded);
+      setPhotoPreview(uploaded.url || image.photoUrl);
+      setPasteStatus('Photo uploaded to Supabase. Review the AI count and fields before saving.');
+      analyzeDraftPhoto(image.base64, image.mediaType);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Photo upload failed';
+      setPasteStatus(message);
+    }
   };
 
   const handleSelectedPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selected) return;
-    const image = await readImageFile(file);
-    setRecords((current) => current.map((record) => (record.id === selected.id ? { ...record, photoUrl: image.photoUrl, aiPhotoCount: undefined } : record)));
-    analyzeRecordPhoto(selected.id, image.base64, image.mediaType, selected.product);
+    try {
+      const image = await readImageFile(file);
+      const uploaded = await uploadPhoto(file, selected.id);
+      await patchRecord(selected.id, {
+        photoPath: uploaded.path,
+        photoFileName: uploaded.fileName,
+        photoContentType: uploaded.contentType,
+        aiPhotoCount: {},
+      });
+      analyzeRecordPhoto(selected.id, image.base64, image.mediaType, selected.product);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Photo upload failed';
+      setAiStatus(message);
+    }
   };
 
   const useDraftAiCount = () => {
@@ -518,38 +472,38 @@ export default function EstateProduceTrackerPage() {
   };
 
   const useSelectedAiCount = () => {
+    if (!selected) return;
     if (!isAdmin || !selected.aiPhotoCount?.best) return;
     const accepted = { ...selected.aiPhotoCount, accepted: true };
-    setRecords((current) => current.map((record) => {
-      if (record.id !== selected.id) return record;
-      const note = `AI photo count accepted: ${aiCountLabel(accepted)} (${accepted.confidence || 'unknown'} confidence). ${accepted.notes}`;
-      return {
-        ...record,
-        qty: accepted.best ?? record.qty,
-        aiPhotoCount: accepted,
-        notes: [record.notes, note].filter(Boolean).join('\n'),
-      };
-    }));
+    const note = `AI photo count accepted: ${aiCountLabel(accepted)} (${accepted.confidence || 'unknown'} confidence). ${accepted.notes}`;
+    patchRecord(selected.id, {
+      qty: accepted.best ?? selected.qty,
+      aiPhotoCount: accepted,
+      notes: [selected.notes, note].filter(Boolean).join('\n'),
+    }).catch((error) => setAiStatus(error instanceof Error ? error.message : 'Could not save AI count'));
   };
 
-  const deleteSelectedRecord = () => {
+  const deleteSelectedRecord = async () => {
     if (!isAdmin || !deleteConfirmRecord) return;
-    if (records.length <= 1) {
-      setAiStatus('Keep at least one record in this preview tracker. Database delete can allow empty lists later.');
+    try {
+      const response = await fetch(`/api/estate-produce/records/${deleteConfirmRecord.id}`, { method: 'DELETE' });
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(body.error || 'Delete failed');
+      setRecords((current) => {
+        const next = current.filter((record) => record.id !== deleteConfirmRecord.id);
+        setSelectedId(next[0]?.id ?? '');
+        return next;
+      });
       setDeleteConfirmRecord(null);
-      return;
+    } catch (error) {
+      setAiStatus(error instanceof Error ? error.message : 'Delete failed');
     }
-    setRecords((current) => {
-      const next = current.filter((record) => record.id !== deleteConfirmRecord.id);
-      setSelectedId(next[0]?.id ?? '');
-      return next;
-    });
-    setDeleteConfirmRecord(null);
   };
 
-  const addRecord = () => {
-    const next: ProduceRecord = {
-      id: `${draft.product.toLowerCase()}-${draft.estate.toLowerCase()}-${Date.now()}`,
+  const addRecord = async () => {
+    setSavingRecord(true);
+    setStatusMessage('');
+    const payload = {
       date: draft.date,
       time: draft.time,
       estate: draft.estate,
@@ -564,21 +518,37 @@ export default function EstateProduceTrackerPage() {
       damageNotes: draft.damageNotes,
       source: entryMode === 'whatsapp' ? 'WhatsApp Paste' : 'Manual',
       sourceMessage: entryMode === 'whatsapp' ? whatsAppMessage.trim() || undefined : undefined,
-      photoUrl: photoPreview || undefined,
+      photoPath: draftPhoto?.path,
+      photoFileName: draftPhoto?.fileName,
+      photoContentType: draftPhoto?.contentType,
       aiPhotoCount: draftAiCount,
       location: draft.location,
       notes: draft.notes,
       followUp: draft.addFollowUp ? draft.followUp : undefined,
-      enteredBy: 'Admin',
     };
-    setRecords((current) => [next, ...current]);
-    setSelectedId(next.id);
-    setActiveTab('records');
-    setWhatsAppMessage('');
-    setPasteStatus('Entry saved. Paste the next WhatsApp message when ready.');
-    setPhotoPreview('');
-    setDraftAiCount(undefined);
-    setAiStatus('');
+    try {
+      const response = await fetch('/api/estate-produce/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json().catch(() => ({})) as { record?: ProduceRecord; error?: string };
+      if (!response.ok || !body.record) throw new Error(body.error || 'Could not save entry');
+      setRecords((current) => [body.record!, ...current]);
+      setSelectedId(body.record.id);
+      setActiveTab('records');
+      setWhatsAppMessage('');
+      setPasteStatus('Entry saved to Supabase. Paste the next WhatsApp message when ready.');
+      setPhotoPreview('');
+      setDraftPhoto(undefined);
+      setDraftAiCount(undefined);
+      setAiStatus('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not save entry';
+      setStatusMessage(message);
+    } finally {
+      setSavingRecord(false);
+    }
   };
 
   const exportCsv = () => {
@@ -669,6 +639,14 @@ export default function EstateProduceTrackerPage() {
               ))}
             </div>
 
+            {(loadingRecords || statusMessage) && (
+              <div className={`rounded-md border px-3 py-2 text-sm ${
+                statusMessage ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-100 bg-emerald-50 text-emerald-900'
+              }`}>
+                {statusMessage || 'Loading estate produce records from Supabase...'}
+              </div>
+            )}
+
             {(activeTab === 'records' || activeTab === 'comparisons' || activeTab === 'photos') && (
               <>
                 <div className="grid gap-3 rounded-lg border border-stone-200 bg-white p-3 md:grid-cols-[120px_120px_150px_120px_1fr]">
@@ -745,6 +723,13 @@ export default function EstateProduceTrackerPage() {
                               <td className="px-3 py-3 text-stone-600">{record.notes || record.damageNotes || '-'}</td>
                             </tr>
                           ))}
+                          {!loadingRecords && filteredRecords.length === 0 && (
+                            <tr>
+                              <td colSpan={11} className="px-3 py-8 text-center text-sm text-stone-500">
+                                No estate produce records yet. Add the first entry to save it in Supabase.
+                              </td>
+                            </tr>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -871,9 +856,9 @@ export default function EstateProduceTrackerPage() {
                       ))}
                     </div>
                   )}
-                  <button onClick={addRecord} className="mt-4 inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Save Entry
+                  <button disabled={savingRecord} onClick={addRecord} className="mt-4 inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+                    {savingRecord ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    {savingRecord ? 'Saving...' : 'Save Entry'}
                   </button>
                 </section>
               </div>
@@ -910,7 +895,7 @@ export default function EstateProduceTrackerPage() {
 
             {activeTab === 'photos' && (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[selected, ...records.filter((record) => record.id !== selected.id)].slice(0, 6).map((record) => (
+                {photoRecords.slice(0, 6).map((record) => (
                   <div key={record.id} className="rounded-lg border border-stone-200 bg-white p-4">
                     <button
                       type="button"
@@ -923,6 +908,11 @@ export default function EstateProduceTrackerPage() {
                     <p className="mt-1 text-sm text-stone-500">{record.aiPhotoCount ? `AI count: ${aiCountLabel(record.aiPhotoCount)}` : 'No AI count yet.'}</p>
                   </div>
                 ))}
+                {!loadingRecords && photoRecords.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-stone-300 bg-white p-6 text-sm text-stone-500 sm:col-span-2 lg:col-span-3">
+                    No photos yet. Add or select a record, then attach a photo.
+                  </div>
+                )}
               </div>
             )}
           </main>
@@ -947,69 +937,75 @@ export default function EstateProduceTrackerPage() {
 
             <section className="rounded-lg border border-stone-200 bg-white p-4">
               <h2 className="font-bold text-emerald-950">Selected Record</h2>
-              <div className="mt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => selected.photoUrl && setPhotoModalRecord(selected)}
-                  className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-800"
-                >
-                  {selected.photoUrl ? <img alt="" src={selected.photoUrl} className="h-full w-full rounded-md object-cover" /> : <ImageIcon className="h-8 w-8" />}
-                </button>
-                <div className="min-w-0 text-sm">
-                  <p className="font-bold text-stone-900">{selected.product}</p>
-                  <p className="text-stone-500">{selected.source}</p>
-                  <p className="mt-2">{toDateLabel(selected.date)} {selected.time}</p>
-                  <p>{selected.estate} / {selected.qty} {selected.unit.toLowerCase()}</p>
-                  <p>{formatKg(selected.weightKg)} kg</p>
-                </div>
-              </div>
-              <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
-                <Camera className="h-4 w-4" />
-                {selected.photoUrl ? 'Replace Photo' : 'Attach Photo'}
-                <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
-              </label>
-              {isAdmin && (
-                <button
-                  onClick={() => setDeleteConfirmRecord(selected)}
-                  className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              )}
-              <div className="mt-4 space-y-2 text-sm text-stone-600">
-                <p><span className="font-semibold text-stone-900">Damage:</span> {selected.damageQty} pcs {selected.damageNotes}</p>
-                <p><span className="font-semibold text-stone-900">Location:</span> {selected.location ?? '-'}</p>
-                <p><span className="font-semibold text-stone-900">Entered by:</span> {selected.enteredBy}</p>
-                <p><span className="font-semibold text-stone-900">Follow-up:</span> {selected.followUp ?? 'None'}</p>
-              </div>
-              {selected.sourceMessage && (
-                <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50/70 p-3 text-sm text-stone-700">
-                  <p className="font-semibold text-emerald-950">Attached WhatsApp Message</p>
-                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap font-sans text-xs leading-relaxed">{selected.sourceMessage}</pre>
-                </div>
-              )}
-              <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                <div className="flex items-start gap-2">
-                  {aiStatus.includes('checking') ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
-                  <div>
-                    <p className="font-semibold">AI Photo Count</p>
-                    <p>{selected.aiPhotoCount ? `AI counted approximately ${aiCountLabel(selected.aiPhotoCount)}.` : 'Attach a photo to run an assisted visible count.'}</p>
-                    {selected.aiPhotoCount?.notes && <p className="mt-1 text-xs">{selected.aiPhotoCount.notes}</p>}
-                    {isAdmin && selected.aiPhotoCount?.best && !selected.aiPhotoCount.accepted && (
-                      <button onClick={useSelectedAiCount} className="mt-2 rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white">
-                        Use AI Count
-                      </button>
-                    )}
-                    {selected.aiPhotoCount?.accepted && <p className="mt-1 text-xs font-semibold text-emerald-800">Admin accepted this AI count.</p>}
+              {!selected ? (
+                <p className="mt-4 text-sm text-stone-500">Select a record after adding your first Supabase entry.</p>
+              ) : (
+                <>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => selected.photoUrl && setPhotoModalRecord(selected)}
+                      className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-800"
+                    >
+                      {selected.photoUrl ? <img alt="" src={selected.photoUrl} className="h-full w-full rounded-md object-cover" /> : <ImageIcon className="h-8 w-8" />}
+                    </button>
+                    <div className="min-w-0 text-sm">
+                      <p className="font-bold text-stone-900">{selected.product}</p>
+                      <p className="text-stone-500">{selected.source}</p>
+                      <p className="mt-2">{toDateLabel(selected.date)} {selected.time}</p>
+                      <p>{selected.estate} / {selected.qty} {selected.unit.toLowerCase()}</p>
+                      <p>{formatKg(selected.weightKg)} kg</p>
+                    </div>
                   </div>
-                </div>
-              </div>
-              {selected.followUp && (
-                <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-900">
-                  <CalendarDays className="h-4 w-4" />
-                  Calendar follow-up ready
-                </div>
+                  <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
+                    <Camera className="h-4 w-4" />
+                    {selected.photoUrl ? 'Replace Photo' : 'Attach Photo'}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
+                  </label>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDeleteConfirmRecord(selected)}
+                      className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </button>
+                  )}
+                  <div className="mt-4 space-y-2 text-sm text-stone-600">
+                    <p><span className="font-semibold text-stone-900">Damage:</span> {selected.damageQty} pcs {selected.damageNotes}</p>
+                    <p><span className="font-semibold text-stone-900">Location:</span> {selected.location ?? '-'}</p>
+                    <p><span className="font-semibold text-stone-900">Entered by:</span> {selected.enteredBy}</p>
+                    <p><span className="font-semibold text-stone-900">Follow-up:</span> {selected.followUp ?? 'None'}</p>
+                  </div>
+                  {selected.sourceMessage && (
+                    <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50/70 p-3 text-sm text-stone-700">
+                      <p className="font-semibold text-emerald-950">Attached WhatsApp Message</p>
+                      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap font-sans text-xs leading-relaxed">{selected.sourceMessage}</pre>
+                    </div>
+                  )}
+                  <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <div className="flex items-start gap-2">
+                      {aiStatus.includes('checking') ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                      <div>
+                        <p className="font-semibold">AI Photo Count</p>
+                        <p>{selected.aiPhotoCount ? `AI counted approximately ${aiCountLabel(selected.aiPhotoCount)}.` : 'Attach a photo to run an assisted visible count.'}</p>
+                        {selected.aiPhotoCount?.notes && <p className="mt-1 text-xs">{selected.aiPhotoCount.notes}</p>}
+                        {isAdmin && selected.aiPhotoCount?.best && !selected.aiPhotoCount.accepted && (
+                          <button onClick={useSelectedAiCount} className="mt-2 rounded-md bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white">
+                            Use AI Count
+                          </button>
+                        )}
+                        {selected.aiPhotoCount?.accepted && <p className="mt-1 text-xs font-semibold text-emerald-800">Admin accepted this AI count.</p>}
+                      </div>
+                    </div>
+                  </div>
+                  {selected.followUp && (
+                    <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                      <CalendarDays className="h-4 w-4" />
+                      Calendar follow-up ready
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </aside>

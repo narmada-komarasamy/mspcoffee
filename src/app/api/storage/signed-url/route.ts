@@ -5,6 +5,7 @@ const BUCKET_ROLES: Record<string, string[]> = {
   'board-meetings': ['admin', 'supervisor', 'ceo'],
   'estate-staff-meetings': ['admin', 'supervisor', 'ceo'],
   'employee-center': ['admin', 'hr', 'supervisor'],
+  'estate-produce': ['admin', 'supervisor', 'worker', 'ceo', 'hr'],
   invoices: ['admin', 'supervisor', 'ceo'],
   'travel-allowance-receipts': ['admin'],
 };
