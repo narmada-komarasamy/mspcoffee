@@ -64,3 +64,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  if (!ESTATE_PRODUCE_RECORD_ID_RE.test(id)) return badRequest('Invalid store item id');
+
+  const auth = await requireEstateProduceUser(request);
+  if ('error' in auth) return auth.error;
+
+  const { data, error } = await auth.supabase
+    .from('produce_store_items')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single<{ id: string }>();
+
+  if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Store item was not found. Refresh and try again.' }, { status: 404 });
+
+  return NextResponse.json({ ok: true });
+}

@@ -30,6 +30,18 @@ type ProduceRecordRow = {
   disposition: string | null;
 };
 
+type StoreSplitItem = {
+  quantity?: unknown;
+  weightKg?: unknown;
+  status?: unknown;
+  storageLocation?: unknown;
+  conditionGrade?: unknown;
+  notes?: unknown;
+  photoPath?: unknown;
+  photoFileName?: unknown;
+  photoContentType?: unknown;
+};
+
 function itemSelect() {
   return [
     'id',
@@ -155,6 +167,7 @@ export async function POST(request: Request) {
   const notes = text(body.notes);
   const requestedQuantity = numberValue(body.quantity);
   const requestedWeight = numberValue(body.weightKg);
+  const splitItems = Array.isArray(body.items) ? body.items as StoreSplitItem[] : [];
 
   if (!STORE_STATUSES.includes(status)) return badRequest('Choose a valid store status');
   if (estate && !ESTATES.includes(estate)) return badRequest('Choose a valid estate');
@@ -184,33 +197,46 @@ export async function POST(request: Request) {
 
   const sourceQty = Math.max(0, numberValue(sourceRecord?.qty) - numberValue(sourceRecord?.damage_qty));
   const sourceWeight = Math.max(0, numberValue(sourceRecord?.weight_kg) - numberValue(sourceRecord?.damage_weight_kg));
+  const isFruitLevel = finalUnit === 'Pieces' && finalProduct.toLowerCase().includes('durian');
   const quantity = requestedQuantity || sourceQty || 1;
   const totalWeight = requestedWeight || sourceWeight;
-  const isFruitLevel = finalUnit === 'Pieces' && finalProduct.toLowerCase().includes('durian');
-  const itemCount = isFruitLevel ? Math.max(1, Math.floor(quantity)) : 1;
+  const itemCount = splitItems.length || (isFruitLevel ? Math.max(1, Math.floor(quantity)) : 1);
   const codes = await nextItemCodes(auth.supabase, finalProduct, finalEstate, finalDate, itemCount);
   const perItemWeight = itemCount > 1 ? totalWeight / itemCount : totalWeight;
+  const invalidSplitStatus = splitItems
+    .map((item) => text(item.status))
+    .find((itemStatus) => itemStatus && !STORE_STATUSES.includes(itemStatus));
+  if (invalidSplitStatus) return badRequest('Choose a valid store status');
 
-  const rows = codes.map((code) => ({
-    source_record_id: sourceRecord?.id ?? null,
-    item_code: code,
-    received_date: finalDate,
-    estate: finalEstate,
-    product: finalProduct,
-    unit: finalUnit,
-    quantity: isFruitLevel ? 1 : quantity,
-    weight_kg: Number(perItemWeight.toFixed(3)),
-    condition_grade: conditionGrade || null,
-    storage_location: storageLocation || null,
-    photo_path: sourceRecord?.photo_path ?? null,
-    photo_file_name: sourceRecord?.photo_file_name ?? null,
-    photo_content_type: sourceRecord?.photo_content_type ?? null,
-    status,
-    notes: notes || null,
-    created_by: auth.user.id,
-    created_by_name: auth.user.name,
-    updated_by: auth.user.id,
-  }));
+  const rows = codes.map((code, index) => {
+    const split = splitItems[index];
+    const rowStatus = split ? text(split.status) || status : status;
+    const rowQuantity = split ? numberValue(split.quantity) || (isFruitLevel ? 1 : quantity) : (isFruitLevel ? 1 : quantity);
+    const rowWeight = split ? numberValue(split.weightKg) : perItemWeight;
+    const photoPath = split ? text(split.photoPath) || sourceRecord?.photo_path || null : sourceRecord?.photo_path ?? null;
+    const photoFileName = split ? text(split.photoFileName) || sourceRecord?.photo_file_name || null : sourceRecord?.photo_file_name ?? null;
+    const photoContentType = split ? text(split.photoContentType) || sourceRecord?.photo_content_type || null : sourceRecord?.photo_content_type ?? null;
+    return {
+      source_record_id: sourceRecord?.id ?? null,
+      item_code: code,
+      received_date: finalDate,
+      estate: finalEstate,
+      product: finalProduct,
+      unit: finalUnit,
+      quantity: rowQuantity,
+      weight_kg: Number(rowWeight.toFixed(3)),
+      condition_grade: split ? text(split.conditionGrade) || null : conditionGrade || null,
+      storage_location: split ? text(split.storageLocation) || null : storageLocation || null,
+      photo_path: photoPath,
+      photo_file_name: photoFileName,
+      photo_content_type: photoContentType,
+      status: rowStatus,
+      notes: split ? text(split.notes) || null : notes || null,
+      created_by: auth.user.id,
+      created_by_name: auth.user.name,
+      updated_by: auth.user.id,
+    };
+  });
 
   const { data: inserted, error } = await auth.supabase
     .from('produce_store_items')
@@ -222,8 +248,8 @@ export async function POST(request: Request) {
   const movementRows = ((inserted ?? []) as unknown as StoreItemRow[]).map((item) => ({
     store_item_id: text(item.id),
     movement_type: 'Created',
-    to_status: status,
-    to_location: storageLocation || null,
+    to_status: text(item.status) || status,
+    to_location: text(item.storage_location) || null,
     notes: sourceRecord ? `Created from estate produce record ${sourceRecord.id}` : 'Created manually',
     actor_id: auth.user.id,
     actor_name: auth.user.name,

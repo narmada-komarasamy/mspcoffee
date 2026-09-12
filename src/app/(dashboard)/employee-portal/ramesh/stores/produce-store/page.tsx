@@ -17,6 +17,7 @@ import {
   Search,
   Snowflake,
   Tag,
+  Trash2,
 } from 'lucide-react';
 import { EmailReportButton } from '@/components/email/EmailReportButton';
 
@@ -267,6 +268,7 @@ export default function ProduceStorePage() {
   const [filters, setFilters] = useState({ estate: 'All', product: 'All', status: 'All', search: '' });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [draft, setDraft] = useState({ status: 'In Store' as StoreStatus, storageLocation: '', conditionGrade: '', notes: '', movementNotes: '' });
 
   const loadItems = useCallback(async () => {
@@ -365,6 +367,24 @@ export default function ProduceStorePage() {
       setStatusMessage(error instanceof Error ? error.message : 'Could not update store item');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (!selected) return;
+    if (!window.confirm(`Delete ${selected.itemCode} from Produce Store? This will not delete the original Estate Produce intake.`)) return;
+    setDeleting(true);
+    setStatusMessage('');
+    try {
+      const response = await fetch(`/api/estate-produce/store/${selected.id}`, { method: 'DELETE' });
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(body.error || 'Could not delete store item');
+      setStatusMessage('Store item deleted.');
+      await loadItems();
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Could not delete store item');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -541,6 +561,10 @@ export default function ProduceStorePage() {
                     Download
                   </button>
                   <EmailReportButton payload={catalogueEmailPayload(selected)} label="Email Catalogue" />
+                  <button disabled={deleting} onClick={deleteSelected} className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    {deleting ? 'Deleting...' : 'Delete'}
+                  </button>
                 </div>
 
                 {editing && (

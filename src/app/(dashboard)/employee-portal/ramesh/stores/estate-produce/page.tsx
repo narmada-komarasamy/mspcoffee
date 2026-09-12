@@ -89,10 +89,25 @@ type Draft = {
   followUp: string;
 };
 
+type StoreSplitRow = {
+  id: string;
+  quantity: string;
+  weightKg: string;
+  conditionGrade: string;
+  storageLocation: string;
+  status: StoreStatus;
+  notes: string;
+  photo?: UploadedPhoto;
+  photoPreview?: string;
+};
+
+type StoreStatus = 'In Store' | 'Reserved' | 'Sold' | 'Internal Consumption' | 'Damaged' | 'Cold Storage';
+
 const ESTATES = ['ME', 'SE', 'HFE', 'ORD', 'BVE'];
 const PRODUCTS = ['Durian', 'Pepper', 'Cloves', 'Nutmeg', 'Other Produce'];
 const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 const DISPOSITIONS = ['Store', 'Direct Sale', 'Internal Consumption', 'Damaged'];
+const STORE_STATUSES: StoreStatus[] = ['In Store', 'Cold Storage', 'Reserved', 'Internal Consumption', 'Damaged', 'Sold'];
 const FOLLOW_UPS = ['Pickup needed', 'Sale follow-up', 'Payment follow-up', 'Damage inspection', 'Estimate/quotation due'];
 
 function storedAppUser(): AppUser | null {
@@ -313,6 +328,23 @@ function draftFromRecord(record: ProduceRecord): Draft {
   };
 }
 
+function splitRowId() {
+  return `split-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function blankSplitRow(index: number, record: ProduceRecord, weightKg = ''): StoreSplitRow {
+  const isFruitLevel = record.unit === 'Pieces' && record.product.toLowerCase().includes('durian');
+  return {
+    id: splitRowId(),
+    quantity: isFruitLevel ? '1' : String(Math.max(1, record.qty - record.damageQty)),
+    weightKg,
+    conditionGrade: index === 0 ? 'Premium A' : 'Good',
+    storageLocation: record.location ?? '',
+    status: isFruitLevel ? 'Cold Storage' : 'In Store',
+    notes: '',
+  };
+}
+
 export default function EstateProduceTrackerPage() {
   const [activeTab, setActiveTab] = useState<'records' | 'add' | 'comparisons' | 'photos'>('records');
   const [records, setRecords] = useState<ProduceRecord[]>([]);
@@ -331,6 +363,8 @@ export default function EstateProduceTrackerPage() {
   const [deleteStatus, setDeleteStatus] = useState('');
   const [storeCreateBusy, setStoreCreateBusy] = useState(false);
   const [storeCreateStatus, setStoreCreateStatus] = useState('');
+  const [storeSplitRecord, setStoreSplitRecord] = useState<ProduceRecord | null>(null);
+  const [storeSplitRows, setStoreSplitRows] = useState<StoreSplitRow[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [savingRecord, setSavingRecord] = useState(false);
@@ -664,34 +698,80 @@ export default function EstateProduceTrackerPage() {
     }
   };
 
+  const startStoreSplit = (record: ProduceRecord) => {
+    const goodQty = Math.max(0, record.qty - record.damageQty);
+    const goodWeight = Math.max(0, record.weightKg - record.damageWeightKg);
+    if (goodQty <= 0 && goodWeight <= 0) {
+      setStoreCreateStatus('There is no good stock to move into the store.');
+      return;
+    }
+    const isFruitLevel = record.unit === 'Pieces' && record.product.toLowerCase().includes('durian');
+    const rowCount = isFruitLevel ? Math.max(1, Math.floor(goodQty)) : 1;
+    const defaultWeight = !isFruitLevel && goodWeight > 0 ? goodWeight.toFixed(3) : '';
+    setStoreSplitRows(Array.from({ length: rowCount }, (_, index) => blankSplitRow(index, record, defaultWeight)));
+    setStoreSplitRecord(record);
+    setStoreCreateStatus('');
+  };
+
+  const updateStoreSplitRow = (rowId: string, patch: Partial<StoreSplitRow>) => {
+    setStoreSplitRows((current) => current.map((row) => row.id === rowId ? { ...row, ...patch } : row));
+  };
+
+  const addStoreSplitRow = () => {
+    if (!storeSplitRecord) return;
+    setStoreSplitRows((current) => [...current, blankSplitRow(current.length, storeSplitRecord)]);
+  };
+
+  const deleteStoreSplitRow = (rowId: string) => {
+    setStoreSplitRows((current) => current.length > 1 ? current.filter((row) => row.id !== rowId) : current);
+  };
+
+  const handleSplitRowPhoto = async (rowId: string, file?: File) => {
+    if (!file || !storeSplitRecord) return;
+    try {
+      const image = await readImageFile(file);
+      const uploaded = await uploadPhoto(file, storeSplitRecord.id);
+      updateStoreSplitRow(rowId, { photo: uploaded, photoPreview: uploaded.url || image.photoUrl });
+    } catch (error) {
+      setStoreCreateStatus(error instanceof Error ? error.message : 'Photo upload failed');
+    }
+  };
+
   const createStoreItems = async () => {
-    if (!selected) return;
+    if (!storeSplitRecord) return;
     setStoreCreateBusy(true);
     setStoreCreateStatus('');
     try {
-      const goodQty = Math.max(0, selected.qty - selected.damageQty);
-      const goodWeight = Math.max(0, selected.weightKg - selected.damageWeightKg);
-      if (goodQty <= 0 && goodWeight <= 0) {
-        throw new Error('There is no good stock to move into the store.');
+      const items = storeSplitRows.map((row) => ({
+        quantity: parseNumber(row.quantity),
+        weightKg: parseNumber(row.weightKg),
+        status: row.status,
+        storageLocation: row.storageLocation,
+        conditionGrade: row.conditionGrade,
+        notes: row.notes,
+        photoPath: row.photo?.path,
+        photoFileName: row.photo?.fileName,
+        photoContentType: row.photo?.contentType,
+      }));
+      const invalidWeight = items.some((item) => item.weightKg <= 0);
+      if (invalidWeight) {
+        throw new Error('Enter the individual weight for each fruit before creating store items.');
       }
       const response = await fetch('/api/estate-produce/store', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({
-          sourceRecordId: selected.id,
-          quantity: goodQty,
-          weightKg: goodWeight,
-          status: 'In Store',
-          storageLocation: selected.location || '',
-          conditionGrade: selected.damageQty ? 'Good stock after damage split' : 'Good',
-          notes: `Created from Estate Produce intake. Disposition: ${selected.disposition}.`,
+          sourceRecordId: storeSplitRecord.id,
+          items,
         }),
       });
       const body = await response.json().catch(() => ({})) as { items?: Array<{ itemCode: string }>; error?: string };
       if (!response.ok) throw new Error(body.error || 'Could not create store items');
       const count = body.items?.length ?? 0;
       setStoreCreateStatus(`${count.toLocaleString('en-IN')} store item${count === 1 ? '' : 's'} created.`);
+      setStoreSplitRecord(null);
+      setStoreSplitRows([]);
     } catch (error) {
       setStoreCreateStatus(error instanceof Error ? error.message : 'Could not create store items');
     } finally {
@@ -1203,13 +1283,13 @@ export default function EstateProduceTrackerPage() {
                     <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
                   </label>
                   <button
-                    onClick={createStoreItems}
+                    onClick={() => startStoreSplit(selected)}
                     disabled={storeCreateBusy || selected.disposition !== 'Store'}
                     className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    title={selected.disposition === 'Store' ? 'Create Produce Store items' : 'Only Store disposition can create store items'}
+                    title={selected.disposition === 'Store' ? 'Weigh and move to Produce Store' : 'Only Store disposition can create store items'}
                   >
                     {storeCreateBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Warehouse className="h-4 w-4" />}
-                    Create Store Items
+                    Move to Produce Store
                   </button>
                   <Link
                     href="/employee-portal/ramesh/stores/produce-store"
@@ -1310,6 +1390,141 @@ export default function EstateProduceTrackerPage() {
                 {photoModalRecord.aiPhotoCount ? `AI count: ${aiCountLabel(photoModalRecord.aiPhotoCount)}` : 'No AI count attached yet.'}
               </span>
               {photoModalRecord.aiPhotoCount?.notes && <span className="text-stone-500">{photoModalRecord.aiPhotoCount.notes}</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {storeSplitRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Move produce to store">
+          <div className="max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-lg bg-white shadow-2xl">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-stone-200 px-5 py-4">
+              <div>
+                <h2 className="text-lg font-bold text-stone-950">Move to Produce Store</h2>
+                <p className="mt-1 text-sm text-stone-500">
+                  {storeSplitRecord.product} / {storeSplitRecord.estate} / {toDateLabel(storeSplitRecord.date)}
+                </p>
+                <p className="mt-1 text-xs font-semibold uppercase text-emerald-800">
+                  Bulk intake: {storeSplitRecord.qty} {storeSplitRecord.unit.toLowerCase()} / {formatKg(storeSplitRecord.weightKg)} kg
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setStoreSplitRecord(null);
+                  setStoreSplitRows([]);
+                }}
+                className="rounded-md p-2 text-stone-500 hover:bg-stone-100"
+                aria-label="Close move to store"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-auto p-5">
+              <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Weigh each fruit here. Each row becomes one Produce Store item with its own fruit number, weight, status, location, and photo.
+              </div>
+              <div className="mb-4 grid gap-3 md:grid-cols-4">
+                <div className="rounded-md border border-stone-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-stone-500">Good bulk qty</p>
+                  <p className="mt-1 text-lg font-bold text-stone-950">{Math.max(0, storeSplitRecord.qty - storeSplitRecord.damageQty)} {storeSplitRecord.unit.toLowerCase()}</p>
+                </div>
+                <div className="rounded-md border border-stone-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-stone-500">Good bulk weight</p>
+                  <p className="mt-1 text-lg font-bold text-stone-950">{formatKg(Math.max(0, storeSplitRecord.weightKg - storeSplitRecord.damageWeightKg))} kg</p>
+                </div>
+                <div className="rounded-md border border-stone-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-stone-500">Rows</p>
+                  <p className="mt-1 text-lg font-bold text-stone-950">{storeSplitRows.length}</p>
+                </div>
+                <div className="rounded-md border border-stone-200 p-3">
+                  <p className="text-xs font-semibold uppercase text-stone-500">Entered weight</p>
+                  <p className="mt-1 text-lg font-bold text-stone-950">{formatKg(storeSplitRows.reduce((sum, row) => sum + parseNumber(row.weightKg), 0))} kg</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-stone-200">
+                <table className="w-full min-w-[1080px] text-left text-sm">
+                  <thead className="bg-stone-50 text-xs uppercase text-stone-500">
+                    <tr>
+                      {['Fruit / lot', 'Qty', 'Weight kg', 'Grade', 'Location', 'Status', 'Photo', 'Notes', 'Delete'].map((heading) => (
+                        <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {storeSplitRows.map((row, index) => (
+                      <tr key={row.id}>
+                        <td className="px-3 py-3 font-bold text-emerald-900">Auto {String(index + 1).padStart(3, '0')}</td>
+                        <td className="px-3 py-3">
+                          <input value={row.quantity} onChange={(event) => updateStoreSplitRow(row.id, { quantity: event.target.value })} className="w-20 rounded-md border border-stone-200 px-2 py-1.5" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <input value={row.weightKg} onChange={(event) => updateStoreSplitRow(row.id, { weightKg: event.target.value })} className="w-28 rounded-md border border-stone-200 px-2 py-1.5" placeholder="0.000" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <input value={row.conditionGrade} onChange={(event) => updateStoreSplitRow(row.id, { conditionGrade: event.target.value })} className="w-36 rounded-md border border-stone-200 px-2 py-1.5" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <input value={row.storageLocation} onChange={(event) => updateStoreSplitRow(row.id, { storageLocation: event.target.value })} className="w-40 rounded-md border border-stone-200 px-2 py-1.5" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <select value={row.status} onChange={(event) => updateStoreSplitRow(row.id, { status: event.target.value as StoreStatus })} className="w-44 rounded-md border border-stone-200 px-2 py-1.5">
+                            {STORE_STATUSES.map((status) => <option key={status}>{status}</option>)}
+                          </select>
+                        </td>
+                        <td className="px-3 py-3">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 px-2 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50">
+                            <Camera className="h-3.5 w-3.5" />
+                            {row.photo ? 'Replace' : 'Attach'}
+                            <input type="file" accept="image/*" className="hidden" onChange={(event) => handleSplitRowPhoto(row.id, event.target.files?.[0])} />
+                          </label>
+                          {row.photoPreview && <img alt="" src={row.photoPreview} className="mt-2 h-12 w-12 rounded object-cover" />}
+                        </td>
+                        <td className="px-3 py-3">
+                          <input value={row.notes} onChange={(event) => updateStoreSplitRow(row.id, { notes: event.target.value })} className="w-48 rounded-md border border-stone-200 px-2 py-1.5" placeholder="Optional" />
+                        </td>
+                        <td className="px-3 py-3">
+                          <button onClick={() => deleteStoreSplitRow(row.id)} className="rounded-md border border-red-200 px-2 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <button onClick={addStoreSplitRow} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
+                  <Plus className="h-4 w-4" />
+                  Add Row
+                </button>
+                {storeCreateStatus && (
+                  <p className={`rounded-md border px-3 py-2 text-sm font-semibold ${
+                    storeCreateStatus.includes('created') ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-800'
+                  }`}>
+                    {storeCreateStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-stone-200 px-5 py-4">
+              <button
+                disabled={storeCreateBusy}
+                onClick={() => {
+                  setStoreSplitRecord(null);
+                  setStoreSplitRows([]);
+                }}
+                className="rounded-md border border-stone-200 px-4 py-2 text-sm font-semibold text-stone-700 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={storeCreateBusy}
+                onClick={createStoreItems}
+                className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {storeCreateBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {storeCreateBusy ? 'Creating...' : 'Create Store Items'}
+              </button>
             </div>
           </div>
         </div>
