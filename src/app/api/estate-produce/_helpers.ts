@@ -8,6 +8,7 @@ export const ESTATES = ['ME', 'SE', 'HFE', 'ORD', 'BVE'];
 export const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 export const SOURCES = ['Manual', 'WhatsApp Paste'];
 export const DISPOSITIONS = ['Store', 'Direct Sale', 'Internal Consumption', 'Damaged'];
+export const STORE_STATUSES = ['In Store', 'Reserved', 'Sold', 'Internal Consumption', 'Damaged', 'Cold Storage'];
 export const ESTATE_PRODUCE_ROLES = ['admin', 'supervisor', 'worker', 'ceo', 'hr'];
 export const BUCKET = 'estate-produce';
 export const ESTATE_PRODUCE_RECORD_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,4 +174,18 @@ export function buildRecordPayload(body: Record<string, unknown>, userId: string
 
 export function badRequest(error: string) {
   return NextResponse.json({ error }, { status: 400 });
+}
+
+export function estateProduceSetupError(message: string) {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('estate_produce_records') ||
+    lower.includes('produce_store_items') ||
+    lower.includes('produce_store_movements') ||
+    lower.includes('schema cache') ||
+    lower.includes('disposition')
+  ) {
+    return 'Estate Produce is not fully set up in Supabase yet. Run the latest estate produce migrations in supabase/migrations, then refresh this page.';
+  }
+  return message;
 }

@@ -56,6 +56,12 @@ export const RAMESH_STORES_TOOLS: EmployeePortalTool[] = [
     description: 'Incoming fruits and estate products available for sale, with search and comparisons.',
   },
   {
+    label: 'Produce Store',
+    slug: 'produce-store',
+    href: '/employee-portal/ramesh/stores/produce-store',
+    description: 'Stored fruit numbers, bulk stock, cold storage, reservations, and sale-ready balances.',
+  },
+  {
     label: 'Produce Sales',
     slug: 'produce-sales',
     href: '/employee-portal/ramesh/stores/produce-sales',

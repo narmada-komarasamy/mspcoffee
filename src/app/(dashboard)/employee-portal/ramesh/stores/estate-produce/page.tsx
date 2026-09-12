@@ -1,6 +1,7 @@
 'use client';
 
 import { ChangeEvent, ClipboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   AlertTriangle,
   BarChart3,
@@ -18,6 +19,7 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  Warehouse,
   X,
 } from 'lucide-react';
 
@@ -327,6 +329,8 @@ export default function EstateProduceTrackerPage() {
   const [deleteConfirmRecord, setDeleteConfirmRecord] = useState<ProduceRecord | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState('');
+  const [storeCreateBusy, setStoreCreateBusy] = useState(false);
+  const [storeCreateStatus, setStoreCreateStatus] = useState('');
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [savingRecord, setSavingRecord] = useState(false);
@@ -657,6 +661,41 @@ export default function EstateProduceTrackerPage() {
         : message);
     } finally {
       setDeleteBusy(false);
+    }
+  };
+
+  const createStoreItems = async () => {
+    if (!selected) return;
+    setStoreCreateBusy(true);
+    setStoreCreateStatus('');
+    try {
+      const goodQty = Math.max(0, selected.qty - selected.damageQty);
+      const goodWeight = Math.max(0, selected.weightKg - selected.damageWeightKg);
+      if (goodQty <= 0 && goodWeight <= 0) {
+        throw new Error('There is no good stock to move into the store.');
+      }
+      const response = await fetch('/api/estate-produce/store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          sourceRecordId: selected.id,
+          quantity: goodQty,
+          weightKg: goodWeight,
+          status: 'In Store',
+          storageLocation: selected.location || '',
+          conditionGrade: selected.damageQty ? 'Good stock after damage split' : 'Good',
+          notes: `Created from Estate Produce intake. Disposition: ${selected.disposition}.`,
+        }),
+      });
+      const body = await response.json().catch(() => ({})) as { items?: Array<{ itemCode: string }>; error?: string };
+      if (!response.ok) throw new Error(body.error || 'Could not create store items');
+      const count = body.items?.length ?? 0;
+      setStoreCreateStatus(`${count.toLocaleString('en-IN')} store item${count === 1 ? '' : 's'} created.`);
+    } catch (error) {
+      setStoreCreateStatus(error instanceof Error ? error.message : 'Could not create store items');
+    } finally {
+      setStoreCreateBusy(false);
     }
   };
 
@@ -1163,6 +1202,22 @@ export default function EstateProduceTrackerPage() {
                     {selected.photoUrl ? 'Replace Photo' : 'Attach Photo'}
                     <input type="file" accept="image/*" className="hidden" onChange={handleSelectedPhoto} />
                   </label>
+                  <button
+                    onClick={createStoreItems}
+                    disabled={storeCreateBusy || selected.disposition !== 'Store'}
+                    className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    title={selected.disposition === 'Store' ? 'Create Produce Store items' : 'Only Store disposition can create store items'}
+                  >
+                    {storeCreateBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Warehouse className="h-4 w-4" />}
+                    Create Store Items
+                  </button>
+                  <Link
+                    href="/employee-portal/ramesh/stores/produce-store"
+                    className="ml-2 mt-3 inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50"
+                  >
+                    <Warehouse className="h-4 w-4" />
+                    Produce Store
+                  </Link>
                   {isAdmin && (
                     <>
                       <button
@@ -1191,6 +1246,15 @@ export default function EstateProduceTrackerPage() {
                     <p><span className="font-semibold text-stone-900">Entered by:</span> {selected.enteredBy}</p>
                     <p><span className="font-semibold text-stone-900">Follow-up:</span> {selected.followUp ?? 'None'}</p>
                   </div>
+                  {storeCreateStatus && (
+                    <div className={`mt-4 rounded-md border p-3 text-sm ${
+                      storeCreateStatus.includes('created')
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                        : 'border-red-200 bg-red-50 text-red-800'
+                    }`}>
+                      {storeCreateStatus}
+                    </div>
+                  )}
                   {selected.sourceMessage && (
                     <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50/70 p-3 text-sm text-stone-700">
                       <p className="font-semibold text-emerald-950">Attached WhatsApp Message</p>
