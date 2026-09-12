@@ -7,6 +7,7 @@ export { UUID_RE };
 export const ESTATES = ['ME', 'SE', 'HFE', 'ORD', 'BVE'];
 export const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 export const SOURCES = ['Manual', 'WhatsApp Paste'];
+export const DISPOSITIONS = ['Store', 'Direct Sale', 'Internal Consumption', 'Damaged'];
 export const ESTATE_PRODUCE_ROLES = ['admin', 'supervisor', 'worker', 'ceo', 'hr'];
 export const BUCKET = 'estate-produce';
 export const ESTATE_PRODUCE_RECORD_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -65,6 +66,7 @@ export function recordSelect() {
     'damage_qty',
     'damage_weight_kg',
     'damage_notes',
+    'disposition',
     'source',
     'source_message',
     'photo_path',
@@ -98,6 +100,7 @@ export function mapRecord(row: EstateProduceRow | null | undefined) {
     damageQty: numberValue(sourceRow.damage_qty),
     damageWeightKg: numberValue(sourceRow.damage_weight_kg),
     damageNotes: text(sourceRow.damage_notes),
+    disposition: text(sourceRow.disposition) || 'Store',
     source: text(sourceRow.source) || 'Manual',
     sourceMessage: text(sourceRow.source_message) || undefined,
     photoPath: photoPath || undefined,
@@ -121,6 +124,7 @@ export function buildRecordPayload(body: Record<string, unknown>, userId: string
   const product = text(body.product);
   const unit = text(body.unit) || (isUpdate ? '' : 'Pieces');
   const source = text(body.source) || (isUpdate ? '' : 'Manual');
+  const disposition = text(body.disposition) || (isUpdate ? '' : 'Store');
 
   if (!isUpdate || date) {
     if (!DATE_RE.test(date)) return { ok: false, error: 'Enter a valid date' };
@@ -130,6 +134,7 @@ export function buildRecordPayload(body: Record<string, unknown>, userId: string
   if ((!isUpdate || product) && !product) return { ok: false, error: 'Product is required' };
   if ((!isUpdate || unit) && !UNITS.includes(unit)) return { ok: false, error: 'Choose a valid unit' };
   if ((!isUpdate || source) && !SOURCES.includes(source)) return { ok: false, error: 'Choose a valid source' };
+  if ((!isUpdate || disposition) && !DISPOSITIONS.includes(disposition)) return { ok: false, error: 'Choose a valid disposition' };
 
   const payload: Record<string, unknown> = {
     updated_by: userId,
@@ -152,6 +157,7 @@ export function buildRecordPayload(body: Record<string, unknown>, userId: string
   if (Object.hasOwn(body, 'damageQty')) payload.damage_qty = numberValue(body.damageQty);
   if (Object.hasOwn(body, 'damageWeightKg')) payload.damage_weight_kg = numberValue(body.damageWeightKg);
   if (Object.hasOwn(body, 'damageNotes')) payload.damage_notes = nullableText(body.damageNotes);
+  if (disposition) payload.disposition = disposition;
   if (source) payload.source = source;
   if (Object.hasOwn(body, 'sourceMessage')) payload.source_message = nullableText(body.sourceMessage);
   if (Object.hasOwn(body, 'photoPath')) payload.photo_path = nullableText(body.photoPath);

@@ -46,6 +46,7 @@ type ProduceRecord = {
   damageQty: number;
   damageWeightKg: number;
   damageNotes: string;
+  disposition: string;
   source: 'Manual' | 'WhatsApp Paste';
   sourceMessage?: string;
   photoPath?: string;
@@ -79,6 +80,7 @@ type Draft = {
   damageQty: string;
   damageWeightKg: string;
   damageNotes: string;
+  disposition: string;
   location: string;
   notes: string;
   addFollowUp: boolean;
@@ -88,6 +90,7 @@ type Draft = {
 const ESTATES = ['ME', 'SE', 'HFE', 'ORD', 'BVE'];
 const PRODUCTS = ['Durian', 'Pepper', 'Cloves', 'Nutmeg', 'Other Produce'];
 const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
+const DISPOSITIONS = ['Store', 'Direct Sale', 'Internal Consumption', 'Damaged'];
 const FOLLOW_UPS = ['Pickup needed', 'Sale follow-up', 'Payment follow-up', 'Damage inspection', 'Estimate/quotation due'];
 
 function storedAppUser(): AppUser | null {
@@ -128,6 +131,7 @@ function blankDraft(): Draft {
     damageQty: '',
     damageWeightKg: '',
     damageNotes: '',
+    disposition: 'Store',
     location: '',
     notes: '',
     addFollowUp: false,
@@ -259,6 +263,7 @@ function recordWithWhatsAppValues(record: ProduceRecord): ProduceRecord {
     damageQty: String(record.damageQty),
     damageWeightKg: String(record.damageWeightKg),
     damageNotes: record.damageNotes,
+    disposition: record.disposition,
     location: record.location ?? '',
     notes: record.notes,
     addFollowUp: Boolean(record.followUp),
@@ -279,6 +284,7 @@ function recordWithWhatsAppValues(record: ProduceRecord): ProduceRecord {
     damageQty: parseNumber(parsed.damageQty),
     damageWeightKg: parseNumber(parsed.damageWeightKg),
     damageNotes: parsed.damageNotes,
+    disposition: parsed.disposition,
     location: parsed.location,
   };
 }
@@ -297,6 +303,7 @@ function draftFromRecord(record: ProduceRecord): Draft {
     damageQty: String(record.damageQty),
     damageWeightKg: String(record.damageWeightKg),
     damageNotes: record.damageNotes,
+    disposition: record.disposition,
     location: record.location ?? '',
     notes: record.notes,
     addFollowUp: Boolean(record.followUp),
@@ -669,6 +676,7 @@ export default function EstateProduceTrackerPage() {
       damageQty: parseNumber(draft.damageQty),
       damageWeightKg: parseNumber(draft.damageWeightKg),
       damageNotes: draft.damageNotes,
+      disposition: draft.disposition,
       source: entryMode === 'whatsapp' ? 'WhatsApp Paste' : 'Manual',
       sourceMessage: entryMode === 'whatsapp' ? whatsAppMessage.trim() || undefined : undefined,
       photoPath: draftPhoto?.path,
@@ -710,11 +718,12 @@ export default function EstateProduceTrackerPage() {
   };
 
   const exportCsv = () => {
-    const headers = ['Date', 'Estate', 'Product', 'Qty', 'Unit', 'Total weight kg', 'Previous qty', 'Previous total weight kg', 'Damage qty', 'Damage weight kg', 'Follow-up', 'Notes'];
+    const headers = ['Date', 'Estate', 'Product', 'Disposition', 'Qty', 'Unit', 'Total weight kg', 'Previous qty', 'Previous total weight kg', 'Damage qty', 'Damage weight kg', 'Follow-up', 'Notes'];
     const rows = filteredRecords.map((record) => [
       record.date,
       record.estate,
       record.product,
+      record.disposition,
       record.qty,
       record.unit,
       record.weightKg,
@@ -836,7 +845,7 @@ export default function EstateProduceTrackerPage() {
                       <table className="w-full min-w-[880px] text-left text-sm">
                         <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                           <tr>
-                            {['Date', 'Estate', 'Product', 'Qty', 'Total Weight', 'Damage', 'Photo', 'Follow-up', 'Notes', 'Action'].map((heading) => (
+                            {['Date', 'Estate', 'Product', 'Disposition', 'Qty', 'Total Weight', 'Damage', 'Photo', 'Follow-up', 'Notes', 'Action'].map((heading) => (
                               <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                             ))}
                           </tr>
@@ -847,6 +856,16 @@ export default function EstateProduceTrackerPage() {
                               <td className="px-3 py-3">{toDateLabel(record.date)}</td>
                               <td className="px-3 py-3 font-semibold text-emerald-900">{record.estate}</td>
                               <td className="px-3 py-3">{record.product}</td>
+                              <td className="px-3 py-3">
+                                <span className={`rounded-full px-2 py-1 text-xs font-bold ${
+                                  record.disposition === 'Damaged' ? 'bg-red-50 text-red-700'
+                                    : record.disposition === 'Internal Consumption' ? 'bg-amber-50 text-amber-800'
+                                      : record.disposition === 'Direct Sale' ? 'bg-sky-50 text-sky-800'
+                                        : 'bg-emerald-50 text-emerald-800'
+                                }`}>
+                                  {record.disposition}
+                                </span>
+                              </td>
                               <td className="px-3 py-3">{record.qty} {record.unit.toLowerCase()}</td>
                               <td className="px-3 py-3">{formatKg(record.weightKg)} kg</td>
                               <td className={`px-3 py-3 font-semibold ${record.damageQty ? 'text-red-600' : 'text-emerald-700'}`}>{record.damageQty} pcs</td>
@@ -895,7 +914,7 @@ export default function EstateProduceTrackerPage() {
                           ))}
                           {!loadingRecords && filteredRecords.length === 0 && (
                             <tr>
-                              <td colSpan={10} className="px-3 py-8 text-center text-sm text-stone-500">
+                              <td colSpan={11} className="px-3 py-8 text-center text-sm text-stone-500">
                                 No estate produce records yet. Add the first entry to save it in Supabase.
                               </td>
                             </tr>
@@ -929,6 +948,7 @@ export default function EstateProduceTrackerPage() {
                     <select value={draft.estate} onChange={(event) => updateDraft('estate', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{ESTATES.map((estate) => <option key={estate}>{estate}</option>)}</select>
                     <select value={draft.product} onChange={(event) => updateDraft('product', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{PRODUCTS.map((product) => <option key={product}>{product}</option>)}</select>
                     <select value={draft.unit} onChange={(event) => updateDraft('unit', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select>
+                    <select value={draft.disposition} onChange={(event) => updateDraft('disposition', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{DISPOSITIONS.map((disposition) => <option key={disposition}>{disposition}</option>)}</select>
                     <input value={draft.qty} onChange={(event) => updateDraft('qty', event.target.value)} placeholder="Quantity" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input value={draft.weightKg} onChange={(event) => updateDraft('weightKg', event.target.value)} placeholder="Total weight kg" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input value={draft.previousQty} onChange={(event) => updateDraft('previousQty', event.target.value)} placeholder="Previous quantity" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
@@ -976,6 +996,7 @@ export default function EstateProduceTrackerPage() {
                         damageWeightKg: parseNumber(draft.damageWeightKg),
                         damageNotes: draft.damageNotes,
                         source: entryMode === 'whatsapp' ? 'WhatsApp Paste' : 'Manual',
+                        disposition: draft.disposition,
                         photoUrl: photoPreview,
                         aiPhotoCount: draftAiCount,
                         location: draft.location,
@@ -1012,6 +1033,7 @@ export default function EstateProduceTrackerPage() {
                       ['Estate', draft.estate],
                       ['Qty', `${draft.qty} ${draft.unit}`],
                       ['Total Weight', `${draft.weightKg} kg`],
+                      ['Disposition', draft.disposition],
                       ['Damage', `${draft.damageQty || 0} pcs ${draft.damageNotes ? `(${draft.damageNotes})` : ''}`],
                     ].map(([label, value]) => (
                       <div key={label} className="mt-2 flex justify-between gap-4 border-b border-stone-100 pb-1">
@@ -1133,6 +1155,7 @@ export default function EstateProduceTrackerPage() {
                       <p className="mt-2">{toDateLabel(selected.date)} {selected.time}</p>
                       <p>{selected.estate} / {selected.qty} {selected.unit.toLowerCase()}</p>
                       <p>{formatKg(selected.weightKg)} kg</p>
+                      <p>{selected.disposition}</p>
                     </div>
                   </div>
                   <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
@@ -1163,6 +1186,7 @@ export default function EstateProduceTrackerPage() {
                   )}
                   <div className="mt-4 space-y-2 text-sm text-stone-600">
                     <p><span className="font-semibold text-stone-900">Damage:</span> {selected.damageQty} pcs {selected.damageNotes}</p>
+                    <p><span className="font-semibold text-stone-900">Disposition:</span> {selected.disposition}</p>
                     <p><span className="font-semibold text-stone-900">Location:</span> {selected.location ?? '-'}</p>
                     <p><span className="font-semibold text-stone-900">Entered by:</span> {selected.enteredBy}</p>
                     <p><span className="font-semibold text-stone-900">Follow-up:</span> {selected.followUp ?? 'None'}</p>

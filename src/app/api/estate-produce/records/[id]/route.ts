@@ -11,8 +11,8 @@ import {
 
 function estateProduceSetupError(message: string) {
   const lower = message.toLowerCase();
-  if (lower.includes('estate_produce_records') || lower.includes('schema cache')) {
-    return 'Estate Produce is not set up in Supabase yet. Run migration supabase/migrations/20260910_estate_produce_tracker.sql in the Supabase SQL Editor, then refresh this page.';
+  if (lower.includes('estate_produce_records') || lower.includes('schema cache') || lower.includes('disposition')) {
+    return 'Estate Produce is not fully set up in Supabase yet. Run migrations supabase/migrations/20260910_estate_produce_tracker.sql and supabase/migrations/20260912_estate_produce_disposition.sql in the Supabase SQL Editor, then refresh this page.';
   }
   return message;
 }
