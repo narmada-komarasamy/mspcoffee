@@ -6,6 +6,7 @@ import {
   Banknote,
   Calculator,
   CheckCircle2,
+  Copy,
   Download,
   Eye,
   FileText,
@@ -91,6 +92,14 @@ type CustomerRecord = {
   defaultDispatchMethod: string;
   defaultPaymentMode: PaymentMode | '';
   lastSaleAt: string;
+};
+
+type EmailDraft = {
+  saleId: string;
+  to: string;
+  subject: string;
+  attachment: string;
+  body: string;
 };
 
 type StoreItem = {
@@ -336,6 +345,7 @@ export default function ProduceSalesPage() {
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<'All' | PaymentStatus>('All');
   const [emailDraftOpen, setEmailDraftOpen] = useState(false);
+  const [editableEmailDraft, setEditableEmailDraft] = useState<EmailDraft | null>(null);
 
   const loadStoreStock = useCallback(async () => {
     setLoadingStock(true);
@@ -459,17 +469,39 @@ export default function ProduceSalesPage() {
     }));
   }, [batches]);
 
-  const emailDraft = useMemo(() => {
+  const emailDraftTemplate = useMemo(() => {
     if (!selectedSale) return null;
     const no = invoiceNumber(selectedSale);
 
     return {
+      saleId: selectedSale.id,
       to: selectedSale.buyerPhone ? `${selectedSale.buyerName} <buyer email to add>` : 'buyer email to add',
       subject: `${no} Bill from MSP Coffee Private Limited`,
       attachment: `${no.toLowerCase()}-bill.pdf`,
       body: `Dear ${selectedSale.buyerName},\n\nPlease find attached the bill for ${selectedSale.product}.\n\nBill No: ${no}\nAmount: ${money(selectedSale.totalAmount)}\nPayment Status: ${selectedSale.paymentStatus}\n\nRegards,\nMSP Coffee Private Limited`,
     };
   }, [selectedSale]);
+
+  useEffect(() => {
+    if (!emailDraftOpen || !emailDraftTemplate) return;
+    setEditableEmailDraft((current) => current?.saleId === emailDraftTemplate.saleId ? current : emailDraftTemplate);
+  }, [emailDraftOpen, emailDraftTemplate]);
+
+  const updateEmailDraft = (key: keyof Omit<EmailDraft, 'saleId'>, value: string) => {
+    setEditableEmailDraft((current) => current ? { ...current, [key]: value } : current);
+  };
+
+  const copyEmailDraft = async () => {
+    if (!editableEmailDraft) return;
+    const text = [
+      `To: ${editableEmailDraft.to}`,
+      `Subject: ${editableEmailDraft.subject}`,
+      `Attachment: ${editableEmailDraft.attachment}`,
+      '',
+      editableEmailDraft.body,
+    ].join('\n');
+    await navigator.clipboard?.writeText(text).catch(() => undefined);
+  };
 
   const updateDraft = (key: keyof DraftSale, value: string) => {
     setDraft((current) => {
@@ -857,17 +889,35 @@ export default function ProduceSalesPage() {
                 </div>
               </div>
 
-              {emailDraftOpen && emailDraft && (
+              {emailDraftOpen && editableEmailDraft && (
                 <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
-                  <h3 className="flex items-center gap-2 font-bold text-emerald-950">
-                    <Mail className="h-4 w-4" />
-                    Email Draft Preview
-                  </h3>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="flex items-center gap-2 font-bold text-emerald-950">
+                      <Mail className="h-4 w-4" />
+                      Email Draft
+                    </h3>
+                    <button onClick={copyEmailDraft} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
+                      <Copy className="h-4 w-4" />
+                      Copy Email
+                    </button>
+                  </div>
                   <div className="mt-3 grid gap-3 text-sm">
-                    <div className="rounded-md bg-white p-3"><span className="font-bold">To:</span> {emailDraft.to}</div>
-                    <div className="rounded-md bg-white p-3"><span className="font-bold">Subject:</span> {emailDraft.subject}</div>
-                    <div className="rounded-md bg-white p-3"><span className="font-bold">Attachment:</span> {emailDraft.attachment}</div>
-                    <pre className="whitespace-pre-wrap rounded-md bg-white p-3 font-sans text-sm">{emailDraft.body}</pre>
+                    <label className="space-y-1">
+                      <span className="text-xs font-semibold uppercase text-stone-500">To</span>
+                      <input value={editableEmailDraft.to} onChange={(event) => updateEmailDraft('to', event.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs font-semibold uppercase text-stone-500">Subject</span>
+                      <input value={editableEmailDraft.subject} onChange={(event) => updateEmailDraft('subject', event.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs font-semibold uppercase text-stone-500">Attachment Name</span>
+                      <input value={editableEmailDraft.attachment} onChange={(event) => updateEmailDraft('attachment', event.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs font-semibold uppercase text-stone-500">Message</span>
+                      <textarea value={editableEmailDraft.body} onChange={(event) => updateEmailDraft('body', event.target.value)} className="min-h-44 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm" />
+                    </label>
                   </div>
                 </div>
               )}
