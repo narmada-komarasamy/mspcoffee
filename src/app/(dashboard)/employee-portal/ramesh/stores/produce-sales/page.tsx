@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Banknote,
@@ -31,6 +31,10 @@ type StockBatch = {
   receivedWeightKg: number;
   soldPieces: number;
   soldWeightKg: number;
+  itemCode?: string;
+  status?: string;
+  conditionGrade?: string;
+  storageLocation?: string;
 };
 
 type SaleRecord = {
@@ -72,52 +76,19 @@ type DraftSale = {
   notes: string;
 };
 
-const initialBatches: StockBatch[] = [
-  {
-    id: 'durian-me-2026-09-07',
-    date: '2026-09-07',
-    estate: 'ME',
-    product: 'Durian Fruits',
-    unit: 'Pieces',
-    receivedPieces: 149,
-    receivedWeightKg: 129.7,
-    soldPieces: 2,
-    soldWeightKg: 1.55,
-  },
-  {
-    id: 'pepper-me-2026-09-07',
-    date: '2026-09-07',
-    estate: 'ME',
-    product: 'Pepper',
-    unit: 'Kg',
-    receivedPieces: 0,
-    receivedWeightKg: 98,
-    soldPieces: 0,
-    soldWeightKg: 0,
-  },
-  {
-    id: 'cloves-se-2026-09-06',
-    date: '2026-09-06',
-    estate: 'SE',
-    product: 'Cloves',
-    unit: 'Kg',
-    receivedPieces: 0,
-    receivedWeightKg: 50,
-    soldPieces: 0,
-    soldWeightKg: 0,
-  },
-  {
-    id: 'nutmeg-hfe-2026-09-06',
-    date: '2026-09-06',
-    estate: 'HFE',
-    product: 'Nutmeg',
-    unit: 'Kg',
-    receivedPieces: 0,
-    receivedWeightKg: 38.2,
-    soldPieces: 0,
-    soldWeightKg: 0,
-  },
-];
+type StoreItem = {
+  id: string;
+  itemCode: string;
+  receivedDate: string;
+  estate: string;
+  product: string;
+  unit: string;
+  quantity: number;
+  weightKg: number;
+  conditionGrade: string;
+  storageLocation: string;
+  status: 'In Store' | 'Reserved' | 'Sold' | 'Internal Consumption' | 'Damaged' | 'Cold Storage';
+};
 
 const initialSales: SaleRecord[] = [
   {
@@ -143,16 +114,25 @@ const initialSales: SaleRecord[] = [
   },
 ];
 
-function blankDraft(batchId = initialBatches[0].id): DraftSale {
+function currentDateValue() {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function blankDraft(batchId = ''): DraftSale {
   return {
-    date: '2026-09-08',
+    date: currentDateValue(),
     buyerName: '',
     buyerPhone: '',
     buyerAddress: '',
     dispatchMethod: 'By Courier Service',
     batchId,
-    piecesSold: '2',
-    weightSoldKg: '1.550',
+    piecesSold: '1',
+    weightSoldKg: '',
     ratePerKg: '1000',
     courierPacking: '250',
     paymentStatus: 'Pending',
@@ -343,7 +323,9 @@ function invoiceHtml(sale: SaleRecord) {
 }
 
 export default function ProduceSalesPage() {
-  const [batches, setBatches] = useState(initialBatches);
+  const [batches, setBatches] = useState<StockBatch[]>([]);
+  const [loadingStock, setLoadingStock] = useState(true);
+  const [stockStatus, setStockStatus] = useState('');
   const [sales, setSales] = useState(initialSales);
   const [draft, setDraft] = useState<DraftSale>(blankDraft());
   const [selectedSaleId, setSelectedSaleId] = useState(initialSales[0].id);
@@ -351,17 +333,66 @@ export default function ProduceSalesPage() {
   const [paymentFilter, setPaymentFilter] = useState<'All' | PaymentStatus>('All');
   const [emailDraftOpen, setEmailDraftOpen] = useState(false);
 
-  const selectedBatch = batches.find((batch) => batch.id === draft.batchId) ?? batches[0];
+  const loadStoreStock = useCallback(async () => {
+    setLoadingStock(true);
+    setStockStatus('');
+    try {
+      const response = await fetch('/api/estate-produce/store?status=In%20Store');
+      const body = await response.json().catch(() => ({})) as { items?: StoreItem[]; error?: string };
+      if (!response.ok) throw new Error(body.error || 'Could not load produce store stock');
+      const coldResponse = await fetch('/api/estate-produce/store?status=Cold%20Storage');
+      const coldBody = await coldResponse.json().catch(() => ({})) as { items?: StoreItem[]; error?: string };
+      if (!coldResponse.ok) throw new Error(coldBody.error || 'Could not load cold storage stock');
+      const storeItems = [...(body.items ?? []), ...(coldBody.items ?? [])];
+      const nextBatches = storeItems.map((item) => ({
+        id: item.id,
+        date: item.receivedDate,
+        estate: item.estate,
+        product: item.product,
+        unit: item.unit,
+        receivedPieces: item.unit === 'Pieces' ? item.quantity : 0,
+        receivedWeightKg: item.weightKg,
+        soldPieces: 0,
+        soldWeightKg: 0,
+        itemCode: item.itemCode,
+        status: item.status,
+        conditionGrade: item.conditionGrade,
+        storageLocation: item.storageLocation,
+      }));
+      setBatches(nextBatches);
+      setDraft((current) => {
+        const selectedStillAvailable = nextBatches.some((batch) => batch.id === current.batchId);
+        const nextBatch = selectedStillAvailable ? current.batchId : nextBatches[0]?.id ?? '';
+        const batch = nextBatches.find((entry) => entry.id === nextBatch);
+        return {
+          ...current,
+          batchId: nextBatch,
+          piecesSold: batch?.unit === 'Pieces' ? String(batch.receivedPieces || 1) : current.piecesSold,
+          weightSoldKg: batch ? String(batch.receivedWeightKg.toFixed(3)) : current.weightSoldKg,
+        };
+      });
+    } catch (error) {
+      setStockStatus(error instanceof Error ? error.message : 'Could not load produce store stock');
+    } finally {
+      setLoadingStock(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStoreStock();
+  }, [loadStoreStock]);
+
+  const selectedBatch = batches.find((batch) => batch.id === draft.batchId) ?? batches[0] ?? null;
   const selectedSale = sales.find((sale) => sale.id === selectedSaleId) ?? sales[0];
-  const piecesAvailable = selectedBatch.receivedPieces - selectedBatch.soldPieces;
-  const weightAvailable = selectedBatch.receivedWeightKg - selectedBatch.soldWeightKg;
+  const piecesAvailable = selectedBatch ? selectedBatch.receivedPieces - selectedBatch.soldPieces : 0;
+  const weightAvailable = selectedBatch ? selectedBatch.receivedWeightKg - selectedBatch.soldWeightKg : 0;
   const piecesSold = num(draft.piecesSold);
   const weightSold = num(draft.weightSoldKg);
   const rate = num(draft.ratePerKg);
   const courier = num(draft.courierPacking);
   const produceAmount = weightSold * rate;
   const totalAmount = produceAmount + courier;
-  const overStock = piecesSold > piecesAvailable || weightSold > weightAvailable;
+  const overStock = !selectedBatch || piecesSold > piecesAvailable || weightSold > weightAvailable;
 
   const filteredSales = useMemo(() => {
     return sales.filter((sale) => {
@@ -408,7 +439,18 @@ export default function ProduceSalesPage() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  const saveSale = () => {
+  const selectBatch = (batchId: string) => {
+    const batch = batches.find((entry) => entry.id === batchId);
+    setDraft((current) => ({
+      ...current,
+      batchId,
+      piecesSold: batch?.unit === 'Pieces' ? String(batch.receivedPieces || 1) : current.piecesSold,
+      weightSoldKg: batch ? String(batch.receivedWeightKg.toFixed(3)) : current.weightSoldKg,
+    }));
+  };
+
+  const saveSale = async () => {
+    if (!selectedBatch) return;
     if (overStock) return;
 
     const sale: SaleRecord = {
@@ -433,6 +475,21 @@ export default function ProduceSalesPage() {
       notes: draft.notes,
     };
 
+    const markSoldResponse = await fetch(`/api/estate-produce/store/${selectedBatch.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'Sold',
+        movementNotes: `Sold to ${sale.buyerName} on ${sale.date}.`,
+        notes: [draft.notes, `Sale ${sale.id}: ${sale.piecesSold} pcs / ${kg(sale.weightSoldKg)} kg to ${sale.buyerName}`].filter(Boolean).join('\n'),
+      }),
+    });
+    const body = await markSoldResponse.json().catch(() => ({})) as { error?: string };
+    if (!markSoldResponse.ok) {
+      alert(body.error || 'Sale was not saved because stock could not be marked sold.');
+      return;
+    }
+
     setSales((current) => [sale, ...current]);
     setBatches((current) =>
       current.map((batch) =>
@@ -442,7 +499,8 @@ export default function ProduceSalesPage() {
       ),
     );
     setSelectedSaleId(sale.id);
-    setDraft(blankDraft(selectedBatch.id));
+    await loadStoreStock();
+    setDraft(blankDraft(''));
   };
 
   const exportCsv = () => {
@@ -544,10 +602,11 @@ export default function ProduceSalesPage() {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Produce Batch</span>
-                <select value={draft.batchId} onChange={(event) => updateDraft('batchId', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm">
+                <select value={draft.batchId} onChange={(event) => selectBatch(event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm">
+                  {!batches.length && <option value="">No sale-ready store stock</option>}
                   {batches.map((batch) => (
                     <option key={batch.id} value={batch.id}>
-                      {batch.product} / {batch.estate} / {dateLabel(batch.date)}
+                      {batch.itemCode} / {batch.product} / {batch.estate}
                     </option>
                   ))}
                 </select>
@@ -830,22 +889,28 @@ export default function ProduceSalesPage() {
               <PackageCheck className="h-4 w-4" />
               Available Stock
             </h2>
+            {loadingStock && <p className="mt-4 text-sm text-stone-500">Loading live Produce Store stock...</p>}
+            {stockStatus && <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{stockStatus}</p>}
             <div className="mt-4 divide-y divide-stone-100">
               {stockSummary.map((batch) => (
                 <button
                   key={batch.id}
-                  onClick={() => updateDraft('batchId', batch.id)}
+                  onClick={() => selectBatch(batch.id)}
                   className={`w-full py-3 text-left text-sm ${draft.batchId === batch.id ? 'text-emerald-900' : 'text-stone-700'}`}
                 >
                   <div className="flex justify-between gap-3">
-                    <span className="font-bold">{batch.product} / {batch.estate}</span>
+                    <span className="font-bold">{batch.itemCode ?? batch.product}</span>
                     <span>{dateLabel(batch.date)}</span>
                   </div>
                   <div className="mt-1 text-stone-500">
-                    {batch.availablePieces} pcs / {kg(batch.availableWeightKg)} kg available
+                    {batch.product} / {batch.estate} / {batch.status}
                   </div>
+                  <div className="mt-1 text-stone-500">{batch.availablePieces} pcs / {kg(batch.availableWeightKg)} kg available</div>
                 </button>
               ))}
+              {!loadingStock && !stockSummary.length && !stockStatus && (
+                <div className="py-4 text-sm text-stone-500">No sale-ready stock. Create Store items from Estate Produce first.</div>
+              )}
             </div>
           </section>
 
