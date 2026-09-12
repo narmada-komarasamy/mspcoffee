@@ -852,10 +852,25 @@ export default function ProduceSalesPage() {
                   </button>
                   <button onClick={() => setEmailDraftOpen((open) => !open)} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
                     <Mail className="h-4 w-4" />
-                    Email Draft
+                    {emailDraftOpen ? 'Hide Email Draft' : 'Email Draft'}
                   </button>
                 </div>
               </div>
+
+              {emailDraftOpen && emailDraft && (
+                <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
+                  <h3 className="flex items-center gap-2 font-bold text-emerald-950">
+                    <Mail className="h-4 w-4" />
+                    Email Draft Preview
+                  </h3>
+                  <div className="mt-3 grid gap-3 text-sm">
+                    <div className="rounded-md bg-white p-3"><span className="font-bold">To:</span> {emailDraft.to}</div>
+                    <div className="rounded-md bg-white p-3"><span className="font-bold">Subject:</span> {emailDraft.subject}</div>
+                    <div className="rounded-md bg-white p-3"><span className="font-bold">Attachment:</span> {emailDraft.attachment}</div>
+                    <pre className="whitespace-pre-wrap rounded-md bg-white p-3 font-sans text-sm">{emailDraft.body}</pre>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 overflow-x-auto rounded-lg bg-stone-100 p-4">
                 <div className="relative mx-auto min-h-[720px] w-[680px] overflow-hidden bg-white p-8 text-sm text-stone-950 shadow-sm">
@@ -957,20 +972,6 @@ export default function ProduceSalesPage() {
                 </div>
               </div>
 
-              {emailDraftOpen && emailDraft && (
-                <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
-                  <h3 className="flex items-center gap-2 font-bold text-emerald-950">
-                    <Mail className="h-4 w-4" />
-                    Email Draft Preview
-                  </h3>
-                  <div className="mt-3 grid gap-3 text-sm">
-                    <div className="rounded-md bg-white p-3"><span className="font-bold">To:</span> {emailDraft.to}</div>
-                    <div className="rounded-md bg-white p-3"><span className="font-bold">Subject:</span> {emailDraft.subject}</div>
-                    <div className="rounded-md bg-white p-3"><span className="font-bold">Attachment:</span> {emailDraft.attachment}</div>
-                    <pre className="whitespace-pre-wrap rounded-md bg-white p-3 font-sans text-sm">{emailDraft.body}</pre>
-                  </div>
-                </div>
-              )}
             </section>
           )}
         </main>
