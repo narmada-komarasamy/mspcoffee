@@ -10,16 +10,20 @@ import {
   Eye,
   FileText,
   IndianRupee,
+  Lock,
   Mail,
   PackageCheck,
   Plus,
   Printer,
+  RotateCcw,
   Search,
   ShoppingBag,
+  Sparkles,
 } from 'lucide-react';
 
 type PaymentStatus = 'Paid' | 'Pending' | 'Partial';
 type PaymentMode = 'Cash' | 'UPI' | 'Bank' | 'Cheque' | 'Other';
+type SaleType = 'Charged Sale' | 'Complementary' | 'Replacement';
 
 type StockBatch = {
   id: string;
@@ -53,10 +57,12 @@ type SaleRecord = {
   produceAmount: number;
   courierPacking: number;
   totalAmount: number;
+  saleType: SaleType;
   paymentStatus: PaymentStatus;
   paymentMode: PaymentMode;
   paymentNotes: string;
   notes: string;
+  closedAt?: string;
 };
 
 type DraftSale = {
@@ -70,10 +76,21 @@ type DraftSale = {
   weightSoldKg: string;
   ratePerKg: string;
   courierPacking: string;
+  saleType: SaleType;
   paymentStatus: PaymentStatus;
   paymentMode: PaymentMode;
   paymentNotes: string;
   notes: string;
+};
+
+type CustomerRecord = {
+  id: string;
+  phone: string;
+  name: string;
+  address: string;
+  defaultDispatchMethod: string;
+  defaultPaymentMode: PaymentMode | '';
+  lastSaleAt: string;
 };
 
 type StoreItem = {
@@ -113,6 +130,7 @@ function blankDraft(batchId = ''): DraftSale {
     weightSoldKg: '',
     ratePerKg: '1000',
     courierPacking: '250',
+    saleType: 'Charged Sale',
     paymentStatus: 'Pending',
     paymentMode: 'Bank',
     paymentNotes: '',
@@ -168,6 +186,8 @@ function amountInWords(value: number) {
 function invoiceHtml(sale: SaleRecord) {
   const no = invoiceNumber(sale);
   const words = amountInWords(sale.totalAmount);
+  const isPaid = sale.paymentStatus === 'Paid';
+  const isNoChargeProduce = sale.saleType !== 'Charged Sale';
 
   return `<!doctype html>
 <html>
@@ -176,7 +196,8 @@ function invoiceHtml(sale: SaleRecord) {
 <title>${no} Bill</title>
 <style>
   body { font-family: Georgia, 'Times New Roman', serif; color: #111; margin: 0; background: #f6f1e8; }
-  .sheet { width: 794px; min-height: 1123px; margin: 20px auto; padding: 54px 64px; background: white; box-shadow: 0 12px 40px rgba(0,0,0,.12); }
+  .sheet { position: relative; width: 794px; min-height: 1123px; margin: 20px auto; padding: 54px 64px; background: white; box-shadow: 0 12px 40px rgba(0,0,0,.12); overflow: hidden; }
+  .paid-stamp { position: absolute; top: 450px; left: 120px; right: 120px; transform: rotate(-18deg); color: rgba(185,28,28,.82); font-family: Arial, sans-serif; font-size: 124px; font-weight: 900; letter-spacing: 10px; text-align: center; z-index: 3; pointer-events: none; }
   .header { display: flex; align-items: center; gap: 22px; border-bottom: 1px solid #222; padding-bottom: 12px; }
   .mark { width: 72px; height: 72px; display: grid; place-items: center; background: #222; color: white; font-weight: 900; font-family: Arial, sans-serif; }
   h1 { margin: 0; font-size: 31px; letter-spacing: 1px; }
@@ -220,6 +241,7 @@ function invoiceHtml(sale: SaleRecord) {
     </div>
   </div>
   <div class="bill">BILL</div>
+  ${isPaid ? '<div class="paid-stamp">PAID</div>' : ''}
   <table>
     <thead>
       <tr><th>Date</th><th>Particulars</th><th>Kgs</th><th>Rate</th><th></th><th>Amount</th></tr>
@@ -227,9 +249,9 @@ function invoiceHtml(sale: SaleRecord) {
     <tbody>
       <tr>
         <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
-        <td>${sale.product} (${sale.piecesSold} Nos)</td>
+        <td>${sale.product} (${sale.piecesSold} Nos)${isNoChargeProduce ? `<br/><strong>${sale.saleType} - produce not charged</strong>` : ''}</td>
         <td>${kg(sale.weightSoldKg)} Kgs</td>
-        <td>Rs.${sale.ratePerKg}/-</td>
+        <td>${isNoChargeProduce ? 'No charge' : `Rs.${sale.ratePerKg}/-`}</td>
         <td>=</td>
         <td class="num">${sale.produceAmount.toFixed(2)}</td>
       </tr>
@@ -246,6 +268,7 @@ function invoiceHtml(sale: SaleRecord) {
     </tbody>
   </table>
   <div class="words">(${words})</div>
+  <div style="margin: -8px 0 18px; font-size: 14px;"><strong>Payment Status:</strong> ${sale.paymentStatus}${sale.saleType !== 'Charged Sale' ? ` &nbsp; | &nbsp; <strong>Sale Type:</strong> ${sale.saleType}` : ''}</div>
   <div class="payment">
     <div>
       <div class="section-title">Payment Details:-</div>
@@ -305,6 +328,9 @@ export default function ProduceSalesPage() {
   const [loadingStock, setLoadingStock] = useState(true);
   const [stockStatus, setStockStatus] = useState('');
   const [sales, setSales] = useState(initialSales);
+  const [customers, setCustomers] = useState<CustomerRecord[]>([]);
+  const [salesStatus, setSalesStatus] = useState('');
+  const [userRole, setUserRole] = useState('');
   const [draft, setDraft] = useState<DraftSale>(blankDraft());
   const [selectedSaleId, setSelectedSaleId] = useState('');
   const [search, setSearch] = useState('');
@@ -357,6 +383,37 @@ export default function ProduceSalesPage() {
     loadStoreStock();
   }, [loadStoreStock]);
 
+  const loadSales = useCallback(async () => {
+    setSalesStatus('');
+    try {
+      const response = await fetch('/api/estate-produce/sales');
+      const body = await response.json().catch(() => ({})) as { sales?: SaleRecord[]; customers?: CustomerRecord[]; error?: string };
+      if (!response.ok) throw new Error(body.error || 'Could not load saved produce sales');
+      setSales(body.sales ?? []);
+      setCustomers(body.customers ?? []);
+      setSelectedSaleId((current) => (body.sales ?? []).some((sale) => sale.id === current) ? current : body.sales?.[0]?.id ?? '');
+    } catch (error) {
+      setSalesStatus(error instanceof Error ? error.message : 'Could not load saved produce sales');
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSales();
+  }, [loadSales]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((body: { user?: { role?: string } }) => {
+        if (active) setUserRole(body.user?.role ?? '');
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const selectedBatch = batches.find((batch) => batch.id === draft.batchId) ?? batches[0] ?? null;
   const selectedSale = sales.find((sale) => sale.id === selectedSaleId) ?? sales[0];
   const piecesAvailable = selectedBatch ? selectedBatch.receivedPieces - selectedBatch.soldPieces : 0;
@@ -365,13 +422,13 @@ export default function ProduceSalesPage() {
   const weightSold = num(draft.weightSoldKg);
   const rate = num(draft.ratePerKg);
   const courier = num(draft.courierPacking);
-  const produceAmount = weightSold * rate;
+  const produceAmount = draft.saleType === 'Charged Sale' ? weightSold * rate : 0;
   const totalAmount = produceAmount + courier;
   const overStock = !selectedBatch || piecesSold > piecesAvailable || weightSold > weightAvailable;
 
   const filteredSales = useMemo(() => {
     return sales.filter((sale) => {
-      const text = `${sale.buyerName} ${sale.buyerPhone} ${sale.buyerAddress} ${sale.product} ${sale.estate} ${sale.paymentStatus}`.toLowerCase();
+      const text = `${sale.buyerName} ${sale.buyerPhone} ${sale.buyerAddress} ${sale.product} ${sale.estate} ${sale.saleType} ${sale.paymentStatus}`.toLowerCase();
       const matchesSearch = search.trim() ? text.includes(search.trim().toLowerCase()) : true;
       const matchesPayment = paymentFilter === 'All' || sale.paymentStatus === paymentFilter;
       return matchesSearch && matchesPayment;
@@ -385,8 +442,12 @@ export default function ProduceSalesPage() {
         pending: acc.pending + (sale.paymentStatus === 'Pending' ? sale.totalAmount : 0),
         paid: acc.paid + (sale.paymentStatus === 'Paid' ? sale.totalAmount : 0),
         partial: acc.partial + (sale.paymentStatus === 'Partial' ? sale.totalAmount : 0),
+        fruitsSold: acc.fruitsSold + (sale.saleType === 'Charged Sale' ? sale.piecesSold : 0),
+        kgSold: acc.kgSold + (sale.saleType === 'Charged Sale' ? sale.weightSoldKg : 0),
+        complementary: acc.complementary + (sale.saleType === 'Complementary' ? sale.piecesSold : 0),
+        replacement: acc.replacement + (sale.saleType === 'Replacement' ? sale.piecesSold : 0),
       }),
-      { revenue: 0, pending: 0, paid: 0, partial: 0 },
+      { revenue: 0, pending: 0, paid: 0, partial: 0, fruitsSold: 0, kgSold: 0, complementary: 0, replacement: 0 },
     );
   }, [sales]);
 
@@ -411,7 +472,28 @@ export default function ProduceSalesPage() {
   }, [selectedSale]);
 
   const updateDraft = (key: keyof DraftSale, value: string) => {
-    setDraft((current) => ({ ...current, [key]: value }));
+    setDraft((current) => {
+      const next = { ...current, [key]: value };
+      if (key === 'buyerPhone') {
+        const clean = value.replace(/[^\d+]/g, '');
+        const match = customers.find((customer) => customer.phone.replace(/[^\d+]/g, '') === clean);
+        if (match) {
+          next.buyerName = match.name;
+          next.buyerAddress = match.address || next.buyerAddress;
+          next.dispatchMethod = match.defaultDispatchMethod || next.dispatchMethod;
+          next.paymentMode = match.defaultPaymentMode || next.paymentMode;
+        }
+      }
+      if (key === 'saleType' && value !== 'Charged Sale') {
+        next.ratePerKg = '0';
+        next.paymentStatus = 'Paid';
+      }
+      if (key === 'saleType' && value === 'Charged Sale' && current.saleType !== 'Charged Sale') {
+        next.ratePerKg = '1000';
+        next.paymentStatus = 'Pending';
+      }
+      return next;
+    });
   };
 
   const selectBatch = (batchId: string) => {
@@ -428,64 +510,55 @@ export default function ProduceSalesPage() {
     if (!selectedBatch) return;
     if (overStock) return;
 
-    const sale: SaleRecord = {
-      id: `sale-${Date.now()}`,
-      date: draft.date,
-      buyerName: draft.buyerName || 'Walk-in Buyer',
-      buyerPhone: draft.buyerPhone,
-      buyerAddress: draft.buyerAddress,
-      dispatchMethod: draft.dispatchMethod,
-      batchId: selectedBatch.id,
-      estate: selectedBatch.estate,
-      product: selectedBatch.product,
-      piecesSold,
-      weightSoldKg: weightSold,
-      ratePerKg: rate,
-      produceAmount,
-      courierPacking: courier,
-      totalAmount,
-      paymentStatus: draft.paymentStatus,
-      paymentMode: draft.paymentMode,
-      paymentNotes: draft.paymentNotes,
-      notes: draft.notes,
-    };
-
-    const markSoldResponse = await fetch(`/api/estate-produce/store/${selectedBatch.id}`, {
-      method: 'PATCH',
+    const response = await fetch('/api/estate-produce/sales', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        status: 'Sold',
-        movementNotes: `Sold to ${sale.buyerName} on ${sale.date}.`,
-        notes: [draft.notes, `Sale ${sale.id}: ${sale.piecesSold} pcs / ${kg(sale.weightSoldKg)} kg to ${sale.buyerName}`].filter(Boolean).join('\n'),
+        ...draft,
+        batchId: selectedBatch.id,
+        piecesSold,
+        weightSoldKg: weightSold,
+        ratePerKg: rate,
+        courierPacking: courier,
       }),
     });
-    const body = await markSoldResponse.json().catch(() => ({})) as { error?: string };
-    if (!markSoldResponse.ok) {
+    const body = await response.json().catch(() => ({})) as { sale?: SaleRecord; error?: string };
+    if (!response.ok || !body.sale) {
       alert(body.error || 'Sale was not saved because stock could not be marked sold.');
       return;
     }
 
-    setSales((current) => [sale, ...current]);
-    setBatches((current) =>
-      current.map((batch) =>
-        batch.id === selectedBatch.id
-          ? { ...batch, soldPieces: batch.soldPieces + piecesSold, soldWeightKg: batch.soldWeightKg + weightSold }
-          : batch,
-      ),
-    );
-    setSelectedSaleId(sale.id);
+    setSales((current) => [body.sale as SaleRecord, ...current.filter((sale) => sale.id !== body.sale?.id)]);
+    setSelectedSaleId(body.sale.id);
     await loadStoreStock();
+    await loadSales();
     setDraft(blankDraft(''));
   };
 
+  const markSelectedPaid = async () => {
+    if (!selectedSale) return;
+    const response = await fetch(`/api/estate-produce/sales/${selectedSale.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentStatus: 'Paid', paymentNotes: selectedSale.paymentNotes }),
+    });
+    const body = await response.json().catch(() => ({})) as { error?: string };
+    if (!response.ok) {
+      alert(body.error || 'Invoice could not be marked paid.');
+      return;
+    }
+    await loadSales();
+  };
+
   const exportCsv = () => {
-    const headers = ['Date', 'Buyer', 'Phone', 'Estate', 'Product', 'Pieces', 'Weight kg', 'Rate', 'Courier/Packing', 'Total', 'Payment status', 'Payment mode'];
+    const headers = ['Date', 'Buyer', 'Phone', 'Estate', 'Product', 'Sale type', 'Pieces', 'Weight kg', 'Rate', 'Courier/Packing', 'Total', 'Payment status', 'Payment mode'];
     const rows = filteredSales.map((sale) => [
       sale.date,
       sale.buyerName,
       sale.buyerPhone,
       sale.estate,
       sale.product,
+      sale.saleType,
       sale.piecesSold,
       sale.weightSoldKg,
       sale.ratePerKg,
@@ -536,6 +609,10 @@ export default function ProduceSalesPage() {
             <Plus className="h-4 w-4" />
             Save Sale
           </button>
+          <button onClick={markSelectedPaid} disabled={!selectedSale || selectedSale.paymentStatus === 'Paid'} className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400">
+            <Lock className="h-4 w-4" />
+            Mark Paid
+          </button>
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50">
             <Download className="h-4 w-4" />
             Export
@@ -549,11 +626,11 @@ export default function ProduceSalesPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {[
-          ['Total Revenue', money(totals.revenue), 'All sales'],
-          ['Paid', money(totals.paid), 'Received'],
-          ['Pending', money(totals.pending), 'To collect'],
-          ['Partial', money(totals.partial), 'Follow up'],
-          ['Sale Records', sales.length.toLocaleString('en-IN'), 'Entries'],
+          ['Fruits Sold', `${totals.fruitsSold.toLocaleString('en-IN')} pcs`, `${kg(totals.kgSold)} kg`],
+          ['Complementary Fruits', `${totals.complementary.toLocaleString('en-IN')} pcs`, 'No produce charge'],
+          ['Replacement Fruits', `${totals.replacement.toLocaleString('en-IN')} pcs`, 'No produce charge'],
+          ['Revenue Collected', money(totals.paid), 'Paid invoices'],
+          ['Pending Amount', money(totals.pending + totals.partial), 'To collect'],
         ].map(([label, value, sub]) => (
           <div key={label} className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase text-stone-500">{label}</p>
@@ -576,7 +653,7 @@ export default function ProduceSalesPage() {
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <label className="space-y-1">
-                <span className="text-xs font-semibold uppercase text-stone-500">Produce Batch</span>
+                <span className="text-xs font-semibold uppercase text-stone-500">Produce Token No.</span>
                 <select value={draft.batchId} onChange={(event) => selectBatch(event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm">
                   {!batches.length && <option value="">No sale-ready store stock</option>}
                   {batches.map((batch) => (
@@ -589,6 +666,12 @@ export default function ProduceSalesPage() {
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Sale Date</span>
                 <input type="date" value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs font-semibold uppercase text-stone-500">Sale Type</span>
+                <select value={draft.saleType} onChange={(event) => updateDraft('saleType', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm">
+                  {['Charged Sale', 'Complementary', 'Replacement'].map((type) => <option key={type}>{type}</option>)}
+                </select>
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Buyer Name</span>
@@ -608,7 +691,7 @@ export default function ProduceSalesPage() {
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Payment Status</span>
-                <select value={draft.paymentStatus} onChange={(event) => updateDraft('paymentStatus', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm">
+                <select value={draft.paymentStatus} onChange={(event) => updateDraft('paymentStatus', event.target.value)} disabled={draft.saleType !== 'Charged Sale'} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100 disabled:text-stone-500">
                   {['Paid', 'Pending', 'Partial'].map((status) => <option key={status}>{status}</option>)}
                 </select>
               </label>
@@ -626,7 +709,7 @@ export default function ProduceSalesPage() {
                 </label>
                 <label className="space-y-1">
                   <span className="text-xs font-semibold uppercase text-stone-500">Rate Per Kg</span>
-                  <input value={draft.ratePerKg} onChange={(event) => updateDraft('ratePerKg', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                  <input value={draft.ratePerKg} onChange={(event) => updateDraft('ratePerKg', event.target.value)} disabled={draft.saleType !== 'Charged Sale'} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100 disabled:text-stone-500" />
                 </label>
                 <label className="space-y-1">
                   <span className="text-xs font-semibold uppercase text-stone-500">Courier/Packing</span>
@@ -649,6 +732,12 @@ export default function ProduceSalesPage() {
                   </p>
                 </div>
               </div>
+              {draft.saleType !== 'Charged Sale' && (
+                <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  {draft.saleType === 'Complementary' ? <Sparkles className="mt-0.5 h-4 w-4 shrink-0" /> : <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" />}
+                  Produce value is set to zero for {draft.saleType.toLowerCase()}. Only courier/packing will be billed, and the invoice will be marked paid.
+                </div>
+              )}
               {overStock && (
                 <div className="mt-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -691,11 +780,12 @@ export default function ProduceSalesPage() {
                 </select>
               </div>
             </div>
+            {salesStatus && <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{salesStatus}</p>}
             <div className="mt-4 overflow-x-auto rounded-lg border border-stone-200">
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                   <tr>
-                    {['Date', 'Buyer', 'Estate', 'Product', 'Sold', 'Rate', 'Courier', 'Total', 'Payment', 'Mode'].map((heading) => (
+                    {['Date', 'Buyer', 'Type', 'Estate', 'Product', 'Sold', 'Rate', 'Courier', 'Total', 'Payment', 'Mode'].map((heading) => (
                       <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                     ))}
                   </tr>
@@ -705,6 +795,13 @@ export default function ProduceSalesPage() {
                     <tr key={sale.id} onClick={() => setSelectedSaleId(sale.id)} className="cursor-pointer bg-white hover:bg-emerald-50/60">
                       <td className="px-3 py-3">{dateLabel(sale.date)}</td>
                       <td className="px-3 py-3 font-semibold text-stone-900">{sale.buyerName}</td>
+                      <td className="px-3 py-3">
+                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${
+                          sale.saleType === 'Charged Sale' ? 'bg-stone-100 text-stone-700' : sale.saleType === 'Complementary' ? 'bg-blue-50 text-blue-800' : 'bg-purple-50 text-purple-800'
+                        }`}>
+                          {sale.saleType}
+                        </span>
+                      </td>
                       <td className="px-3 py-3 text-emerald-900">{sale.estate}</td>
                       <td className="px-3 py-3">{sale.product}</td>
                       <td className="px-3 py-3">{sale.piecesSold} pcs / {kg(sale.weightSoldKg)} kg</td>
@@ -723,7 +820,7 @@ export default function ProduceSalesPage() {
                   ))}
                   {!filteredSales.length && (
                     <tr>
-                      <td colSpan={10} className="px-3 py-8 text-center text-sm text-stone-500">
+                      <td colSpan={11} className="px-3 py-8 text-center text-sm text-stone-500">
                         No produce sales yet. Choose an available store item above and save the first sale.
                       </td>
                     </tr>
@@ -745,6 +842,10 @@ export default function ProduceSalesPage() {
                     <Printer className="h-4 w-4" />
                     Print
                   </button>
+                  <button onClick={markSelectedPaid} disabled={selectedSale.paymentStatus === 'Paid'} className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400">
+                    <Lock className="h-4 w-4" />
+                    Mark Paid
+                  </button>
                   <button onClick={downloadInvoiceHtml} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
                     <Download className="h-4 w-4" />
                     Download
@@ -757,7 +858,12 @@ export default function ProduceSalesPage() {
               </div>
 
               <div className="mt-4 overflow-x-auto rounded-lg bg-stone-100 p-4">
-                <div className="mx-auto min-h-[720px] w-[680px] bg-white p-8 text-sm text-stone-950 shadow-sm">
+                <div className="relative mx-auto min-h-[720px] w-[680px] overflow-hidden bg-white p-8 text-sm text-stone-950 shadow-sm">
+                  {selectedSale.paymentStatus === 'Paid' && (
+                    <div className="pointer-events-none absolute left-20 right-20 top-72 z-10 rotate-[-18deg] text-center text-8xl font-black tracking-[0.18em] text-red-700/80">
+                      PAID
+                    </div>
+                  )}
                   <div className="flex items-center gap-5 border-b border-stone-900 pb-3">
                     <div className="grid h-16 w-16 shrink-0 place-items-center bg-stone-900 text-center text-xs font-black leading-tight text-white">
                       MSP<br />COFFEE
@@ -793,9 +899,12 @@ export default function ProduceSalesPage() {
                     <tbody>
                       <tr>
                         <td className="border border-stone-700 px-2 py-2">{new Date(`${selectedSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
-                        <td className="border border-stone-700 px-2 py-2">{selectedSale.product} ({selectedSale.piecesSold} Nos)</td>
+                        <td className="border border-stone-700 px-2 py-2">
+                          {selectedSale.product} ({selectedSale.piecesSold} Nos)
+                          {selectedSale.saleType !== 'Charged Sale' && <div className="font-bold">{selectedSale.saleType} - produce not charged</div>}
+                        </td>
                         <td className="border border-stone-700 px-2 py-2">{kg(selectedSale.weightSoldKg)} Kgs</td>
-                        <td className="border border-stone-700 px-2 py-2">Rs.{selectedSale.ratePerKg}/-</td>
+                        <td className="border border-stone-700 px-2 py-2">{selectedSale.saleType === 'Charged Sale' ? `Rs.${selectedSale.ratePerKg}/-` : 'No charge'}</td>
                         <td className="border border-stone-700 px-2 py-2">=</td>
                         <td className="border border-stone-700 px-2 py-2 text-right">{selectedSale.produceAmount.toFixed(2)}</td>
                       </tr>
@@ -818,6 +927,7 @@ export default function ProduceSalesPage() {
                     </tbody>
                   </table>
                   <p className="mt-5">({amountInWords(selectedSale.totalAmount)})</p>
+                  <p className="mt-2 text-sm"><strong>Payment Status:</strong> {selectedSale.paymentStatus}{selectedSale.saleType !== 'Charged Sale' ? ` | ${selectedSale.saleType}` : ''}</p>
 
                   <div className="mt-7 grid grid-cols-2 border border-stone-700">
                     <div className="border-r border-stone-700 p-3 leading-6">
@@ -921,9 +1031,15 @@ export default function ProduceSalesPage() {
                 <p>{selectedSale.product} / {selectedSale.estate}</p>
                 <p>{selectedSale.piecesSold} pcs / {kg(selectedSale.weightSoldKg)} kg at {money(selectedSale.ratePerKg)}/kg</p>
                 <p className="font-bold text-emerald-950">Total: {money(selectedSale.totalAmount)}</p>
+                <p>Type: {selectedSale.saleType}</p>
                 <p>Payment: {selectedSale.paymentStatus} by {selectedSale.paymentMode}</p>
                 <p>Dispatch: {selectedSale.dispatchMethod}</p>
                 <p>Phone: {selectedSale.buyerPhone || '-'}</p>
+                {selectedSale.paymentStatus === 'Paid' && (
+                  <p className="rounded-md border border-red-200 bg-red-50 p-2 font-semibold text-red-700">
+                    Closed invoice. {userRole === 'admin' ? 'Admin can revise if needed.' : 'Only admin can revise it.'}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="mt-4 text-sm text-stone-500">No sale selected.</p>
@@ -939,7 +1055,7 @@ export default function ProduceSalesPage() {
           <section className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Saving a sale reduces available pieces and kg for the selected produce batch.</span>
+              <span>Saving a sale reduces available pieces and kg for the selected produce token.</span>
             </div>
           </section>
         </aside>

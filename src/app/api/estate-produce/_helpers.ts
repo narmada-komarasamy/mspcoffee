@@ -9,6 +9,9 @@ export const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 export const SOURCES = ['Manual', 'WhatsApp Paste'];
 export const DISPOSITIONS = ['Store', 'Direct Sale', 'Internal Consumption', 'Damaged'];
 export const STORE_STATUSES = ['In Store', 'Reserved', 'Sold', 'Internal Consumption', 'Damaged', 'Cold Storage'];
+export const SALE_TYPES = ['Charged Sale', 'Complementary', 'Replacement'];
+export const PAYMENT_STATUSES = ['Paid', 'Pending', 'Partial'];
+export const PAYMENT_MODES = ['Cash', 'UPI', 'Bank', 'Cheque', 'Other'];
 export const ESTATE_PRODUCE_ROLES = ['admin', 'supervisor', 'worker', 'ceo', 'hr'];
 export const BUCKET = 'estate-produce';
 export const ESTATE_PRODUCE_RECORD_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -182,6 +185,8 @@ export function estateProduceSetupError(message: string) {
     lower.includes('estate_produce_records') ||
     lower.includes('produce_store_items') ||
     lower.includes('produce_store_movements') ||
+    lower.includes('produce_sales') ||
+    lower.includes('produce_customers') ||
     lower.includes('schema cache') ||
     lower.includes('disposition')
   ) {

@@ -160,7 +160,7 @@ function itemCatalogueHtml(item: StoreItem) {
           <div class="hero">
             ${photo}
             <div class="quick">
-              <div class="quick-row"><span>Fruit / Lot No.</span><strong>${itemCode}</strong></div>
+              <div class="quick-row"><span>Produce Token No.</span><strong>${itemCode}</strong></div>
               <div class="quick-row"><span>Estate</span><strong>${estate}</strong></div>
               <div class="quick-row"><span>Weight</span><strong>${weight}</strong></div>
               <div class="quick-row"><span>Quantity</span><strong>${quantity}</strong></div>
@@ -173,7 +173,7 @@ function itemCatalogueHtml(item: StoreItem) {
             <div class="badge"><b>3</b>Safe packing possible</div>
             <div class="badge"><b>4</b>${status}</div>
           </div>
-          <div class="writeup">Selected from MSP estate produce and catalogued with a fruit number for easy reference. Share this card with the fruit number when confirming an order.</div>
+          <div class="writeup">Selected from MSP estate produce and catalogued with a produce token number for easy reference. Share this token number when confirming an order.</div>
           <div class="how">
             <h2>How to use</h2>
             <div class="steps">
@@ -183,7 +183,7 @@ function itemCatalogueHtml(item: StoreItem) {
             </div>
           </div>
         </div>
-        <div class="strip">LIMITED STOCK - BOOK WITH FRUIT NUMBER</div>
+        <div class="strip">LIMITED STOCK - BOOK WITH PRODUCE TOKEN NO.</div>
         <div class="footer"><span>Received: ${dateLabel(item.receivedDate)}</span><span>Storage: ${storage}</span></div>
       </section>
 
@@ -198,7 +198,7 @@ function itemCatalogueHtml(item: StoreItem) {
           <div class="hero">
             ${photo}
             <div class="quick">
-              <div class="quick-row"><span>பழ எண்</span><strong>${itemCode}</strong></div>
+              <div class="quick-row"><span>உற்பத்தி டோக்கன் எண்</span><strong>${itemCode}</strong></div>
               <div class="quick-row"><span>எஸ்டேட்</span><strong>${estate}</strong></div>
               <div class="quick-row"><span>எடை</span><strong>${weight}</strong></div>
               <div class="quick-row"><span>அளவு</span><strong>${quantity}</strong></div>
@@ -211,7 +211,7 @@ function itemCatalogueHtml(item: StoreItem) {
             <div class="badge"><b>3</b>பாதுகாப்பான பேக்கிங்</div>
             <div class="badge"><b>4</b>${status}</div>
           </div>
-          <div class="writeup">MSP எஸ்டேட் உற்பத்தியில் இருந்து தேர்வு செய்யப்பட்ட பழம். ஆர்டர் உறுதி செய்யும்போது இந்த பழ எண்ணை குறிப்பிடவும்.</div>
+          <div class="writeup">MSP எஸ்டேட் உற்பத்தியில் இருந்து தேர்வு செய்யப்பட்ட பொருள். ஆர்டர் உறுதி செய்யும்போது இந்த டோக்கன் எண்ணை குறிப்பிடவும்.</div>
           <div class="how">
             <h2>பயன்படுத்தும் வழி</h2>
             <div class="steps">
@@ -221,7 +221,7 @@ function itemCatalogueHtml(item: StoreItem) {
             </div>
           </div>
         </div>
-        <div class="strip">குறைந்த ஸ்டாக் - பழ எண்ணுடன் முன்பதிவு செய்யவும்</div>
+        <div class="strip">குறைந்த ஸ்டாக் - டோக்கன் எண்ணுடன் முன்பதிவு செய்யவும்</div>
         <div class="footer"><span>வரவு தேதி: ${dateLabel(item.receivedDate)}</span><span>சேமிப்பு: ${storage}</span></div>
       </section>
     </div>
@@ -239,7 +239,7 @@ function catalogueEmailPayload(item: StoreItem) {
     attachmentName: `${item.itemCode.toLowerCase()}-catalogue.html`,
     data: {
       summary: [
-        { label: 'Fruit / Lot No.', value: item.itemCode },
+        { label: 'Produce Token No.', value: item.itemCode },
         { label: 'Product', value: item.product, detail: item.status },
         { label: 'Estate', value: item.estate },
         { label: 'Weight', value: `${kg(item.weightKg)} kg`, detail: `${item.quantity} ${item.unit.toLowerCase()}` },
@@ -251,7 +251,7 @@ function catalogueEmailPayload(item: StoreItem) {
           title: 'Catalogue Note',
           rows: [
             { label: 'Availability', value: item.status === 'Sold' ? 'Sold' : 'Available from current estate stock' },
-            { label: 'Reference', value: item.itemCode, detail: 'Use this number for confirmation and dispatch.' },
+            { label: 'Reference', value: item.itemCode, detail: 'Use this produce token number for confirmation and dispatch.' },
             { label: 'English Write-up', value: 'Fresh premium durian direct from estate stock with rich aroma and creamy texture.' },
             { label: 'Tamil Write-up', value: 'எஸ்டேட்டிலிருந்து நேரடி பிரீமியம் டூரியன் பழம் - மணமும் சுவையும் நிறைந்தது.' },
           ],
@@ -430,7 +430,7 @@ export default function ProduceStorePage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {[
-          ['Sale Stock Items', totals.count.toLocaleString('en-IN'), 'fruit numbers and bulk lots', Boxes],
+          ['Sale Stock Items', totals.count.toLocaleString('en-IN'), 'produce tokens', Boxes],
           ['Sale Stock Weight', `${kg(totals.weight)} kg`, 'shown stock only', PackageCheck],
           ['Available', `${kg(totals.available)} kg`, 'store + cold storage', CheckCircle2],
           ['Cold Storage', `${kg(totals.cold)} kg`, 'chilled stock', Snowflake],
@@ -478,7 +478,7 @@ export default function ProduceStorePage() {
               <table className="w-full min-w-[960px] text-left text-sm">
                 <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                   <tr>
-                    {['Fruit / Lot No.', 'Received', 'Estate', 'Product', 'Status', 'Qty', 'Weight', 'Grade', 'Location', 'Photo'].map((heading) => (
+                    {['Produce Token No.', 'Received', 'Estate', 'Product', 'Status', 'Qty', 'Weight', 'Grade', 'Location', 'Photo'].map((heading) => (
                       <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                     ))}
                   </tr>
@@ -530,7 +530,7 @@ export default function ProduceStorePage() {
             </div>
 
             {!selected ? (
-              <p className="mt-4 text-sm text-stone-500">Select a fruit number or bulk lot.</p>
+              <p className="mt-4 text-sm text-stone-500">Select a produce token number.</p>
             ) : (
               <>
                 <div className="mt-4 flex gap-3">

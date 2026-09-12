@@ -755,7 +755,7 @@ export default function EstateProduceTrackerPage() {
       }));
       const invalidWeight = items.some((item) => item.weightKg <= 0);
       if (invalidWeight) {
-        throw new Error('Enter the individual weight for each fruit before creating store items.');
+        throw new Error('Enter the individual weight for each produce token before creating store items.');
       }
       const response = await fetch('/api/estate-produce/store', {
         method: 'POST',
@@ -1421,7 +1421,7 @@ export default function EstateProduceTrackerPage() {
             </div>
             <div className="max-h-[70vh] overflow-auto p-5">
               <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                Weigh each fruit here. Each row becomes one Produce Store item with its own fruit number, weight, status, location, and photo.
+                Weigh each stored item here. Each row becomes one Produce Store item with its own auto-generated Produce Token No., weight, status, location, and photo.
               </div>
               <div className="mb-4 grid gap-3 md:grid-cols-4">
                 <div className="rounded-md border border-stone-200 p-3">
@@ -1445,7 +1445,7 @@ export default function EstateProduceTrackerPage() {
                 <table className="w-full min-w-[1080px] text-left text-sm">
                   <thead className="bg-stone-50 text-xs uppercase text-stone-500">
                     <tr>
-                      {['Fruit / lot', 'Qty', 'Weight kg', 'Grade', 'Location', 'Status', 'Photo', 'Notes', 'Delete'].map((heading) => (
+                      {['Produce Token No.', 'Qty', 'Weight kg', 'Grade', 'Location', 'Status', 'Photo', 'Notes', 'Delete'].map((heading) => (
                         <th key={heading} className="px-3 py-3 font-bold">{heading}</th>
                       ))}
                     </tr>
