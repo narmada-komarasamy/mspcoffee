@@ -90,29 +90,7 @@ type StoreItem = {
   status: 'In Store' | 'Reserved' | 'Sold' | 'Internal Consumption' | 'Damaged' | 'Cold Storage';
 };
 
-const initialSales: SaleRecord[] = [
-  {
-    id: 'sale-durian-preeti-2026-09-01',
-    date: '2026-09-01',
-    buyerName: 'Mrs. Preeti Garg',
-    buyerPhone: '+91-98410 10889',
-    buyerAddress: 'Garg Nivas, Chennai',
-    dispatchMethod: 'By Courier Service',
-    batchId: 'durian-me-2026-09-07',
-    estate: 'ME',
-    product: 'Durian Fruits',
-    piecesSold: 2,
-    weightSoldKg: 1.55,
-    ratePerKg: 1000,
-    produceAmount: 1550,
-    courierPacking: 250,
-    totalAmount: 1800,
-    paymentStatus: 'Pending',
-    paymentMode: 'Bank',
-    paymentNotes: 'Invoice-ready sale entry.',
-    notes: 'Courier and packing charges included.',
-  },
-];
+const initialSales: SaleRecord[] = [];
 
 function currentDateValue() {
   const now = new Date();
@@ -328,7 +306,7 @@ export default function ProduceSalesPage() {
   const [stockStatus, setStockStatus] = useState('');
   const [sales, setSales] = useState(initialSales);
   const [draft, setDraft] = useState<DraftSale>(blankDraft());
-  const [selectedSaleId, setSelectedSaleId] = useState(initialSales[0].id);
+  const [selectedSaleId, setSelectedSaleId] = useState('');
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<'All' | PaymentStatus>('All');
   const [emailDraftOpen, setEmailDraftOpen] = useState(false);
@@ -337,13 +315,10 @@ export default function ProduceSalesPage() {
     setLoadingStock(true);
     setStockStatus('');
     try {
-      const response = await fetch('/api/estate-produce/store?status=In%20Store');
+      const response = await fetch('/api/estate-produce/store?status=Sale%20Stock');
       const body = await response.json().catch(() => ({})) as { items?: StoreItem[]; error?: string };
       if (!response.ok) throw new Error(body.error || 'Could not load produce store stock');
-      const coldResponse = await fetch('/api/estate-produce/store?status=Cold%20Storage');
-      const coldBody = await coldResponse.json().catch(() => ({})) as { items?: StoreItem[]; error?: string };
-      if (!coldResponse.ok) throw new Error(coldBody.error || 'Could not load cold storage stock');
-      const storeItems = [...(body.items ?? []), ...(coldBody.items ?? [])];
+      const storeItems = body.items ?? [];
       const nextBatches = storeItems.map((item) => ({
         id: item.id,
         date: item.receivedDate,
@@ -746,6 +721,13 @@ export default function ProduceSalesPage() {
                       <td className="px-3 py-3">{sale.paymentMode}</td>
                     </tr>
                   ))}
+                  {!filteredSales.length && (
+                    <tr>
+                      <td colSpan={10} className="px-3 py-8 text-center text-sm text-stone-500">
+                        No produce sales yet. Choose an available store item above and save the first sale.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
