@@ -45,6 +45,7 @@ type StoreStatus = 'In Store' | 'Reserved' | 'Sold' | 'Internal Consumption' | '
 const ESTATES = ['All', 'ME', 'SE', 'HFE', 'ORD', 'BVE'];
 const PRODUCTS = ['All', 'Durian', 'Pepper', 'Cloves', 'Nutmeg', 'Other Produce'];
 const STATUSES: Array<'All' | StoreStatus> = ['All', 'In Store', 'Cold Storage', 'Reserved', 'Sold', 'Internal Consumption', 'Damaged'];
+const SALE_STATUS_FILTERS = ['Sale Stock', 'In Store', 'Cold Storage', 'Reserved'];
 
 const STATUS_STYLES: Record<StoreStatus, string> = {
   'In Store': 'bg-emerald-50 text-emerald-800',
@@ -265,7 +266,7 @@ export default function ProduceStorePage() {
   const [selectedId, setSelectedId] = useState('');
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState('');
-  const [filters, setFilters] = useState({ estate: 'All', product: 'All', status: 'All', search: '' });
+  const [filters, setFilters] = useState({ estate: 'All', product: 'All', status: 'Sale Stock', search: '' });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -429,8 +430,8 @@ export default function ProduceStorePage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {[
-          ['Store Items', totals.count.toLocaleString('en-IN'), 'fruit numbers and bulk lots', Boxes],
-          ['Total Weight', `${kg(totals.weight)} kg`, 'all statuses', PackageCheck],
+          ['Sale Stock Items', totals.count.toLocaleString('en-IN'), 'fruit numbers and bulk lots', Boxes],
+          ['Sale Stock Weight', `${kg(totals.weight)} kg`, 'shown stock only', PackageCheck],
           ['Available', `${kg(totals.available)} kg`, 'store + cold storage', CheckCircle2],
           ['Cold Storage', `${kg(totals.cold)} kg`, 'chilled stock', Snowflake],
           ['Reserved', `${kg(totals.reserved)} kg`, 'held for sale', Tag],
@@ -448,7 +449,7 @@ export default function ProduceStorePage() {
 
       {(loading || statusMessage) && (
         <div className={`rounded-md border px-3 py-2 text-sm ${
-          statusMessage && !statusMessage.includes('updated') ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-100 bg-emerald-50 text-emerald-900'
+          statusMessage && !statusMessage.includes('updated') && !statusMessage.includes('deleted') ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-100 bg-emerald-50 text-emerald-900'
         }`}>
           {loading ? 'Loading produce store...' : statusMessage}
         </div>
@@ -464,7 +465,7 @@ export default function ProduceStorePage() {
               {PRODUCTS.map((product) => <option key={product}>{product}</option>)}
             </select>
             <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className="rounded-md border border-stone-200 px-3 py-2 text-sm">
-              {STATUSES.map((status) => <option key={status}>{status}</option>)}
+              {SALE_STATUS_FILTERS.map((status) => <option key={status}>{status}</option>)}
             </select>
             <label className="flex items-center gap-2 rounded-md border border-stone-200 px-3 py-2">
               <Search className="h-4 w-4 text-stone-400" />
@@ -506,7 +507,7 @@ export default function ProduceStorePage() {
                   {!loading && items.length === 0 && (
                     <tr>
                       <td colSpan={10} className="px-3 py-8 text-center text-sm text-stone-500">
-                        No store items yet. Open Estate Produce and create store items from a saved intake record.
+                        No sale-held store items. Move good produce into In Store, Cold Storage, or Reserved from Estate Produce.
                       </td>
                     </tr>
                   )}
@@ -600,7 +601,7 @@ export default function ProduceStorePage() {
           <section className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
             <div className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Durian is tracked fruit-by-fruit. Bulk produce remains as one lot with available quantity and weight.</span>
+              <span>This page only shows produce held for sale: In Store, Cold Storage, and Reserved. Internal consumption, damaged, and sold items stay tracked but are hidden here.</span>
             </div>
           </section>
         </aside>

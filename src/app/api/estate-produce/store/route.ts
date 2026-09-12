@@ -42,6 +42,8 @@ type StoreSplitItem = {
   photoContentType?: unknown;
 };
 
+const SALE_STORE_STATUSES = ['In Store', 'Cold Storage', 'Reserved'];
+
 function itemSelect() {
   return [
     'id',
@@ -138,7 +140,11 @@ export async function GET(request: Request) {
 
   if (estate && estate !== 'All') query = query.eq('estate', estate);
   if (product && product !== 'All') query = query.eq('product', product);
-  if (status && status !== 'All') query = query.eq('status', status);
+  if (status === 'Sale Stock' || !status || status === 'All') {
+    query = query.in('status', SALE_STORE_STATUSES);
+  } else {
+    query = query.eq('status', status);
+  }
   if (search) {
     const term = search.replace(/[%_]/g, '\\$&');
     query = query.or(`item_code.ilike.%${term}%,product.ilike.%${term}%,estate.ilike.%${term}%,condition_grade.ilike.%${term}%,storage_location.ilike.%${term}%,notes.ilike.%${term}%`);
