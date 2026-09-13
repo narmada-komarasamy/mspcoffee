@@ -309,40 +309,149 @@ export default function CoffeeStoragePage() {
 /* ═══════════════════════════════════════════════════════════════
  SYNC STOCK DRAWER — matches your Excel sheet against green_lots
 ═══════════════════════════════════════════════════════════════ */
-function SyncStockDrawer({ onClose, reload }: { onClose: () => void; reload: () => void }) {
- const [rows, setRows] = useState<{ id: string; lot: string; estate: string; process: string; grade: string; screen: string; score: number | null; sheetKg: number; currentKg: number; status: string }[]>([]);
- const [busy, setBusy] = useState(false);
- const [results, setResults] = useState<{ matched: string[]; added: string[]; updated: string[]; removed: string[]; errors: string[] } | null>(null);
- const fileRef = useRef<HTMLInputElement>(null);
+type SyncRow = {
+ id: string; lot: string; estate: string; process: string; grade: string; screen: string;
+ score: number | null; sheetKg: number; ratePerKg: number; season: Season;
+};
+type SyncPlanItem = SyncRow & {
+ dbId?: string; oldCurrentKg?: number; oldGreenKgIn?: number; nextCurrentKg: number;
+ status: "matched" | "added" | "updated" | "depleted" | "blocked";
+ reason?: string;
+};
+type SyncPlan = {
+ matched: SyncPlanItem[]; added: SyncPlanItem[]; updated: SyncPlanItem[]; depleted: SyncPlanItem[]; blocked: SyncPlanItem[];
+ errors: string[];
+};
 
- const readFile = (f: File) => {
- const reader = new FileReader();
- reader.onload = (e) => {
- try {
- const wb = XLSX.read(e.target!.result as ArrayBuffer, { type: "array" });
- const ws = wb.Sheets[wb.SheetNames[0]];
- const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
- if (!data.length) return;
- const header = data[0].map((h: any) => String(h || "").toLowerCase().trim().replace(/\s+/g, " "));
- const colIdx = (name: string, variants: string[]) => {
- for (const v of variants) {
+function normalizeSheetLabel(value: unknown) {
+ return String(value ?? "").toLowerCase().replace(/\s+/g, " ").replace(/[_/.-]+/g, " ").trim();
+}
+function parseSheetNumber(value: unknown) {
+ const cleaned = String(value ?? "").replace(/,/g, "").replace(/[^0-9.-]/g, "").trim();
+ const parsed = parseFloat(cleaned);
+ return Number.isFinite(parsed) ? parsed : 0;
+}
+function findColumn(header: string[], variants: string[]) {
+ for (const variant of variants.map(normalizeSheetLabel)) {
  for (let i = 0; i < header.length; i++) {
- if (header[i] === v || header[i].includes(v)) return i;
+ if (header[i] === variant || header[i].includes(variant)) return i;
  }
  }
  return -1;
+}
+function guessProcess(process: string, details: string) {
+ const raw = `${process} ${details}`.toLowerCase();
+ if (raw.includes("watermelon")) return "Watermelon Washed";
+ if (raw.includes("washed")) return "Regular Washed";
+ if (raw.includes("natural")) return "Bag Natural";
+ return process || details || "Unknown";
+}
+
+function SyncStockDrawer({ season, onClose, reload }: { season: Season; onClose: () => void; reload: () => void }) {
+ const [rows, setRows] = useState<SyncRow[]>([]);
+ const [busy, setBusy] = useState(false);
+ const [plan, setPlan] = useState<SyncPlan | null>(null);
+ const [applied, setApplied] = useState<{ added: string[]; updated: string[]; depleted: string[]; errors: string[] } | null>(null);
+ const fileRef = useRef<HTMLInputElement>(null);
+
+ const buildPlan = useCallback(async (parsedRows: SyncRow[]): Promise<SyncPlan> => {
+ const empty: SyncPlan = { matched: [], added: [], updated: [], depleted: [], blocked: [], errors: [] };
+ const sup = createClient();
+ const [{ data: existing, error: stockError }, { data: saleRefs, error: saleError }] = await Promise.all([
+ sup.from("green_lots").select("*"),
+ sup.from("coffee_sales").select("green_lot_ids, lot_allocations").not("status", "eq", "cancelled"),
+ ]);
+ if (stockError) return { ...empty, errors: [`Could not read green lots: ${stockError.message}`] };
+ if (saleError) empty.errors.push(`Could not read sales history: ${saleError.message}`);
+
+ const map = new Map<string, GreenLot>();
+ (existing ?? []).forEach((lot: GreenLot) => map.set(`${lot.season ?? "2024-2025"}::${lot.lot}`, lot));
+ const sheetLots = new Set(parsedRows.map(row => `${row.season}::${row.lot}`));
+ const lotIdsWithSales = new Set<string>();
+ (saleRefs ?? []).forEach((sale: { green_lot_ids?: string[]; lot_allocations?: SaleLotAllocation[] }) => {
+ (sale.green_lot_ids ?? []).forEach(id => lotIdsWithSales.add(id));
+ (Array.isArray(sale.lot_allocations) ? sale.lot_allocations : []).forEach(a => {
+ if (a?.green_lot_id) lotIdsWithSales.add(a.green_lot_id);
+ });
+ });
+
+ for (const dbLot of (existing ?? []) as GreenLot[]) {
+ const key = `${dbLot.season ?? "2024-2025"}::${dbLot.lot}`;
+ if ((dbLot.season ?? "2024-2025") !== season || sheetLots.has(key) || dbLot.status !== "in-stock") continue;
+ if (lotIdsWithSales.has(dbLot.id)) {
+ empty.blocked.push({
+ id: `blocked-${dbLot.id}`, lot: dbLot.lot, estate: dbLot.field, process: dbLot.process, grade: dbLot.grade,
+ screen: dbLot.screen, score: dbLot.score, sheetKg: 0, ratePerKg: n(dbLot.rate_per_kg), season,
+ dbId: dbLot.id, oldCurrentKg: n(dbLot.current_kg), oldGreenKgIn: n(dbLot.green_kg_in), nextCurrentKg: n(dbLot.current_kg),
+ status: "blocked", reason: "Not in sheet, but has sales history.",
+ });
+ } else {
+ empty.depleted.push({
+ id: `deplete-${dbLot.id}`, lot: dbLot.lot, estate: dbLot.field, process: dbLot.process, grade: dbLot.grade,
+ screen: dbLot.screen, score: dbLot.score, sheetKg: 0, ratePerKg: n(dbLot.rate_per_kg), season,
+ dbId: dbLot.id, oldCurrentKg: n(dbLot.current_kg), oldGreenKgIn: n(dbLot.green_kg_in), nextCurrentKg: 0,
+ status: "depleted",
+ });
+ }
+ }
+
+ for (const row of parsedRows) {
+ const dbLot = map.get(`${row.season}::${row.lot}`);
+ if (!dbLot) {
+ empty.added.push({ ...row, nextCurrentKg: row.sheetKg, status: "added" });
+ continue;
+ }
+ const safeCurrentKg = Math.min(row.sheetKg, n(dbLot.green_kg_in) || row.sheetKg);
+ const changed = n(dbLot.current_kg) !== safeCurrentKg
+ || (row.estate && dbLot.field !== row.estate)
+ || (row.process && dbLot.process !== row.process)
+ || (row.grade && dbLot.grade !== row.grade)
+ || (row.screen && dbLot.screen !== row.screen)
+ || (row.ratePerKg > 0 && n(dbLot.rate_per_kg) !== row.ratePerKg);
+ const item: SyncPlanItem = {
+ ...row, dbId: dbLot.id, oldCurrentKg: n(dbLot.current_kg), oldGreenKgIn: n(dbLot.green_kg_in),
+ nextCurrentKg: safeCurrentKg, status: changed ? "updated" : "matched",
+ reason: row.sheetKg > n(dbLot.green_kg_in) && n(dbLot.green_kg_in) > 0
+ ? "Sheet kg is above initial stock; current kg will be capped at initial stock."
+ : undefined,
  };
- const iLot = colIdx("lot", ["lot", "lot no", "lot number", "lot_no", "lot_number", "garden lot", "id"]);
- const iEstate = colIdx("estate", ["estate", "garden", "estate name", "field"]);
- const iProcess = colIdx("process", ["process", "process type"]);
- const iGrade = colIdx("grade", ["grade", "screen grade", "grade/size"]);
- const iScreen = colIdx("screen", ["screen", "size", "screen size", "sieve"]);
- const iScore = colIdx("score", ["score", "cup score", "quality score", "cup_score"]);
- let iKg = colIdx("kg", ["kg", "qty", "quantity", "stock kg", "available kg", "current kg", "balance kg", "in kgs", "kgs"]);
+ empty[changed ? "updated" : "matched"].push(item);
+ }
+ return empty;
+ }, [season]);
+
+ const readFile = (f: File) => {
+ const reader = new FileReader();
+ reader.onload = async (e) => {
+ try {
+ const wb = XLSX.read(e.target!.result as ArrayBuffer, { type: "array" });
+ const ws = wb.Sheets[wb.SheetNames[0]];
+ const data = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+ if (!data.length) return;
+ let headerRow = data.findIndex(row => {
+ const header = row.map(normalizeSheetLabel);
+ return findColumn(header, ["lot", "lot no", "lot number", "garden lot", "id"]) >= 0
+ && findColumn(header, ["kg", "qty", "quantity", "stock kg", "available kg", "current kg", "balance kg", "in kgs", "kgs"]) >= 0;
+ });
+ if (headerRow === -1) {
+ headerRow = data.findIndex(row => /^\d{2,4}$/.test(String(row?.[0] ?? "").trim()));
+ if (headerRow > 0) headerRow -= 1;
+ }
+ if (headerRow < 0) throw new Error("Could not find the stock table header in the sheet.");
+ const header = data[headerRow].map(normalizeSheetLabel);
+ const iLot = findColumn(header, ["lot", "lot no", "lot number", "lot_no", "lot_number", "garden lot", "id"]);
+ const iEstate = findColumn(header, ["estate", "garden", "estate name", "field"]);
+ const iProcess = findColumn(header, ["process", "process type"]);
+ const iDetails = findColumn(header, ["process details", "details", "description"]);
+ const iGrade = findColumn(header, ["grade", "screen grade", "grade/size", "variety"]);
+ const iScreen = findColumn(header, ["screen", "size", "screen size", "sieve"]);
+ const iScore = findColumn(header, ["score", "cup score", "quality score", "cup_score"]);
+ const iRate = findColumn(header, ["purchase price per kg", "price per kg", "rate per kg", "rate"]);
+ let iKg = findColumn(header, ["kg", "qty", "quantity", "stock kg", "available kg", "current kg", "balance kg", "in kgs", "kgs"]);
  if (iKg === -1) {
  for (let c = 0; c < header.length; c++) {
  let numericCount = 0;
- for (let r = 1; r < Math.min(data.length, 30); r++) {
+ for (let r = headerRow + 1; r < Math.min(data.length, headerRow + 30); r++) {
  const v = String(data[r]?.[c] || "").trim().replace(/,/g, "");
  if (v && !isNaN(parseFloat(v))) numericCount++;
  }
@@ -350,24 +459,28 @@ function SyncStockDrawer({ onClose, reload }: { onClose: () => void; reload: () 
  }
  }
  if (iKg === -1) throw new Error("Could not find a 'kg' / 'quantity' column in the sheet. Please ensure your sheet has a numeric stock column.");
- const parsed: typeof rows = [];
- for (let r = 1; r < data.length; r++) {
+ const parsed: SyncRow[] = [];
+ for (let r = headerRow + 1; r < data.length; r++) {
  const rawLot = String(data[r]?.[iLot] || "").trim();
  if (!rawLot) continue;
+ if (/total amount|grand total/i.test(rawLot)) continue;
  const lotMatch = rawLot.match(/\d+/);
  if (!lotMatch) continue;
  const lot = lotMatch[0];
- const kgRaw = String(data[r]?.[iKg] || "").trim().replace(/,/g, "");
- const kg = parseFloat(kgRaw);
+ const kg = parseSheetNumber(data[r]?.[iKg]);
  if (isNaN(kg) || kg <= 0) continue;
+ const process = guessProcess(
+ iProcess >= 0 ? String(data[r]?.[iProcess] || "").trim() : "",
+ iDetails >= 0 ? String(data[r]?.[iDetails] || "").trim() : ""
+ );
  parsed.push({
  id: "sheet-" + r, lot,
  estate: iEstate >= 0 ? String(data[r]?.[iEstate] || "").trim() : "",
- process: iProcess >= 0 ? String(data[r]?.[iProcess] || "").trim() : "",
+ process,
  grade: iGrade >= 0 ? String(data[r]?.[iGrade] || "").trim() : "",
  screen: iScreen >= 0 ? String(data[r]?.[iScreen] || "").trim() : "",
  score: iScore >= 0 && data[r]?.[iScore] ? Number(data[r][iScore]) : null,
- sheetKg: kg, currentKg: 0, status: "",
+ sheetKg: kg, ratePerKg: iRate >= 0 ? parseSheetNumber(data[r]?.[iRate]) : 0, season,
  });
  }
  if (parsed.length === 0) {
@@ -375,93 +488,60 @@ function SyncStockDrawer({ onClose, reload }: { onClose: () => void; reload: () 
  return;
  }
  setRows(parsed);
+ setApplied(null);
+ setPlan(await buildPlan(parsed));
  } catch (err) { alert("Could not parse file: " + (err instanceof Error ? err.message : err)); }
  };
  reader.readAsArrayBuffer(f);
  };
 
- const runSync = async () => {
- setBusy(true); setResults(null);
- const res = { matched: [] as string[], added: [] as string[], updated: [] as string[], removed: [] as string[], errors: [] as string[] };
+ const applySync = async () => {
+ if (!plan) return;
+ setBusy(true);
+ const res = { added: [] as string[], updated: [] as string[], depleted: [] as string[], errors: [...plan.errors] };
  try {
  const sup = createClient();
- const { data: existing } = await sup.from("green_lots").select("*");
- const map = new Map<string, any>();
- (existing || []).forEach((l: any) => map.set(l.lot, l));
- const sheetLots = new Set(rows.map(r => r.lot));
- const existingLots = new Set(map.keys());
-
- // Safety net: find every green_lot_id referenced by a sale so we never
- // mark a lot depleted when it has transaction history. Sales themselves
- // are never touched — the row just stays in-stock or depleted as-is.
- const { data: saleRefs } = await sup.from("coffee_sales")
- .select("green_lot_ids, lot_allocations")
- .not("status", "eq", "cancelled");
- const lotIdsWithSales = new Set<string>();
- (saleRefs || []).forEach((s: any) => {
- (s.green_lot_ids || []).forEach((id: string) => lotIdsWithSales.add(id));
- (Array.isArray(s.lot_allocations) ? s.lot_allocations : []).forEach((a: any) => {
- if (a?.green_lot_id) lotIdsWithSales.add(a.green_lot_id);
- });
- });
-
- for (const lot of existingLots) {
- const dbLot = map.get(lot);
- if (!sheetLots.has(lot) && dbLot.status === "in-stock") {
- if (lotIdsWithSales.has(dbLot.id)) {
- res.errors.push(`Lot ${lot} has existing sales — kept as in-stock. Manage from Sales tab.`);
- continue;
+ for (const item of plan.depleted) {
+ if (!item.dbId) continue;
+ const { error } = await sup.from("green_lots").update({ status: "depleted", current_kg: 0, updated_at: new Date().toISOString() }).eq("id", item.dbId);
+ if (error) res.errors.push(`Failed to deplete lot ${item.lot}: ${error.message}`);
+ else res.depleted.push(item.lot);
  }
- res.removed.push(lot);
- await sup.from("green_lots").update({ status: "depleted", updated_at: new Date().toISOString() }).eq("id", dbLot.id);
- }
- }
- for (const r of rows) {
- let dbLot = map.get(r.lot);
- if (!dbLot && r.estate) {
- for (const [, l] of map) { if (l.lot === r.lot && l.field === r.estate) { dbLot = l; break; } }
- }
- if (!dbLot) {
- const newId = "G-" + String(Date.now()).slice(-3);
+ for (const item of [...plan.added, ...plan.updated]) {
+ if (item.status === "added") {
+ const newId = `G-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
  try {
- await sup.from("green_lots").insert({
- id: newId, lot: r.lot, derived_from: [],
- green_kg_in: r.sheetKg, current_kg: r.sheetKg, rate_per_kg: 0,
- process: r.process || "Washed", field: r.estate || "Unknown",
- grade: r.grade || "", screen: r.screen || "",
- score: r.score, milled_date: new Date().toISOString().slice(0, 10),
- warehouse: "", status: "in-stock",
+ const { error } = await sup.from("green_lots").insert({
+ id: newId, lot: item.lot, derived_from: [],
+ green_kg_in: item.sheetKg, current_kg: item.sheetKg, rate_per_kg: item.ratePerKg,
+ process: item.process || "Unknown", field: item.estate || "Unknown",
+ grade: item.grade || "", screen: item.screen || "",
+ score: item.score, milled_date: new Date().toISOString().slice(0, 10),
+ warehouse: "", status: "in-stock", season: item.season,
  });
- res.added.push(r.lot);
- } catch { res.errors.push("Failed to insert lot " + r.lot); }
+ if (error) res.errors.push(`Failed to insert lot ${item.lot}: ${error.message}`);
+ else res.added.push(item.lot);
+ } catch (err) { res.errors.push(`Failed to insert lot ${item.lot}: ${err}`); }
  } else {
- // Preserve green_kg_in (initial stock). Only update current_kg from the
- // sheet so prior sales (green_kg_in − current_kg) remain visible in the
- // "Sold / Used" KPI. Clamp to green_kg_in so the sheet never reverses sales.
- const safeKg = Math.min(r.sheetKg, n(dbLot.green_kg_in));
- const changed = dbLot.current_kg !== safeKg
- || (r.process && dbLot.process !== r.process)
- || (r.grade && dbLot.grade !== r.grade)
- || (r.screen && dbLot.screen !== r.screen);
- if (changed) {
- try {
- await sup.from("green_lots").update({
- current_kg: safeKg,
- process: r.process || dbLot.process,
- grade: r.grade ?? dbLot.grade,
- screen: r.screen ?? dbLot.screen,
- score: r.score ?? dbLot.score,
- status: safeKg <= 0 ? "depleted" : "in-stock",
+ if (!item.dbId) continue;
+ const { error } = await sup.from("green_lots").update({
+ current_kg: item.nextCurrentKg,
+ ...(item.process ? { process: item.process } : {}),
+ ...(item.estate ? { field: item.estate } : {}),
+ ...(item.grade ? { grade: item.grade } : {}),
+ ...(item.screen ? { screen: item.screen } : {}),
+ ...(item.score !== null ? { score: item.score } : {}),
+ ...(item.ratePerKg > 0 ? { rate_per_kg: item.ratePerKg } : {}),
+ status: item.nextCurrentKg <= 0 ? "depleted" : "in-stock",
  updated_at: new Date().toISOString(),
- }).eq("id", dbLot.id);
- res.updated.push(r.lot);
- } catch { res.errors.push("Failed to update lot " + r.lot); }
- } else { res.matched.push(r.lot); }
+ }).eq("id", item.dbId);
+ if (error) res.errors.push(`Failed to update lot ${item.lot}: ${error.message}`);
+ else res.updated.push(item.lot);
  }
  }
- setResults(res); reload();
+ setApplied(res); reload();
  } catch (err) {
- setResults({ ...res, errors: [...res.errors, String(err)] });
+ setApplied({ ...res, errors: [...res.errors, String(err)] });
  } finally { setBusy(false); }
  };
 
@@ -469,18 +549,18 @@ function SyncStockDrawer({ onClose, reload }: { onClose: () => void; reload: () 
  <div className={css.drawerOverlay} onClick={onClose}>
  <div className={css.drawer}>
  <div className={css.drawerHeader}>
- <span className={css.drawerTitle}>Sync Stock from Excel</span>
+ <span className={css.drawerTitle}>Sync Stock from Excel — {season}</span>
  <button className={css.drawerClose} onClick={onClose}><X size={14} /></button>
  </div>
  <div className={css.drawerBody}>
  <p style={{ color: "var(--t-muted)", fontSize: 13, margin: "0 0 12px" }}>
- Upload your stock Excel sheet. Lot numbers are matched to existing green lots.
+ Upload your stock Excel or CSV sheet. Lot numbers are matched to existing green lots in the selected season.
  Existing sales are never touched — green_kg_in is preserved so prior sales remain visible.
- Lots with existing sales won't be marked depleted. New stock is added; updates clamp to initial stock.
+ Lots with existing sales will not be marked depleted. New stock is added; updates clamp to initial stock.
  </p>
- {!results ? (
+ {!applied ? (
  <>
- <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }}
+ <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
  onChange={(e) => { if (e.target.files?.[0]) readFile(e.target.files[0]); }} />
  <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
  <button className={css.btnSecondary} onClick={() => fileRef.current?.click()}>
@@ -515,28 +595,33 @@ function SyncStockDrawer({ onClose, reload }: { onClose: () => void; reload: () 
  ))}
  </tbody>
  </table>
- <p style={{ color: "var(--t-muted)", fontSize: 12, marginTop: 8 }}>
- {rows.length} lot(s) found. Click "Sync" to apply changes.
- </p>
+ {plan && (
+ <div style={{ marginTop: 12, fontSize: 12, color: "var(--t-muted)" }}>
+ <strong style={{ color: "var(--t-text)" }}>Preview:</strong>{" "}
+ {plan.added.length} added · {plan.updated.length} updated · {plan.depleted.length} depleted · {plan.matched.length} unchanged · {plan.blocked.length} protected
+ {plan.errors.length > 0 && <div style={{ color: "crimson", marginTop: 6 }}>{plan.errors.join(", ")}</div>}
+ {plan.blocked.length > 0 && <div style={{ marginTop: 6 }}>Protected lots: {plan.blocked.map(i => i.lot).join(", ")}</div>}
+ </div>
+ )}
  </>
  )}
  </>
  ) : (
  <div>
- {results.added.length > 0 && <p><strong>Added ({results.added.length}):</strong> {results.added.join(", ")}</p>}
- {(results.updated.length + results.matched.length) > 0 && <p><strong>Updated / Unchanged ({results.updated.length + results.matched.length}):</strong> {results.matched.join(", ")} and {results.updated.join(", ")}</p>}
- {results.removed.length > 0 && <p><strong>Depleted ({results.removed.length}):</strong> {results.removed.join(", ")}</p>}
- {results.errors.length > 0 && <p style={{ color: "crimson" }}><strong>Errors ({results.errors.length}):</strong> {results.errors.join(", ")}</p>}
+ {applied.added.length > 0 && <p><strong>Added ({applied.added.length}):</strong> {applied.added.join(", ")}</p>}
+ {applied.updated.length > 0 && <p><strong>Updated ({applied.updated.length}):</strong> {applied.updated.join(", ")}</p>}
+ {applied.depleted.length > 0 && <p><strong>Depleted ({applied.depleted.length}):</strong> {applied.depleted.join(", ")}</p>}
+ {applied.errors.length > 0 && <p style={{ color: "crimson" }}><strong>Errors ({applied.errors.length}):</strong> {applied.errors.join(", ")}</p>}
  <p style={{ color: "var(--t-muted)", fontSize: 12, marginTop: 8 }}>Sales are untouched. Stock tables updated.</p>
  </div>
  )}
  </div>
  <div className={css.drawerFooter}>
- {!results ? (
+ {!applied ? (
  <>
  <button className={css.btnCancel} onClick={onClose}>Cancel</button>
- <button className={css.btnPrimary} onClick={runSync} disabled={rows.length === 0 || busy}>
- {busy ? "Syncing…" : "Sync " + rows.length + " Lot(s)"}
+ <button className={css.btnPrimary} onClick={applySync} disabled={!plan || rows.length === 0 || busy}>
+ {busy ? "Syncing…" : "Apply Sync"}
  </button>
  </>
  ) : (
@@ -1794,7 +1879,7 @@ function GreenTab({ greenLots, reload, setTab }: { greenLots: GreenLot[]; reload
         <AddLotDrawer season={activeSeason} onClose={() => setAddLotDrawer(false)} reload={reload} />
       )}
  {syncOpen && (
- <SyncStockDrawer onClose={() => setSyncOpen(false)} reload={reload} />
+ <SyncStockDrawer season={activeSeason} onClose={() => setSyncOpen(false)} reload={reload} />
  )}
     </div>
   );
