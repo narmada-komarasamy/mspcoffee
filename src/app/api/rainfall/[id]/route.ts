@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .from('rainfall')
     .update(parsed.record)
     .eq('id', recordId)
-    .select('id, date, estate, rainfall_mm, inches, year, month')
+    .select('id, date, estate, rainfall_mm, inches')
     .single();
 
   if (error) {

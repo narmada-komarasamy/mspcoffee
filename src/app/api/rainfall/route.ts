@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const { data, error } = await auth.supabase
     .from('rainfall')
     .insert(parsed.record)
-    .select('id, date, estate, rainfall_mm, inches, year, month')
+    .select('id, date, estate, rainfall_mm, inches')
     .single();
 
   if (error) {
