@@ -204,6 +204,15 @@ const getRoleLineFontSize = (form: CardForm) => {
   return Math.min(11.5, Math.max(7.4, Math.floor(285 / (length * 0.7)) / 10));
 };
 
+const getAddressFontSize = (address: string) => {
+  const length = address.trim().length;
+  if (length > 115) return 10.8;
+  if (length > 95) return 11.4;
+  if (length > 78) return 12.2;
+  if (length > 58) return 13.1;
+  return 14.8;
+};
+
 const fitCanvasTextSize = (
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -251,31 +260,55 @@ const drawCenteredWrappedText = (
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
-  y: number,
+  topY: number,
   maxWidth: number,
-  fontSize: number,
-  lineHeight: number,
+  maxHeight: number,
+  startSize: number,
+  minSize: number,
   fontWeight = 900
 ) => {
-  ctx.font = `${fontWeight} ${fontSize}px Segoe UI, Arial, sans-serif`;
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let line = "";
-
-  words.forEach((word) => {
-    const next = line ? `${line} ${word}` : word;
-    if (ctx.measureText(next).width <= maxWidth || !line) {
-      line = next;
-    } else {
-      lines.push(line);
-      line = word;
-    }
-  });
-  if (line) lines.push(line);
-
   ctx.textAlign = "center";
-  lines.slice(0, 4).forEach((item, index) => {
-    ctx.fillText(item, x, y + index * lineHeight, maxWidth);
+
+  const wrapAtSize = (fontSize: number) => {
+    ctx.font = `${fontWeight} ${fontSize}px Segoe UI, Arial, sans-serif`;
+    const lines: string[] = [];
+    text.split(/\n+/).forEach((paragraph) => {
+      const words = paragraph.split(/\s+/).filter(Boolean);
+      let line = "";
+
+      words.forEach((word) => {
+        const next = line ? `${line} ${word}` : word;
+        if (ctx.measureText(next).width <= maxWidth || !line) {
+          line = next;
+        } else {
+          lines.push(line);
+          line = word;
+        }
+      });
+      if (line) lines.push(line);
+    });
+
+    return lines.length ? lines : ["-"];
+  };
+
+  let fittedSize = startSize;
+  let fittedLines = wrapAtSize(fittedSize);
+  let fittedLineHeight = fittedSize * 1.1;
+
+  for (let size = startSize; size >= minSize; size -= 1) {
+    const lines = wrapAtSize(size);
+    const lineHeight = size * 1.1;
+    fittedSize = size;
+    fittedLines = lines;
+    fittedLineHeight = lineHeight;
+    if (lines.length * lineHeight <= maxHeight) break;
+  }
+
+  ctx.font = `${fontWeight} ${fittedSize}px Segoe UI, Arial, sans-serif`;
+  const blockHeight = fittedLines.length * fittedLineHeight;
+  const firstBaseline = topY + Math.max(0, (maxHeight - blockHeight) / 2) + fittedSize;
+  fittedLines.forEach((item, index) => {
+    ctx.fillText(item, x, firstBaseline + index * fittedLineHeight, maxWidth);
   });
 };
 
@@ -484,7 +517,7 @@ const renderIdCardImage = async (form: CardForm, photo: string) => {
   ctx.fillText(`EMPLOYEE NO : ${form.employeeNumber || "-"}`, backX + 185, 540, 430);
   ctx.fillText(`BLOOD GROUP : ${form.bloodGroup || "-"}`, backX + 185, 598, 430);
   ctx.fillText(`MOBILE : ${form.mobile || "-"}`, backX + 185, 656, 430);
-  drawCenteredWrappedText(ctx, form.address || "-", backX + cardWidth / 2, 800, 430, 40, 44, 750);
+  drawCenteredWrappedText(ctx, form.address || "-", backX + cardWidth / 2, 735, 455, 205, 40, 22, 750);
   ctx.restore();
 
   try {
@@ -982,7 +1015,9 @@ function IdCardBack({ form }: { form: CardForm }) {
           <div><span className={css.infoIcon}>●</span><span>Employee No : {form.employeeNumber || "-"}</span></div>
           <div><span className={css.infoIcon}>●</span><span>Blood Group : {form.bloodGroup || "-"}</span></div>
           <div><span className={css.infoIcon}>☎</span><span>Mobile : {form.mobile || "-"}</span></div>
-          <div className={css.addressRow}><span>{form.address || "-"}</span></div>
+          <div className={css.addressRow} style={{ fontSize: `${getAddressFontSize(form.address)}px` }}>
+            <span>{form.address || "-"}</span>
+          </div>
         </div>
       </div>
     </article>
