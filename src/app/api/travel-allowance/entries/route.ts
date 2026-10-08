@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { DATE_RE, UUID_RE, requireTravelAllowanceUser } from '../_auth';
+import { UUID_RE, normalizeDateKey, requireTravelAllowanceUser } from '../_auth';
 
 type EntryPayload = {
   entry_date?: unknown;
@@ -13,13 +13,25 @@ export async function POST(request: Request) {
   if ('error' in auth) return auth.error;
 
   const payload = await request.json().catch(() => null) as EntryPayload | null;
-  const entryDate = typeof payload?.entry_date === 'string' ? payload.entry_date.trim() : '';
+  const entryDate = normalizeDateKey(payload?.entry_date);
   const employeeId = typeof payload?.employee_id === 'string' ? payload.employee_id.trim() : '';
   const locationId = typeof payload?.location_id === 'string' ? payload.location_id.trim() : '';
   const times = Number(payload?.times ?? 1);
 
-  if (!DATE_RE.test(entryDate) || !UUID_RE.test(employeeId) || !UUID_RE.test(locationId) || !Number.isInteger(times) || times < 1 || times > 100) {
-    return NextResponse.json({ error: 'Enter a valid date, employee, location, and event count' }, { status: 400 });
+  if (!entryDate) {
+    return NextResponse.json({ error: 'Enter a valid date' }, { status: 400 });
+  }
+
+  if (!UUID_RE.test(employeeId)) {
+    return NextResponse.json({ error: 'Choose a valid employee' }, { status: 400 });
+  }
+
+  if (!UUID_RE.test(locationId)) {
+    return NextResponse.json({ error: 'Choose a valid location' }, { status: 400 });
+  }
+
+  if (!Number.isInteger(times) || times < 1 || times > 100) {
+    return NextResponse.json({ error: 'Enter an event count from 1 to 100' }, { status: 400 });
   }
 
   const { data, error } = await auth.supabase

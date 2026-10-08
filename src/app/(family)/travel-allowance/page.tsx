@@ -56,6 +56,39 @@ type PaymentRow = {
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const monthKey = () => new Date().toISOString().slice(0, 7);
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const SLASH_DATE_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+
+function validDateKey(date: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return parsed.getUTCFullYear() === year
+    && parsed.getUTCMonth() === month - 1
+    && parsed.getUTCDate() === day;
+}
+
+function normalizeDateInput(value: string) {
+  const trimmed = value.trim();
+  if (DATE_KEY_RE.test(trimmed)) return validDateKey(trimmed) ? trimmed : '';
+
+  const slashMatch = SLASH_DATE_RE.exec(trimmed);
+  if (!slashMatch) return '';
+
+  const first = Number(slashMatch[1]);
+  const second = Number(slashMatch[2]);
+  const year = Number(slashMatch[3]);
+  const month = first > 12 ? second : first;
+  const day = first > 12 ? first : second;
+  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  return validDateKey(date) ? date : '';
+}
 
 function weekStartKey() {
   const d = new Date();
@@ -222,8 +255,25 @@ export default function TravelAllowancePage() {
   }, []);
 
   const addEntry = async () => {
-    if (!entryDate || !employeeId || !locationId) {
-      showToast('Fill in date, employee, and location');
+    const normalizedEntryDate = normalizeDateInput(entryDate);
+
+    if (!normalizedEntryDate) {
+      showToast('Enter a valid date');
+      return;
+    }
+
+    if (!employeeId) {
+      showToast('Choose an employee');
+      return;
+    }
+
+    if (!locationId) {
+      showToast('Choose a location');
+      return;
+    }
+
+    if (!Number.isInteger(times) || times < 1 || times > 100) {
+      showToast('Enter an event count from 1 to 100');
       return;
     }
 
@@ -237,10 +287,10 @@ export default function TravelAllowancePage() {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        entry_date: entryDate,
+        entry_date: normalizedEntryDate,
         employee_id: employeeId,
         location_id: locationId,
-        times: Math.max(1, times || 1),
+        times,
       }),
     });
 
