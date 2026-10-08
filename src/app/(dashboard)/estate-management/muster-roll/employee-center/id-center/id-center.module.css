@@ -620,7 +620,8 @@
 
 .infoList .addressRow {
   display: block;
-  padding: 0 8px;
+  padding: 0 6px;
+  overflow-wrap: anywhere;
   text-align: center;
 }
 
