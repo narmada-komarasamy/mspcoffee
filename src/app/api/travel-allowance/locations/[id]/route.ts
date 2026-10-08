@@ -1,22 +1,29 @@
 import { NextResponse } from 'next/server';
-import { UUID_RE, requireTravelAllowanceUser } from '../../_auth';
+import { requireTravelAllowanceUser } from '../../_auth';
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  if (!UUID_RE.test(id)) {
+  const { id: rawId } = await params;
+  const id = decodeURIComponent(rawId).trim();
+  if (!id) {
     return NextResponse.json({ error: 'Invalid location id' }, { status: 400 });
   }
 
   const auth = await requireTravelAllowanceUser(request, ['admin']);
   if ('error' in auth) return auth.error;
 
-  const { error } = await auth.supabase
+  const { data, error } = await auth.supabase
     .from('travel_allowance_locations')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Location not found' }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true });
