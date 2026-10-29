@@ -14,7 +14,7 @@ function load(path, mocks = {}) {
   return fixtureModule.exports;
 }
 const helpers = load('src/lib/fleet/maintenance.ts');
-const helperMocks = { '@/lib/fleet/maintenance': helpers };
+const helperMocks = { '@/lib/fleet/maintenance': helpers, '@/lib/fleet/maintenance-server': { billFingerprint: bytes => require('node:crypto').createHash('sha256').update(Buffer.from(bytes)).digest('hex'), findExactBill: async () => null } };
 
 test('search finds original bill text across vehicles, case and word order', () => {
   const records = [
@@ -57,15 +57,15 @@ function saveHarness({ failSave = false, existing = false } = {}) {
     upload: async (...args) => { calls.uploads.push(args); return { error: null }; },
     remove: async paths => { calls.removes.push(paths); return { error: null }; },
   };
-  const result = { error: failSave ? { code: '23505' } : null };
+  const result = { data: failSave ? null : { ok: true }, error: failSave ? { code: '23505' } : null };
   const db = {
     insert: async payload => { calls.writes.push(payload); return result; },
     update: payload => { calls.writes.push(payload); return { eq: async () => result }; },
-    select: () => ({ eq: () => ({ single: async () => ({ data: existing ? { maintenance_bill_path: 'old/bill.pdf' } : null }) }) }),
+    select: () => ({ eq: () => ({ single: async () => ({ data: existing ? { ...record, id: 12, maintenance_bill_path: 'old/bill.pdf' } : null }) }) }),
   };
   const api = load('src/app/api/fleet/maintenance-bill/route.ts', {
     ...helperMocks,
-    '@/lib/auth/api': { requireApiUser: async () => ({ user: { id: 'admin' }, supabase: { from: () => db, storage: { from: () => storage } } }) },
+    '@/lib/auth/api': { requireApiUser: async () => ({ user: { id: 'admin' }, supabase: { rpc: async (_name, args) => { calls.writes.push(args.p_record); return result; }, from: () => db, storage: { from: () => storage } } }) },
   });
   return { api, calls };
 }

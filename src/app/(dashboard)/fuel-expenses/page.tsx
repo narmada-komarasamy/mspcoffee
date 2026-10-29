@@ -142,6 +142,10 @@ export default function FleetPage() {
   const [logMonth,    setLogMonth]    = useState("ALL");
   const [logDateFrom, setLogDateFrom] = useState("");
   const [logDateTo,   setLogDateTo]   = useState("");
+  const [savedLogKey, setSavedLogKey] = useState("");
+  const [saveNotice, setSaveNotice] = useState("");
+  const dailyLogRef = useRef<HTMLDivElement>(null);
+  const scrollLogAfterSave = useRef(false);
 
   /* ── Trip calculator ─────────────────────────────────────────────────────────── */
   const [tripFromText, setTripFromText] = useState("Moganad Estate, Managalam");
@@ -247,7 +251,7 @@ export default function FleetPage() {
     while (true) {
       const { data: rows, error } = await supabase
         .from("fleet_daily").select("*")
-        .order("date", { ascending: true })
+        .order("date", { ascending: true }).order("id", { ascending: true })
         .range(from, from + BATCH - 1);
       if (error) { console.error("[fleet] loadData error:", error); break; }
       if (!rows || rows.length === 0) break;
@@ -260,6 +264,23 @@ export default function FleetPage() {
     setLastRefreshed(new Date().toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true }));
     setLoading(false);
   }, []);
+
+  const handleFleetSaved = useCallback((entry?: FleetRecord) => {
+    setLogSearch(""); setLogYear("ALL"); setLogMonth("ALL"); setLogPage(1);
+    setLogVehicle(entry?.vehicle_id.trim() || "ALL");
+    setLogDateFrom(entry?.date || ""); setLogDateTo(entry?.date || "");
+    setSavedLogKey(entry ? `${entry.vehicle_id.trim()}|${entry.date}` : "");
+    setSaveNotice(entry ? `Entry saved. Showing ${entry.vehicle_id.trim()} on ${entry.date}.` : "Fleet records refreshed. Showing all records.");
+    scrollLogAfterSave.current = true;
+    void loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (!loading && scrollLogAfterSave.current) {
+      dailyLogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      scrollLogAfterSave.current = false;
+    }
+  }, [loading]);
 
   /* Initial vehicle selection — runs once after first data load */
   const initialised = useRef(false);
@@ -348,7 +369,7 @@ export default function FleetPage() {
     return filterRows(data, logVehicle, logYear, logMonth)
       .filter(r => matchesMaintenanceSearch(r, logSearch))
       .filter(r => (!logDateFrom || r.date >= logDateFrom) && (!logDateTo || r.date <= logDateTo))
-      .reverse();
+      .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   }, [data, logVehicle, logYear, logMonth, logDateFrom, logDateTo, logSearch]);
   const logPages = Math.max(1, Math.ceil(logRows.length / LOG_PAGE_SIZE));
   const logSlice = logRows.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
@@ -551,6 +572,7 @@ export default function FleetPage() {
             <button className={s.uploadBtn} onClick={() => setShowUpload(true)}>
               <Upload className="h-3.5 w-3.5" /> Upload Excel
             </button>
+            <button className={s.refreshBtn} disabled={loading} onClick={() => dailyLogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>View daily log</button>
             <button className={s.addBtn} onClick={() => setEditRecord(null)}>
               <Plus className="h-3.5 w-3.5" /> Add Record
             </button>
@@ -1108,7 +1130,8 @@ export default function FleetPage() {
             {/* ════════════════════════════════════════════════════════════════════
                 ◆ DAILY LOG
             ════════════════════════════════════════════════════════════════════ */}
-            <div className={s.sectionHeader}><span className={s.diamond}>◆</span> DAILY VEHICLE LOG</div>
+            <div ref={dailyLogRef} className={s.sectionHeader}><span className={s.diamond}>◆</span> DAILY VEHICLE LOG</div>
+            {saveNotice && <p role="status" style={{ margin:"0 28px 14px", color:TEAL, fontSize:13 }}>{saveNotice}</p>}
 
             <div className={s.filterBar} style={{ marginBottom:14 }}>
               <div className={s.ctrlGroup}>
@@ -1152,18 +1175,6 @@ export default function FleetPage() {
               <button className={s.resetBtn} onClick={() => { setLogSearch(""); setLogVehicle("ALL"); setLogYear("ALL"); setLogMonth("ALL"); setLogDateFrom(""); setLogDateTo(""); setLogPage(1); }}>Reset Filters</button>
             </div>
 
-            {(() => {
-              const logReady = !!logSearch.trim() || logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo;
-              if (!logReady) return (
-                <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"var(--t-label)", border:"1px dashed var(--t-border)", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
-                  Search bill contents across all vehicles, or apply a filter above to view records
-                </div>
-              );
-              return null;
-            })()}
-
-            {(!!logSearch.trim() || logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo) && (
-              <>
             <div style={{ fontSize:11, color:"var(--t-muted)", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
 
             <div className={s.dailyTableWrapper}>
@@ -1188,7 +1199,8 @@ export default function FleetPage() {
                 <tbody>
                   {logSlice.length === 0 && <tr><td colSpan={13} style={{ textAlign:"center", padding:24 }}>No matching records. Try another term or clear the filters.</td></tr>}
                   {logSlice.map(r => (
-                    <tr key={r.id}>
+                    <tr key={r.id} aria-current={savedLogKey === `${r.vehicle_id}|${r.date}` ? "true" : undefined}
+                      style={savedLogKey === `${r.vehicle_id}|${r.date}` ? { background:"var(--t-subtle)", outline:`2px solid ${TEAL}`, outlineOffset:-2 } : undefined}>
                       <td className={s.colDate}>{r.date}</td>
                       <td className={s.colVehicle} style={{ color: vColor(r.vehicle_id) }}>{r.vehicle_id}</td>
                       <td className={s.colAccount}>{r.account}</td>
@@ -1235,15 +1247,13 @@ export default function FleetPage() {
                 <button onClick={() => setLogPage(p => Math.min(logPages,p+1))} disabled={logPage===logPages} className={s.pageBtn}><ChevronRight size={14}/></button>
               </div>
             )}
-              </>
-            )}
           </>
         )}
       </div>
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData}/>}
-      {showPhotoEntry && <PhotoEntryModal rows={data} vehicles={vehicles} onClose={() => setShowPhotoEntry(false)} onSuccess={loadData}/>}
-      {editRecord !== false && <RecordModal record={editRecord} rows={data} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={loadData}/>}
+      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={handleFleetSaved}/>}
+      {showPhotoEntry && <PhotoEntryModal rows={data} vehicles={vehicles} onClose={() => setShowPhotoEntry(false)} onSuccess={handleFleetSaved}/>}
+      {editRecord !== false && <RecordModal record={editRecord} rows={data} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={handleFleetSaved}/>}
 
       {/* ════════════════════════════════════════════════════════════════════════
           ◆ MIS REPORT MODAL

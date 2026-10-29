@@ -3,6 +3,18 @@ export const BILL_BUCKET = 'fleet-maintenance-bills';
 export const MAX_BILL_BYTES = 4 * 1024 * 1024;
 export const BILL_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
+export const fleetVehicleKey = (vehicle: string) => vehicle.toUpperCase().replace(/[^A-Z0-9]/g, '');
+export function validBillDate(date: string) {
+  return !date || (/^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date)) && new Date(date).toISOString().slice(0, 10) === date);
+}
+export function possibleMaintenanceDuplicates<T extends { id?: number; vehicle_id: string; maint_cost: number | string }>(rows: T[], entry: T, original?: T | null) {
+  const amount = Math.round(Number(entry.maint_cost) * 100);
+  const vehicle = fleetVehicleKey(entry.vehicle_id);
+  if (!vehicle || amount <= 0 || !Number.isFinite(amount)) return [];
+  if (original?.id === entry.id && original?.id != null && fleetVehicleKey(original.vehicle_id) === vehicle && Math.round(Number(original.maint_cost) * 100) === amount) return [];
+  return rows.filter(row => row.id !== entry.id && fleetVehicleKey(row.vehicle_id) === vehicle && Math.round(Number(row.maint_cost) * 100) === amount);
+}
+
 type MaintenanceEntry = {
   date: string;
   maint_cost: number | string | null;

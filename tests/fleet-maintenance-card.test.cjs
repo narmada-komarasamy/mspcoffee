@@ -15,7 +15,7 @@ function load(path, mocks = {}) {
 const helpers = load('src/lib/fleet/maintenance.ts');
 const urls = load('src/lib/storage/urls.ts');
 const css = { __esModule: true, default: new Proxy({}, { get: (_, name) => String(name) }) };
-const base = { vehicle_id: 'TN 54 M 6336', date: '2026-09-10', maint_cost: 0, maintenance_performed: '', fuel_cost: 0, fuel_filled_l: 0, starting_km: 1, closing_km: 2, km_run: 1, vehicle_type: 'Estate', account: 'ME', fuel_type: 'Diesel' };
+const base = { total_cost: 0, avg_mileage: 0, cost_per_km: 0, vehicle_id: 'TN 54 M 6336', date: '2026-09-10', maint_cost: 0, maintenance_performed: '', fuel_cost: 0, fuel_filled_l: 0, starting_km: 1, closing_km: 2, km_run: 1, vehicle_type: 'Estate', account: 'ME', fuel_type: 'Diesel' };
 const rows = [
   { ...base, id: 1, maint_cost: 30000, maintenance_vendor: 'Workshop A', maintenance_performed: 'Brake pads', maintenance_bill_path: 'first/bill.pdf' },
   { ...base, id: 2, date: '2026-09-20', maint_cost: '4762', maintenance_vendor: 'Workshop B' },
@@ -105,7 +105,7 @@ test('single missing bill and empty periods open the list; Escape closes the dia
   }
 });
 
-test('spotlight card receives exactly the selected vehicle, year and month rows and matching total', () => {
+test('spotlight filters stay accurate; the daily log shows by default and reveals saved entries', async () => {
   const fixtures = [...rows,
     { ...base, id: 4, vehicle_id: 'OTHER', maint_cost: 9000 },
     { ...base, id: 5, date: '2026-08-15', maint_cost: 8000 },
@@ -113,12 +113,14 @@ test('spotlight card receives exactly the selected vehicle, year and month rows 
   ];
   const hooks = reactHarness((index, initial) => index === 0 ? fixtures : index === 1 ? false : (typeof initial === 'function' ? initial() : initial));
   const Card = () => null;
+  const Modal = () => null;
+  const query = { select() { return query; }, order() { return query; }, range: async () => ({ data: fixtures, error: null }) };
   const Page = load('src/app/(dashboard)/fuel-expenses/page.tsx', {
     react: hooks.react,
-    '@/lib/supabase': { supabase: {} },
+    '@/lib/supabase': { supabase: { from: () => query } },
     '@/lib/fleet/maintenance': helpers, '@/lib/storage/urls': urls,
     './fleet.module.css': css,
-    '@/components/fleet/UploadModal': {}, '@/components/fleet/RecordModal': {}, '@/components/fleet/PhotoEntryModal': {},
+    '@/components/fleet/UploadModal': {}, '@/components/fleet/RecordModal': { RecordModal: Modal }, '@/components/fleet/PhotoEntryModal': {},
     '@/components/fleet/MaintenanceCostCard': { MaintenanceCostCard: Card },
   }).default;
   const render = () => { hooks.reset(); return Page(); };
@@ -127,9 +129,23 @@ test('spotlight card receives exactly the selected vehicle, year and month rows 
     assert.ok(group, label);
     nodes(group).find(node => node.type === 'select').props.onChange({ target: { value } });
   }
+  const initialTable = nodes(render()).find(node => node.type === 'table' && node.props.className === 'dailyTable' && nodes(node).some(child => child.type === 'th' && text(child) === 'Date'));
+  assert.ok(initialTable, 'Daily log must show without searching or filtering');
+  assert.ok(text(initialTable).includes('2026-09-20'));
+  assert.ok(text(initialTable).includes('OTHER'));
   change('Select Vehicle', 'TN 54 M 6336'); change('Year', '2026'); change('Month', 'Sep');
   const card = nodes(render()).find(node => node.type === Card);
   assert.deepEqual(card.props.rows.map(row => row.id), [1, 2, 3]);
   assert.equal(card.props.total, 34762);
   assert.equal(card.props.selection, 'TN 54 M 6336 · Sep · 2026');
+  const add = nodes(render()).find(node => node.type === 'button' && text(node).trim() === 'Add Record');
+  assert.ok(add); add.props.onClick();
+  nodes(render()).find(node => node.type === Modal).props.onSuccess(rows[1]);
+  for (let i = 0; i < 3; i++) await new Promise(resolve => setImmediate(resolve));
+  const savedTable = nodes(render()).find(node => node.type === 'table' && node.props.className === 'dailyTable' && nodes(node).some(child => child.type === 'th' && text(child) === 'Date'));
+  assert.ok(text(savedTable).includes('2026-09-20'));
+  assert.ok(!text(savedTable).includes('OTHER'));
+  assert.ok(!text(savedTable).includes('2026-08-15'));
+  assert.equal(nodes(savedTable).filter(node => node.type === 'tr' && node.props['aria-current'] === 'true').length, 1);
+  assert.ok(text(render()).includes('Entry saved. Showing TN 54 M 6336 on 2026-09-20.'));
 });

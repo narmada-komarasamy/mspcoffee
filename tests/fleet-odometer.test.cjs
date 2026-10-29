@@ -8,9 +8,9 @@ function load(path, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(path, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
-  const module = { exports: {} };
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), module, module.exports);
-  return module.exports;
+  const fixtureModule = { exports: {} };
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), fixtureModule, fixtureModule.exports);
+  return fixtureModule.exports;
 }
 const odometer = load('src/lib/fleet/odometer.ts');
 const rows = [
@@ -51,7 +51,8 @@ function formHarness(componentName, props) {
     react,
     '@/lib/supabase': { supabase: {} },
     '@/lib/fleet/odometer': odometer,
-    '@/lib/fleet/maintenance': {},
+    '@/lib/fleet/maintenance': load('src/lib/fleet/maintenance.ts'),
+    './MaintenanceDuplicateReview': {},
     '@/lib/storage/urls': {},
   })[componentName];
   function elements(node) {

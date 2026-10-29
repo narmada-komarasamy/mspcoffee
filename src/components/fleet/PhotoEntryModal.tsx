@@ -12,7 +12,7 @@ type Props = {
   rows: Row[];
   vehicles: string[];
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (entry?: FleetRecord) => void;
 };
 
 type Draft = FleetRecord & {
@@ -283,7 +283,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
       return;
     }
 
-    onSuccess();
+    onSuccess(payload);
     onClose();
   };
 

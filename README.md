@@ -28,6 +28,8 @@ The Add/Edit Fleet Record form accepts a maintenance bill photo (JPG, PNG, WebP)
 
 In Single Vehicle Spotlight, clicking Maintenance Cost uses the same vehicle/year/month selection as the displayed total. A single maintenance entry with an attachment opens its original bill directly. Multiple entries, missing attachments, and empty periods open a list with dates, workshops, amounts and original bill links. Entries without attachments show **No bill uploaded** and **Add bill**, which opens the existing edit form. Original bill access continues to use the authenticated signed-URL route.
 
+The Daily Vehicle Log shows recent entries by default, with pagination and optional filters. After a form/photo entry is saved, the page displays that vehicle/date, highlights the entry and scrolls to the log. The **View daily log** shortcut jumps to it without saving. Vehicle Registry continues to show one summary row per vehicle.
+
 Before deploying this feature:
 
 1. Apply `supabase/migrations/20261028_fleet_maintenance_bills.sql` to the target database. It adds four columns and creates the private bill storage bucket.
@@ -39,6 +41,16 @@ If extraction fails, the original can still be attached and details entered manu
 Run the isolated maintenance checks with `node --test tests/fleet-maintenance.test.cjs`. They mock storage and AI without writing production data.
 
 Run `node --test tests/fleet-maintenance-card.test.cjs` for the Maintenance Cost drilldown, including selection filters, totals, original links and missing attachments.
+
+### Maintenance bill duplicate safeguards
+
+The vehicle log date is kept when reading a bill; the bill date is stored separately. Different dates require explicit review. Matching vehicle/maintenance amounts across dates produce a warning, with an option to attach the bill to an existing expense or confirm a genuinely separate expense. Attaching to an existing expense preserves that entry's log date, fuel, KM and costs.
+
+Apply `supabase/migrations/20261029044531_fleet_bill_duplicate_safeguards.sql` before deploying. Saved bills receive a server-computed SHA-256 fingerprint; identical files are blocked even after renaming. Older attachments are fingerprinted when uploads are checked. The server-only save transaction rechecks duplicates under a lock, records explicit overrides, requires date review and guards against concurrent attachment changes. No records are merged automatically. Image/PDF conversions or rescans change the bytes and may rely on the amount warning rather than the exact-file check.
+
+Also apply `supabase/migrations/20261029045704_fleet_attach_preserve_current_expense.sql`; it preserves the current expense fields under the database lock when attaching a bill, including concurrent fuel/KM edits.
+
+Run `node --test tests/fleet-bill-safeguards.test.cjs` for the form, API and legacy-file checks. `tests/fleet-bill-safeguards.sql` verifies the database rules using synthetic records and rolls back the transaction.
 
 ## Getting Started
 
