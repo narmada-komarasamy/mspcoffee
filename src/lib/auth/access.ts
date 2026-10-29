@@ -47,7 +47,9 @@ const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employ
 
   if (employee.slug === 'ramesh') {
     children.push(
-      ...RAMESH_DIRECT_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)),
+      ...RAMESH_DIRECT_WORK_AREAS
+        .filter((section) => section.slug !== 'courier-tracking')
+        .map((section) => employeeSectionLink(employee.slug, section)),
       {
         label: 'Stores',
         roles: employeePortalRoles,
@@ -57,6 +59,9 @@ const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employ
           roles: employeePortalRoles,
         })),
       },
+      ...RAMESH_DIRECT_WORK_AREAS
+        .filter((section) => section.slug === 'courier-tracking')
+        .map((section) => employeeSectionLink(employee.slug, section)),
     );
   }
 

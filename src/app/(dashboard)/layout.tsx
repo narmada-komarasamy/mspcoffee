@@ -109,7 +109,9 @@ const navItems: NavItem[] = [
 
      if (employee.slug === 'ramesh') {
        children.push(
-         ...RAMESH_DIRECT_WORK_AREAS.map((section) => employeeSectionLink(employee.slug, section)),
+         ...RAMESH_DIRECT_WORK_AREAS
+           .filter((section) => section.slug !== 'courier-tracking')
+           .map((section) => employeeSectionLink(employee.slug, section)),
          {
            label: 'Stores',
            roles: employeePortalRoles,
@@ -119,6 +121,9 @@ const navItems: NavItem[] = [
              roles: employeePortalRoles,
            })),
          },
+         ...RAMESH_DIRECT_WORK_AREAS
+           .filter((section) => section.slug === 'courier-tracking')
+           .map((section) => employeeSectionLink(employee.slug, section)),
        );
      }
 
