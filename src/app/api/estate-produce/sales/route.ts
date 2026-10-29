@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { validBuyerEmail } from '@/lib/produce-sales';
+import { validBuyerEmail, isInternalUse } from '@/lib/produce-sales';
 import {
-  ESTATES,
   ESTATE_PRODUCE_RECORD_ID_RE,
   PAYMENT_MODES,
   PAYMENT_STATUSES,
   SALE_TYPES,
   badRequest,
   estateProduceSetupError,
-  nullableText,
   numberValue,
   requireEstateProduceUser,
   text,
@@ -16,16 +14,6 @@ import {
 
 type SaleRow = Record<string, unknown>;
 type CustomerRow = Record<string, unknown>;
-type StoreItemRow = {
-  id: string;
-  item_code: string;
-  estate: string;
-  product: string;
-  unit: string;
-  quantity: number;
-  weight_kg: number;
-  status: string;
-};
 
 function normalizePhone(value: string) {
   return value.replace(/[^\d+]/g, '');
@@ -39,6 +27,7 @@ function mapSale(row: SaleRow) {
     buyerPhone: text(row.buyer_phone),
     buyerEmail: text(row.buyer_email),
     buyerAddress: text(row.buyer_address),
+    recipientName: text(row.recipient_name),
     dispatchMethod: text(row.dispatch_method),
     batchId: text(row.store_item_id),
     itemCode: text(row.store_item_code),
@@ -88,6 +77,7 @@ export async function GET(request: Request) {
       'buyer_email',
       'store_item_code',
       'buyer_address',
+      'recipient_name',
       'dispatch_method',
       'estate',
       'product',
@@ -134,121 +124,54 @@ export async function POST(request: Request) {
 
   const storeItemId = text(body.batchId);
   const saleDate = text(body.date);
-  const buyerName = text(body.buyerName) || 'Walk-in Buyer';
-  const buyerPhone = normalizePhone(text(body.buyerPhone));
-  const buyerEmail = text(body.buyerEmail);
-  const buyerAddress = text(body.buyerAddress);
-  const dispatchMethod = text(body.dispatchMethod) || 'By Courier Service';
   const saleType = text(body.saleType) || 'Charged Sale';
+  const internal = isInternalUse(saleType);
+  const recipient = text(body.recipientName);
+  const buyerEmail = internal ? '' : text(body.buyerEmail);
   const paymentMode = text(body.paymentMode) || 'Bank';
-  const paymentStatusInput = text(body.paymentStatus) || 'Pending';
-  const piecesSold = numberValue(body.piecesSold);
-  const weightSoldKg = numberValue(body.weightSoldKg);
-  const ratePerKg = saleType === 'Charged Sale' ? numberValue(body.ratePerKg) : 0;
-  const courierPacking = numberValue(body.courierPacking);
-  const produceAmount = saleType === 'Charged Sale' ? weightSoldKg * ratePerKg : 0;
-  const totalAmount = produceAmount + courierPacking;
-  const paymentStatus = saleType === 'Charged Sale' ? paymentStatusInput : 'Paid';
+  const paymentStatus = saleType === 'Charged Sale' ? text(body.paymentStatus) || 'Pending' : 'Paid';
+  const piecesSold = Number(body.piecesSold);
+  const weightSoldKg = Number(body.weightSoldKg);
+  const rate = Number(body.ratePerKg ?? 0);
+  const courier = Number(body.courierPacking ?? 0);
 
   if (!ESTATE_PRODUCE_RECORD_ID_RE.test(storeItemId)) return badRequest('Choose a valid produce store item');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(saleDate)) return badRequest('Enter a valid sale date');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(saleDate) || Number.isNaN(Date.parse(saleDate)) || new Date(saleDate).toISOString().slice(0, 10) !== saleDate) return badRequest('Enter a valid sale date');
   if (!SALE_TYPES.includes(saleType)) return badRequest('Choose a valid sale type');
   if (!PAYMENT_MODES.includes(paymentMode)) return badRequest('Choose a valid payment mode');
   if (!PAYMENT_STATUSES.includes(paymentStatus)) return badRequest('Choose a valid payment status');
   if (!validBuyerEmail(buyerEmail)) return badRequest('Enter a valid buyer email address, or leave it blank');
+  if (internal && !recipient) return badRequest('Enter the person receiving the fruit');
+  if (![piecesSold, weightSoldKg, rate, courier].every(value => Number.isFinite(value) && value >= 0) || (piecesSold === 0 && weightSoldKg === 0)) return badRequest('Enter valid quantities and charges; at least one quantity must be greater than zero');
 
-  const { data: storeItem, error: storeError } = await auth.supabase
-    .from('produce_store_items')
-    .select('id, item_code, estate, product, unit, quantity, weight_kg, status')
-    .eq('id', storeItemId)
-    .single<StoreItemRow>();
-
-  if (storeError) return NextResponse.json({ error: estateProduceSetupError(storeError.message) }, { status: 500 });
-  if (!storeItem) return NextResponse.json({ error: 'Produce store item was not found' }, { status: 404 });
-  if (!ESTATES.includes(storeItem.estate)) return badRequest('Store item estate is not valid');
-  if (storeItem.status === 'Sold') return badRequest('This produce store item is already sold');
-  if (piecesSold > numberValue(storeItem.quantity) || weightSoldKg > numberValue(storeItem.weight_kg)) {
-    return badRequest('Sale quantity is more than available store stock');
-  }
-
-  let customerId: string | null = null;
-  if (buyerPhone) {
-    const { data: customer, error: customerError } = await auth.supabase
-      .from('produce_customers')
-      .upsert({
-        phone: buyerPhone,
-        ...(Object.hasOwn(body, 'buyerEmail') ? { email: buyerEmail } : {}),
-        name: buyerName,
-        address: buyerAddress || null,
-        default_dispatch_method: dispatchMethod,
-        default_payment_mode: paymentMode,
-        last_sale_at: new Date().toISOString(),
-        updated_by: auth.user.id,
-        created_by: auth.user.id,
-        created_by_name: auth.user.name,
-      }, { onConflict: 'phone' })
-      .select('id')
-      .single<{ id: string }>();
-
-    if (customerError) return NextResponse.json({ error: estateProduceSetupError(customerError.message) }, { status: 500 });
-    customerId = customer?.id ?? null;
-  }
-
-  const { data: sale, error: saleError } = await auth.supabase
-    .from('produce_sales')
-    .insert([{
-      store_item_id: storeItem.id,
-      store_item_code: storeItem.item_code,
-      customer_id: customerId,
-      sale_date: saleDate,
-      buyer_name: buyerName,
-      buyer_phone: buyerPhone || null,
-      buyer_email: buyerEmail,
-      buyer_address: buyerAddress || null,
-      dispatch_method: dispatchMethod,
-      estate: storeItem.estate,
-      product: storeItem.product,
-      pieces_sold: piecesSold,
-      weight_sold_kg: weightSoldKg,
-      rate_per_kg: ratePerKg,
-      produce_amount: produceAmount,
-      courier_packing: courierPacking,
-      total_amount: totalAmount,
-      sale_type: saleType,
-      payment_status: paymentStatus,
-      payment_mode: paymentMode,
-      payment_notes: nullableText(body.paymentNotes),
-      notes: nullableText(body.notes),
-      closed_at: paymentStatus === 'Paid' ? new Date().toISOString() : null,
-      created_by: auth.user.id,
-      created_by_name: auth.user.name,
-      updated_by: auth.user.id,
-    }])
-    .select('*')
-    .single<SaleRow>();
-
-  if (saleError) return NextResponse.json({ error: estateProduceSetupError(saleError.message) }, { status: 500 });
-
-  const { error: itemError } = await auth.supabase
-    .from('produce_store_items')
-    .update({
-      status: 'Sold',
-      updated_by: auth.user.id,
-      notes: nullableText(body.notes) || `Sale recorded for ${buyerName}`,
-    })
-    .eq('id', storeItem.id);
-
-  if (itemError) return NextResponse.json({ error: estateProduceSetupError(itemError.message) }, { status: 500 });
-
-  await auth.supabase.from('produce_store_movements').insert([{
-    store_item_id: storeItem.id,
-    movement_type: 'Status Change',
-    from_status: storeItem.status,
-    to_status: 'Sold',
-    notes: `${saleType} invoice for ${buyerName} on ${saleDate}.`,
+  // The database locks the token and saves the record, customer and stock movement
+  // in one transaction. A failed save cannot deduct stock, and concurrent requests
+  // cannot both claim the same remaining fruit.
+  const { data, error } = await auth.supabase.rpc('record_produce_sale', { p_payload: {
+    store_item_id: storeItemId,
+    sale_date: saleDate,
+    sale_type: saleType,
+    recipient_name: internal ? recipient : '',
+    buyer_name: internal ? recipient : text(body.buyerName) || 'Walk-in Buyer',
+    buyer_phone: internal ? '' : normalizePhone(text(body.buyerPhone)),
+    buyer_email: buyerEmail,
+    email_supplied: Object.hasOwn(body, 'buyerEmail'),
+    buyer_address: internal ? '' : text(body.buyerAddress),
+    dispatch_method: internal ? 'Internal use' : text(body.dispatchMethod) || 'By Courier Service',
+    pieces_sold: piecesSold,
+    weight_sold_kg: weightSoldKg,
+    rate_per_kg: saleType === 'Charged Sale' ? rate : 0,
+    courier_packing: internal ? 0 : courier,
+    payment_status: paymentStatus,
+    payment_mode: paymentMode,
+    payment_notes: internal ? '' : text(body.paymentNotes),
+    notes: text(body.notes),
     actor_id: auth.user.id,
     actor_name: auth.user.name,
-  }]);
-
-  return NextResponse.json({ sale: mapSale(sale) });
+  } });
+  if (error) {
+    const inputError = error.code === 'P0001' || error.code === '23514';
+    return NextResponse.json({ error: inputError ? error.message : estateProduceSetupError(error.message) }, { status: inputError ? 400 : 500 });
+  }
+  return NextResponse.json({ sale: mapSale(data as SaleRow) });
 }

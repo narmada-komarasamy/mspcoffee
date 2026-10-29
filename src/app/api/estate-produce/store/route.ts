@@ -55,6 +55,8 @@ function itemSelect() {
     'unit',
     'quantity',
     'weight_kg',
+    'allocated_quantity',
+    'allocated_weight_kg',
     'condition_grade',
     'storage_location',
     'photo_path',
@@ -78,8 +80,10 @@ function mapItem(row: StoreItemRow) {
     estate: text(row.estate),
     product: text(row.product),
     unit: text(row.unit),
-    quantity: numberValue(row.quantity),
-    weightKg: numberValue(row.weight_kg),
+    quantity: Math.max(0, numberValue(row.quantity) - numberValue(row.allocated_quantity)),
+    weightKg: Math.max(0, numberValue(row.weight_kg) - numberValue(row.allocated_weight_kg)),
+    originalQuantity: numberValue(row.quantity),
+    originalWeightKg: numberValue(row.weight_kg),
     conditionGrade: text(row.condition_grade),
     storageLocation: text(row.storage_location),
     photoPath: photoPath || undefined,
@@ -153,7 +157,9 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: estateProduceSetupError(error.message) }, { status: 500 });
 
-  return NextResponse.json({ items: ((data ?? []) as unknown as StoreItemRow[]).map(mapItem) });
+  const items = ((data ?? []) as unknown as StoreItemRow[]).map(mapItem);
+  const saleStock = status === 'Sale Stock' || !status || status === 'All';
+  return NextResponse.json({ items: saleStock ? items.filter(item => item.quantity > 0 || item.weightKg > 0) : items });
 }
 
 export async function POST(request: Request) {

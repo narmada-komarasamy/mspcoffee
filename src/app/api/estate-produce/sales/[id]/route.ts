@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isInternalUse } from '@/lib/produce-sales';
 import {
   ESTATE_PRODUCE_RECORD_ID_RE,
   PAYMENT_STATUSES,
@@ -11,6 +12,7 @@ import {
 
 type SaleRow = {
   id: string;
+  sale_type: string;
   payment_status: string;
   closed_at: string | null;
 };
@@ -27,12 +29,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { data: before, error: beforeError } = await auth.supabase
     .from('produce_sales')
-    .select('id, payment_status, closed_at')
+    .select('id, sale_type, payment_status, closed_at')
     .eq('id', id)
     .single<SaleRow>();
 
   if (beforeError) return NextResponse.json({ error: estateProduceSetupError(beforeError.message) }, { status: 500 });
   if (!before) return NextResponse.json({ error: 'Sale was not found' }, { status: 404 });
+  if (isInternalUse(before.sale_type)) return badRequest('Internal-use records do not have payment status changes');
   if (before.payment_status === 'Paid' && auth.user.role !== 'admin') {
     return NextResponse.json({ error: 'This paid invoice is closed. Only admin can change it.' }, { status: 403 });
   }

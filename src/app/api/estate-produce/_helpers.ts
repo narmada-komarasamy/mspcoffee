@@ -9,7 +9,7 @@ export const UNITS = ['Pieces', 'Kg', 'Boxes', 'Bunches', 'Bags', 'Other'];
 export const SOURCES = ['Manual', 'WhatsApp Paste'];
 export const DISPOSITIONS = ['Store', 'Direct Sale', 'Internal Consumption', 'Damaged'];
 export const STORE_STATUSES = ['In Store', 'Reserved', 'Sold', 'Internal Consumption', 'Damaged', 'Cold Storage'];
-export const SALE_TYPES = ['Charged Sale', 'Complementary', 'Replacement'];
+export { SALE_TYPES } from '@/lib/produce-sales';
 export const PAYMENT_STATUSES = ['Paid', 'Pending', 'Partial'];
 export const PAYMENT_MODES = ['Cash', 'UPI', 'Bank', 'Cheque', 'Other'];
 export const ESTATE_PRODUCE_ROLES = ['admin', 'supervisor', 'worker', 'ceo', 'hr'];

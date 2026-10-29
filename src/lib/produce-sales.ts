@@ -1,6 +1,10 @@
 export type PaymentStatus = 'Paid' | 'Pending' | 'Partial';
 export type PaymentMode = 'Cash' | 'UPI' | 'Bank' | 'Cheque' | 'Other';
-export type SaleType = 'Charged Sale' | 'Complementary' | 'Replacement';
+export const SALE_TYPES = ['Charged Sale', 'Complementary', 'Replacement', 'MSP Coffee Processing', 'Bungalow Consumption'];
+export type SaleType = 'Charged Sale' | 'Complementary' | 'Replacement' | 'MSP Coffee Processing' | 'Bungalow Consumption';
+export function isInternalUse(saleType: string) {
+  return saleType === 'MSP Coffee Processing' || saleType === 'Bungalow Consumption';
+}
 
 export type StockBatch = {
   id: string;
@@ -25,6 +29,7 @@ export type SaleRecord = {
   buyerPhone: string;
   buyerEmail: string;
   buyerAddress: string;
+  recipientName?: string;
   dispatchMethod: string;
   batchId: string;
   itemCode: string;
@@ -51,6 +56,7 @@ export type DraftSale = {
   buyerPhone: string;
   buyerEmail: string;
   buyerAddress: string;
+  recipientName: string;
   dispatchMethod: string;
   batchId: string;
   piecesSold: string;
@@ -108,12 +114,14 @@ export function buildDraftSale(draft: DraftSale, batch: StockBatch | null): Sale
   const weightSoldKg = num(draft.weightSoldKg);
   const ratePerKg = draft.saleType === 'Charged Sale' ? num(draft.ratePerKg) : 0;
   const produceAmount = weightSoldKg * ratePerKg;
-  const courierPacking = num(draft.courierPacking);
+  const internal = isInternalUse(draft.saleType);
+  const courierPacking = internal ? 0 : num(draft.courierPacking);
   return {
     ...draft,
     id: `draft-${batch.id}`,
     isDraft: true,
     buyerEmail: draft.buyerEmail.trim(),
+    ...(internal ? { buyerName: draft.recipientName, buyerEmail: '', buyerPhone: '', buyerAddress: '', dispatchMethod: 'Internal use' } : {}),
     itemCode: batch.itemCode || '',
     estate: batch.estate,
     product: batch.product,
@@ -127,7 +135,8 @@ export function buildDraftSale(draft: DraftSale, batch: StockBatch | null): Sale
   };
 }
 
-export function buildEmailDraft(sale: SaleRecord): EmailDraft {
+export function buildEmailDraft(sale: SaleRecord): EmailDraft | null {
+  if (isInternalUse(sale.saleType)) return null;
   const no = invoiceNumber(sale);
   return {
     saleId: sale.id,
@@ -155,6 +164,7 @@ export function blankDraft(batchId = ''): DraftSale {
     buyerPhone: '',
     buyerEmail: '',
     buyerAddress: '',
+    recipientName: '',
     dispatchMethod: 'By Courier Service',
     batchId,
     piecesSold: '1',
@@ -194,7 +204,7 @@ export function invoiceNumber(sale: SaleRecord) {
   if (sale.isDraft) return 'DRAFT';
   const year = new Date(`${sale.date}T00:00:00`).getFullYear();
   const numberSeed = sale.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  return `EP-${year}-${String((numberSeed % 9999) + 1).padStart(4, '0')}`;
+  return `${isInternalUse(sale.saleType) ? 'IU' : 'EP'}-${year}-${String((numberSeed % 9999) + 1).padStart(4, '0')}`;
 }
 
 export function integerToWords(value: number): string {
@@ -222,6 +232,14 @@ export function invoiceHtml(sale: SaleRecord) {
   const words = amountInWords(sale.totalAmount);
   const isPaid = sale.paymentStatus === 'Paid';
   const isNoChargeProduce = sale.saleType !== 'Charged Sale';
+
+  if (isInternalUse(sale.saleType)) return `<!doctype html><html><head><meta charset="utf-8"><title>${no} Internal Use</title>
+    <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;color:#143c2c;padding:24px}h1{font-size:24px}td,th{border:1px solid #ccc;padding:12px;text-align:left}table{border-collapse:collapse;width:100%}p{white-space:pre-wrap}</style></head><body>
+    <h1>MSP Coffee — Internal-use Record</h1><p>${sale.isDraft ? 'DRAFT — not saved' : safe(no)}</p>
+    <table><tr><th>Date</th><td>${dateLabel(sale.date)}</td></tr><tr><th>Use</th><td>${safe(sale.saleType)}</td></tr>
+    <tr><th>Produce token</th><td>${safe(sale.itemCode)}</td></tr><tr><th>Product / Estate</th><td>${safe(sale.product)} / ${safe(sale.estate)}</td></tr>
+    <tr><th>Recipient</th><td>${safe(sale.recipientName || sale.buyerName)}</td></tr><tr><th>Quantity / Weight</th><td>${sale.piecesSold} / ${kg(sale.weightSoldKg)} kg</td></tr>
+    <tr><th>Total charges</th><td>Rs.0 — internal use</td></tr></table><p>Notes: ${safe(sale.notes || '-')}</p></body></html>`;
 
   return `<!doctype html>
 <html>

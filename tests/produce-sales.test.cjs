@@ -135,12 +135,33 @@ test('page previews before saving, follows edits, finalizes after save and recal
     assert.equal(field('Buyer Email').value, 'buyer@example.com');
     assert.ok(text(render()).includes('Draft Invoice Preview'));
     assert.ok(field('Message').value.includes('DUR-ME-001'));
+    change('Sale Type', 'MSP Coffee Processing');
+    assert.ok(text(render()).includes('Draft Internal-use Record'));
+    assert.ok(!nodes(render()).some(n => n.type === 'textarea' && String(n.props.value).includes('Dear ')));
+    assert.equal(button('Save Use').disabled, true);
+    change('Recipient Name', 'Processing manager');
+    assert.equal(button('Save Use').disabled, false);
+    assert.ok(text(render()).includes('Rs.0 — internal use'));
+    assert.equal(field('Courier/Packing').value, '0');
+    change('Sale Type', 'Bungalow Consumption');
+    assert.ok(text(render()).includes('Processing manager'));
+    change('Sale Type', 'Charged Sale');
+    assert.equal(field('Courier/Packing').value, '250');
+    assert.ok(field('Message').value.includes('DUR-ME-001'));
   } finally { global.fetch = oldFetch; }
 });
 
 function routeHarness() {
   const calls = [];
-  const mock = { from(table) {
+  const mock = {
+    async rpc(name, { p_payload: payload }) {
+      calls.push({ table: 'rpc', name, value: payload });
+      return { data: { ...payload, id: 'sale-id', store_item_code: batch.itemCode,
+        estate: 'ME', product: batch.product,
+        produce_amount: payload.weight_sold_kg * payload.rate_per_kg,
+        total_amount: payload.weight_sold_kg * payload.rate_per_kg + payload.courier_packing }, error: null };
+    },
+    from(table) {
     let written;
     const query = {
       select() { return query; }, eq() { return query; }, order() { return query; }, limit() { return query; },
@@ -156,7 +177,7 @@ function routeHarness() {
     };
     return query;
   } };
-  const helpers = { ESTATES: ['ME'], ESTATE_PRODUCE_RECORD_ID_RE: /^[a-f0-9-]{36}$/i, SALE_TYPES: ['Charged Sale', 'Complementary', 'Replacement'], PAYMENT_MODES: ['Bank'], PAYMENT_STATUSES: ['Pending', 'Paid'], requireEstateProduceUser: async () => ({ supabase: mock, user: { id: 'user-id', name: 'Test' } }), text: v => String(v ?? '').trim(), nullableText: v => v || null, numberValue: v => Number(v) || 0, badRequest: error => Response.json({ error }, { status: 400 }), estateProduceSetupError: message => message };
+  const helpers = { ESTATES: ['ME'], ESTATE_PRODUCE_RECORD_ID_RE: /^[a-f0-9-]{36}$/i, SALE_TYPES: lib.SALE_TYPES, PAYMENT_MODES: ['Bank'], PAYMENT_STATUSES: ['Pending', 'Paid'], requireEstateProduceUser: async () => ({ supabase: mock, user: { id: 'user-id', name: 'Test' } }), text: v => String(v ?? '').trim(), nullableText: v => v || null, numberValue: v => Number(v) || 0, badRequest: error => Response.json({ error }, { status: 400 }), estateProduceSetupError: message => message };
   return { calls, api: load('src/app/api/estate-produce/sales/route.ts', { '../_helpers': helpers, '@/lib/produce-sales': lib }) };
 }
 
@@ -168,7 +189,8 @@ test('sales API saves and returns the trusted produce token and buyer email, inc
   assert.equal(sale.buyerEmail, 'buyer@example.com');
   assert.equal(sale.itemCode, 'DUR-ME-001');
   assert.equal(sale.totalAmount, 2450);
-  assert.equal(calls.find(c => c.table === 'produce_customers').value.email, 'buyer@example.com');
+  assert.equal(calls.find(c => c.table === 'rpc').value.buyer_email, 'buyer@example.com');
+  assert.equal('itemCode' in calls.find(c => c.table === 'rpc').value, false);
   const loaded = await (await api.GET(new Request('http://localhost/sales'))).json();
   assert.equal(loaded.customers[0].email, 'buyer@example.com');
   assert.equal(loaded.sales[0].buyerEmail, 'buyer@example.com');
@@ -180,4 +202,68 @@ test('invalid email is rejected before any database writes', async () => {
   const response = await api.POST(new Request('http://localhost/sales', { method: 'POST', body: JSON.stringify({ ...draft, buyerEmail: 'broken-email' }) }));
   assert.equal(response.status, 400);
   assert.equal(calls.length, 0);
+});
+
+
+test('internal uses have no produce, courier or total charge and no email draft', () => {
+  for (const saleType of ['MSP Coffee Processing', 'Bungalow Consumption']) {
+    const sale = lib.buildDraftSale({ ...draft, saleType, recipientName: 'Estate manager', courierPacking: '999' }, batch);
+    assert.equal(sale.totalAmount, 0);
+    assert.equal(sale.courierPacking, 0);
+    assert.equal(sale.ratePerKg, 0);
+    assert.equal(sale.buyerEmail, '');
+    assert.equal(lib.buildEmailDraft(sale), null);
+    const html = lib.invoiceHtml(sale);
+    assert.ok(html.includes('Internal-use Record'));
+    assert.ok(html.includes('Estate manager'));
+    assert.ok(!html.includes('Pay online'));
+  }
+});
+
+test('API enforces zero internal charges and recipient, irrespective of client totals', async () => {
+  for (const saleType of ['MSP Coffee Processing', 'Bungalow Consumption']) {
+    const { api, calls } = routeHarness();
+    const body = { ...draft, saleType, recipientName: 'Bungalow staff', ratePerKg: 1000, courierPacking: 999, totalAmount: 10000 };
+    const request = value => new Request('http://localhost/sales', { method: 'POST', body: JSON.stringify(value) });
+    assert.equal((await api.POST(request({ ...body, recipientName: '' }))).status, 400);
+    assert.equal(calls.length, 0);
+    const response = await api.POST(request(body));
+    assert.equal(response.status, 200);
+    const { sale } = await response.json();
+    assert.equal(sale.totalAmount, 0);
+    assert.equal(sale.recipientName, 'Bungalow staff');
+    const payload = calls[0].value;
+    assert.equal(payload.buyer_phone, '');
+    assert.equal(payload.buyer_email, '');
+    assert.equal(payload.recipient_name, 'Bungalow staff');
+  }
+});
+
+test('API refuses negative quantities, empty movements and propagates stock conflicts', async () => {
+  const { api, calls } = routeHarness();
+  for (const value of [{ ...draft, piecesSold: -1 }, { ...draft, piecesSold: 0, weightSoldKg: 0 }]) {
+    assert.equal((await api.POST(new Request('http://localhost/sales', { method: 'POST', body: JSON.stringify(value) }))).status, 400);
+  }
+  assert.equal(calls.length, 0);
+});
+
+test('stock API returns the remaining balance and omits exhausted tokens from available stock', async () => {
+  const fixtures = [
+    { id: 'partial', item_code: 'TOKEN-1', quantity: 10, weight_kg: 20, allocated_quantity: 2, allocated_weight_kg: 4, status: 'In Store' },
+    { id: 'empty', item_code: 'TOKEN-2', quantity: 1, weight_kg: 2, allocated_quantity: 1, allocated_weight_kg: 2, status: 'In Store' },
+  ];
+  const query = { select() { return query; }, order() { return query; }, limit() { return query; }, in() { return query; }, then(resolve) { return Promise.resolve({ data: fixtures, error: null }).then(resolve); } };
+  const api = load('src/app/api/estate-produce/store/route.ts', {
+    '@/lib/storage/urls': {},
+    '../_helpers': {
+      text: v => String(v ?? ''), numberValue: v => Number(v) || 0,
+      requireEstateProduceUser: async () => ({ supabase: { from: () => query } }),
+    },
+  });
+  const response = await api.GET(new Request('http://localhost/store?status=Sale%20Stock'));
+  const { items } = await response.json();
+  assert.equal(items.length, 1);
+  assert.equal(items[0].quantity, 8);
+  assert.equal(items[0].weightKg, 16);
+  assert.equal(items[0].originalQuantity, 10);
 });

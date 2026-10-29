@@ -14,6 +14,14 @@ The email is an editable draft to copy; download the saved HTML bill to attach i
 
 Run `node --test tests/produce-sales.test.cjs` for preview, saving and customer-recall checks without writing live stock.
 
+### Internal use and partial stock
+
+Sale Type includes **MSP Coffee Processing** and **Bungalow Consumption**. These require a recipient and record zero charges, including courier/packing. They create internal-use records rather than customer invoices or email drafts. The records list, type filter, totals and CSV distinguish each use.
+
+Apply `supabase/migrations/20261029035156_produce_internal_use_and_partial_stock.sql` before deploying. It adds allocation counters while preserving the received quantities. The server-only `record_produce_sale` transaction locks the selected token, validates the remaining quantity/weight, and saves the record, customer (for sales) and movement together. Partial use keeps the token available; exhausted tokens leave available stock. When both pieces and weight are tracked, enter both; using all remaining pieces requires the full remaining weight as well.
+
+`tests/produce-stock-transaction.sql` verifies the database transaction using synthetic records and ends with `ROLLBACK`; no fixture data is retained. It requires an existing staff ID for audit foreign keys and a database role allowed to run the server-only function.
+
 ## Fleet maintenance bills
 
 The Add/Edit Fleet Record form accepts a maintenance bill photo (JPG, PNG, WebP) or PDF up to 4 MB. It extracts maintenance cost, date, workshop, maintenance items and searchable bill text for review. The original is uploaded to private storage only when the entry is saved. Search in Daily Vehicle Log covers all vehicles by default and respects any vehicle/date filters you apply.
