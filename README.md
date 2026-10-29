@@ -1,5 +1,33 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Release workflow
+
+Push application changes, tests and database migrations to the existing GitHub repository when releasing to Vercel. Keep unrelated workspace changes out of release commits. Apply and verify required migrations before deploying code that uses the new columns.
+
+## Produce Sales previews
+
+Selecting a produce token and completing New Sale updates the draft invoice and email immediately. Save Sale creates the final invoice; printing and downloading are enabled for saved invoices. Selecting a Sales Records row opens that saved invoice, and editing New Sale returns to its draft preview.
+
+Buyer email is saved with each invoice and remembered in the customer record when a phone number is provided. The next purchase recalls customer details by phone. Apply `supabase/migrations/20261029025903_produce_sales_live_preview.sql` before deploying. The migration adds email columns and a produce-token snapshot, and fills token references on existing linked invoices.
+
+The email is an editable draft to copy; download the saved HTML bill to attach it, or use Print to save a PDF. The application does not send this email automatically.
+
+Run `node --test tests/produce-sales.test.cjs` for preview, saving and customer-recall checks without writing live stock.
+
+## Fleet maintenance bills
+
+The Add/Edit Fleet Record form accepts a maintenance bill photo (JPG, PNG, WebP) or PDF up to 4 MB. It extracts maintenance cost, date, workshop, maintenance items and searchable bill text for review. The original is uploaded to private storage only when the entry is saved. Search in Daily Vehicle Log covers all vehicles by default and respects any vehicle/date filters you apply.
+
+Before deploying this feature:
+
+1. Apply `supabase/migrations/20261028_fleet_maintenance_bills.sql` to the target database. It adds four columns and creates the private bill storage bucket.
+2. Configure the existing server credentials `SUPABASE_SERVICE_ROLE_KEY` and `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`).
+3. Configure `OPENAI_API_KEY` (alternatively `OPENAI_FLEET_PARSE_API_KEY` or `OPENAI_KEY`) on the server. `OPENAI_FLEET_PARSE_MODEL` is optional and defaults to `gpt-4.1`; use a model supporting image and PDF input. Never expose the key with a `NEXT_PUBLIC_` prefix.
+
+If extraction fails, the original can still be attached and details entered manually. Search then uses those manually entered details; unreadable bill text is not indexed. Existing records remain searchable through their maintenance descriptions and remarks. One original maintenance bill is attached per daily record; uploading another bill replaces it when saved. The existing one-entry-per-vehicle-per-day constraint still applies.
+
+Run the isolated maintenance checks with `node --test tests/fleet-maintenance.test.cjs`. They mock storage and AI without writing production data.
+
 ## Getting Started
 
 First, run the development server:

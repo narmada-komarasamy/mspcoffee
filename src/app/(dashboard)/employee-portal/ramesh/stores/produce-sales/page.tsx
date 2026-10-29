@@ -21,86 +21,11 @@ import {
   ShoppingBag,
   Sparkles,
 } from 'lucide-react';
-
-type PaymentStatus = 'Paid' | 'Pending' | 'Partial';
-type PaymentMode = 'Cash' | 'UPI' | 'Bank' | 'Cheque' | 'Other';
-type SaleType = 'Charged Sale' | 'Complementary' | 'Replacement';
-
-type StockBatch = {
-  id: string;
-  date: string;
-  estate: string;
-  product: string;
-  unit: string;
-  receivedPieces: number;
-  receivedWeightKg: number;
-  soldPieces: number;
-  soldWeightKg: number;
-  itemCode?: string;
-  status?: string;
-  conditionGrade?: string;
-  storageLocation?: string;
-};
-
-type SaleRecord = {
-  id: string;
-  date: string;
-  buyerName: string;
-  buyerPhone: string;
-  buyerAddress: string;
-  dispatchMethod: string;
-  batchId: string;
-  estate: string;
-  product: string;
-  piecesSold: number;
-  weightSoldKg: number;
-  ratePerKg: number;
-  produceAmount: number;
-  courierPacking: number;
-  totalAmount: number;
-  saleType: SaleType;
-  paymentStatus: PaymentStatus;
-  paymentMode: PaymentMode;
-  paymentNotes: string;
-  notes: string;
-  closedAt?: string;
-};
-
-type DraftSale = {
-  date: string;
-  buyerName: string;
-  buyerPhone: string;
-  buyerAddress: string;
-  dispatchMethod: string;
-  batchId: string;
-  piecesSold: string;
-  weightSoldKg: string;
-  ratePerKg: string;
-  courierPacking: string;
-  saleType: SaleType;
-  paymentStatus: PaymentStatus;
-  paymentMode: PaymentMode;
-  paymentNotes: string;
-  notes: string;
-};
-
-type CustomerRecord = {
-  id: string;
-  phone: string;
-  name: string;
-  address: string;
-  defaultDispatchMethod: string;
-  defaultPaymentMode: PaymentMode | '';
-  lastSaleAt: string;
-};
-
-type EmailDraft = {
-  saleId: string;
-  to: string;
-  subject: string;
-  attachment: string;
-  body: string;
-};
+import {
+  type PaymentStatus, type StockBatch, type SaleRecord, type DraftSale, type CustomerRecord, type EmailDraft,
+  blankDraft, num, money, kg, dateLabel, invoiceNumber, amountInWords, invoiceHtml,
+  buildDraftSale, buildEmailDraft, validBuyerEmail, applyCustomerPhone,
+} from '@/lib/produce-sales';
 
 type StoreItem = {
   id: string;
@@ -118,220 +43,6 @@ type StoreItem = {
 
 const initialSales: SaleRecord[] = [];
 
-function currentDateValue() {
-  const now = new Date();
-  return [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    String(now.getDate()).padStart(2, '0'),
-  ].join('-');
-}
-
-function blankDraft(batchId = ''): DraftSale {
-  return {
-    date: currentDateValue(),
-    buyerName: '',
-    buyerPhone: '',
-    buyerAddress: '',
-    dispatchMethod: 'By Courier Service',
-    batchId,
-    piecesSold: '1',
-    weightSoldKg: '',
-    ratePerKg: '1000',
-    courierPacking: '250',
-    saleType: 'Charged Sale',
-    paymentStatus: 'Pending',
-    paymentMode: 'Bank',
-    paymentNotes: '',
-    notes: '',
-  };
-}
-
-function num(value: string) {
-  return Number(value.replace(/,/g, '')) || 0;
-}
-
-function money(value: number) {
-  return `Rs.${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-}
-
-function kg(value: number) {
-  return value.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-}
-
-function dateLabel(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function invoiceNumber(sale: SaleRecord) {
-  const year = new Date(`${sale.date}T00:00:00`).getFullYear();
-  const numberSeed = sale.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  return `EP-${year}-${String((numberSeed % 9999) + 1).padStart(4, '0')}`;
-}
-
-function integerToWords(value: number): string {
-  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-  const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-
-  if (value === 0) return 'zero';
-  if (value < 10) return ones[value];
-  if (value < 20) return teens[value - 10];
-  if (value < 100) return `${tens[Math.floor(value / 10)]}${value % 10 ? ` ${ones[value % 10]}` : ''}`;
-  if (value < 1000) return `${ones[Math.floor(value / 100)]} hundred${value % 100 ? ` and ${integerToWords(value % 100)}` : ''}`;
-  if (value < 100000) return `${integerToWords(Math.floor(value / 1000))} thousand${value % 1000 ? ` ${integerToWords(value % 1000)}` : ''}`;
-  if (value < 10000000) return `${integerToWords(Math.floor(value / 100000))} lakh${value % 100000 ? ` ${integerToWords(value % 100000)}` : ''}`;
-  return `${integerToWords(Math.floor(value / 10000000))} crore${value % 10000000 ? ` ${integerToWords(value % 10000000)}` : ''}`;
-}
-
-function amountInWords(value: number) {
-  return `Rupees ${integerToWords(Math.round(value))} only`;
-}
-
-function invoiceHtml(sale: SaleRecord) {
-  const no = invoiceNumber(sale);
-  const words = amountInWords(sale.totalAmount);
-  const isPaid = sale.paymentStatus === 'Paid';
-  const isNoChargeProduce = sale.saleType !== 'Charged Sale';
-
-  return `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>${no} Bill</title>
-<style>
-  body { font-family: Georgia, 'Times New Roman', serif; color: #111; margin: 0; background: #f6f1e8; }
-  .sheet { position: relative; width: 794px; min-height: 1123px; margin: 20px auto; padding: 54px 64px; background: white; box-shadow: 0 12px 40px rgba(0,0,0,.12); overflow: hidden; }
-  .paid-stamp { position: absolute; top: 450px; left: 120px; right: 120px; transform: rotate(-18deg); color: rgba(185,28,28,.82); font-family: Arial, sans-serif; font-size: 124px; font-weight: 900; letter-spacing: 10px; text-align: center; z-index: 3; pointer-events: none; }
-  .header { display: flex; align-items: center; gap: 22px; border-bottom: 1px solid #222; padding-bottom: 12px; }
-  .mark { width: 72px; height: 72px; display: grid; place-items: center; background: #222; color: white; font-weight: 900; font-family: Arial, sans-serif; }
-  h1 { margin: 0; font-size: 31px; letter-spacing: 1px; }
-  .address { text-align: center; font-size: 14px; margin-top: 4px; }
-  .meta { display: flex; justify-content: space-between; margin-top: 40px; font-size: 15px; line-height: 1.45; }
-  .bill { text-align: center; margin: 30px 0 16px; text-decoration: underline; font-weight: 700; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { border: 1px solid #333; padding: 7px 8px; vertical-align: top; }
-  th { text-align: left; background: #f7f7f7; }
-  .num { text-align: right; }
-  .words { margin: 22px 0 28px; font-size: 15px; }
-  .payment { display: grid; grid-template-columns: 1.1fr .9fr; gap: 0; border: 1px solid #333; }
-  .payment > div { padding: 12px; min-height: 118px; }
-  .payment > div + div { border-left: 1px solid #333; }
-  .section-title { text-decoration: underline; font-weight: 700; margin-bottom: 8px; }
-  .thanks { margin-top: 34px; line-height: 1.8; }
-  .footer { margin-top: 90px; border-top: 1px solid #333; padding-top: 10px; display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px; font-size: 12px; line-height: 1.35; }
-  @media print { body { background: white; } .sheet { margin: 0; box-shadow: none; width: auto; min-height: auto; } }
-</style>
-</head>
-<body>
-<div class="sheet">
-  <div class="header">
-    <div class="mark">MSP<br/>COFFEE</div>
-    <div style="flex:1">
-      <h1>MSP COFFEE PRIVATE LIMITED</h1>
-      <div class="address">370/2 Moganad Estate, Yercaud 636602, Tamil Nadu, India</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div>
-      <div>${dateLabel(sale.date)}</div>
-      <br/>
-      <strong>${sale.buyerName}</strong><br/>
-      ${sale.buyerAddress.replace(/\n/g, '<br/>') || 'Buyer address'}<br/>
-      ${sale.buyerPhone ? `Cell : ${sale.buyerPhone}` : ''}
-    </div>
-    <div>
-      <strong>Bill No:</strong> ${no}<br/><br/>
-      <u>${sale.dispatchMethod}</u>
-    </div>
-  </div>
-  <div class="bill">BILL</div>
-  ${isPaid ? '<div class="paid-stamp">PAID</div>' : ''}
-  <table>
-    <thead>
-      <tr><th>Date</th><th>Particulars</th><th>Kgs</th><th>Rate</th><th></th><th>Amount</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
-        <td>${sale.product} (${sale.piecesSold} Nos)${isNoChargeProduce ? `<br/><strong>${sale.saleType} - produce not charged</strong>` : ''}</td>
-        <td>${kg(sale.weightSoldKg)} Kgs</td>
-        <td>${isNoChargeProduce ? 'No charge' : `Rs.${sale.ratePerKg}/-`}</td>
-        <td>=</td>
-        <td class="num">${sale.produceAmount.toFixed(2)}</td>
-      </tr>
-      <tr>
-        <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
-        <td>Courier and Packing Charges</td>
-        <td></td><td></td><td>=</td>
-        <td class="num">${sale.courierPacking.toFixed(2)}</td>
-      </tr>
-      <tr>
-        <td></td><td></td><td></td><td><strong>Total</strong></td><td></td>
-        <td class="num"><strong>${sale.totalAmount.toFixed(2)}</strong></td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="words">(${words})</div>
-  <div style="margin: -8px 0 18px; font-size: 14px;"><strong>Payment Status:</strong> ${sale.paymentStatus}${sale.saleType !== 'Charged Sale' ? ` &nbsp; | &nbsp; <strong>Sale Type:</strong> ${sale.saleType}` : ''}</div>
-  <div class="payment">
-    <div>
-      <div class="section-title">Payment Details:-</div>
-      Cheque or Demand Draft<br/>
-      Infavour of <strong>"M/s.Moganad Estate"</strong>, Payable at Yercaud.<br/><br/>
-      <u>Post to</u> &nbsp; The Manager,<br/>
-      MSP Coffee (P) Ltd.,<br/>
-      Moganad Estate, Semmanatham Post,<br/>
-      Yercaud - 636 602, Salem District.<br/>
-      Tamil Nadu.<br/>
-      Tel: +91-4281-290640.
-    </div>
-    <div>
-      <div class="section-title">Payment Details:-</div>
-      <u>Pay online</u><br/><br/>
-      Account Name = Moganad Estate<br/>
-      Current A/c No = 1226 2010 00418<br/>
-      Bank Name = Canara Bank<br/>
-      Branch Name = Yercaud<br/>
-      Bank IFSC Code = CNRB0001226<br/><br/>
-      GPay Number = To be added
-    </div>
-  </div>
-  <div class="thanks">
-    Thanking you,<br/><br/>
-    Yours truly,<br/>
-    For MSP Coffee P Ltd.,<br/><br/><br/>
-    Manager.
-  </div>
-  <div class="footer">
-    <div>
-      GSTIN : 33AABCM4455B1ZZ<br/>
-      PAN NO : AABCM4455B<br/>
-      CIN : U15492TZ1996PTC007450
-    </div>
-    <div>
-      PHONE : +91 4281 290640<br/>
-      EMAIL : mail@mspcoffee.com<br/>
-      WEB : www.mspcoffee.com<br/>
-      Instagram : msp.coffee
-    </div>
-    <div>
-      Registered Office:<br/>
-      370/2 Moganad Estate,<br/>
-      Semmanatham post,<br/>
-      Yercaud 636002,<br/>
-      Salem District, Tamil Nadu
-    </div>
-  </div>
-</div>
-</body>
-</html>`;
-}
-
 export default function ProduceSalesPage() {
   const [batches, setBatches] = useState<StockBatch[]>([]);
   const [loadingStock, setLoadingStock] = useState(true);
@@ -344,8 +55,11 @@ export default function ProduceSalesPage() {
   const [selectedSaleId, setSelectedSaleId] = useState('');
   const [search, setSearch] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<'All' | PaymentStatus>('All');
-  const [emailDraftOpen, setEmailDraftOpen] = useState(false);
-  const [editableEmailDraft, setEditableEmailDraft] = useState<EmailDraft | null>(null);
+  const [emailDraftOpen, setEmailDraftOpen] = useState(true);
+  const [previewMode, setPreviewMode] = useState<'new' | 'saved'>('new');
+  const [emailEdits, setEmailEdits] = useState<{ source: string; fields: Partial<EmailDraft> } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const loadStoreStock = useCallback(async () => {
     setLoadingStock(true);
@@ -426,6 +140,9 @@ export default function ProduceSalesPage() {
 
   const selectedBatch = batches.find((batch) => batch.id === draft.batchId) ?? batches[0] ?? null;
   const selectedSale = sales.find((sale) => sale.id === selectedSaleId) ?? sales[0];
+  const previewSale = previewMode === 'new' ? buildDraftSale(draft, selectedBatch) : selectedSale;
+  const previewIsDraft = Boolean(previewSale?.isDraft);
+  const buyerEmailValid = validBuyerEmail(draft.buyerEmail);
   const piecesAvailable = selectedBatch ? selectedBatch.receivedPieces - selectedBatch.soldPieces : 0;
   const weightAvailable = selectedBatch ? selectedBatch.receivedWeightKg - selectedBatch.soldWeightKg : 0;
   const piecesSold = num(draft.piecesSold);
@@ -438,7 +155,7 @@ export default function ProduceSalesPage() {
 
   const filteredSales = useMemo(() => {
     return sales.filter((sale) => {
-      const text = `${sale.buyerName} ${sale.buyerPhone} ${sale.buyerAddress} ${sale.product} ${sale.estate} ${sale.saleType} ${sale.paymentStatus}`.toLowerCase();
+      const text = `${sale.itemCode} ${sale.buyerName} ${sale.buyerPhone} ${sale.buyerEmail} ${sale.buyerAddress} ${sale.product} ${sale.estate} ${sale.saleType} ${sale.paymentStatus}`.toLowerCase();
       const matchesSearch = search.trim() ? text.includes(search.trim().toLowerCase()) : true;
       const matchesPayment = paymentFilter === 'All' || sale.paymentStatus === paymentFilter;
       return matchesSearch && matchesPayment;
@@ -469,26 +186,17 @@ export default function ProduceSalesPage() {
     }));
   }, [batches]);
 
-  const emailDraftTemplate = useMemo(() => {
-    if (!selectedSale) return null;
-    const no = invoiceNumber(selectedSale);
-
-    return {
-      saleId: selectedSale.id,
-      to: selectedSale.buyerPhone ? `${selectedSale.buyerName} <buyer email to add>` : 'buyer email to add',
-      subject: `${no} Bill from MSP Coffee Private Limited`,
-      attachment: `${no.toLowerCase()}-bill.pdf`,
-      body: `Dear ${selectedSale.buyerName},\n\nPlease find attached the bill for ${selectedSale.product}.\n\nBill No: ${no}\nAmount: ${money(selectedSale.totalAmount)}\nPayment Status: ${selectedSale.paymentStatus}\n\nRegards,\nMSP Coffee Private Limited`,
-    };
-  }, [selectedSale]);
-
-  useEffect(() => {
-    if (!emailDraftOpen || !emailDraftTemplate) return;
-    setEditableEmailDraft((current) => current?.saleId === emailDraftTemplate.saleId ? current : emailDraftTemplate);
-  }, [emailDraftOpen, emailDraftTemplate]);
+  const emailDraftTemplate = previewSale ? buildEmailDraft(previewSale) : null;
+  const emailSource = JSON.stringify(previewSale);
+  const editableEmailDraft = emailDraftTemplate
+    ? { ...emailDraftTemplate, ...(emailEdits?.source === emailSource ? emailEdits.fields : {}) }
+    : null;
 
   const updateEmailDraft = (key: keyof Omit<EmailDraft, 'saleId'>, value: string) => {
-    setEditableEmailDraft((current) => current ? { ...current, [key]: value } : current);
+    setEmailEdits(current => ({
+      source: emailSource,
+      fields: { ...(current?.source === emailSource ? current.fields : {}), [key]: value },
+    }));
   };
 
   const copyEmailDraft = async () => {
@@ -504,18 +212,11 @@ export default function ProduceSalesPage() {
   };
 
   const updateDraft = (key: keyof DraftSale, value: string) => {
+    setPreviewMode('new');
+    setSaveError('');
     setDraft((current) => {
       const next = { ...current, [key]: value };
-      if (key === 'buyerPhone') {
-        const clean = value.replace(/[^\d+]/g, '');
-        const match = customers.find((customer) => customer.phone.replace(/[^\d+]/g, '') === clean);
-        if (match) {
-          next.buyerName = match.name;
-          next.buyerAddress = match.address || next.buyerAddress;
-          next.dispatchMethod = match.defaultDispatchMethod || next.dispatchMethod;
-          next.paymentMode = match.defaultPaymentMode || next.paymentMode;
-        }
-      }
+      if (key === 'buyerPhone') return applyCustomerPhone(next, customers, current.buyerPhone);
       if (key === 'saleType' && value !== 'Charged Sale') {
         next.ratePerKg = '0';
         next.paymentStatus = 'Paid';
@@ -529,6 +230,8 @@ export default function ProduceSalesPage() {
   };
 
   const selectBatch = (batchId: string) => {
+    setPreviewMode('new');
+    setSaveError('');
     const batch = batches.find((entry) => entry.id === batchId);
     setDraft((current) => ({
       ...current,
@@ -539,32 +242,41 @@ export default function ProduceSalesPage() {
   };
 
   const saveSale = async () => {
-    if (!selectedBatch) return;
-    if (overStock) return;
+    if (!selectedBatch || overStock || saving) return;
+    if (!buyerEmailValid) { setSaveError('Enter a valid buyer email address, or leave it blank.'); return; }
+    setSaving(true);
+    setSaveError('');
+    try {
+      const response = await fetch('/api/estate-produce/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...draft,
+          batchId: selectedBatch.id,
+          piecesSold,
+          weightSoldKg: weightSold,
+          ratePerKg: rate,
+          courierPacking: courier,
+        }),
+      });
+      const body = await response.json().catch(() => ({})) as { sale?: SaleRecord; error?: string };
+      if (!response.ok || !body.sale) {
+        setSaveError(body.error || 'Sale was not saved because stock could not be marked sold.');
+        return;
+      }
 
-    const response = await fetch('/api/estate-produce/sales', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...draft,
-        batchId: selectedBatch.id,
-        piecesSold,
-        weightSoldKg: weightSold,
-        ratePerKg: rate,
-        courierPacking: courier,
-      }),
-    });
-    const body = await response.json().catch(() => ({})) as { sale?: SaleRecord; error?: string };
-    if (!response.ok || !body.sale) {
-      alert(body.error || 'Sale was not saved because stock could not be marked sold.');
-      return;
+      setSales((current) => [body.sale as SaleRecord, ...current.filter((sale) => sale.id !== body.sale?.id)]);
+      setSelectedSaleId(body.sale.id);
+      setPreviewMode('saved');
+      setEmailEdits(null);
+      setDraft(blankDraft(''));
+      await loadStoreStock();
+      await loadSales();
+    } catch {
+      setSaveError('Could not save the sale. Please try again.');
+    } finally {
+      setSaving(false);
     }
-
-    setSales((current) => [body.sale as SaleRecord, ...current.filter((sale) => sale.id !== body.sale?.id)]);
-    setSelectedSaleId(body.sale.id);
-    await loadStoreStock();
-    await loadSales();
-    setDraft(blankDraft(''));
   };
 
   const markSelectedPaid = async () => {
@@ -609,19 +321,20 @@ export default function ProduceSalesPage() {
   };
 
   const printInvoice = () => {
-    if (!selectedSale) return;
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1100');
+    if (!previewSale || previewIsDraft) return;
+    const printWindow = window.open('', '_blank', 'width=900,height=1100');
     if (!printWindow) return;
-    printWindow.document.write(invoiceHtml(selectedSale));
+    printWindow.opener = null;
+    printWindow.document.write(invoiceHtml(previewSale));
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
   };
 
   const downloadInvoiceHtml = () => {
-    if (!selectedSale) return;
-    const no = invoiceNumber(selectedSale);
-    const url = URL.createObjectURL(new Blob([invoiceHtml(selectedSale)], { type: 'text/html;charset=utf-8' }));
+    if (!previewSale || previewIsDraft) return;
+    const no = invoiceNumber(previewSale);
+    const url = URL.createObjectURL(new Blob([invoiceHtml(previewSale)], { type: 'text/html;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
     link.download = `${no.toLowerCase()}-bill.html`;
@@ -637,11 +350,11 @@ export default function ProduceSalesPage() {
           <h1 className="mt-2 text-3xl font-bold text-emerald-950">Produce Sales</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={saveSale} disabled={overStock} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-stone-400">
+          <button onClick={saveSale} disabled={overStock || saving || !buyerEmailValid} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-stone-400">
             <Plus className="h-4 w-4" />
-            Save Sale
+            {saving ? 'Saving…' : 'Save Sale'}
           </button>
-          <button onClick={markSelectedPaid} disabled={!selectedSale || selectedSale.paymentStatus === 'Paid'} className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400">
+          <button onClick={markSelectedPaid} disabled={previewIsDraft || !selectedSale || selectedSale.paymentStatus === 'Paid'} className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400">
             <Lock className="h-4 w-4" />
             Mark Paid
           </button>
@@ -649,7 +362,7 @@ export default function ProduceSalesPage() {
             <Download className="h-4 w-4" />
             Export
           </button>
-          <button onClick={printInvoice} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50">
+          <button onClick={printInvoice} disabled={!previewSale || previewIsDraft} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50">
             <Printer className="h-4 w-4" />
             Print Bill
           </button>
@@ -674,7 +387,7 @@ export default function ProduceSalesPage() {
 
       <section className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <main className="space-y-5">
-          <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
+          <fieldset disabled={saving} className="min-w-0 rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <h2 className="flex items-center gap-2 text-lg font-bold text-emerald-950">
                 <ShoppingBag className="h-5 w-5" />
@@ -683,6 +396,7 @@ export default function ProduceSalesPage() {
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-900">Invoice-ready fields</span>
             </div>
 
+            {saveError && <p role="alert" className="mt-3 text-sm text-red-700">{saveError}</p>}
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Produce Token No.</span>
@@ -712,6 +426,12 @@ export default function ProduceSalesPage() {
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Buyer Phone</span>
                 <input value={draft.buyerPhone} onChange={(event) => updateDraft('buyerPhone', event.target.value)} placeholder="Phone number" className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs font-semibold uppercase text-stone-500">Buyer Email</span>
+                <input type="email" value={draft.buyerEmail} onChange={(event) => updateDraft('buyerEmail', event.target.value)} placeholder="buyer@example.com" aria-invalid={!buyerEmailValid} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                <span className="block text-xs text-stone-500">Remembered after saving when a buyer phone number is provided.</span>
+                {!buyerEmailValid && <span role="alert" className="block text-xs text-red-700">Enter a valid email address.</span>}
               </label>
               <label className="space-y-1 md:col-span-2">
                 <span className="text-xs font-semibold uppercase text-stone-500">Buyer Address</span>
@@ -794,7 +514,7 @@ export default function ProduceSalesPage() {
                 <textarea value={draft.notes} onChange={(event) => updateDraft('notes', event.target.value)} placeholder="Courier note, delivery detail, invoice comment" className="min-h-20 w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </label>
             </div>
-          </section>
+          </fieldset>
 
           <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -824,7 +544,7 @@ export default function ProduceSalesPage() {
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {filteredSales.map((sale) => (
-                    <tr key={sale.id} onClick={() => setSelectedSaleId(sale.id)} className="cursor-pointer bg-white hover:bg-emerald-50/60">
+                    <tr key={sale.id} onClick={() => { setSelectedSaleId(sale.id); setPreviewMode('saved'); }} className="cursor-pointer bg-white hover:bg-emerald-50/60">
                       <td className="px-3 py-3">{dateLabel(sale.date)}</td>
                       <td className="px-3 py-3 font-semibold text-stone-900">{sale.buyerName}</td>
                       <td className="px-3 py-3">
@@ -862,23 +582,23 @@ export default function ProduceSalesPage() {
             </div>
           </section>
 
-          {selectedSale && (
+          {previewSale && (
             <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-emerald-950">
                   <Eye className="h-5 w-5" />
-                  Invoice Preview
+                  {previewIsDraft ? 'Draft Invoice Preview' : 'Saved Invoice'}
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={printInvoice} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900">
+                  <button onClick={printInvoice} disabled={!previewSale || previewIsDraft} className="inline-flex items-center gap-2 rounded-md bg-emerald-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900">
                     <Printer className="h-4 w-4" />
                     Print
                   </button>
-                  <button onClick={markSelectedPaid} disabled={selectedSale.paymentStatus === 'Paid'} className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400">
+                  <button onClick={markSelectedPaid} disabled={previewIsDraft || previewSale.paymentStatus === 'Paid'} className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-stone-200 disabled:text-stone-400">
                     <Lock className="h-4 w-4" />
                     Mark Paid
                   </button>
-                  <button onClick={downloadInvoiceHtml} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
+                  <button onClick={downloadInvoiceHtml} disabled={previewIsDraft} className="inline-flex items-center gap-2 rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50">
                     <Download className="h-4 w-4" />
                     Download
                   </button>
@@ -888,6 +608,9 @@ export default function ProduceSalesPage() {
                   </button>
                 </div>
               </div>
+
+              {previewIsDraft && <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-900">Draft only — updates as you complete New Sale. Save Sale to create the final invoice and enable printing or download.</p>}
+              {!previewIsDraft && <button type="button" onClick={() => setPreviewMode('new')} className="mt-3 text-sm font-semibold text-emerald-800 underline">Preview new sale</button>}
 
               {emailDraftOpen && editableEmailDraft && (
                 <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
@@ -911,7 +634,7 @@ export default function ProduceSalesPage() {
                       <input value={editableEmailDraft.subject} onChange={(event) => updateEmailDraft('subject', event.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm" />
                     </label>
                     <label className="space-y-1">
-                      <span className="text-xs font-semibold uppercase text-stone-500">Attachment Name</span>
+                      <span className="text-xs font-semibold uppercase text-stone-500">{previewIsDraft ? 'Attachment (available after saving)' : 'Attachment Name'}</span>
                       <input value={editableEmailDraft.attachment} onChange={(event) => updateEmailDraft('attachment', event.target.value)} className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm" />
                     </label>
                     <label className="space-y-1">
@@ -922,9 +645,10 @@ export default function ProduceSalesPage() {
                 </div>
               )}
 
+              <p className="mt-3 text-xs text-stone-500">This prepares an email draft. Download the saved bill to attach it, or use Print to save a PDF.</p>
               <div className="mt-4 overflow-x-auto rounded-lg bg-stone-100 p-4">
                 <div className="relative mx-auto min-h-[720px] w-[680px] overflow-hidden bg-white p-8 text-sm text-stone-950 shadow-sm">
-                  {selectedSale.paymentStatus === 'Paid' && (
+                  {!previewIsDraft && previewSale.paymentStatus === 'Paid' && (
                     <div className="pointer-events-none absolute left-20 right-20 top-72 z-10 rotate-[-18deg] text-center text-8xl font-black tracking-[0.18em] text-red-700/80">
                       PAID
                     </div>
@@ -941,14 +665,15 @@ export default function ProduceSalesPage() {
 
                   <div className="mt-8 grid grid-cols-2 gap-8">
                     <div className="leading-6">
-                      <p>{dateLabel(selectedSale.date)}</p>
-                      <p className="mt-5 font-bold">{selectedSale.buyerName}</p>
-                      <p className="whitespace-pre-line">{selectedSale.buyerAddress || 'Buyer address'}</p>
-                      <p>{selectedSale.buyerPhone ? `Cell : ${selectedSale.buyerPhone}` : ''}</p>
+                      <p>{dateLabel(previewSale.date)}</p>
+                      <p className="mt-5 font-bold">{previewSale.buyerName}</p>
+                      <p className="whitespace-pre-line">{previewSale.buyerAddress || 'Buyer address'}</p>
+                      <p>{previewSale.buyerPhone ? `Cell : ${previewSale.buyerPhone}` : ''}</p>
+                      {previewSale.buyerEmail && <p>Email: {previewSale.buyerEmail}</p>}
                     </div>
                     <div className="text-right leading-6">
-                      <p><span className="font-bold">Bill No:</span> {invoiceNumber(selectedSale)}</p>
-                      <p className="mt-5 underline">{selectedSale.dispatchMethod}</p>
+                      <p><span className="font-bold">Bill No:</span> {invoiceNumber(previewSale)}</p>
+                      <p className="mt-5 underline">{previewSale.dispatchMethod}</p>
                     </div>
                   </div>
 
@@ -963,23 +688,25 @@ export default function ProduceSalesPage() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="border border-stone-700 px-2 py-2">{new Date(`${selectedSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+                        <td className="border border-stone-700 px-2 py-2">{new Date(`${previewSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
                         <td className="border border-stone-700 px-2 py-2">
-                          {selectedSale.product} ({selectedSale.piecesSold} Nos)
-                          {selectedSale.saleType !== 'Charged Sale' && <div className="font-bold">{selectedSale.saleType} - produce not charged</div>}
+                          {previewSale.product} ({previewSale.piecesSold} Nos)
+                          <div className="text-xs">Token: {previewSale.itemCode || 'Not recorded'}</div>
+                          <div className="text-xs">Estate: {previewSale.estate}</div>
+                          {previewSale.saleType !== 'Charged Sale' && <div className="font-bold">{previewSale.saleType} - produce not charged</div>}
                         </td>
-                        <td className="border border-stone-700 px-2 py-2">{kg(selectedSale.weightSoldKg)} Kgs</td>
-                        <td className="border border-stone-700 px-2 py-2">{selectedSale.saleType === 'Charged Sale' ? `Rs.${selectedSale.ratePerKg}/-` : 'No charge'}</td>
+                        <td className="border border-stone-700 px-2 py-2">{kg(previewSale.weightSoldKg)} Kgs</td>
+                        <td className="border border-stone-700 px-2 py-2">{previewSale.saleType === 'Charged Sale' ? `Rs.${previewSale.ratePerKg}/-` : 'No charge'}</td>
                         <td className="border border-stone-700 px-2 py-2">=</td>
-                        <td className="border border-stone-700 px-2 py-2 text-right">{selectedSale.produceAmount.toFixed(2)}</td>
+                        <td className="border border-stone-700 px-2 py-2 text-right">{previewSale.produceAmount.toFixed(2)}</td>
                       </tr>
                       <tr>
-                        <td className="border border-stone-700 px-2 py-2">{new Date(`${selectedSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+                        <td className="border border-stone-700 px-2 py-2">{new Date(`${previewSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
                         <td className="border border-stone-700 px-2 py-2">Courier and Packing Charges</td>
                         <td className="border border-stone-700 px-2 py-2"></td>
                         <td className="border border-stone-700 px-2 py-2"></td>
                         <td className="border border-stone-700 px-2 py-2">=</td>
-                        <td className="border border-stone-700 px-2 py-2 text-right">{selectedSale.courierPacking.toFixed(2)}</td>
+                        <td className="border border-stone-700 px-2 py-2 text-right">{previewSale.courierPacking.toFixed(2)}</td>
                       </tr>
                       <tr>
                         <td className="border border-stone-700 px-2 py-2"></td>
@@ -987,12 +714,12 @@ export default function ProduceSalesPage() {
                         <td className="border border-stone-700 px-2 py-2"></td>
                         <td className="border border-stone-700 px-2 py-2 font-bold">Total</td>
                         <td className="border border-stone-700 px-2 py-2"></td>
-                        <td className="border border-stone-700 px-2 py-2 text-right font-bold">{selectedSale.totalAmount.toFixed(2)}</td>
+                        <td className="border border-stone-700 px-2 py-2 text-right font-bold">{previewSale.totalAmount.toFixed(2)}</td>
                       </tr>
                     </tbody>
                   </table>
-                  <p className="mt-5">({amountInWords(selectedSale.totalAmount)})</p>
-                  <p className="mt-2 text-sm"><strong>Payment Status:</strong> {selectedSale.paymentStatus}{selectedSale.saleType !== 'Charged Sale' ? ` | ${selectedSale.saleType}` : ''}</p>
+                  <p className="mt-5">({amountInWords(previewSale.totalAmount)})</p>
+                  <p className="mt-2 text-sm"><strong>Payment Status:</strong> {previewSale.paymentStatus}{previewSale.saleType !== 'Charged Sale' ? ` | ${previewSale.saleType}` : ''}</p>
 
                   <div className="mt-7 grid grid-cols-2 border border-stone-700">
                     <div className="border-r border-stone-700 p-3 leading-6">

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validBuyerEmail } from '@/lib/produce-sales';
 import {
   ESTATES,
   ESTATE_PRODUCE_RECORD_ID_RE,
@@ -17,6 +18,7 @@ type SaleRow = Record<string, unknown>;
 type CustomerRow = Record<string, unknown>;
 type StoreItemRow = {
   id: string;
+  item_code: string;
   estate: string;
   product: string;
   unit: string;
@@ -35,9 +37,11 @@ function mapSale(row: SaleRow) {
     date: text(row.sale_date),
     buyerName: text(row.buyer_name),
     buyerPhone: text(row.buyer_phone),
+    buyerEmail: text(row.buyer_email),
     buyerAddress: text(row.buyer_address),
     dispatchMethod: text(row.dispatch_method),
     batchId: text(row.store_item_id),
+    itemCode: text(row.store_item_code),
     estate: text(row.estate),
     product: text(row.product),
     piecesSold: numberValue(row.pieces_sold),
@@ -60,6 +64,7 @@ function mapCustomer(row: CustomerRow) {
   return {
     id: text(row.id),
     phone: text(row.phone),
+    email: text(row.email),
     name: text(row.name),
     address: text(row.address),
     defaultDispatchMethod: text(row.default_dispatch_method),
@@ -80,6 +85,8 @@ export async function GET(request: Request) {
       'sale_date',
       'buyer_name',
       'buyer_phone',
+      'buyer_email',
+      'store_item_code',
       'buyer_address',
       'dispatch_method',
       'estate',
@@ -106,7 +113,7 @@ export async function GET(request: Request) {
 
   const { data: customers, error: customersError } = await auth.supabase
     .from('produce_customers')
-    .select('id, phone, name, address, default_dispatch_method, default_payment_mode, last_sale_at')
+    .select('id, phone, email, name, address, default_dispatch_method, default_payment_mode, last_sale_at')
     .order('last_sale_at', { ascending: false, nullsFirst: false })
     .limit(500);
 
@@ -129,6 +136,7 @@ export async function POST(request: Request) {
   const saleDate = text(body.date);
   const buyerName = text(body.buyerName) || 'Walk-in Buyer';
   const buyerPhone = normalizePhone(text(body.buyerPhone));
+  const buyerEmail = text(body.buyerEmail);
   const buyerAddress = text(body.buyerAddress);
   const dispatchMethod = text(body.dispatchMethod) || 'By Courier Service';
   const saleType = text(body.saleType) || 'Charged Sale';
@@ -147,10 +155,11 @@ export async function POST(request: Request) {
   if (!SALE_TYPES.includes(saleType)) return badRequest('Choose a valid sale type');
   if (!PAYMENT_MODES.includes(paymentMode)) return badRequest('Choose a valid payment mode');
   if (!PAYMENT_STATUSES.includes(paymentStatus)) return badRequest('Choose a valid payment status');
+  if (!validBuyerEmail(buyerEmail)) return badRequest('Enter a valid buyer email address, or leave it blank');
 
   const { data: storeItem, error: storeError } = await auth.supabase
     .from('produce_store_items')
-    .select('id, estate, product, unit, quantity, weight_kg, status')
+    .select('id, item_code, estate, product, unit, quantity, weight_kg, status')
     .eq('id', storeItemId)
     .single<StoreItemRow>();
 
@@ -168,6 +177,7 @@ export async function POST(request: Request) {
       .from('produce_customers')
       .upsert({
         phone: buyerPhone,
+        ...(Object.hasOwn(body, 'buyerEmail') ? { email: buyerEmail } : {}),
         name: buyerName,
         address: buyerAddress || null,
         default_dispatch_method: dispatchMethod,
@@ -188,10 +198,12 @@ export async function POST(request: Request) {
     .from('produce_sales')
     .insert([{
       store_item_id: storeItem.id,
+      store_item_code: storeItem.item_code,
       customer_id: customerId,
       sale_date: saleDate,
       buyer_name: buyerName,
       buyer_phone: buyerPhone || null,
+      buyer_email: buyerEmail,
       buyer_address: buyerAddress || null,
       dispatch_method: dispatchMethod,
       estate: storeItem.estate,
