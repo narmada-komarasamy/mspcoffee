@@ -26,6 +26,8 @@ Apply `supabase/migrations/20261029035156_produce_internal_use_and_partial_stock
 
 The Add/Edit Fleet Record form accepts a maintenance bill photo (JPG, PNG, WebP) or PDF up to 4 MB. It extracts maintenance cost, date, workshop, maintenance items and searchable bill text for review. The original is uploaded to private storage only when the entry is saved. Search in Daily Vehicle Log covers all vehicles by default and respects any vehicle/date filters you apply.
 
+In Single Vehicle Spotlight, clicking Maintenance Cost uses the same vehicle/year/month selection as the displayed total. A single maintenance entry with an attachment opens its original bill directly. Multiple entries, missing attachments, and empty periods open a list with dates, workshops, amounts and original bill links. Entries without attachments show **No bill uploaded** and **Add bill**, which opens the existing edit form. Original bill access continues to use the authenticated signed-URL route.
+
 Before deploying this feature:
 
 1. Apply `supabase/migrations/20261028_fleet_maintenance_bills.sql` to the target database. It adds four columns and creates the private bill storage bucket.
@@ -35,6 +37,8 @@ Before deploying this feature:
 If extraction fails, the original can still be attached and details entered manually. Search then uses those manually entered details; unreadable bill text is not indexed. Existing records remain searchable through their maintenance descriptions and remarks. One original maintenance bill is attached per daily record; uploading another bill replaces it when saved. The existing one-entry-per-vehicle-per-day constraint still applies.
 
 Run the isolated maintenance checks with `node --test tests/fleet-maintenance.test.cjs`. They mock storage and AI without writing production data.
+
+Run `node --test tests/fleet-maintenance-card.test.cjs` for the Maintenance Cost drilldown, including selection filters, totals, original links and missing attachments.
 
 ## Getting Started
 

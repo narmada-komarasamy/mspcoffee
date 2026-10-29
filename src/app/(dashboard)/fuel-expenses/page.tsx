@@ -11,6 +11,7 @@ import { Upload, Plus, RefreshCw, ChevronLeft, ChevronRight, Pencil, Palette, Ma
 import { UploadModal } from "@/components/fleet/UploadModal";
 import { RecordModal, FleetRecord } from "@/components/fleet/RecordModal";
 import { PhotoEntryModal } from "@/components/fleet/PhotoEntryModal";
+import { MaintenanceCostCard } from "@/components/fleet/MaintenanceCostCard";
 import s from "./fleet.module.css";
 import { BILL_BUCKET, matchesMaintenanceSearch } from "@/lib/fleet/maintenance";
 import { signedStorageUrl } from "@/lib/storage/urls";
@@ -641,21 +642,28 @@ export default function FleetPage() {
                 { emoji:"🛣️", label:"Total KM Running",         value:fmt(svAgg.totalKm,0),              unit:"km",  sub:`Odometer: ${fmt(svAgg.startKm,0)} → ${fmt(svAgg.closeKm,0)}`, accent:GOLD   },
                 { emoji:"🌿", label:"Vehicle Mileage",           value:fmt(svAgg.avgMileage,2),          unit:"km/L", sub:"Average fuel efficiency",                             accent:GREEN  },
                 { emoji:"💰", label:"Vehicle Fuel Cost",         value:fmtC(svAgg.fuelCost),             unit:"",    sub:"Total fuel expenditure (₹)",                          accent:RED    },
-                { emoji:"🔧", label:"Maintenance Cost",          value:fmtC(svAgg.maintCost),            unit:"",    sub:"Total maintenance expenditure (₹)",                   accent:PURPLE },
+                { emoji:"🔧", label:"Maintenance Cost",          value:fmtC(svAgg.maintCost),            unit:"",    sub:"Click to view maintenance entries and bills",             accent:PURPLE },
                 { emoji:"💸", label:"Fuel + Maintenance Cost",   value:fmtC(svAgg.totalCost),            unit:"",    sub:"Combined operational cost (₹)",                       accent:"#e67e22"},
                 { emoji:"📊", label:"Running Cost / KM",         value:fmt(svAgg.costPerKm,2),           unit:"₹/km",sub:"Total vehicle cost per kilometre",                    accent:BLUE   },
                 { emoji:"🚀", label:"Starting KM",               value:fmt(svAgg.startKm,0),             unit:"",    sub:"First odometer reading",                              accent:TEAL   },
                 { emoji:"🏁", label:"Closing KM",                value:fmt(svAgg.closeKm,0),             unit:"",    sub:"Final odometer reading",                              accent:RED    },
-              ].map(k => (
-                <div key={k.label} className={s.kpiCard} style={{ ["--accent" as string]: k.accent }}>
+              ].map(k => {
+                const content = <>
                   <div className={s.kpiIconBox}>{k.emoji}</div>
                   <div className={s.kpiInfo}>
                     <div className={s.kpiLabel}>{k.label}</div>
                     <div className={s.kpiValue}>{k.value}{k.unit && <span className={s.kpiUnit}>{k.unit}</span>}</div>
                     <div className={s.kpiSub}>{k.sub}</div>
                   </div>
-                </div>
-              ))}
+                </>;
+                return k.label === "Maintenance Cost" ? <MaintenanceCostCard
+                  key={`${k.label}-${svVehicle}-${svYear}-${svMonth}`}
+                  rows={svRows} total={svAgg.maintCost}
+                  selection={`${svVehicle || "All vehicles"} · ${svMonth === "ALL" ? "All months" : svMonth} · ${svYear === "ALL" ? "All years" : svYear}`}
+                  className={s.kpiCard} style={{ ["--accent" as string]: k.accent }} onEdit={setEditRecord}>
+                  {content}
+                </MaintenanceCostCard> : <div key={k.label} className={s.kpiCard} style={{ ["--accent" as string]: k.accent }}>{content}</div>;
+              })}
             </div>
 
             {/* ════════════════════════════════════════════════════════════════════

@@ -3,6 +3,26 @@ export const BILL_BUCKET = 'fleet-maintenance-bills';
 export const MAX_BILL_BYTES = 4 * 1024 * 1024;
 export const BILL_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
+type MaintenanceEntry = {
+  date: string;
+  maint_cost: number | string | null;
+  maintenance_bill_path?: string | null;
+  maintenance_performed?: string | null;
+  maintenance_vendor?: string | null;
+};
+
+export function maintenanceEntries<T extends MaintenanceEntry>(rows: T[]): T[] {
+  return rows.filter(row => Number(row.maint_cost) !== 0 || row.maintenance_bill_path ||
+    row.maintenance_performed?.trim() || row.maintenance_vendor?.trim())
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// Keep the list when an unreceipted entry also contributes to the total.
+export function singleMaintenanceBillPath(rows: MaintenanceEntry[]) {
+  const entries = maintenanceEntries(rows);
+  return entries.length === 1 ? entries[0].maintenance_bill_path || '' : '';
+}
+
 export function billFileError(file: { size: number; type: string }) {
   if (!BILL_TYPES.includes(file.type)) return 'Choose a JPG, PNG, WebP photo or PDF bill.';
   if (!file.size) return 'The bill file is empty.';

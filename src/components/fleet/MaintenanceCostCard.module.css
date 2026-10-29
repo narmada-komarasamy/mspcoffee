@@ -1,0 +1,24 @@
+.card { cursor: pointer; text-align: left; font: inherit; text-decoration: none; color: inherit; width: 100%; }
+.card:focus-visible { outline: 3px solid var(--t-accent, #1b6a45); outline-offset: 3px; }
+.dialog { position: fixed; inset: 0; margin: auto; padding: 0; width: min(920px, calc(100vw - 32px)); max-height: 85vh; border: 1px solid var(--t-border, #d4d9d0); border-radius: 16px; background: var(--t-card, #fff); color: var(--t-text, #163c2d); box-shadow: 0 24px 80px #0005; }
+.dialog::backdrop { background: #0009; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 24px; border-bottom: 1px solid var(--t-border, #ddd); }
+.header h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.header p { margin: 5px 0 0; color: var(--t-muted, #667466); font-size: 13px; }
+.close { padding: 0 8px; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 28px; line-height: 1; }
+.body { padding: 20px 24px; }
+.summary { margin: 0 0 18px; font-size: 14px; }
+.summary strong { color: var(--t-heading, #164525); font-size: 20px; }
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th, .table td { padding: 12px; border-bottom: 1px solid var(--t-border, #ddd); vertical-align: top; text-align: left; }
+.table th { background: var(--t-subtle, #f8f6ee); font-weight: 700; }
+.table .amount { text-align: right; white-space: nowrap; }
+.description { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--t-muted, #657265); }
+.link, .addBill { color: var(--t-accent, #1b6a45); font-weight: 700; text-decoration: underline; }
+.fileName { display: block; max-width: 200px; overflow-wrap: anywhere; font-size: 11px; font-weight: 400; margin-top: 3px; }
+.missing { display: block; color: var(--t-muted, #657265); }
+.addBill { display: block; margin-top: 5px; padding: 0; background: transparent; border: 0; font: inherit; cursor: pointer; }
+.empty, .note { color: var(--t-muted, #657265); font-size: 13px; }
+.note { margin: 16px 0 0; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
