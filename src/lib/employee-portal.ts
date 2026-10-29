@@ -36,6 +36,7 @@ export const EMPLOYEE_PRODUCTIVITY_SECTIONS: EmployeePortalSection[] = [
 ];
 
 export const RAMESH_DIRECT_WORK_AREAS: EmployeePortalSection[] = [
+  { label: 'Courier and Tracking', slug: 'courier-tracking', description: 'Courier dispatches, remembered recipients, hand deliveries and monthly accounts statements.' },
   {
     label: 'Quotations',
     slug: 'quotations',
