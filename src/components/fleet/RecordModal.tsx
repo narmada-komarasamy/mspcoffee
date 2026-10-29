@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { X, Trash2, Save, Loader2 } from "lucide-react";
+import { X, Trash2, Save, Loader2, Upload, FileText } from "lucide-react";
+
+import { BILL_BUCKET, billFileError } from "@/lib/fleet/maintenance";
+import { signedStorageUrl } from "@/lib/storage/urls";
+import { startingKmFor } from "@/lib/fleet/odometer";
 
 const ACCOUNTS = ["BVE", "HFE", "ME", "ORE", "RSE", "SE"];
 const VEHICLE_TYPES = ["Estate", "Personal"];
@@ -28,10 +32,15 @@ export type FleetRecord = {
   cost_per_km: number;
   maintenance_performed: string;
   remarks: string;
+  maintenance_vendor?: string;
+  maintenance_bill_path?: string;
+  maintenance_bill_name?: string;
+  maintenance_bill_text?: string;
 };
 
 interface Props {
   record: FleetRecord | null; // null = new record
+  rows: FleetRecord[];
   vehicles: string[];         // list of known vehicle IDs for datalist
   onClose: () => void;
   onSuccess: () => void;
@@ -58,22 +67,38 @@ const empty: FleetRecord = {
 
 function derive(f: FleetRecord): FleetRecord {
   const km_run = Math.max(0, f.closing_km - f.starting_km);
-  const total_cost = f.fuel_cost + f.maint_cost;
+  const total_cost = Number(f.fuel_cost || 0) + Number(f.maint_cost || 0);
   const avg_mileage = f.fuel_filled_l > 0 ? parseFloat((km_run / f.fuel_filled_l).toFixed(2)) : 0;
   const cost_per_km = km_run > 0 ? parseFloat((total_cost / km_run).toFixed(2)) : 0;
   return { ...f, km_run, total_cost, avg_mileage, cost_per_km };
 }
 
-export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
+export function RecordModal({ record, rows, vehicles, onClose, onSuccess }: Props) {
   const isEdit = record?.id != null;
-  const [form, setForm] = useState<FleetRecord>(record ?? empty);
+  const [form, setForm] = useState<FleetRecord>(() => derive(record ?? empty));
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [bill, setBill] = useState<File | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [billNotice, setBillNotice] = useState("");
+  const [billPreview, setBillPreview] = useState("");
+  useEffect(() => {
+    const url = bill ? URL.createObjectURL(bill) : "";
+    setBillPreview(url);
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [bill]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
   const set = <K extends keyof FleetRecord>(field: K, value: FleetRecord[K]) => {
-    setForm((prev) => derive({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (!isEdit && (field === "vehicle_id" || field === "date") && prev[field] !== value) {
+        next.starting_km = startingKmFor(rows, next.vehicle_id, next.date);
+      }
+      return derive(next);
+    });
   };
 
   const num = (field: keyof FleetRecord) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -85,29 +110,61 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
     if (!form.vehicle_id.trim()) { setError("Vehicle ID is required"); return; }
 
     setSaving(true);
-    const d = new Date(form.date);
-    const payload = {
-      ...form,
-      month: d.getMonth() + 1,
-      year: d.getFullYear(),
-    };
-    delete (payload as Partial<FleetRecord>).id;
-
-    const { error: err } = isEdit
-      ? await supabase.from("fleet_daily").update(payload).eq("id", record!.id!)
-      : await supabase.from("fleet_daily").insert(payload);
-
-    setSaving(false);
-    if (err) { setError(err.message); return; }
+    try {
+      const body = new FormData();
+      body.set("record", JSON.stringify(form));
+      if (bill) body.set("file", bill);
+      const response = await fetch("/api/fleet/maintenance-bill", { method: "POST", body });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not save the fleet entry.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save the fleet entry.");
+      return;
+    } finally {
+      setSaving(false);
+    }
     onSuccess();
     onClose();
+  };
+
+  const uploadBill = async (file: File) => {
+    const validation = billFileError(file);
+    if (validation) { setError(validation); return; }
+    setError("");
+    setBill(file);
+    setBillNotice("");
+    setExtracting(true);
+    // A replacement bill must never keep the previous bill's searchable text.
+    setForm(prev => ({ ...prev, maintenance_bill_text: "" }));
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      const response = await fetch("/api/fleet/maintenance-bill/extract", { method: "POST", body });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not extract bill details.");
+      setForm(prev => derive({ ...prev,
+        ...(result.total !== null ? { maint_cost: result.total } : {}),
+        ...(result.date ? { date: result.date } : {}),
+        ...(!isEdit && result.date && result.date !== prev.date
+          ? { starting_km: startingKmFor(rows, prev.vehicle_id, result.date) } : {}),
+        maintenance_vendor: result.workshop || "",
+        maintenance_performed: result.maintenance_items || "",
+        maintenance_bill_text: result.bill_text || "",
+      }));
+      setBillNotice(`Bill read. Review the date, workshop, maintenance items and costs before saving.${result.total === null ? " Total could not be read; enter maintenance cost manually." : ""}${result.notes ? ` ${result.notes}` : ""}`);
+    } catch (err) {
+      setBillNotice(err instanceof Error ? err.message : "Could not read bill details. Enter them manually.");
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
     setDeleting(true);
-    await supabase.from("fleet_daily").delete().eq("id", record!.id!);
+    const { error } = await supabase.from("fleet_daily").delete().eq("id", record!.id!);
     setDeleting(false);
+    if (error) { setError(error.message); return; }
     onSuccess();
     onClose();
   };
@@ -123,12 +180,27 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
           <h2 className="text-base font-semibold text-white">
             {isEdit ? "Edit Record" : "Add Fleet Record"}
           </h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition">
+          <button onClick={onClose} disabled={saving || extracting || deleting} aria-label="Close record" className="text-white/40 hover:text-white transition">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-5">
+          <div className="rounded-xl border border-msp-navy-border bg-msp-bg p-4 space-y-3">
+            <button type="button" onClick={() => fileInput.current?.click()} disabled={extracting || saving || deleting}
+              className="flex items-center gap-2 text-sm text-msp-teal disabled:opacity-40">
+              {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {extracting ? "Reading maintenance bill…" : "Upload Maintenance Bill"}
+            </button>
+            <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden"
+              onChange={e => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void uploadBill(file); }} />
+            <p className="text-xs text-white/50">Photo or PDF, up to 4 MB. Fills maintenance cost and updates total cost. Review before saving.</p>
+            {bill && <p className="text-sm text-white/70"><a href={billPreview} target="_blank" rel="noopener noreferrer" className="text-msp-teal">View {bill.name}</a> · attached when you save</p>}
+            {!bill && form.maintenance_bill_path && <a className="flex items-center gap-2 text-sm text-msp-teal" target="_blank" rel="noopener noreferrer"
+              href={signedStorageUrl(BILL_BUCKET, form.maintenance_bill_path)}><FileText className="h-4 w-4" />View original bill{form.maintenance_bill_name ? ` · ${form.maintenance_bill_name}` : ""}</a>}
+            {billNotice && <p role="status" className="text-sm text-msp-gold-light">{billNotice}</p>}
+          </div>
+          <fieldset disabled={extracting || saving || deleting} className="space-y-5 disabled:opacity-60">
           {/* Row 1: Date + Vehicle ID */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -183,9 +255,14 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
           {/* Row 3: KM readings */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Starting KM</label>
-              <input type="number" min="0" value={form.starting_km}
+              <label htmlFor="fleet-starting-km" className={labelCls}>Starting KM</label>
+              <input id="fleet-starting-km" type="number" min="0" value={form.starting_km}
                 onChange={num("starting_km")} className={inputCls} />
+              {!isEdit && form.vehicle_id && <p className="mt-1 text-xs text-white/50">
+                {startingKmFor(rows, form.vehicle_id, form.date) > 0
+                  ? "Uses the previous closing KM. You can edit it."
+                  : "No earlier closing KM found. Enter the starting KM."}
+              </p>}
             </div>
             <div>
               <label className={labelCls}>Closing KM</label>
@@ -217,7 +294,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Maint Cost (₹)</label>
-              <input type="number" min="0" value={form.maint_cost}
+              <input type="number" min="0" step="0.01" value={form.maint_cost}
                 onChange={num("maint_cost")} className={`${inputCls} text-msp-danger`} />
             </div>
             <div>
@@ -239,6 +316,12 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             </div>
           </div>
 
+          <div>
+            <label htmlFor="maintenance-vendor" className={labelCls}>Workshop / Vendor</label>
+            <input id="maintenance-vendor" value={form.maintenance_vendor || ""}
+              onChange={e => set("maintenance_vendor", e.target.value)} placeholder="Workshop name" className={inputCls} />
+          </div>
+
           {/* Maintenance performed */}
           <div>
             <label className={labelCls}>Maintenance Performed</label>
@@ -257,6 +340,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
               className={inputCls} />
           </div>
 
+          </fieldset>
           {error && <p className="text-msp-danger text-sm">{error}</p>}
 
           {/* Actions */}
@@ -264,7 +348,7 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             {isEdit && (
               <button
                 onClick={handleDelete}
-                disabled={deleting}
+                disabled={deleting || saving || extracting}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                   confirmDelete
                     ? "bg-msp-danger text-white hover:opacity-90"
@@ -277,13 +361,14 @@ export function RecordModal({ record, vehicles, onClose, onSuccess }: Props) {
             )}
             <button
               onClick={onClose}
+              disabled={saving || extracting || deleting}
               className="flex-1 px-4 py-2.5 rounded-lg border border-msp-navy-border text-white/60 text-sm hover:bg-white/5 transition"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || extracting || deleting}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-msp-teal text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

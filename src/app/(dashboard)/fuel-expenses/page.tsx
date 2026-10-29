@@ -12,6 +12,8 @@ import { UploadModal } from "@/components/fleet/UploadModal";
 import { RecordModal, FleetRecord } from "@/components/fleet/RecordModal";
 import { PhotoEntryModal } from "@/components/fleet/PhotoEntryModal";
 import s from "./fleet.module.css";
+import { BILL_BUCKET, matchesMaintenanceSearch } from "@/lib/fleet/maintenance";
+import { signedStorageUrl } from "@/lib/storage/urls";
 
 /* ─── Types ──────────────────────────────────────────────────────────────────── */
 type Row = FleetRecord & { id: number };
@@ -132,6 +134,7 @@ export default function FleetPage() {
   const [periodBMonth,  setPeriodBMonth]  = useState("ALL");
 
   /* ── Log table ───────────────────────────────────────────────────────────────── */
+  const [logSearch, setLogSearch] = useState("");
   const [logPage,     setLogPage]     = useState(1);
   const [logVehicle,  setLogVehicle]  = useState("ALL");
   const [logYear,     setLogYear]     = useState("ALL");
@@ -342,9 +345,10 @@ export default function FleetPage() {
   /* Log table */
   const logRows = useMemo(() => {
     return filterRows(data, logVehicle, logYear, logMonth)
+      .filter(r => matchesMaintenanceSearch(r, logSearch))
       .filter(r => (!logDateFrom || r.date >= logDateFrom) && (!logDateTo || r.date <= logDateTo))
       .reverse();
-  }, [data, logVehicle, logYear, logMonth, logDateFrom, logDateTo]);
+  }, [data, logVehicle, logYear, logMonth, logDateFrom, logDateTo, logSearch]);
   const logPages = Math.max(1, Math.ceil(logRows.length / LOG_PAGE_SIZE));
   const logSlice = logRows.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
 
@@ -1100,6 +1104,12 @@ export default function FleetPage() {
 
             <div className={s.filterBar} style={{ marginBottom:14 }}>
               <div className={s.ctrlGroup}>
+                <label htmlFor="maintenance-search" className={s.ctrlLabel}>Search maintenance bills</label>
+                <input id="maintenance-search" type="search" className={s.ctrlSelect} value={logSearch}
+                  placeholder="e.g. brake pads" style={{ minWidth:200 }}
+                  onChange={e => { setLogSearch(e.target.value); setLogPage(1); }} />
+              </div>
+              <div className={s.ctrlGroup}>
                 <span className={s.ctrlLabel}>Vehicle</span>
                 <select className={s.ctrlSelect} value={logVehicle} onChange={e => { setLogVehicle(e.target.value); setLogPage(1); }}>
                   <option value="ALL">— All Vehicles —</option>
@@ -1131,20 +1141,20 @@ export default function FleetPage() {
                   onChange={e => { setLogDateTo(e.target.value); setLogPage(1); }}/>
               </div>
               <button className={s.csvBtn} onClick={downloadCSV}>⬇ Download CSV</button>
-              <button className={s.resetBtn} onClick={() => { setLogVehicle("ALL"); setLogYear("ALL"); setLogMonth("ALL"); setLogDateFrom(""); setLogDateTo(""); setLogPage(1); }}>Reset Filters</button>
+              <button className={s.resetBtn} onClick={() => { setLogSearch(""); setLogVehicle("ALL"); setLogYear("ALL"); setLogMonth("ALL"); setLogDateFrom(""); setLogDateTo(""); setLogPage(1); }}>Reset Filters</button>
             </div>
 
             {(() => {
-              const logReady = logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo;
+              const logReady = !!logSearch.trim() || logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo;
               if (!logReady) return (
                 <div style={{ margin:"0 28px 40px", padding:"48px 0", textAlign:"center", color:"var(--t-label)", border:"1px dashed var(--t-border)", borderRadius:12, fontSize:13, letterSpacing:"0.5px" }}>
-                  Select a vehicle or apply a filter above to view records
+                  Search bill contents across all vehicles, or apply a filter above to view records
                 </div>
               );
               return null;
             })()}
 
-            {(logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo) && (
+            {(!!logSearch.trim() || logVehicle !== "ALL" || logYear !== "ALL" || logMonth !== "ALL" || !!logDateFrom || !!logDateTo) && (
               <>
             <div style={{ fontSize:11, color:"var(--t-muted)", marginBottom:10, marginLeft:28 }}>{logRows.length.toLocaleString()} records · newest first</div>
 
@@ -1163,10 +1173,12 @@ export default function FleetPage() {
                     <th style={{ textAlign:"right" }}>Maint Cost ₹</th>
                     <th style={{ textAlign:"right" }}>Total Cost ₹</th>
                     <th>Maintenance Description</th>
+                    <th>Workshop / Bill</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
+                  {logSlice.length === 0 && <tr><td colSpan={13} style={{ textAlign:"center", padding:24 }}>No matching records. Try another term or clear the filters.</td></tr>}
                   {logSlice.map(r => (
                     <tr key={r.id}>
                       <td className={s.colDate}>{r.date}</td>
@@ -1181,7 +1193,11 @@ export default function FleetPage() {
                       <td className={s.colNumber} style={{ color:GOLD, fontWeight:700 }}>{fmt(r.total_cost,0)}</td>
                       <td style={{ color:"var(--t-muted)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
                       <td>
-                        <button onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"var(--t-label)", cursor:"pointer", padding:"2px 4px" }}>
+                        <div style={{ fontSize:11 }}>{r.maintenance_vendor || "—"}</div>
+                        {r.maintenance_bill_path && <a href={signedStorageUrl(BILL_BUCKET, r.maintenance_bill_path)} target="_blank" rel="noopener noreferrer" style={{ color:TEAL, fontSize:11 }}>View bill</a>}
+                      </td>
+                      <td>
+                        <button aria-label={`Edit record for ${r.vehicle_id} on ${r.date}`} onClick={() => setEditRecord(r)} style={{ background:"none", border:"none", color:"var(--t-label)", cursor:"pointer", padding:"2px 4px" }}>
                           <Pencil size={13}/>
                         </button>
                       </td>
@@ -1198,7 +1214,7 @@ export default function FleetPage() {
                     <td className={s.colNumber} style={{ color:GOLD }}>{fmt(logRows.reduce((a,r)=>a+r.fuel_cost,0),0)}</td>
                     <td className={s.colNumber} style={{ color:RED  }}>{fmt(logRows.reduce((a,r)=>a+r.maint_cost,0),0)}</td>
                     <td className={s.colNumber} style={{ color:GOLD, fontWeight:700 }}>{fmt(logRows.reduce((a,r)=>a+r.total_cost,0),0)}</td>
-                    <td colSpan={2}/>
+                    <td colSpan={3}/>
                   </tr>
                 </tfoot>
               </table>
@@ -1219,7 +1235,7 @@ export default function FleetPage() {
 
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={loadData}/>}
       {showPhotoEntry && <PhotoEntryModal rows={data} vehicles={vehicles} onClose={() => setShowPhotoEntry(false)} onSuccess={loadData}/>}
-      {editRecord !== false && <RecordModal record={editRecord} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={loadData}/>}
+      {editRecord !== false && <RecordModal record={editRecord} rows={data} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={loadData}/>}
 
       {/* ════════════════════════════════════════════════════════════════════════
           ◆ MIS REPORT MODAL

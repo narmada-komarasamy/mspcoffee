@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Camera, CheckCircle2, Loader2, Save, Sparkles, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { FleetRecord } from "./RecordModal";
+import { previousOdometerRow, startingKmFor } from "@/lib/fleet/odometer";
 
 type Row = FleetRecord & { id: number };
 
@@ -73,18 +74,11 @@ function derive(form: Draft): Draft {
 }
 
 function nearestPriorRow(rows: Row[], draft: Draft) {
-  const vehicleRows = rows
-    .filter((row) => row.vehicle_id === draft.vehicle_id)
-    .sort((a, b) => `${a.date}-${a.id}`.localeCompare(`${b.date}-${b.id}`));
-
-  const beforeDate = vehicleRows.filter((row) => row.date <= draft.date);
-  return beforeDate.at(-1) ?? vehicleRows.at(-1) ?? null;
+  return previousOdometerRow(rows, draft.vehicle_id, draft.date);
 }
 
 function priorClosingKm(rows: Row[], draft: Draft, vehicle_id = draft.vehicle_id, date = draft.date) {
-  if (!vehicle_id) return 0;
-  const prior = nearestPriorRow(rows, { ...draft, vehicle_id, date });
-  return prior ? n(prior.closing_km) : 0;
+  return startingKmFor(rows, vehicle_id, date);
 }
 
 function buildValidation(rows: Row[], draft: Draft): Validation[] {
@@ -174,14 +168,14 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
 
   const setDate = (date: string) => {
     setDraft((prev) => {
-      const starting_km = n(prev.starting_km) > 0 ? prev.starting_km : priorClosingKm(rows, prev, prev.vehicle_id, date);
+      const starting_km = date === prev.date ? prev.starting_km : priorClosingKm(rows, prev, prev.vehicle_id, date);
       return derive({ ...prev, date, starting_km });
     });
   };
 
   const setVehicle = (vehicle_id: string) => {
     setDraft((prev) => {
-      const starting_km = n(prev.starting_km) > 0 ? prev.starting_km : priorClosingKm(rows, prev, vehicle_id, prev.date);
+      const starting_km = vehicle_id === prev.vehicle_id ? prev.starting_km : priorClosingKm(rows, prev, vehicle_id, prev.date);
       return derive({ ...prev, vehicle_id, starting_km });
     });
   };
@@ -219,12 +213,13 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
       const nextVehicle = parsed.vehicle_id || draft.vehicle_id;
       const parsedStartingKm = Number(parsed.starting_km) || 0;
       const fallbackStartingKm = priorClosingKm(rows, draft, nextVehicle, nextDate);
+      const retainedStartingKm = nextVehicle === draft.vehicle_id && nextDate === draft.date ? draft.starting_km : 0;
       const next = derive({
         ...draft,
         date: nextDate,
         vehicle_id: nextVehicle,
         fuel_type: FUEL_TYPES.includes(parsed.fuel_type) ? parsed.fuel_type : draft.fuel_type,
-        starting_km: parsedStartingKm || fallbackStartingKm || draft.starting_km,
+        starting_km: retainedStartingKm || fallbackStartingKm || parsedStartingKm,
         closing_km: Number(parsed.closing_km) || draft.closing_km,
         fuel_filled_l: Number(parsed.fuel_filled_l) || draft.fuel_filled_l,
         fuel_cost: Number(parsed.fuel_cost) || draft.fuel_cost,
@@ -408,8 +403,11 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className={labelCls}>Starting KM</label>
-                <input type="number" min="0" value={draft.starting_km} onChange={num("starting_km")} className={inputCls} />
+                <label htmlFor="photo-starting-km" className={labelCls}>Starting KM</label>
+                <input id="photo-starting-km" type="number" min="0" value={draft.starting_km} onChange={num("starting_km")} className={inputCls} />
+                <p className="mt-1 text-xs text-white/50">{priorClosingKm(rows, draft) > 0
+                  ? "Uses the previous closing KM. You can edit it."
+                  : "No earlier closing KM found. Enter the starting KM."}</p>
               </div>
               <div>
                 <label className={labelCls}>Closing KM</label>

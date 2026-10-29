@@ -1,0 +1,37 @@
+export const BILL_BUCKET = 'fleet-maintenance-bills';
+// Leave room for multipart fields within the hosting request limit.
+export const MAX_BILL_BYTES = 4 * 1024 * 1024;
+export const BILL_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+export function billFileError(file: { size: number; type: string }) {
+  if (!BILL_TYPES.includes(file.type)) return 'Choose a JPG, PNG, WebP photo or PDF bill.';
+  if (!file.size) return 'The bill file is empty.';
+  if (file.size > MAX_BILL_BYTES) return 'The bill must be 4 MB or smaller.';
+  return '';
+}
+
+export function matchesMaintenanceSearch(record: {
+  vehicle_id: string;
+  maintenance_performed: string;
+  remarks: string;
+  maintenance_vendor?: string | null;
+  maintenance_bill_text?: string | null;
+}, query: string) {
+  const text = [record.vehicle_id, record.maintenance_performed, record.remarks,
+    record.maintenance_vendor, record.maintenance_bill_text].join(' ').normalize('NFKC').toLowerCase();
+  return query.normalize('NFKC').toLowerCase().trim().split(/\s+/).every(term => text.includes(term));
+}
+
+export function cleanBillExtraction(value: Record<string, unknown>) {
+  const string = (v: unknown, max = 500) => typeof v === 'string' ? v.trim().slice(0, max) : '';
+  const total = value.total;
+  const date = string(value.date);
+  return {
+    total: typeof total === 'number' && Number.isFinite(total) && total >= 0 ? total : null,
+    date: /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(date)) && new Date(date).toISOString().slice(0, 10) === date ? date : '',
+    workshop: string(value.workshop),
+    maintenance_items: string(value.maintenance_items, 10000),
+    bill_text: string(value.bill_text, 50000),
+    notes: string(value.notes, 1000),
+  };
+}

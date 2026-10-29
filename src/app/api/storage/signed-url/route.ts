@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/api';
 
 const BUCKET_ROLES: Record<string, string[]> = {
+  'fleet-maintenance-bills': ['admin', 'supervisor', 'ceo'],
   'board-meetings': ['admin', 'supervisor', 'ceo'],
   'estate-staff-meetings': ['admin', 'supervisor', 'ceo'],
   'employee-center': ['admin', 'hr', 'supervisor'],
