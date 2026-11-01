@@ -268,6 +268,22 @@ const navItems: NavItem[] = [
       { label: 'Email Activity',     href: '/admin-controls/email-activity' },
     ],
   },
+  {
+    label: 'HillTiller Sales',
+    href: '/hilltiller-sales',
+    icon: ShoppingCart,
+    roles: ['admin'],
+    children: [
+      { label: 'Sales Management Menu', href: '/hilltiller-sales' },
+      { label: 'Data Import', href: '/hilltiller-sales/import' },
+      { label: 'Dashboard', href: '/hilltiller-sales/dashboard' },
+      { label: 'Shopify Connection', href: '/hilltiller-sales/connection' },
+      { label: 'Sync Status', href: '/hilltiller-sales/sync-status' },
+      { label: 'Daily Reports', href: '/hilltiller-sales/reports' },
+      { label: 'Recipients', href: '/hilltiller-sales/recipients' },
+      { label: 'Alert Settings', href: '/hilltiller-sales/alerts' },
+    ],
+  },
 ];
 
 const REQUIRED_ROLE_PAGES: Record<string, string[]> = {

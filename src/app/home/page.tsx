@@ -48,8 +48,8 @@ const CARDS = [
     photoBg: '#0a0a0a',
     objectFit: 'cover' as const,
     sub: 'Sales Management',
-    href: null,
-    active: false,
+    href: '/hilltiller-sales',
+    active: true,
   },
 ];
 

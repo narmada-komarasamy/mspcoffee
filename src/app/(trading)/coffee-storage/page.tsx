@@ -281,7 +281,7 @@ export default function CoffeeStoragePage() {
           ["overview", "📊 Overview"],
           ["yard",     "🌾 Parchment Yard", "Sheet 1"],
           ["milling",  "⚙️ Milling"],
-          ["green",       "☕ Green Store",          "Sheet 2"],
+          ["green",       "☕ Green Store"],
           ["blends",      "🧪 Blends"],
           ["sales",    "🌍 Sales"],
           ["audit",    "📋 Audit Log"],
@@ -673,11 +673,11 @@ function OverviewTab({ batches, greenLots, sales, setTab }: {
   const greenCount  = greenLots.filter(g => g.status === "in-stock").length;
   const soldYTD     = sales.filter(s => s.date?.startsWith(new Date().getFullYear().toString())).reduce((a,s)=>a+n(s.kg),0);
 
-  const flowSteps: { icon: string; label: string; sub: string; value: string; color: string; tab: Tab }[] = [
+  const flowSteps: { icon: string; label: string; sub?: string; value: string; color: string; tab: Tab }[] = [
     { icon: "🌿", label: "Cherry",        sub: "Field harvest",     value: `${batches.length} lots`,         color: "#2ecc71", tab: "yard"    },
     { icon: "🌾", label: "Parchment Yard", sub: "Sheet 1",          value: `${yardCount} on yard`,           color: "#f5a623", tab: "yard"    },
     { icon: "⚙️",  label: "Milling",       sub: "In transit",        value: `${millingCount} dispatched`,     color: "#1fc8c8", tab: "milling" },
-    { icon: "☕", label: "Green Store",   sub: "Sheet 2",            value: `${greenCount} in stock`,         color: "#9b59b6", tab: "green"   },
+    { icon: "☕", label: "Green Store",                                value: `${greenCount} in stock`,         color: "#9b59b6", tab: "green"   },
     { icon: "🌍", label: "Sales",          sub: "Exporters / Cafés", value: `${fmtKg(soldYTD)} sold YTD`,    color: "#3498db", tab: "sales"   },
   ];
 
@@ -721,7 +721,7 @@ function OverviewTab({ batches, greenLots, sales, setTab }: {
             <div className={css.flowTopBorder} style={{ background: step.color }} />
             <div className={css.flowIcon}>{step.icon}</div>
             <div className={css.flowLabel}>{step.label}</div>
-            <div className={css.flowSub}>{step.sub}</div>
+            {step.sub && <div className={css.flowSub}>{step.sub}</div>}
             <div className={css.flowValue} style={{ color: step.color, marginTop: 6 }}>{step.value}</div>
           </div>
         ))}
