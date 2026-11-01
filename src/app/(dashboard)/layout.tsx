@@ -33,6 +33,7 @@ import {
   Maximize2,
   Minimize2,
   CalendarDays,
+  BookOpen,
 } from 'lucide-react';
 import {
   EMPLOYEE_PORTAL_PEOPLE,
@@ -87,6 +88,7 @@ function employeeSectionLink(employeeSlug: string, section: { label: string; slu
 }
 
 const navItems: NavItem[] = [
+ { label: 'User Guides', href: '/user-guides', icon: BookOpen, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
  { label: 'Rain Gauge', href: '/rainfall', icon: CloudRain, roles: ['admin', 'supervisor', 'worker', 'ceo'],
  children: [
  { label: 'Rainfall Infographic', href: '/rainfall/infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },

@@ -73,6 +73,7 @@ const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employ
 });
 
 export const NAV_ITEMS: NavItemDef[] = [
+ { label: 'User Guides', href: '/user-guides', iconName: 'BookOpen', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
  { label: 'Rain Gauge', href: '/rainfall', iconName: 'CloudRain', roles: ['admin', 'supervisor', 'worker', 'ceo'],
   children: [
   { label: 'Rainfall Infographic', href: '/rainfall/infographic', roles: ['admin', 'supervisor', 'worker', 'ceo'] },
