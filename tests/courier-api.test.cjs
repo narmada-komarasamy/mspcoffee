@@ -1,0 +1,71 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const ts=require('typescript');
+const {NextResponse}=require('next/server');
+
+function load(file,dependencies){
+ const mod={exports:{}};
+ const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ new Function('exports','module','require',code)(mod.exports,mod,name=>{
+  if(name==='next/server')return {NextResponse};
+  if(name in dependencies)return dependencies[name];
+  throw Error('Unexpected import '+name);
+ });
+ return mod.exports;
+}
+const lib=load('src/lib/courier.ts',{});
+const id='aa6b7734-6782-4a93-ae73-5fcb380cf125';
+const uuid={UUID_RE:/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i};
+const input={id,recipientName:'Confirmed recipient',courier:'DHL',sent:'2025-07-02',status:'Not recorded',paymentStatus:'Not recorded',cost:''};
+function route(auth){return load('src/app/api/courier/route.ts',{'@/lib/auth/api':uuid,'@/lib/courier':lib,'./_auth':{courierAuth:auth}});}
+function request(data){return new Request('http://localhost/api/courier',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});}
+
+test('courier handlers require authentication before touching the database',async()=>{
+ const calls=[];const handlers=route(async(_request,write)=>{calls.push(!!write);return {error:NextResponse.json({error:'Unauthorized'},{status:401})};});
+ assert.equal((await handlers.GET(new Request('http://localhost/api/courier'))).status,401);
+ assert.equal((await handlers.POST(request(input))).status,401);
+ assert.deepEqual(calls,[false,true]);
+});
+
+test('history API applies the starting date before pagination and returns every page',async()=>{
+ const seen=[];const shipments=Array.from({length:503},(_,i)=>({id:String(i),data:{sent:'2025-04-01',recipientName:'Package '+i}}));
+ const supabase={from(table){const q={select(){return q},gte(key,date){seen.push([key,date]);return q},order(){return q},async range(start,end){return {data:table==='courier_shipments'?shipments.slice(start,end+1):[],error:null}}};return q;}};
+ const response=await route(async()=>({supabase,user:{id:'tester'}})).GET(new Request('http://localhost/api/courier'));
+ assert.equal(response.status,200);assert.equal((await response.json()).shipments.length,503);
+ assert.deepEqual(seen,[['data->>sent','2025-04-01'],['data->>sent','2025-04-01']]);
+ assert.equal(response.headers.get('Cache-Control'),'private, no-store');
+});
+
+test('editing uses database provenance and passes the concurrency token to the audited save',async()=>{
+ let args;
+ const previous={source_ref:'register:row-3',data:{confirmedBy:'Ashok',registerPage:6,registerRow:3,sourceNotes:'Original note'}};
+ const supabase={from(){return {select(){return this},eq(){return this},async maybeSingle(){return {data:previous,error:null}}}},async rpc(name,payload){args={name,...payload};return {data:id,error:null}}};
+ const response=await route(async()=>({supabase,user:{id:'tester'}})).POST(request({...input,isNew:false,updatedAt:'2026-11-01T01:00:00Z',confirmedBy:'Spoofed',registerPage:99}));
+ assert.equal(response.status,200);assert.equal(args.p_data.confirmedBy,'Ashok');assert.equal(args.p_data.registerPage,6);assert.equal(args.p_expected,'2026-11-01T01:00:00Z');assert.equal(args.p_actor,'tester');
+});
+
+test('invalid date or forged historical metadata cannot reach the save function',async()=>{
+ let saves=0;
+ const supabase={from(){return {select(){return this},eq(){return this},async maybeSingle(){return {data:null,error:null}}}},async rpc(){saves++;throw Error('Must not save')}};
+ const handlers=route(async()=>({supabase,user:{id:'tester'}}));
+ assert.equal((await handlers.POST(request({...input,sent:'2025-03-31'}))).status,400);
+ assert.equal((await handlers.POST(request({...input,courier:'Hand delivered',sourceRef:'forged',deliveredBy:''}))).status,400);
+ assert.equal(saves,0);
+});
+
+test('database conflicts return an actionable conflict response',async()=>{
+ const supabase={from(){return {select(){return this},eq(){return this},async maybeSingle(){return {data:null,error:null}}}},async rpc(){return {data:null,error:{code:'23505'}}}};
+ const response=await route(async()=>({supabase,user:{id:'tester'}})).POST(request(input));
+ assert.equal(response.status,409);assert.match((await response.json()).error,/already exist/);
+});
+
+test('concurrent receipt linking cannot overwrite another edit and cleans up the new upload',async()=>{
+ let removed,version;
+ const store={async upload(){return {error:null}},async remove(paths){removed=paths;return {error:null}}};
+ const supabase={storage:{from(){return store}},from(){return {select(){return this},eq(key,value){if(key==='updated_at')version=value;return this},async single(){return {data:{id,receipt_path:null,updated_at:'version-1'}}},update(){return this},async maybeSingle(){return {data:null,error:null}}}}};
+ const handlers=load('src/app/api/courier/receipt/route.ts',{'@/lib/auth/api':uuid,'@/lib/courier':lib,'../_auth':{courierAuth:async()=>({supabase,user:{id:'tester'}})}});
+ const form=new FormData();form.set('id',id);form.set('file',new File(['receipt fixture'],'receipt.pdf',{type:'application/pdf'}));
+ const response=await handlers.POST(new Request('http://localhost/api/courier/receipt',{method:'POST',body:form}));
+ assert.equal(response.status,409);assert.equal(version,'version-1');assert.equal(removed.length,1);assert(removed[0].startsWith(id+'/'));
+});

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:courier": "node --test tests/courier.test.cjs tests/courier-api.test.cjs tests/courier-reconciliation.test.cjs tests/courier-reconciliation-api.test.cjs tests/courier-bills.test.cjs",
+    "check:courier": "npm run test:courier && next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

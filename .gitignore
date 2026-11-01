@@ -42,3 +42,9 @@ next-env.d.ts
 
 # Data backups
 /backups/
+
+# Private source documents kept beside the project, never application source.
+/*.pdf
+/*.rar
+/*.tiff
+/private-inputs/

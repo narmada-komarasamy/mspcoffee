@@ -17,13 +17,13 @@ export async function POST(request:Request){
  const form=await request.formData(),file=form.get('file'),id=String(form.get('id')||'');
  if(!UUID_RE.test(id)||!(file instanceof File))return NextResponse.json({error:'Choose a shipment and receipt.'},{status:400});
  const invalid=fileError(file);if(invalid)return NextResponse.json({error:invalid},{status:400});
- const {data:existing}=await auth.supabase.from('courier_shipments').select('id,receipt_path').eq('id',id).single();
+ const {data:existing}=await auth.supabase.from('courier_shipments').select('id,receipt_path,updated_at').eq('id',id).single();
  if(!existing)return NextResponse.json({error:'Save the shipment first.'},{status:404});
  const ext:Record<string,string>={'application/pdf':'pdf','image/png':'png','image/jpeg':'jpg','image/webp':'webp'};
  const path=`${id}/${crypto.randomUUID()}.${ext[file.type]}`;
  const {error:upload}=await auth.supabase.storage.from(BUCKET).upload(path,await file.arrayBuffer(),{contentType:file.type,upsert:false});
  if(upload)return NextResponse.json({error:'Receipt upload failed. The shipment is saved; retry the receipt upload.'},{status:500});
- const {error}=await auth.supabase.from('courier_shipments').update({receipt_path:path,updated_at:new Date().toISOString()}).eq('id',id);
- if(error){await auth.supabase.storage.from(BUCKET).remove([path]);return NextResponse.json({error:'Receipt could not be linked. Retry the upload.'},{status:500})}
+ const {data:linked,error}=await auth.supabase.from('courier_shipments').update({receipt_path:path,updated_at:new Date().toISOString()}).eq('id',id).eq('updated_at',existing.updated_at).select('id').maybeSingle();
+ if(error||!linked){await auth.supabase.storage.from(BUCKET).remove([path]);return NextResponse.json({error:'Receipt could not be linked because the shipment changed or saving failed. Reload and retry the upload.'},{status:error?500:409})}
  return NextResponse.json({path});
 }

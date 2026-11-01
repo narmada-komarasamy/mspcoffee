@@ -1,0 +1,20 @@
+# Local dependencies and generated build output
+node_modules
+.next
+.git
+.vercel
+
+# Credentials and local configuration
+.env*
+*.pem
+
+# Private bills, photographed registers and operational backups
+/*.pdf
+/*.rar
+/*.tiff
+backups
+private-inputs
+
+# Local design/review material
+previews
+/courier-bill-preview.html
