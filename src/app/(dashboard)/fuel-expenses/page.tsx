@@ -557,6 +557,9 @@ export default function FleetPage() {
   return (
     <div ref={pageRef} className={s.page} style={{} as React.CSSProperties}>
       <div className={s.content}>
+        <div className={s.guideBar}>
+          <Link href="/user-guides/fleet-fuel" className={s.guideLink}>How to use this page →</Link>
+        </div>
 
         {/* ── Top info bar ─────────────────────────────────────────────────────── */}
         <div className={s.topBar}>
@@ -571,7 +574,6 @@ export default function FleetPage() {
             <span className={s.topBarDate}>{lastRefreshed || "—"}</span>
           </div>
           <div className={s.topBarRight}>
-            <Link href="/user-guides/fleet-fuel" className={s.refreshBtn}>How to use this page →</Link>
             <button className={s.uploadBtn} onClick={() => setShowUpload(true)}>
               <Upload className="h-3.5 w-3.5" /> Upload Excel
             </button>
