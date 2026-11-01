@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estate Stock &amp; Storage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --forest:#1b4a1b; --green:#2d6e2d; --accent:#4a9e4a; --gold:#e8c84a;
+  --ink:#1a1a1a; --muted:#6b7280; --line:#e5dfc8; --cream:#fdf8ee; --pale:#f5eedc;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font:14px/1.5 'Exo 2',system-ui,sans-serif}
+button{cursor:pointer}
+input,select,textarea{font:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--green);outline:2px solid #22603925}
+
+.content{max-width:1480px;margin:auto;padding:22px 36px 48px}
+.breadcrumb{font-size:12px;color:var(--muted);margin-bottom:13px}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-family:'Cormorant Garamond',Georgia,serif;color:var(--forest);font-weight:700;font-size:34px;letter-spacing:-.9px;margin:0}
+.heading p{margin:2px 0 0;color:var(--muted);font-size:12px}
+p{margin:0;color:var(--muted)}
+
+.button{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 14px;border-radius:8px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;text-decoration:none}
+.button.primary{background:var(--forest);color:#fff;border-color:var(--forest)}
+.button.small{padding:5px 9px;font-size:12px}
+.button:hover{filter:brightness(.96)}
+.button.danger{background:#fff;color:#a34e32;border-color:#e8c9bf}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:21px}
+.stat{border:1px solid var(--line);border-top:3px solid var(--accent);background:#fff;border-radius:12px;padding:16px 19px;display:flex;align-items:center;justify-content:space-between}
+.stat label{color:var(--muted);font-size:12px}
+.stat strong{display:block;font-size:28px;letter-spacing:-.8px;color:var(--forest)}
+.stat .symbol{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--pale);color:var(--green);font-size:19px}
+.stat .sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:21px;box-shadow:0 2px 3px #23312703}
+.cardhead{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h2{font-size:17px;color:var(--forest);margin:0;font-weight:700}
+.cardhead p{font-size:12px;margin-top:3px}
+.sectionlabel{font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:var(--accent);font-weight:700;margin-bottom:13px}
+
+/* Estate grid */
+.estates{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;padding:22px}
+.estate{border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:var(--cream)}
+.estate h3{margin:0 0 2px;font-size:15px;color:var(--forest);font-weight:700}
+.estate .kind{font-size:11px;color:var(--muted);margin-bottom:12px}
+.estate dl{display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:12px;margin:0}
+.estate dt{color:var(--muted)}
+.estate dd{margin:0;font-weight:600;text-align:right}
+.estate dd small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:1px}
+.dot.warn{background:var(--gold)}
+
+/* Toolbar + tables */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toolbar input{width:230px}
+.toolbar select{width:160px}
+.toolbar input,.toolbar select{width:auto}
+label{display:block;font-size:12px;font-weight:600;margin-bottom:5px}
+input,select,textarea{width:100%;border:1px solid #d8dfd4;border-radius:6px;padding:9px 11px;background:#fff;color:var(--ink);min-height:40px}
+textarea{resize:vertical;min-height:64px}
+.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left}
+th{background:#f8faf6;padding:11px 20px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#6e7e69;font-weight:650}
+td{padding:14px 20px;border-top:1px solid #edf0e9;font-size:12px;vertical-align:top}
+td strong{font-size:13px}
+td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--green);font-weight:600}
+.tablefoot{padding:12px 22px;color:var(--muted);font-size:11px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+.badge{display:inline-block;padding:4px 9px;border-radius:15px;background:#f6eedb;color:#8d6c24;font-size:10px;font-weight:650}
+.badge.InTransit{background:#eaf0fa;color:#3e6598}
+.badge.Delivered,.badge.InStock,.badge.Settled{background:#eaf4e8;color:#3d733a}
+.badge.AwaitingReturn,.badge.InTransit{background:#eaf0fa;color:#3e6598}
+.badge.Returned,.badge.Damaged,.badge.Cancelled{background:#faeae4;color:#a34e32}
+.badge.Reserved,.badge.Maintained,.badge.OutOfService{background:#f6eedb;color:#8d6c24}
+
+.billchip{display:inline-flex;align-items:center;gap:6px;border:1px dashed #b5cbb1;background:#fff;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--forest);text-decoration:none}
+.billchip small{color:var(--muted);font-weight:400}
+.linkbtn{border:0;padding:0;background:none;color:var(--accent);font-size:11px;text-decoration:underline;cursor:pointer}
+
+/* Forms */
+.formbody{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:25px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.full{grid-column:1/-1}
+.hint{font-size:11px;color:var(--muted);margin-top:5px}
+.formfooter{padding:14px 22px;border-top:1px solid var(--line);background:#fafbf8;border-radius:0 0 12px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.formfooter p{font-size:11px}
+.error{color:#ad382c;font-size:12px;padding:0 22px 12px}
+
+/* Flow strip (out vs in) */
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;padding:18px 22px;background:var(--pale);border-radius:0 0 12px 12px}
+.flowcol{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-height:96px}
+.flowcol h4{margin:0 0 8px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:700}
+.flowrow{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:7px 0;border-top:1px solid #edf0e9}
+.flowrow:first-of-type{border-top:0}
+.arrowcol{display:grid;place-items:center;color:var(--green);font-size:22px;font-weight:700}
+
+.notice{padding:11px 15px;border:1px dashed #c7d4be;border-radius:7px;color:#63735b;font-size:11px;margin-bottom:21px}
+.notice strong{color:var(--forest)}
+.empty{text-align:center;padding:35px;color:var(--muted)}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--forest);color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 8px 30px #0002;z-index:20;font-size:13px;max-width:400px;display:none}
+#toast.err{background:#7a271e}
+
+dialog{border:1px solid var(--line);border-radius:12px;padding:0;max-width:640px;width:92%;box-shadow:0 20px 80px #0003}
+dialog::backdrop{background:#17281755}
+
+@media(max-width:1100px){.stats{grid-template-columns:1fr 1fr}.formbody{grid-template-columns:1fr}}
+@media(max-width:700px){.content{padding:16px 14px}h1{font-size:24px}.stats{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.arrowcol{display:none}}
+</style>
+</head>
+<body>
+<main><div class="content">
+<div id="loadError" class="notice" role="alert" hidden></div>
+<div class="breadcrumb">Employee Portal &nbsp;/&nbsp; Ramesh &nbsp;/&nbsp; Estate Stock &amp; Storage</div>
+
+<div class="heading">
+  <div><h1>Estate Stock &amp; Storage</h1><p>Indent out/in between estates · purchase invoices · stock balances</p></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="button" id="openInvoice">+ Upload invoice</button>
+    <button class="button primary" id="openIndent">+ New indent</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div><label>Stock items</label><strong id="statItems">0</strong><div class="sub" id="statItemsSub">across estates</div></div><div class="symbol">▣</div></div>
+  <div class="stat"><div><label>Indents in transit</label><strong id="statTransit">0</strong><div class="sub">outbound + awaiting return</div></div><div class="symbol">⇄</div></div>
+  <div class="stat"><div><label>Settled indents</label><strong id="statSettled">0</strong><div class="sub">balances offset</div></div><div class="symbol">✓</div></div>
+  <div class="stat"><div><label>Invoices on file</label><strong id="statInvoices">0</strong><div class="sub">scanned bills viewable</div></div><div class="symbol">🧾</div></div>
+</div>
+
+<!-- Estate stock overview -->
+<section class="card" id="stockCard">
+  <div class="cardhead"><div><h2>Estate stock</h2><p>Current stock lines by estate — sprayers, harvesters, tables, silos and equipment</p></div>
+    <button class="button small" id="openItem">+ Add stock item</button></div>
+  <div class="sectionlabel" style="padding:20px 22px 0">Stock snapshot</div>
+  <div class="estates" id="estateGrid"><div class="empty">Loading stock…</div></div>
+</section>
+
+<!-- Indent out / in -->
+<section class="card">
+  <div class="cardhead"><div><h2>Indent out / in — estate transfers</h2><p>Signed indent notes; outbound and inward entries offset each other so balances settle</p></div>
+    <div class="toolbar">
+      <input type="text" id="indentSearch" placeholder="Search item or number…" style="width:220px">
+      <select id="indentEstate"><option value="">All estates</option></select>
+      <select id="indentStatus">
+        <option value="">All statuses</option>
+        <option>In Transit</option><option>Delivered</option><option>Settled</option><option>Returned</option><option>Cancelled</option>
+      </select>
+    </div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Indent no.</th><th>Date</th><th>From estate</th><th>To estate</th><th>Item</th><th>Qty</th><th>Status</th><th>Signed</th><th></th></tr></thead>
+      <tbody id="indentBody"><tr><td colspan="9" class="empty">Loading indents…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tablefoot"><span id="indentCount"></span><span>Outbound at sender pairs with the inward at the receiver; when both legs settle, the item returns to In Stock.</span></div>
+</section>
+
+<div class="flow">
+  <div class="flowcol"><h4>Outbound — in transit</h4><div id="flowOut"><div class="empty" style="padding:12px">None</div></div></div>
+  <div class="arrowcol">⟷</div>
+  <div class="flowcol"><h4>Inward — awaiting return</h4><div id="flowIn"><div class="empty" style="padding:12px">None</div></div></div>
+</div>
+
+<!-- Invoices -->
+<section class="card">
+  <div class="cardhead"><div><h2>Purchase invoices</h2><p>Scanned bills filed against stock — click a bill to view the original</p></div>
+    <div class="toolbar">
+      <select id="invoiceEstate"><option value="">All estates</option></select>
+    </div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Invoice no.</th><th>Date</th><th>Supplier</th><th>Item</th><th>Estate</th><th>Amount</th><th>Attachment</th></tr></thead>
+      <tbody id="invoiceBody"><tr><td colspan="7" class="empty">Loading invoices…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tablefoot"><span id="invoiceCount"></span><span>Bills stay linked to the estate they were purchased for.</span></div>
+</section>
+
+<section class="notice">
+  <strong>How the flow works:</strong> an indent is entered once at the sending estate (outward). The matching inward is expected at the receiving estate.
+  When both sides are signed and the indent is marked <strong>Settled</strong>, matching stock lines at the receiving estate move back to <strong>In Stock</strong> and the balances offset.
+  New purchases are filed as invoices with the scanned bill attached.
+</section>
+</div></main>
+
+<!-- New indent dialog -->
+<dialog id="indentDialog">
+  <div class="cardhead" style="border-radius:12px 12px 0 0"><div><h2 id="indentDialogTitle">New indent</h2><p>Enter the outward indent. The inward leg is expected at the receiving estate.</p></div></div>
+  <form id="indentForm" class="formbody">
+    <section>
+      <div class="sectionlabel">01 · Transfer</div>
+      <div class="grid">
+        <div><label for="iNo">Indent no. (blank = auto)</label><input id="iNo" name="no" maxlength="40"></div>
+        <div><label for="iDate">Indent date *</label><input id="iDate" name="date" type="date" required></div>
+        <div><label for="iFrom">From estate *</label><select id="iFrom" name="fromEstate" required></select></div>
+        <div><label for="iTo">To estate *</label><select id="iTo" name="toEstate" required></select></div>
+        <div class="full"><label for="iItem">Item *</label><input id="iItem" name="item" required placeholder="e.g. Knapsack sprayers"></div>
+        <div><label for="iQty">Quantity</label><input id="iQty" name="quantity" type="number" min="0" step="0.001" value="0"></div>
+        <div><label for="iWt">Weight (kg)</label><input id="iWt" name="weightKg" type="number" min="0" step="0.001" value="0"></div>
+        <div class="full"><label for="iStatus">Status</label><select id="iStatus" name="status"><option>In Transit</option><option>Delivered</option><option>Settled</option><option>Returned</option><option>Cancelled</option></select></div>
+        <div class="full"><label for="iReceived">Received by</label><input id="iReceived" name="receivedBy" placeholder="Name of the person who signed inward"></div>
+        <div class="full"><label for="iNotes">Notes</label><textarea id="iNotes" name="notes" placeholder="Condition, bay number, anything to flag"></textarea></div>
+      </div>
+    </section>
+  </form>
+  <div class="formfooter">
+    <p id="indentFormError" class="error" style="padding:0" hidden></p>
+    <div style="display:flex;gap:10px;margin-left:auto"><button type="button" class="button small" id="indentCancel">Cancel</button><button type="button" class="button primary" id="indentSave">Save indent</button></div>
+  </div>
+</dialog>
+
+<!-- Stock item dialog -->
+<dialog id="itemDialog">
+  <div class="cardhead" style="border-radius:12px 12px 0 0"><div><h2 id="itemDialogTitle">Add stock item</h2><p>One line of the estate stock sheet.</p></div></div>
+  <form id="itemForm" class="formbody">
+    <div class="grid full">
+      <div class="full"><label for="sItem">Item *</label><input id="sItem" name="item" required></div>
+      <div><label for="sEstate">Estate *</label><select id="sEstate" name="estate" required></select></div>
+      <div><label for="sUnit">Unit</label><select id="sUnit" name="unit"><option>Nos</option><option>Kg</option><option>L</option><option>Set</option><option>Box</option><option>Bag</option><option>Other</option></select></div>
+      <div><label for="sQty">Quantity</label><input id="sQty" name="quantity" type="number" min="0" step="0.001" value="0"></div>
+      <div><label for="sWt">Weight (kg)</label><input id="sWt" name="weightKg" type="number" min="0" step="0.001" value="0"></div>
+      <div><label for="sStatus">Status</label><select id="sStatus" name="status"><option>In Stock</option><option>In Transit</option><option>Reserved</option><option>Maintained</option><option>Damaged</option><option>Out of Service</option></select></div>
+      <div><label for="sLoc">Storage location</label><input id="sLoc" name="storage_location" placeholder="e.g. Bay 2, Moganad"></div>
+      <div class="full"><label for="sNotes">Notes</label><textarea id="sNotes" name="notes"></textarea></div>
+    </div>
+  </form>
+  <div class="formfooter">
+    <p id="itemFormError" class="error" style="padding:0" hidden></p>
+    <div style="display:flex;gap:10px;margin-left:auto"><button type="button" class="button small" id="itemCancel">Cancel</button><button type="button" class="button primary" id="itemSave">Save item</button></div>
+  </div>
+</dialog>
+
+<!-- Invoice dialog -->
+<dialog id="invoiceDialog">
+  <div class="cardhead" style="border-radius:12px 12px 0 0"><div><h2 id="invoiceDialogTitle">Upload invoice</h2><p>File a purchase bill against an estate. Attach the scanned bill (PDF/JPG/PNG/WebP, up to 4 MB).</p></div></div>
+  <form id="invoiceForm" class="formbody">
+    <div class="grid full">
+      <div><label for="vNo">Invoice no. *</label><input id="vNo" name="no" required></div>
+      <div><label for="vDate">Invoice date *</label><input id="vDate" name="date" type="date" required></div>
+      <div class="full"><label for="vSupplier">Supplier *</label><input id="vSupplier" name="supplier" required></div>
+      <div class="full"><label for="vItem">Item purchased *</label><input id="vItem" name="item" required></div>
+      <div><label for="vEstate">Estate *</label><select id="vEstate" name="estate" required></select></div>
+      <div><label for="vAmount">Amount</label><input id="vAmount" name="amount" type="number" min="0" step="0.01" value="0"></div>
+      <div class="full"><label for="vFile">Scanned bill</label><input id="vFile" name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"><div class="hint">PDF, JPG, PNG or WebP · up to 4 MB</div></div>
+      <div class="full"><label for="vNotes">Notes</label><textarea id="vNotes" name="notes"></textarea></div>
+    </div>
+  </form>
+  <div class="formfooter">
+    <p id="invoiceFormError" class="error" style="padding:0" hidden></p>
+    <div style="display:flex;gap:10px;margin-left:auto"><button type="button" class="button small" id="invoiceCancel">Cancel</button><button type="button" class="button primary" id="invoiceSave">Save invoice</button></div>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+<script>
+const EST_STATE={estates:[],items:[],indents:[],invoices:[],editIndentId:null,editItemId:null,editInvoiceId:null,loading:false};
+const $=(id)=>document.getElementById(id);
+function esc(s){const d=document.createElement('i');d.textContent=s??'';return d.innerHTML}
+function toast(msg,err){const t=$('toast');t.textContent=msg;t.className=err?'err':'';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3200)}
+function fmtDate(d){if(!d)return '—';const p=String(d).slice(0,10);return p.split('-').reverse().join(' ')}
+function fmtMoney(n){return n==null?'—':'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function badge(status){const key=(status||'').replace(/\s+/g,'');return `<span class="badge ${esc(status)}">${esc(status)}</span>`}
+
+async function api(path,options){
+  const res=await fetch(path,Object.assign({credentials:'same-origin'},options));
+  let body;try{body=await res.json()}catch(_){body={}}
+  if(!res.ok)throw new Error(body.error||('Request failed ('+res.status+')'));
+  return body;
+}
+
+function estateOptions(selected){
+  return (EST_STATE.estates.length?EST_STATE.estates:[{name:'Moganad Estate'},{name:'Stanmore Estate'},{name:'Stanmore Hospital'},{name:'Orchardale Estate'},{name:'Hidden Falls Estate'}])
+    .map(e=>`<option${e.name===selected?' selected':''}>${esc(e.name)}</option>`).join('');
+}
+function refreshEstatePickers(){
+  ['iFrom','iTo','sEstate','vEstate','indentEstate','invoiceEstate'].forEach(id=>{
+    const el=$(id);if(!el)return;
+    const prev=el.value;
+    el.innerHTML=(id==='indentEstate'||id==='invoiceEstate')?'<option value="">All estates</option>':''+estateOptions(prev);
+  });
+  $('iFrom').innerHTML=estateOptions('');$('iTo').innerHTML=estateOptions('');
+}
+
+function renderStats(){
+  const transit=EST_STATE.indents.filter(i=>i.status==='In Transit'||i.status==='Delivered').length;
+  const settled=EST_STATE.indents.filter(i=>i.status==='Settled').length;
+  $('statItems').textContent=EST_STATE.items.length;
+  $('statItemsSub').textContent=`across ${new Set(EST_STATE.items.map(i=>i.estate)).size} estate(s)`;
+  $('statTransit').textContent=transit;
+  $('statSettled').textContent=settled;
+  $('statInvoices').textContent=EST_STATE.invoices.length;
+}
+
+function renderEstates(){
+  const grid=$('estateGrid');
+  if(!EST_STATE.items.length){grid.innerHTML='<div class="empty">No stock lines yet. Add the first line of an estate stock sheet.</div>';return}
+  const byEstate={};
+  EST_STATE.items.forEach(it=>{(byEstate[it.estate]=byEstate[it.estate]||[]).push(it)});
+  const inTransit=new Set(EST_STATE.indents.filter(i=>i.status==='In Transit').map(i=>i.to_estate));
+  grid.innerHTML=Object.keys(byEstate).sort().map(e=>{
+    const lines=byEstate[e];
+    const bays=new Set(lines.filter(l=>l.storage_location).map(l=>l.storage_location)).size;
+    const transiting=inTransit.has(e);
+    return `<div class="estate"><h3>${esc(e)}</h3><div class="kind">${lines.length} stock line(s)</div>
+      <dl>
+        <dt><span class="dot${transiting?' warn':''}"></span>Items</dt><dd>${lines.length}<small>${bays?bays+' storage location(s)':'no location set'}</small></dd>
+        <dt>Total qty</dt><dd>${lines.reduce((s,l)=>s+(Number(l.quantity)||0),0).toLocaleString('en-IN')}<small>tracked</small></dd>
+        ${transiting?`<dt>Indent expected</dt><dd style="color:var(--accent)">inbound in transit</dd>`:''}
+      </dl></div>`;
+  }).join('');
+}
+
+function renderIndents(){
+  const q=($('indentSearch').value||'').toLowerCase();
+  const e=($('indentEstate').value||'');
+  const st=($('indentStatus').value||'');
+  const rows=EST_STATE.indents.filter(i=>{
+    const hay=(i.indent_no+' '+i.item+' '+i.from_estate+' '+i.to_estate+' '+(i.status||'')).toLowerCase();
+    return (!q||hay.includes(q))&&(!e||i.from_estate===e||i.to_estate===e)&&(!st||i.status===st);
+  });
+  const body=$('indentBody');
+  if(!rows.length){body.innerHTML='<tr><td colspan="9" class="empty">No indents match. Use “New indent” to record an outward transfer.</td></tr>'}
+  else body.innerHTML=rows.map(i=>`<tr>
+    <td><span class="mono">${esc(i.indent_no)}</span></td>
+    <td>${fmtDate(i.indent_date)}</td>
+    <td>${esc(i.from_estate)}</td><td>${esc(i.to_estate)}</td>
+    <td><strong>${esc(i.item)}</strong>${i.notes?`<small>${esc(i.notes)}</small>`:''}</td>
+    <td>${Number(i.quantity).toLocaleString('en-IN')}${Number(i.weight_kg)?`<small>${Number(i.weight_kg)} kg</small>`:''}</td>
+    <td>${badge(i.status)}</td>
+    <td>${esc(i.signed_by)||'—'}</td>
+    <td><button class="linkbtn" data-act="indent-status" data-id="${i.id}">status</button>
+        <button class="linkbtn" data-act="indent-del" data-id="${i.id}" data-no="${esc(i.indent_no)}">del</button></td>
+  </tr>`).join('');
+  $('indentCount').textContent=rows.length+' indent'+(rows.length===1?'':'s')+' shown';
+  // flow strip
+  const out=EST_STATE.indents.filter(i=>i.status==='In Transit');
+  $('flowOut').innerHTML=out.length?out.map(i=>`<div class="flowrow"><div><strong>${i.quantity} × ${esc(i.item)}</strong><small>${esc(i.indent_no)} · ${fmtDate(i.indent_date)} · ${esc(i.from_estate)} → ${esc(i.to_estate)}</small></div>${badge(i.status)}</div>`).join(''):'<div class="empty" style="padding:12px">None</div>';
+  const inw=EST_STATE.indents.filter(i=>i.status==='Delivered');
+  $('flowIn').innerHTML=inw.length?inw.map(i=>`<div class="flowrow"><div><strong>${i.quantity} × ${esc(i.item)}</strong><small>${esc(i.indent_no)} · awaiting settlement at ${esc(i.to_estate)}</small></div>${badge('Awaiting return')}</div>`).join(''):'<div class="empty" style="padding:12px">None</div>';
+}
+
+function renderInvoices(){
+  const e=($('invoiceEstate').value||'');
+  const rows=EST_STATE.invoices.filter(v=>!e||v.estate===e);
+  const body=$('invoiceBody');
+  if(!rows.length){body.innerHTML='<tr><td colspan="7" class="empty">No invoices filed yet. Use “Upload invoice”.</td></tr>'}
+  else body.innerHTML=rows.map(v=>`<tr>
+    <td><span class="mono">${esc(v.invoice_no)}</span></td>
+    <td>${fmtDate(v.invoice_date)}</td>
+    <td>${esc(v.supplier)}</td>
+    <td><strong>${esc(v.item)}</strong></td>
+    <td>${esc(v.estate)}</td>
+    <td>${fmtMoney(v.amount)}</td>
+    <td>${v.attachment_path?`<a class="billchip" target="_blank" rel="noreferrer" href="/api/estate-stock/invoices/${v.id}?attachment=1">🧾 ${esc(v.attachment_name||'View bill')}<small></small></a>`:'<span style="color:var(--muted);font-size:11px">no attachment</span>'}
+        <button class="linkbtn" data-act="inv-del" data-id="${v.id}" data-no="${esc(v.invoice_no)}">del</button></td>
+  </tr>`).join('');
+  $('invoiceCount').textContent=rows.length+' invoice'+(rows.length===1?'':'s')+' shown';
+}
+
+async function loadAll(){
+  EST_STATE.loading=true;
+  try{
+    const [e,i,ind,inv]=await Promise.all([
+      api('/api/estate-stock/estates'),
+      api('/api/estate-stock/items'),
+      api('/api/estate-stock/indents'),
+      api('/api/estate-stock/invoices')
+    ]);
+    EST_STATE.estates=e.estates||[];EST_STATE.items=i.items||[];EST_STATE.indents=ind.indents||[];EST_STATE.invoices=inv.invoices||[];
+    refreshEstatePickers();renderStats();renderEstates();renderIndents();renderInvoices();
+  }catch(err){$('loadError').textContent='Could not load estate stock data: '+err.message;$('loadError').hidden=false}
+  EST_STATE.loading=false;
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  $('indentSearch').oninput=renderIndents;
+  $('indentEstate').onchange=renderIndents;
+  $('indentStatus').onchange=renderIndents;
+  $('invoiceEstate').onchange=renderInvoices;
+
+  document.body.addEventListener('click',async(e)=>{
+    const btn=e.target.closest('[data-act]');if(!btn)return;
+    e.preventDefault();
+    const act=btn.dataset.act,id=btn.dataset.id;
+    try{
+      if(act==='indent-status'){
+        const i=EST_STATE.indents.find(x=>x.id===id);if(!i)return;
+        const next=window.prompt(`Status for ${i.indent_no} — enter one of: In Transit, Delivered, Settled, Returned, Cancelled`,`i.status`);
+        if(!next)return;
+        const r=await api('/api/estate-stock/indents/'+id,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({...i,no:i.indent_no,date:i.indent_date,fromEstate:i.from_estate,toEstate:i.to_estate,item:i.item,quantity:i.quantity,weightKg:i.weight_kg,status:next.trim(),receivedBy:i.received_by,notes:i.notes})});
+        toast(r.settled?`Settled — ${r.offset.join(', ')} returned to In Stock.`:'Status updated.');
+        await loadAll();
+      }
+      if(act==='indent-del'){
+        if(!window.confirm(`Delete indent ${btn.dataset.no}? This cannot be undone.`))return;
+        await api('/api/estate-stock/indents/'+id,{method:'DELETE'});toast('Indent deleted.');await loadAll();
+      }
+      if(act==='inv-del'){
+        if(!window.confirm(`Delete invoice ${btn.dataset.no}? The attachment is removed too.`))return;
+        await api('/api/estate-stock/invoices/'+id,{method:'DELETE'});toast('Invoice deleted.');await loadAll();
+      }
+    }catch(err){toast(err.message,true)}
+  });
+
+  $('openIndent').onclick=()=>{$('indentForm').reset();$('iDate').valueAsDate=new Date();$('iFrom').innerHTML=estateOptions('');$('iTo').innerHTML=estateOptions('');$('indentDialogTitle').textContent='New indent';$('indentFormError').hidden=true;$('indentDialog').showModal()};
+  $('indentCancel').onclick=()=>$('indentDialog').close();
+  $('indentSave').onclick=async()=>{
+    const f=$('indentForm');const fd=new FormData(f);
+    const payload=Object.fromEntries(fd.entries());
+    try{
+      await api('/api/estate-stock/indents',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      $('indentDialog').close();toast('Indent recorded.');await loadAll();
+    }catch(err){const m=$('indentFormError');m.textContent=err.message;m.hidden=false}
+  };
+
+  $('openItem').onclick=()=>{$('itemForm').reset();$('sEstate').innerHTML=estateOptions('');$('itemDialogTitle').textContent='Add stock item';$('itemFormError').hidden=true;$('itemDialog').showModal()};
+  $('itemCancel').onclick=()=>$('itemDialog').close();
+  $('itemSave').onclick=async()=>{
+    const fd=new FormData($('itemForm'));
+    const payload=Object.fromEntries(fd.entries());
+    try{
+      await api('/api/estate-stock/items',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      $('itemDialog').close();toast('Stock item added.');await loadAll();
+    }catch(err){const m=$('itemFormError');m.textContent=err.message;m.hidden=false}
+  };
+
+  $('openInvoice').onclick=()=>{$('invoiceForm').reset();$('vDate').valueAsDate=new Date();$('vEstate').innerHTML=estateOptions('');$('invoiceDialogTitle').textContent='Upload invoice';$('invoiceFormError').hidden=true;$('invoiceDialog').showModal()};
+  $('invoiceCancel').onclick=()=>$('invoiceDialog').close();
+  $('invoiceSave').onclick=async()=>{
+    const f=$('invoiceForm');const fd=new FormData(f);
+    const payload=Object.fromEntries(fd.entries());
+    try{
+      const form=fd;if(payload.file instanceof File&&payload.file.size>0)form.append('file',payload.file);
+      const r=await api('/api/estate-stock/invoices',{method:'POST',body:form});
+      $('invoiceDialog').close();toast(r.attached?'Invoice saved with attachment.':'Invoice saved.');await loadAll();
+    }catch(err){const m=$('invoiceFormError');m.textContent=err.message;m.hidden=false}
+  };
+
+  await loadAll();
+});
+</script>
+</body>
+</html>

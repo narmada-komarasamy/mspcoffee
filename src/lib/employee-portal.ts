@@ -49,6 +49,12 @@ export const RAMESH_DIRECT_WORK_AREAS: EmployeePortalSection[] = [
   },
 ];
 
+export const RAMESH_ESTATE_STOCK_SECTION: EmployeePortalSection = {
+  label: 'Estate Stock & Storage',
+  slug: 'estate-stock-storage',
+  description: 'Indent out/in transfers between estates, purchase invoices, and estate stock balances.',
+};
+
 export const RAMESH_STORES_TOOLS: EmployeePortalTool[] = [
   {
     label: 'Estate Produce',

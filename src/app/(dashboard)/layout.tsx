@@ -33,12 +33,14 @@ import {
   Maximize2,
   Minimize2,
   CalendarDays,
+  BookOpen,
 } from 'lucide-react';
 import {
   EMPLOYEE_PORTAL_PEOPLE,
   EMPLOYEE_PRODUCTIVITY_SECTIONS,
   EMPLOYEE_PORTAL_ROLES,
   RAMESH_DIRECT_WORK_AREAS,
+  RAMESH_ESTATE_STOCK_SECTION,
   RAMESH_STORES_TOOLS,
 } from '@/lib/employee-portal';
 
@@ -87,6 +89,7 @@ function employeeSectionLink(employeeSlug: string, section: { label: string; slu
 }
 
 const navItems: NavItem[] = [
+ { label: 'User Guides', href: '/user-guides', icon: BookOpen, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
  { label: 'Rain Gauge', href: '/rainfall', icon: CloudRain, roles: ['admin', 'supervisor', 'worker', 'ceo'],
  children: [
  { label: 'Rainfall Infographic', href: '/rainfall/infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
@@ -124,6 +127,11 @@ const navItems: NavItem[] = [
          ...RAMESH_DIRECT_WORK_AREAS
            .filter((section) => section.slug === 'courier-tracking')
            .map((section) => employeeSectionLink(employee.slug, section)),
+         {
+           label: RAMESH_ESTATE_STOCK_SECTION.label,
+           href: `/employee-portal/ramesh/${RAMESH_ESTATE_STOCK_SECTION.slug}`,
+           roles: employeePortalRoles,
+         },
        );
      }
 

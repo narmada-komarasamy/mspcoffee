@@ -9,6 +9,7 @@ import {
   EMPLOYEE_PRODUCTIVITY_SECTIONS,
   EMPLOYEE_PORTAL_ROLES,
   RAMESH_DIRECT_WORK_AREAS,
+  RAMESH_ESTATE_STOCK_SECTION,
   RAMESH_STORES_TOOLS,
 } from '@/lib/employee-portal';
 
@@ -62,6 +63,11 @@ const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employ
       ...RAMESH_DIRECT_WORK_AREAS
         .filter((section) => section.slug === 'courier-tracking')
         .map((section) => employeeSectionLink(employee.slug, section)),
+      {
+        label: RAMESH_ESTATE_STOCK_SECTION.label,
+        href: `/employee-portal/ramesh/${RAMESH_ESTATE_STOCK_SECTION.slug}`,
+        roles: employeePortalRoles,
+      },
     );
   }
 
@@ -73,6 +79,7 @@ const employeePortalChildren: NavGroupDef[] = EMPLOYEE_PORTAL_PEOPLE.map((employ
 });
 
 export const NAV_ITEMS: NavItemDef[] = [
+ { label: 'User Guides', href: '/user-guides', iconName: 'BookOpen', roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
  { label: 'Rain Gauge', href: '/rainfall', iconName: 'CloudRain', roles: ['admin', 'supervisor', 'worker', 'ceo'],
   children: [
   { label: 'Rainfall Infographic', href: '/rainfall/infographic', roles: ['admin', 'supervisor', 'worker', 'ceo'] },
