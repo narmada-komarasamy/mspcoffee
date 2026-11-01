@@ -15,11 +15,11 @@ function load(file,dependencies){
 }
 const registry=load('src/lib/user-guides.ts',{});
 const req=(suffix='')=>new Request('http://localhost/api/user-guides/courier-tracking'+suffix);
-function handlers(status){
- const auth=async()=>status?{error:NextResponse.json({error:'Denied'},{status})}:{user:{id:'tester'}};
+function handlers(status, overrides={}){
+ const auth=async(_request,id)=>{ const code=overrides[id] ?? status; return code?{error:NextResponse.json({error:'Denied'},{status:code})}:{user:{id:'tester'}}; };
  return {
-  list:load('src/app/api/user-guides/route.ts',{'../courier/_auth':{courierAuth:auth},'@/lib/user-guides':registry}).GET,
-  asset:load('src/app/api/user-guides/[id]/route.ts',{'../../courier/_auth':{courierAuth:auth},'@/lib/user-guides':registry}).GET,
+  list:load('src/app/api/user-guides/route.ts',{'@/lib/user-guide-auth':{userGuideAuth:auth},'@/lib/user-guides':registry}).GET,
+  asset:load('src/app/api/user-guides/[id]/route.ts',{'@/lib/user-guide-auth':{userGuideAuth:auth},'@/lib/user-guides':registry}).GET,
  };
 }
 const context=(id='courier-tracking')=>({params:Promise.resolve({id})});
@@ -57,4 +57,33 @@ test('unknown guides and invalid page parameters cannot select arbitrary files',
  const h=handlers();
  assert.equal((await h.asset(req(),context('../README'))).status,404);
  for(const page of ['0','3','../../README.md'])assert.equal((await h.asset(req('?page='+encodeURIComponent(page)),context())).status,404);
+});
+
+
+test('each guide is listed and served only with its own feature permission',async()=>{
+ for(const [blocked,allowed] of [['courier-tracking','fleet-fuel'],['fleet-fuel','courier-tracking']]){
+  const h=handlers(0,{[blocked]:403});
+  const list=await (await h.list(req())).json();
+  assert.deepEqual(list.guides.map(guide=>guide.id),[allowed]);
+  assert.equal((await h.asset(req(),context(blocked))).status,403);
+  assert.equal((await h.asset(req(),context(allowed))).status,200);
+ }
+});
+test('Fleet guide serves its approved PDF and four pages, with strict page bounds',async()=>{
+ const h=handlers(),ctx=context('fleet-fuel');
+ const pdf=await h.asset(req('?download=1'),ctx);
+ assert.match(pdf.headers.get('Content-Disposition'),/MSP_Coffee_Fleet_Fuel_Guide.pdf/);
+ assert.equal(Buffer.from(await pdf.arrayBuffer()).subarray(0,4).toString(),'%PDF');
+ for(const page of [1,2,3,4])assert.equal((await h.asset(req('?page='+page),ctx)).status,200);
+ for(const page of ['0','5','01','-1','1.0','../README'])assert.equal((await h.asset(req('?page='+encodeURIComponent(page)),ctx)).status,404);
+});
+test('guide authorization dispatches to feature guards with read-only fleet access',async()=>{
+ const calls=[];
+ const auth=load('src/lib/user-guide-auth.ts',{
+  '@/app/api/courier/_auth':{courierAuth:async()=>{calls.push('courier');return {user:{id:'courier'}}}},
+  '@/lib/fleet/auth':{fleetAuth:async(_req,write)=>{calls.push(['fleet',write]);return {user:{id:'fleet'}}}},
+ }).userGuideAuth;
+ await auth(req(),'courier-tracking');await auth(req(),'fleet-fuel');
+ assert.deepEqual(calls,['courier',['fleet',false]]);
+ assert.equal((await auth(req(),'unknown')).error.status,404);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -570,6 +571,7 @@ export default function FleetPage() {
             <span className={s.topBarDate}>{lastRefreshed || "—"}</span>
           </div>
           <div className={s.topBarRight}>
+            <Link href="/user-guides/fleet-fuel" className={s.refreshBtn}>How to use this page →</Link>
             <button className={s.uploadBtn} onClick={() => setShowUpload(true)}>
               <Upload className="h-3.5 w-3.5" /> Upload Excel
             </button>

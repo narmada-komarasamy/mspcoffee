@@ -36,7 +36,7 @@ export default function GuideLibrary({ guideId }: { guideId?: string }) {
         <div className={s.actions}>
           <a href={`/api/user-guides/${guide.id}?download=1`}><Download size={17} aria-hidden="true" /> Download PDF</a>
           <button disabled={previewError || loadedPages.size < guide.pages} onClick={() => window.print()}><Printer size={17} aria-hidden="true" /> Print guide</button>
-          <Link href={guide.featureHref}>Open Courier Tracking →</Link>
+          <Link href={guide.featureHref}>Open {guide.featureLabel} →</Link>
         </div>
         <p className={s.meta}>{guide.languages} · {guide.pages} pages · Version {guide.version} · {guide.updated}</p>
         {previewError && <p role="alert">The page preview could not load. You can still download the PDF above.</p>}

@@ -40,8 +40,12 @@ The cream appearance is the default for future MSPPROJECT instruction guides. A 
 
 The main menu links to `/user-guides` above Rain Gauge. Courier Tracking and Bills & reconciliation link to `/user-guides/courier-tracking`.
 
-`src/lib/user-guides.ts` holds the approved catalogue. The initial catalogue contains only the approved courier guide. The API uses the same verified session and role/user permission checks as the courier feature; denied users see no courier listing and cannot download or preview its assets directly. Documents stay outside `public/`, and responses are private with no caching. The two PNG page renders provide an on-page preview on browsers that do not embed PDFs; the original PDF remains available for download and selectable text. Printing becomes available after both page images load.
+`src/lib/user-guides.ts` holds the approved catalogue. The catalogue contains the approved Courier Tracking & Billing and Fleet Fuel Expenses guides. Each uses its own feature guard through `src/lib/user-guide-auth.ts`; denied users cannot see that guide or retrieve its PDF or preview images directly. Documents stay outside `public/`, and responses are private with no caching. The two PNG page renders provide an on-page preview on browsers that do not embed PDFs; the original PDF remains available for download and selectable text. Printing becomes available after both page images load.
 
 When adding another approved guide, add its catalogue entry, retained PDF and page renders, and implement that feature's server permission check for both listing and asset retrieval. Do not assign every future guide the courier permission check. Update the route tracing includes when adding a new asset naming pattern. Verify access denial, direct asset requests and preview/download behavior before release.
 
 Run the guide access tests with `node --test tests/user-guides.test.cjs`.
+
+## Approved Fleet Fuel guide
+
+`MSP_Coffee_Fleet_Fuel_Guide.pdf` is the four-page English/Tamil staff guide, version 1.0. The Fleet Fuel Expenses page links to `/user-guides/fleet-fuel`. Its page previews are `fleet-guide-page-1.png` through `fleet-guide-page-4.png`; reproducible source and blank-screen screenshots are retained in `sources/fleet-fuel/`. The guide covers the deployed photo retention and insert-only Excel import safeguards.
