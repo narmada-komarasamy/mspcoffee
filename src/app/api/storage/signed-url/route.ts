@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/api';
+import { fleetAuth } from '@/lib/fleet/auth';
 
 const BUCKET_ROLES: Record<string, string[]> = {
   'fleet-maintenance-bills': ['admin', 'supervisor', 'ceo'],
+  'fleet-entry-photos': ['admin', 'supervisor', 'ceo'],
   'board-meetings': ['admin', 'supervisor', 'ceo'],
   'estate-staff-meetings': ['admin', 'supervisor', 'ceo'],
   'employee-center': ['admin', 'hr', 'supervisor'],
@@ -27,7 +29,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Invalid storage file request' }, { status: 400 });
   }
 
-  const auth = await requireApiUser(request, roles);
+  const auth = bucket.startsWith('fleet-') ? await fleetAuth(request, false) : await requireApiUser(request, roles);
   if ('error' in auth) return auth.error;
 
   const { data, error } = await auth.supabase.storage

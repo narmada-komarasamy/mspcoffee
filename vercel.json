@@ -1,5 +1,7 @@
 {
-  "buildCommand": "npm run check:courier && npm run build",
+  "buildCommand": "npm run check:courier && npm run test:fleet && npm run build",
   "framework": "nextjs",
-  "regions": ["iad1"]
+  "regions": [
+    "iad1"
+  ]
 }

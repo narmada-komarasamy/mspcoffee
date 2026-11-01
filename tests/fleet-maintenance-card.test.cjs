@@ -9,7 +9,13 @@ function load(path, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   const fixtureModule = { exports: {} };
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), fixtureModule, fixtureModule.exports);
+  const resolve = name => {
+    if (name === '@/lib/fleet/evidence') return load('src/lib/fleet/evidence.ts', { './maintenance': load('src/lib/fleet/maintenance.ts') });
+    if (name === '@/lib/storage/urls' && !mocks[name]) return load('src/lib/storage/urls.ts');
+    if (name === '@/lib/fleet/auth' && mocks['@/lib/auth/api']) return { fleetAuth: mocks['@/lib/auth/api'].requireApiUser };
+    return name in mocks ? mocks[name] : require(name);
+  };
+  new Function('require', 'module', 'exports', code)(resolve, fixtureModule, fixtureModule.exports);
   return fixtureModule.exports;
 }
 const helpers = load('src/lib/fleet/maintenance.ts');

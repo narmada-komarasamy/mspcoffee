@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -13,6 +14,7 @@ import { RecordModal, FleetRecord } from "@/components/fleet/RecordModal";
 import { PhotoEntryModal } from "@/components/fleet/PhotoEntryModal";
 import { MaintenanceCostCard } from "@/components/fleet/MaintenanceCostCard";
 import s from "./fleet.module.css";
+import { PHOTO_BUCKET } from "@/lib/fleet/evidence";
 import { BILL_BUCKET, matchesMaintenanceSearch } from "@/lib/fleet/maintenance";
 import { signedStorageUrl } from "@/lib/storage/urls";
 
@@ -569,6 +571,7 @@ export default function FleetPage() {
             <span className={s.topBarDate}>{lastRefreshed || "—"}</span>
           </div>
           <div className={s.topBarRight}>
+            <Link href="/user-guides/fleet-fuel" className={s.refreshBtn}>How to use this page →</Link>
             <button className={s.uploadBtn} onClick={() => setShowUpload(true)}>
               <Upload className="h-3.5 w-3.5" /> Upload Excel
             </button>
@@ -1214,6 +1217,8 @@ export default function FleetPage() {
                       <td style={{ color:"var(--t-muted)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={r.maintenance_performed}>{r.maintenance_performed || "—"}</td>
                       <td>
                         <div style={{ fontSize:11 }}>{r.maintenance_vendor || "—"}</div>
+                        {r.fuel_bill_path && <a href={signedStorageUrl(PHOTO_BUCKET,r.fuel_bill_path)} target="_blank" rel="noreferrer" style={{display:'block',color:TEAL,fontSize:11}}>Fuel bill</a>}
+                        {r.odometer_photo_path && <a href={signedStorageUrl(PHOTO_BUCKET,r.odometer_photo_path)} target="_blank" rel="noreferrer" style={{display:'block',color:TEAL,fontSize:11}}>Odometer photo</a>}
                         {r.maintenance_bill_path && <a href={signedStorageUrl(BILL_BUCKET, r.maintenance_bill_path)} target="_blank" rel="noopener noreferrer" style={{ color:TEAL, fontSize:11 }}>View bill</a>}
                       </td>
                       <td>
@@ -1251,8 +1256,8 @@ export default function FleetPage() {
         )}
       </div>
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={handleFleetSaved}/>}
-      {showPhotoEntry && <PhotoEntryModal rows={data} vehicles={vehicles} onClose={() => setShowPhotoEntry(false)} onSuccess={handleFleetSaved}/>}
+      {showUpload && <UploadModal existingRows={data} onClose={() => setShowUpload(false)} onSuccess={handleFleetSaved}/>}
+      {showPhotoEntry && <PhotoEntryModal onOpenExisting={setEditRecord} rows={data} vehicles={vehicles} onClose={() => setShowPhotoEntry(false)} onSuccess={handleFleetSaved}/>}
       {editRecord !== false && <RecordModal record={editRecord} rows={data} vehicles={vehicles} onClose={() => setEditRecord(false)} onSuccess={handleFleetSaved}/>}
 
       {/* ════════════════════════════════════════════════════════════════════════

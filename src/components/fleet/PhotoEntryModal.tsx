@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Camera, CheckCircle2, Loader2, Save, Sparkles, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { PHOTO_BUCKET, photoFilesError } from "@/lib/fleet/evidence";
+import { signedStorageUrl } from "@/lib/storage/urls";
 import { FleetRecord } from "./RecordModal";
 import { previousOdometerRow, startingKmFor } from "@/lib/fleet/odometer";
 
@@ -13,6 +14,7 @@ type Props = {
   vehicles: string[];
   onClose: () => void;
   onSuccess: (entry?: FleetRecord) => void;
+  onOpenExisting?: (entry: Row) => void;
 };
 
 type Draft = FleetRecord & {
@@ -93,7 +95,7 @@ function buildValidation(rows: Row[], draft: Draft): Validation[] {
   if (n(draft.fuel_cost) <= 0) checks.push({ tone: "warn", text: "Fuel cost is empty or zero. Check the bill before saving." });
 
   if (sameDate) {
-    checks.push({ tone: "warn", text: `A row already exists for ${draft.vehicle_id} on ${draft.date}. Approval will update that date/vehicle row.` });
+    checks.push({ tone: "warn", text: `A row already exists for ${draft.vehicle_id} on ${draft.date}. It will not be overwritten; open it or attach photos only.` });
   }
 
   if (prior && n(prior.closing_km) > 0 && n(draft.starting_km) > 0) {
@@ -134,7 +136,7 @@ function buildValidation(rows: Row[], draft: Draft): Validation[] {
   return checks;
 }
 
-export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
+export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess, onOpenExisting }: Props) {
   const [odometerFile, setOdometerFile] = useState<File | null>(null);
   const [billFile, setBillFile] = useState<File | null>(null);
   const [odometerPreview, setOdometerPreview] = useState("");
@@ -143,6 +145,8 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [existingEntry, setExistingEntry] = useState<Row | null>(null);
+  const [conflictCode, setConflictCode] = useState("");
 
   useEffect(() => {
     const odoUrl = odometerFile ? URL.createObjectURL(odometerFile) : "";
@@ -167,6 +171,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
   };
 
   const setDate = (date: string) => {
+    setExistingEntry(null);
     setDraft((prev) => {
       const starting_km = date === prev.date ? prev.starting_km : priorClosingKm(rows, prev, prev.vehicle_id, date);
       return derive({ ...prev, date, starting_km });
@@ -174,6 +179,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
   };
 
   const setVehicle = (vehicle_id: string) => {
+    setExistingEntry(null);
     setDraft((prev) => {
       const starting_km = vehicle_id === prev.vehicle_id ? prev.starting_km : priorClosingKm(rows, prev, vehicle_id, prev.date);
       return derive({ ...prev, vehicle_id, starting_km });
@@ -182,8 +188,9 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
 
   const handleExtract = async () => {
     setError("");
-    if (!odometerFile && !billFile) {
-      setError("Upload at least one odometer or fuel bill photo.");
+    const fileError = photoFilesError([odometerFile, billFile].filter((file): file is File => !!file));
+    if (fileError) {
+      setError(fileError);
       return;
     }
 
@@ -236,9 +243,12 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
     }
   };
 
-  const handleApprove = async () => {
+  const handleApprove = async (attachOnly = false) => {
     setError("");
-    if (hasBlockingError) {
+    if (saving) return;
+    const fileError = photoFilesError([odometerFile, billFile].filter((file): file is File => !!file));
+    if (fileError) { setError(fileError); return; }
+    if (hasBlockingError && !attachOnly) {
       setError("Fix the blocking validation errors before approval.");
       return;
     }
@@ -273,18 +283,23 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
       remarks,
     };
 
-    const { error: saveError } = await supabase
-      .from("fleet_daily")
-      .upsert(payload, { onConflict: "date,vehicle_id" });
-
-    setSaving(false);
-    if (saveError) {
-      setError(saveError.message);
-      return;
-    }
-
-    onSuccess(payload);
-    onClose();
+    try {
+      const form = new FormData();
+      form.set("record", JSON.stringify(attachOnly ? existingEntry : payload));
+      form.set("mode", attachOnly ? "attach" : "create");
+      if (odometerFile) form.set("odometer", odometerFile);
+      if (billFile) form.set("fuel", billFile);
+      const response = await fetch("/api/fleet/photo-entry", { method: "POST", body: form });
+      const result = await response.json();
+      if (!response.ok) {
+        if (result.existing) { setExistingEntry(result.existing); setConflictCode(result.code); }
+        throw Error(result.error || "Could not save the photos and entry.");
+      }
+      onSuccess(attachOnly ? existingEntry! : payload);
+      onClose();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not confirm the save. Check the daily log before retrying.");
+    } finally { setSaving(false); }
   };
 
   const inputCls = "w-full bg-msp-bg border border-msp-navy-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-msp-teal/60 transition";
@@ -301,7 +316,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
               <p className="text-xs text-white/40 mt-0.5">Extract, review, then approve before database update</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition">
+          <button disabled={saving || extracting} onClick={onClose} aria-label="Close photo entry" className="text-white/40 hover:text-white transition">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -326,10 +341,10 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
                       </div>
                     )}
                   </div>
-                  <p className="mt-2 text-xs text-white/35 truncate">{item.file?.name || "JPEG, PNG, WebP up to 10 MB"}</p>
-                  <input
+                  <p className="mt-2 text-xs text-white/35 truncate">{item.file?.name || "JPG, PNG, WebP - photos total 3 MB max"}</p>
+                  <input disabled={saving || extracting}
                     type="file"
-                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={(e) => item.onChange(e.target.files?.[0] ?? null)}
                   />
@@ -339,7 +354,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
 
             <button
               onClick={handleExtract}
-              disabled={extracting || (!odometerFile && !billFile)}
+              disabled={saving || extracting || (!odometerFile && !billFile)}
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-msp-teal text-msp-bg px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
             >
               {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -368,30 +383,30 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Date</label>
-                <input type="date" value={draft.date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+                <input disabled={saving || extracting} type="date" value={draft.date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Vehicle ID</label>
-                <input list="photo-vehicle-list" value={draft.vehicle_id} onChange={(e) => setVehicle(e.target.value)} className={`${inputCls} text-msp-teal`} />
+                <input disabled={saving || extracting} list="photo-vehicle-list" value={draft.vehicle_id} onChange={(e) => setVehicle(e.target.value)} className={`${inputCls} text-msp-teal`} />
                 <datalist id="photo-vehicle-list">
                   {vehicles.map((vehicle) => <option key={vehicle} value={vehicle} />)}
                 </datalist>
               </div>
               <div>
                 <label className={labelCls}>Vehicle Type</label>
-                <select value={draft.vehicle_type} onChange={(e) => set("vehicle_type", e.target.value)} className={`${inputCls} appearance-none`}>
+                <select disabled={saving || extracting} value={draft.vehicle_type} onChange={(e) => set("vehicle_type", e.target.value)} className={`${inputCls} appearance-none`}>
                   {VEHICLE_TYPES.map((type) => <option key={type}>{type}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelCls}>Account</label>
-                <select value={draft.account} onChange={(e) => set("account", e.target.value)} className={`${inputCls} appearance-none`}>
+                <select disabled={saving || extracting} value={draft.account} onChange={(e) => set("account", e.target.value)} className={`${inputCls} appearance-none`}>
                   {ACCOUNTS.map((account) => <option key={account}>{account}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelCls}>Fuel Type</label>
-                <select value={draft.fuel_type} onChange={(e) => set("fuel_type", e.target.value)} className={`${inputCls} appearance-none`}>
+                <select disabled={saving || extracting} value={draft.fuel_type} onChange={(e) => set("fuel_type", e.target.value)} className={`${inputCls} appearance-none`}>
                   {FUEL_TYPES.map((fuelType) => <option key={fuelType}>{fuelType}</option>)}
                 </select>
               </div>
@@ -411,26 +426,26 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
               </div>
               <div>
                 <label className={labelCls}>Closing KM</label>
-                <input type="number" min="0" value={draft.closing_km} onChange={num("closing_km")} className={inputCls} />
+                <input disabled={saving || extracting} type="number" min="0" value={draft.closing_km} onChange={num("closing_km")} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>KM Run</label>
-                <input type="number" readOnly value={draft.km_run} className={`${inputCls} text-msp-teal opacity-70 cursor-not-allowed`} />
+                <input disabled={saving || extracting} type="number" readOnly value={draft.km_run} className={`${inputCls} text-msp-teal opacity-70 cursor-not-allowed`} />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Fuel Filled (L)</label>
-                <input type="number" min="0" step="0.01" value={draft.fuel_filled_l} onChange={num("fuel_filled_l")} className={inputCls} />
+                <input disabled={saving || extracting} type="number" min="0" step="0.01" value={draft.fuel_filled_l} onChange={num("fuel_filled_l")} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Fuel Cost (₹)</label>
-                <input type="number" min="0" step="0.01" value={draft.fuel_cost} onChange={num("fuel_cost")} className={`${inputCls} text-msp-gold-light`} />
+                <input disabled={saving || extracting} type="number" min="0" step="0.01" value={draft.fuel_cost} onChange={num("fuel_cost")} className={`${inputCls} text-msp-gold-light`} />
               </div>
               <div>
                 <label className={labelCls}>Total Cost</label>
-                <input type="number" readOnly value={draft.total_cost} className={`${inputCls} text-msp-gold-light opacity-70 cursor-not-allowed`} />
+                <input disabled={saving || extracting} type="number" readOnly value={draft.total_cost} className={`${inputCls} text-msp-gold-light opacity-70 cursor-not-allowed`} />
               </div>
             </div>
 
@@ -457,15 +472,22 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess }: Props) {
               </div>
             )}
 
-            {error && <p className="text-msp-danger text-sm">{error}</p>}
+            {existingEntry && <section role="alert" className="rounded-lg border border-amber-500/50 p-3 text-sm space-y-2 text-white">
+              <strong>Existing record: {existingEntry.vehicle_id} - {existingEntry.date}</strong>
+              <p>Fuel ₹{existingEntry.fuel_cost} · Maintenance ₹{existingEntry.maint_cost} · KM {existingEntry.starting_km} to {existingEntry.closing_km}. No saved values have been changed.</p>
+              {existingEntry.fuel_bill_path && <a className="block underline text-msp-teal" href={signedStorageUrl(PHOTO_BUCKET,existingEntry.fuel_bill_path)} target="_blank" rel="noreferrer">View saved fuel bill</a>}
+              {conflictCode === 'EXISTING_ENTRY' && <button disabled={saving} className="block underline text-msp-teal" onClick={() => void handleApprove(true)}>Attach photos only - keep saved amounts</button>}
+              {onOpenExisting && <button disabled={saving} className="block underline text-msp-teal" onClick={() => { onOpenExisting(existingEntry); onClose(); }}>Open existing entry for review</button>}
+            </section>}
+            {error && <p role="alert" className="text-msp-danger text-sm">{error}</p>}
 
             <div className="flex gap-3 pt-1">
-              <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-msp-navy-border text-white/60 text-sm hover:bg-white/5 transition">
+              <button disabled={saving || extracting} onClick={onClose} aria-label="Close photo entry" className="flex-1 px-4 py-2.5 rounded-lg border border-msp-navy-border text-white/60 text-sm hover:bg-white/5 transition">
                 Cancel
               </button>
               <button
-                onClick={handleApprove}
-                disabled={saving || hasBlockingError}
+                onClick={() => void handleApprove()}
+                disabled={saving || extracting || hasBlockingError}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-msp-teal text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

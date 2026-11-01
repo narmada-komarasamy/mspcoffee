@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { supabase } from "@/lib/supabase";
+import { fleetRowKey } from "@/lib/fleet/evidence";
 import { CloudUpload, X, CheckCircle, AlertCircle, Loader2, FileSpreadsheet } from "lucide-react";
 
 export type FleetRow = {
@@ -31,38 +31,38 @@ const VALID_VEHICLE_TYPES = ["Estate", "Personal"];
 const VALID_FUEL_TYPES = ["Diesel", "Petrol"];
 
 interface Props {
+  existingRows: { vehicle_id: string; date: string }[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-function parseDate(raw: string): string | null {
-  if (!raw) return null;
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
-    const [m, d, y] = raw.split("/");
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  const d = new Date(raw);
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-  return null;
+function parseDate(raw: unknown): string | null {
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) return `${raw.getFullYear()}-${String(raw.getMonth()+1).padStart(2,'0')}-${String(raw.getDate()).padStart(2,'0')}`;
+  const text = String(raw ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  return !Number.isNaN(Date.parse(text)) && new Date(text).toISOString().slice(0,10) === text ? text : null;
 }
 
 function n(v: unknown): number {
   const x = parseFloat(String(v ?? "0").replace(/,/g, ""));
-  return isNaN(x) ? 0 : x;
+  return String(v ?? "").trim() === "" ? 0 : x;
 }
 
 function s(v: unknown): string {
   return String(v ?? "").trim();
 }
 
-export function UploadModal({ onClose, onSuccess }: Props) {
+export function UploadModal({ existingRows, onClose, onSuccess }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<FleetRow[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [fileName, setFileName] = useState("");
   const [step, setStep] = useState<"idle" | "preview" | "uploading" | "done">("idle");
   const [uploadedCount, setUploadedCount] = useState(0);
+  const [saveError, setSaveError] = useState("");
+  const [skipped, setSkipped] = useState<{vehicle_id:string;date:string;reason:string}[]>([]);
+  const existingKeys = new Set(existingRows.map(fleetRowKey));
+  const existingCount = rows.filter(row => existingKeys.has(fleetRowKey(row))).length;
 
   const parseFile = (file: File) => {
     setFileName(file.name);
@@ -71,7 +71,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
       const data = new Uint8Array(e.target?.result as ArrayBuffer);
       const wb = XLSX.read(data, { type: "array", cellDates: true });
       const ws = wb.Sheets["Fleet Data"] ?? wb.Sheets["Fuel Expenses"] ?? wb.Sheets[wb.SheetNames[0]];
-      const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { raw: false, defval: "" });
+      const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { raw: true, defval: "" });
 
       const parsed: FleetRow[] = [];
       const errs: string[] = [];
@@ -80,8 +80,8 @@ export function UploadModal({ onClose, onSuccess }: Props) {
         const rowNum = i + 2;
 
         const dateRaw = s(r["Date"] ?? r["date"]);
-        const date = parseDate(dateRaw);
-        if (!date) { errs.push(`Row ${rowNum}: missing or invalid Date "${dateRaw}"`); return; }
+        const date = parseDate(r["Date"] ?? r["date"]);
+        if (!date) { errs.push(`Row ${rowNum}: missing or invalid Date "${dateRaw}". Use YYYY-MM-DD or an Excel date cell`); return; }
 
         const vehicle_id = s(r["Vehicle ID"] ?? r["Vehicle"] ?? r["vehicle_id"]);
         if (!vehicle_id) { errs.push(`Row ${rowNum}: missing Vehicle ID`); return; }
@@ -90,6 +90,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
         const account = s(r["Account"] ?? r["account"] ?? "");
         const fuel_type = s(r["Fuel Type"] ?? r["fuel_type"] ?? "Diesel");
 
+        if (!VALID_ACCOUNTS.includes(account) || !VALID_VEHICLE_TYPES.includes(vehicle_type) || !VALID_FUEL_TYPES.includes(fuel_type)) { errs.push(`Row ${rowNum}: check Account, Vehicle Type and Fuel Type.`); return; }
         const starting_km = n(r["Starting KM"] ?? r["starting_km"] ?? r["Start KM"]);
         const closing_km = n(r["Closing KM"] ?? r["closing_km"] ?? r["Close KM"]);
         const km_run_raw = n(r["KM Run"] ?? r["km_run"] ?? r["KM"]);
@@ -98,6 +99,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
         const fuel_filled_l = n(r["Fuel Filled (L)"] ?? r["Fuel Filled"] ?? r["fuel_filled_l"] ?? r["Litres"] ?? r["Liters"]);
         const fuel_cost = n(r["Fuel Cost"] ?? r["fuel_cost"] ?? r["Fuel Expense"]);
         const maint_cost = n(r["Maint Cost"] ?? r["maint_cost"] ?? r["Maintenance Cost"] ?? r["Maintenance"]);
+        if (![starting_km, closing_km, fuel_filled_l, fuel_cost, maint_cost].every(value => Number.isFinite(value) && value >= 0)) { errs.push(`Row ${rowNum}: invalid KM, litres or expense amount.`); return; }
         const total_cost_raw = n(r["Total Cost"] ?? r["total_cost"]);
         const total_cost = total_cost_raw || fuel_cost + maint_cost;
 
@@ -121,6 +123,13 @@ export function UploadModal({ onClose, onSuccess }: Props) {
         });
       });
 
+      if (parsed.length > 500) errs.push('Split the spreadsheet into batches of 500 rows or fewer.');
+      const seen = new Set<string>();
+      for (const row of parsed) {
+        const key = fleetRowKey(row);
+        if (seen.has(key)) errs.push(`Repeated vehicle/date in this file: ${row.vehicle_id} on ${row.date}. Resolve it before importing.`);
+        seen.add(key);
+      }
       setRows(parsed);
       setErrors(errs);
       setStep("preview");
@@ -141,16 +150,18 @@ export function UploadModal({ onClose, onSuccess }: Props) {
 
   const handleUpload = async () => {
     setStep("uploading");
-    const BATCH = 500;
-    let count = 0;
-    for (let i = 0; i < rows.length; i += BATCH) {
-      const batch = rows.slice(i, i + BATCH);
-      await supabase.from("fleet_daily").upsert(batch, { onConflict: "date,vehicle_id" });
-      count += batch.length;
-      setUploadedCount(count);
+    setSaveError("");
+    try {
+      const response = await fetch('/api/fleet/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({rows}) });
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error || 'Import failed.');
+      setUploadedCount(result.inserted);
+      setSkipped(result.skipped || []);
+      setStep('done');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not confirm the import. Check the daily log before retrying.');
+      setStep('preview');
     }
-    setStep("done");
-    setTimeout(() => { onSuccess(); onClose(); }, 1200);
   };
 
   return (
@@ -162,7 +173,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
             <FileSpreadsheet className="h-5 w-5 text-msp-teal" />
             <h2 className="text-base font-semibold text-white">Upload Fleet Data</h2>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition">
+          <button disabled={step === "uploading"} onClick={onClose} aria-label="Close fleet import" className="text-white/40 hover:text-white transition">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -182,7 +193,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
               </div>
               <p className="text-xs text-white/30 text-center">
                 Expected columns: Date, Vehicle ID, Vehicle Type, Account, Fuel Type,<br />
-                Starting KM, Closing KM, Fuel Filled (L), Fuel Cost, Maint Cost, Remarks
+                Starting KM, Closing KM, Fuel Filled (L), Fuel Cost, Maint Cost, Remarks. Dates: YYYY-MM-DD or Excel date cells. Maximum 500 rows.
               </p>
               <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
             </div>
@@ -194,7 +205,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                 <div>
                   <p className="text-white font-medium text-sm">{fileName}</p>
                   <p className="text-white/50 text-xs mt-0.5">
-                    {rows.length.toLocaleString()} rows parsed
+                    {rows.length.toLocaleString()} rows parsed · {existingCount} existing vehicle/date rows will be skipped
                     {errors.length > 0 && ` · ${errors.length} warnings`}
                   </p>
                 </div>
@@ -210,7 +221,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                 <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 max-h-24 overflow-y-auto">
                   <div className="flex items-center gap-2 mb-1.5">
                     <AlertCircle className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
-                    <span className="text-yellow-400 text-xs font-medium">Rows skipped</span>
+                    <span className="text-yellow-400 text-xs font-medium">Fix these issues before importing</span>
                   </div>
                   {errors.map((e, i) => <p key={i} className="text-yellow-300/70 text-xs">{e}</p>)}
                 </div>
@@ -256,6 +267,7 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                 )}
               </div>
 
+              {saveError && <p role="alert" className="text-yellow-300 text-sm">{saveError}</p>}
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={onClose}
@@ -265,10 +277,10 @@ export function UploadModal({ onClose, onSuccess }: Props) {
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={rows.length === 0}
+                  disabled={rows.length === 0 || errors.length > 0}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-msp-teal text-msp-bg text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
                 >
-                  Upload {rows.length.toLocaleString()} rows
+                  Import new rows only
                 </button>
               </div>
             </div>
@@ -286,7 +298,9 @@ export function UploadModal({ onClose, onSuccess }: Props) {
             <div className="flex flex-col items-center justify-center gap-3 py-16">
               <CheckCircle className="h-10 w-10 text-msp-green" />
               <p className="text-white font-medium">Upload complete</p>
-              <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} rows saved to Supabase</p>
+              <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} new rows saved · {skipped.length} skipped. Existing records and attachments were kept.</p>
+              {skipped.length > 0 && <div className="max-h-48 overflow-y-auto text-sm text-white/70 px-6" role="status">{skipped.map((row,index)=><p key={index}>{row.vehicle_id} · {row.date}: {row.reason}</p>)}</div>}
+              <button className="px-4 py-2 rounded-lg bg-msp-teal text-msp-bg" onClick={() => { onSuccess(); onClose(); }}>Done</button>
             </div>
           )}
         </div>

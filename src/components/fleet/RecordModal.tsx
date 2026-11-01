@@ -6,6 +6,7 @@ import { X, Trash2, Save, Loader2, Upload, FileText } from "lucide-react";
 
 import { BILL_BUCKET, billFileError, fleetVehicleKey, possibleMaintenanceDuplicates } from "@/lib/fleet/maintenance";
 import { signedStorageUrl } from "@/lib/storage/urls";
+import { PHOTO_BUCKET } from "@/lib/fleet/evidence";
 import { startingKmFor } from "@/lib/fleet/odometer";
 import { MaintenanceDuplicateReview, type MaintenanceMatch } from "./MaintenanceDuplicateReview";
 
@@ -15,6 +16,11 @@ const FUEL_TYPES = ["Diesel", "Petrol"];
 
 export type FleetRecord = {
   id?: number;
+  entry_version?: number;
+  fuel_bill_path?: string;
+  fuel_bill_name?: string;
+  odometer_photo_path?: string;
+  odometer_photo_name?: string;
   date: string;
   month?: number;
   year?: number;
@@ -166,6 +172,7 @@ export function RecordModal({ record, rows, vehicles, onClose, onSuccess }: Prop
     try {
       const body = new FormData();
       body.set("record", JSON.stringify(form));
+      body.set("expectedVersion", String(original?.entry_version ?? ""));
       if (bill) body.set("file", bill);
       body.set("attachmentOnly", String(attachmentOnly));
       body.set("confirmedDuplicateIds", JSON.stringify(duplicateConfirmed ? duplicates.map(row => row.id) : []));
@@ -231,9 +238,12 @@ export function RecordModal({ record, rows, vehicles, onClose, onSuccess }: Prop
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
     setDeleting(true);
-    const { error } = await supabase.from("fleet_daily").delete().eq("id", form.id!);
+    try {
+      const response = await fetch(`/api/fleet/entries/${form.id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ version: original?.entry_version }) });
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error || 'Could not delete the entry.');
+    } catch (error) { setError(error instanceof Error ? error.message : 'Could not delete the entry.'); setDeleting(false); return; }
     setDeleting(false);
-    if (error) { setError(error.message); return; }
     onSuccess();
     onClose();
   };
@@ -255,6 +265,11 @@ export function RecordModal({ record, rows, vehicles, onClose, onSuccess }: Prop
         </div>
 
         <div className="p-6 space-y-5">
+          {(form.fuel_bill_path || form.odometer_photo_path) && <section className="rounded-xl border border-msp-navy-border bg-msp-bg p-4 space-y-2 text-sm">
+            <h3 className="text-white font-semibold">Saved fuel evidence</h3>
+            {form.fuel_bill_path && <a className="block text-msp-teal underline" href={signedStorageUrl(PHOTO_BUCKET,form.fuel_bill_path)} target="_blank" rel="noreferrer">View fuel bill{form.fuel_bill_name ? ` · ${form.fuel_bill_name}` : ''}</a>}
+            {form.odometer_photo_path && <a className="block text-msp-teal underline" href={signedStorageUrl(PHOTO_BUCKET,form.odometer_photo_path)} target="_blank" rel="noreferrer">View odometer photo{form.odometer_photo_name ? ` · ${form.odometer_photo_name}` : ''}</a>}
+          </section>}
           <div className="rounded-xl border border-msp-navy-border bg-msp-bg p-4 space-y-3">
             <button type="button" onClick={() => fileInput.current?.click()} disabled={busy}
               className="flex items-center gap-2 text-sm text-msp-teal disabled:opacity-40">
