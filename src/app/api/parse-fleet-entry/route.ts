@@ -6,11 +6,12 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/api';
+import { MAX_PHOTO_BYTES, photoSignature } from '@/lib/fleet/evidence';
 import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
 function extractOutputText(payload: unknown) {
   const response = payload as {
@@ -80,10 +81,10 @@ export async function POST(req: NextRequest) {
       if (!image.mediaType || !allowedTypes.includes(image.mediaType)) {
         return NextResponse.json({ error: `Unsupported ${image.label} file type` }, { status: 400 });
       }
-      if ((image.base64 ?? '').length > 14 * 1024 * 1024) {
-        return NextResponse.json({ error: `${image.label} file too large (max 10 MB)` }, { status: 413 });
-      }
+      if (typeof image.base64 !== 'string' || image.base64.length > Math.ceil(MAX_PHOTO_BYTES / 3) * 4 || !/^[A-Za-z0-9+/]*={0,2}$/.test(image.base64)) return NextResponse.json({error:'Invalid image or photos exceed the 3 MB total limit.'},{status:413});
+      if (!photoSignature(Buffer.from(image.base64,'base64'),image.mediaType)) return NextResponse.json({error:'The photo does not match its file type.'},{status:400});
     }
+    if (images.reduce((sum,image)=>sum+Buffer.from(image.base64!,'base64').length,0) > MAX_PHOTO_BYTES) return NextResponse.json({error:'Photos must total 3 MB or less.'},{status:413});
 
     const apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_FLEET_PARSE_API_KEY || process.env.OPENAI_KEY;
     if (!apiKey) {

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { requireApiUser } from '@/lib/auth/api';
+import { fleetAuth } from '@/lib/fleet/auth';
 import { BILL_BUCKET, billFileError, validBillDate, fleetVehicleKey } from '@/lib/fleet/maintenance';
 import { billFingerprint, findExactBill } from '@/lib/fleet/maintenance-server';
 
 export const maxDuration = 60;
 
 async function saveRecord(request: Request) {
-  const auth = await requireApiUser(request, ['admin', 'supervisor', 'ceo']);
+  const auth = await fleetAuth(request);
   if ('error' in auth) return auth.error;
   const form = await request.formData();
   let row: Record<string, unknown>;
@@ -95,7 +95,9 @@ async function saveRecord(request: Request) {
     payload.maintenance_bill_sha256 = fingerprint;
     payload.maintenance_bill_name = file.name.slice(0, 255);
   }
-  const { data: result, error } = await auth.supabase.rpc('save_fleet_maintenance_record', {
+  const { data: result, error } = await auth.supabase.rpc('save_fleet_entry', {
+    p_mode: id === null ? 'create' : 'edit', p_expected_version: id === null ? null : Number(form.get('expectedVersion')),
+    p_photos: [],
     p_record: payload, p_confirmed_ids: confirmedIds, p_date_reviewed: form.get('dateReviewed') === 'true',
     p_expected_path: oldPath, p_actor: auth.user.id,
   });
