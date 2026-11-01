@@ -48,3 +48,10 @@ next-env.d.ts
 /*.rar
 /*.tiff
 /private-inputs/
+
+# Local dev / scratch artifacts (kept beside the project, never application source)
+/sync-stock.js
+/sync-stock.mjs
+/courier-bill-preview.html
+/previews/
+docs/instruction-guides/drafts/
