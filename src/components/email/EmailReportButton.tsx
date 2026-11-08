@@ -12,6 +12,8 @@ type Props = {
   };
   label?: string;
   disabled?: boolean;
+  pdfPreviewUrl?: string;
+  onSent?: () => void;
 };
 
 function getAuthHeaders(): Record<string, string> {
@@ -32,7 +34,7 @@ function providerLabel(provider?: string) {
   return 'email provider';
 }
 
-export function EmailReportButton({ payload, label = 'Email Report', disabled = false }: Props) {
+export function EmailReportButton({ payload, label = 'Email Report', disabled = false, pdfPreviewUrl, onSent }: Props) {
   const [open, setOpen] = useState(false);
   const [recipients, setRecipients] = useState(payload.recipients?.join(', ') ?? '');
   const [cc, setCc] = useState(payload.cc?.join(', ') ?? '');
@@ -106,6 +108,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
       return;
     }
 
+    onSent?.();
     setStatus(body?.status === 'sent'
       ? 'Sent and logged'
       : 'Logged only. Add the email provider credentials in Vercel to enable live delivery.'
@@ -210,6 +213,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
                 <div style={{ padding: '10px 12px', borderBottom: '1px solid #f0ead4', display: 'grid', gap: 3 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.08em' }}>Preview</div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#1b4a1b' }}>Subject: {payload.subject || payload.reportTitle}</div>
+                  {pdfPreviewUrl && <><a href={pdfPreviewUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#1b4a1b', fontWeight: 700 }}>Preview one-page PDF statement</a><div style={{ fontSize: 12, color: '#6b7280' }}>Sending saves the complete month’s statement. Return to Upload signed copy after signing.</div></>}
                   {payload.attachmentName && <div style={{ fontSize: 12, color: '#6b7280' }}>Attachment: {payload.attachmentName}</div>}
                 </div>
                 <div style={{ padding: 12, display: 'grid', gap: 12, maxHeight: 270, overflow: 'auto' }}>

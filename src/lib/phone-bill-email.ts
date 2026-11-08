@@ -10,7 +10,8 @@ export function phoneBillEmail(rows: PhoneBillRow[], month: string, year: string
     subject: `MSP Coffee · Phone & Internet Reimbursement · ${month} ${year}`,
     reportTitle: `Phone & Internet Reimbursement — ${month} ${year}`,
     sourcePath: '/ho-fuel/recurring-bills/phone-bills',
-    attachmentName: `MSP_Phone_Bills_${year}_${String(BILL_MONTHS.indexOf(month) + 1).padStart(2, '0')}.html`,
+    phoneBillPeriod: `${year}-${String(BILL_MONTHS.indexOf(month) + 1).padStart(2, '0')}`,
+    attachmentName: `MSP_Phone_Bills_${year}_${String(BILL_MONTHS.indexOf(month) + 1).padStart(2, '0')}.pdf`,
     data: {
       summary: [
         { label: 'Bill month', value: `${month} ${year}` },

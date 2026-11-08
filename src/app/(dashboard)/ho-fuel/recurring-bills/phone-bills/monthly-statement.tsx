@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { billMoney, billPeriod, historicallyPaid, paymentStatus, payeeTotals, totalBills, validPeriod, type PhoneBillRow, type PhoneStatement, type StatementFile } from '@/lib/phone-bills';
-import { phoneStatementHtml } from '@/lib/phone-statement-html';
 import css from './phone-bills.module.css';
 import PaymentHistory from './payment-history';
 
-export default function MonthlyStatement({ rows, month, year, preview = false, onSelect }: { rows: PhoneBillRow[]; month: string; year: string; preview?: boolean; onSelect: (month: string, year: string) => void }) {
+export default function MonthlyStatement({ rows, month, year, preview = false, onSelect, refreshVersion = 0 }: { rows: PhoneBillRow[]; month: string; year: string; preview?: boolean; refreshVersion?: number; onSelect: (month: string, year: string) => void }) {
   const period = billPeriod({ month, year });
   const historical = historicallyPaid(period);
   const [revision, setRevision] = useState(0);
@@ -15,8 +14,6 @@ export default function MonthlyStatement({ rows, month, year, preview = false, o
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [payment, setPayment] = useState({ date: '', reference: '' });
-  const dialog = useRef<HTMLDialogElement>(null);
-  const iframe = useRef<HTMLIFrameElement>(null);
   const activePeriod = useRef(period);
   const uploadInput = useRef<HTMLInputElement>(null);
   const loaded = preview || (state.period === period && state.loaded);
@@ -31,7 +28,6 @@ export default function MonthlyStatement({ rows, month, year, preview = false, o
   useEffect(() => {
     activePeriod.current = period;
     if (!ready || preview) return;
-    const currentDialog = dialog.current;
     const controller = new AbortController();
     fetch(`/api/phone-bills/statements?period=${period}`, { cache: 'no-store', signal: controller.signal }).then(async response => {
       const body = await response.json();
@@ -40,8 +36,8 @@ export default function MonthlyStatement({ rows, month, year, preview = false, o
     }).catch(error => {
       if (!controller.signal.aborted) setState({ period, statement: null, files: [], error: error.message, loaded: true });
     });
-    return () => { controller.abort(); currentDialog?.close(); };
-  }, [period, ready, preview]);
+    return () => controller.abort();
+  }, [period, ready, preview, refreshVersion]);
 
   async function issue() {
     if (preview) return;
@@ -51,7 +47,7 @@ export default function MonthlyStatement({ rows, month, year, preview = false, o
       const response = await fetch('/api/phone-bills/statements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ period }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'Unable to issue statement.');
-      if (activePeriod.current === selectedPeriod) { setState({ period, statement: body.statement, files: [], error: '', loaded: true }); setRevision(r => r + 1); setMessage('Statement saved. Use Preview saved statement to print or save a PDF.'); }
+      if (activePeriod.current === selectedPeriod) { setState({ period, statement: body.statement, files: [], error: '', loaded: true }); setRevision(r => r + 1); setMessage('Statement saved. Use Preview / print one-page PDF to print or download it.'); }
     } catch (error) { if (activePeriod.current === selectedPeriod) setMessage(error instanceof Error ? error.message : 'Unable to save.'); }
     finally { setBusy(false); }
   }
@@ -87,16 +83,15 @@ export default function MonthlyStatement({ rows, month, year, preview = false, o
     {ready && <>
       <div className={css.recipientGrid}>{payeeTotals(statementRows).map(p => <div key={p.payee}><span>Reimburse {p.payee}</span><b>{billMoney(p.total)}</b></div>)}<div className={css.monthlyTotal}><span>Total · {statementRows.length} accounts</span><b>{billMoney(total)}</b></div></div>
       <div className={css.workflow}>
-        <div><h3>1. Prepare &amp; print</h3><p>Review all accounts, save the statement, then open its preview to print or save a PDF.</p><button className={css.actionBtn} disabled={!statementRows.length || busy || !loaded} onClick={() => dialog.current?.showModal()}>Preview {statement ? 'saved statement' : 'monthly statement'}</button>{!statement && <button className={`${css.actionBtn} ${css.actionBtnPrimary}`} disabled={preview || !loaded || !!error || !statementRows.length || missing || total <= 0 || busy} onClick={issue}>{busy ? 'Please wait…' : 'Save statement for printing'}</button>}{statement && <p className={css.reference}>{statement.reference}</p>}{missing && <p role="alert">Fill missing amounts before issuing.</p>}</div>
+        <div><h3>1. Prepare &amp; print</h3><p>Review all accounts, save the statement, then open its preview to print or save a PDF.</p><a className={css.actionBtn} href={`/api/phone-bills/pdf?period=${period}`} target="_blank" rel="noopener noreferrer">Preview / print one-page PDF</a>{!statement && <button className={`${css.actionBtn} ${css.actionBtnPrimary}`} disabled={preview || !loaded || !!error || !statementRows.length || missing || total <= 0 || busy} onClick={issue}>{busy ? 'Please wait…' : 'Save statement for printing'}</button>}{statement && <p className={css.reference}>{statement.reference}</p>}{missing && <p role="alert">Fill missing amounts before issuing.</p>}</div>
         <div><h3>2. Mark as paid</h3>{historical ? <><b>Paid — historical</b><p>Confirmed paid through February 2026. No payment date or reference has been inferred. You can save the statement and attach an old scan.</p></> : statement?.payment_date ? <><b>{billMoney(Number(statement.payment_amount))} paid</b><p>Date: {statement.payment_date}<br/>Reference: {statement.payment_reference}</p></> : <form onSubmit={recordPayment}>{!statement && <p>Save the statement first to enable payment recording.</p>}<label className={css.label}>Payment date<input aria-label="Payment date" type="date" className={css.input} required disabled={!statement || busy} value={payment.date} onChange={e => setPayment(s => ({ ...s, date: e.target.value }))}/></label><label className={css.label}>Payment / voucher reference<input aria-label="Payment reference" className={css.input} required maxLength={200} disabled={!statement || busy} value={payment.reference} onChange={e => setPayment(s => ({ ...s, reference: e.target.value }))}/></label><button className={css.actionBtn} disabled={!statement || busy}>Mark as paid</button></form>}</div>
-        <div><h3>3. Upload paid / signed copy</h3><p>Upload a scanned PDF or a photograph of each signed page. All copies are retained for this month. Uploading does not change payment status.</p><button className={`${css.actionBtn} ${css.actionBtnPrimary}`} disabled={preview || !statement || busy} onClick={() => uploadInput.current?.click()}>Upload paid / signed copy</button>{!statement && <p>Save the statement first to enable uploads.</p>}<label className={css.uploadPicker}>Signed document<input ref={uploadInput} aria-label="Signed document" type="file" hidden accept="application/pdf,image/jpeg,image/png" disabled={preview || !statement || busy} onChange={e => upload(e.target.files?.[0])}/></label><small>PDF, JPG or PNG · Up to 3 MB per file</small><ul className={css.fileList}>{files.map(file => <li key={file.id}><a href={`/api/phone-bills/files?id=${file.id}`} target="_blank" rel="noopener noreferrer">{file.file_name}</a><small>{new Date(file.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</small></li>)}</ul></div>
+        <div><h3>3. Upload signed copy</h3><p>Upload a scanned PDF or a photograph of each signed page. All copies are retained for this month. Uploading does not change payment status.</p><button className={`${css.actionBtn} ${css.actionBtnPrimary}`} disabled={preview || !statement || busy} onClick={() => uploadInput.current?.click()}>Upload signed copy</button>{!statement && <p>Save the statement or email the monthly PDF first, then upload the signed scan here.</p>}<label className={css.uploadPicker}>Signed document<input ref={uploadInput} aria-label="Signed document" type="file" hidden accept="application/pdf,image/jpeg,image/png" disabled={preview || !statement || busy} onChange={e => upload(e.target.files?.[0])}/></label><small>PDF, JPG or PNG · Up to 3 MB per file · Find saved copies later in Payment history &amp; saved scans.</small><ul className={css.fileList}>{files.map(file => <li key={file.id}><a href={`/api/phone-bills/files?id=${file.id}`} target="_blank" rel="noopener noreferrer">{file.file_name}</a><small>{new Date(file.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</small></li>)}</ul></div>
       </div>
       <p className={css.monthlyNote}>The monthly statement includes every account for {month} {year}, regardless of the other register filters. Prepared by Ashok · Checked by Ponraj · Payment received by Ashok.</p>
       {preview && <p className={css.notice}>Preview only — printing and filters work. Saving, payment and uploads will be enabled after approval and database setup.</p>}
       {error && <p role="alert" className={css.notice}>{error} You can still review the draft.</p>}
       {message && <p role="status" className={css.notice}>{message}</p>}
-      <dialog ref={dialog} className={css.statementDialog} aria-labelledby="statement-preview-title"><div className={css.dialogBar}><h2 id="statement-preview-title">{statement ? 'Issued statement' : 'Draft statement'} · {month} {year}</h2><div><button className={css.actionBtn} onClick={() => iframe.current?.contentWindow?.print()}>Print / Save PDF</button><button className={css.actionBtn} onClick={() => dialog.current?.close()}>Close preview</button></div></div><iframe ref={iframe} title="Printable monthly reimbursement statement" srcDoc={phoneStatementHtml(statementRows, period, statement)} sandbox="allow-same-origin allow-modals" /></dialog>
     </>}
-    <PaymentHistory rows={rows} preview={preview} revision={revision} onSelect={onSelect} />
+    <PaymentHistory rows={rows} preview={preview} revision={revision + refreshVersion} onSelect={onSelect} />
   </section>;
 }

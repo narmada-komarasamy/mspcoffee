@@ -154,7 +154,7 @@ test('monthly email includes only the chosen month, every filtered entry, recipi
   const payload = email.phoneBillEmail(march, 'March', '2026', 'month is March; year is 2026');
   assert.equal(payload.data.sections[0].rows.length, 21);
   assert.ok(payload.subject.includes('March 2026'));
-  assert.equal(payload.attachmentName, 'MSP_Phone_Bills_2026_03.html');
+  assert.equal(payload.attachmentName, 'MSP_Phone_Bills_2026_03.pdf');
   assert.equal(payload.data.summary.find(r => r.label === 'Total reimbursement').value, h.billMoney(14851.86));
   assert.equal(payload.data.summary.find(r => r.label === 'Reimburse Mrs. NA').value, h.billMoney(2357.82));
   const validate = load('src/lib/email/payload.ts');
@@ -169,4 +169,70 @@ test('monthly email includes only the chosen month, every filtered entry, recipi
   const partial = email.phoneBillEmail(march.slice(0, 1), 'March', '2026', 'user is Mr.MR');
   assert.equal(partial.data.sections[0].rows.length, 1);
   assert.equal(partial.data.summary.find(r => r.label === 'Register filters').value, 'user is Mr.MR');
+});
+
+test('monthly PDF fits one A4 page with every account across all source months', async () => {
+  const pdf = load('src/lib/phone-statement-pdf.ts', { './phone-bills': h });
+  const { PDFDocument } = require('pdf-lib');
+  const logo = fs.readFileSync('public/msp-logo.png');
+  for (const period of new Set(rows.map(h.billPeriod))) {
+    const monthly = rows.filter(r => h.billPeriod(r) === period);
+    if (monthly.some(r => r.amount === null)) continue;
+    const bytes = await pdf.phoneStatementPdf(monthly, period, logo);
+    const document = await PDFDocument.load(bytes);
+    assert.equal(document.getPageCount(), 1, period);
+    assert.ok(Math.abs(document.getPage(0).getWidth() - 595.28) < 0.1);
+    if (period === '2026-03') fs.writeFileSync('/tmp/msp-phone-march.pdf', bytes);
+  }
+  await assert.rejects(pdf.phoneStatementPdf([{...example, amount: null}], '2026-02', logo), /Complete all bill amounts/);
+  await assert.rejects(pdf.phoneStatementPdf(Array(200).fill(example), '2026-02', logo), /one-page/);
+});
+test('email preparation uses the full saved snapshot and produces a real PDF attachment', async () => {
+  const email = load('src/lib/phone-bill-email.ts', { './phone-bills': h });
+  const pdf = load('src/lib/phone-statement-pdf.ts', { './phone-bills': h });
+  const march = rows.filter(r => r.month === 'March' && r.year === '2026');
+  const snapshot = { id: 's', reference: 'MSP-PH-202603', period: '2026-03', rows: march, total: 14851.86, created_at: '2026-11-08', payment_date: null };
+  let saved = snapshot; let issued = 0;
+  const server = load('src/lib/phone-bill-email-server.ts', {
+    'server-only': {}, './phone-bills': h, './phone-bill-email': email, './phone-statement-pdf': pdf,
+    './phone-bills-server': { basePhoneRows: async () => march, allPhoneRows: async () => { throw new Error('Must prefer saved snapshot'); } },
+  });
+  const supabase = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: saved }) }) }) }), rpc: async () => { issued++; saved = snapshot; return { data: snapshot }; } };
+  const input = { ...email.phoneBillEmail(march.slice(0, 1), 'March', '2026', 'partial'), recipients: ['test@example.com'], note: 'Please sign and return.' };
+  const prepared = await server.preparePhoneBillEmail(supabase, input, 'admin');
+  assert.equal(issued, 0);
+  assert.equal(prepared.attachmentContentType, 'application/pdf');
+  assert.equal(prepared.attachmentContent.subarray(0, 4).toString(), '%PDF');
+  assert.equal(prepared.payload.data.summary.find(r => r.label === 'Accounts included').value, '21');
+  assert.equal(prepared.payload.data.sections, undefined);
+  assert.deepEqual(prepared.payload.recipients, ['test@example.com']);
+  saved = null;
+  await server.preparePhoneBillEmail(supabase, input, 'admin');
+  assert.equal(issued, 1);
+  await assert.rejects(server.preparePhoneBillEmail(supabase, {...input, phoneBillPeriod:'invalid'}, 'admin'), /valid month/);
+});
+test('PDF preview route rejects unauthorized access', async () => {
+  const route = load('src/app/api/phone-bills/pdf/route.ts', { '@/lib/phone-bills-server': { phoneBillAuth: () => ({ error: new Response('Unauthorized', { status: 401 }) }) }, '@/lib/phone-bills': h, '@/lib/phone-bill-email-server': {} });
+  assert.equal((await route.GET(new Request('http://localhost/api/phone-bills/pdf?period=2026-03'))).status, 401);
+});
+
+test('send endpoint passes the generated PDF bytes and MIME type to the email provider', async () => {
+  const email = load('src/lib/phone-bill-email.ts', { './phone-bills': h });
+  const validation = load('src/lib/email/payload.ts');
+  const input = { ...email.phoneBillEmail(feb, 'February', '2026', ''), recipients: ['test@example.com'] };
+  const bytes = Buffer.from('%PDF-1.7 test document');
+  let delivery;
+  const route = load('src/app/api/email/send/route.ts', {
+    '@/lib/email/payload': validation,
+    '@/lib/email/render': { renderEmail: () => ({ subject: 'Monthly PDF', text: 'Please sign.', html: '<p>Please sign.</p>' }) },
+    '@/lib/phone-bill-email-server': { preparePhoneBillEmail: async () => ({ payload: input, attachmentContent: bytes, attachmentContentType: 'application/pdf' }) },
+    '@/lib/email/provider': { sendEmail: async data => { delivery = data; return { status: 'sent', provider: 'test' }; }, EmailDeliveryError: class extends Error {} },
+    '../_auth': { requireEmailUser: async () => ({ user: { id: 'admin' }, supabase: { from: () => ({ insert: () => ({ select: () => ({ single: async () => ({ data: { id: 'log' } }) }) }), update: () => ({ eq: async () => ({ error: null }) }) }) } }) },
+    '@/lib/auth/rate-limit': { checkRateLimit: () => ({}), rateLimitKey: () => 'test' },
+  });
+  const response = await route.POST(new Request('http://localhost/api/email/send', { method: 'POST', body: JSON.stringify(input) }));
+  assert.equal(response.status, 201);
+  assert.equal(delivery.attachmentContent, bytes);
+  assert.equal(delivery.attachmentContentType, 'application/pdf');
+  assert.ok(delivery.payload.attachmentName.endsWith('.pdf'));
 });

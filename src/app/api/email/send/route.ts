@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { renderEmail } from '@/lib/email/render';
 import { EmailDeliveryError, sendEmail } from '@/lib/email/provider';
-import { validateEmailPayload } from '@/lib/email/payload';
+import { validateEmailPayload, type EmailPayload } from '@/lib/email/payload';
 import { requireEmailUser } from '../_auth';
 import { checkRateLimit, rateLimitKey } from '@/lib/auth/rate-limit';
+import { preparePhoneBillEmail } from '@/lib/phone-bill-email-server';
 
 export async function POST(request: Request) {
   const auth = await requireEmailUser(request);
@@ -22,7 +23,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const payload = parsed.payload;
+  let payload: EmailPayload = parsed.payload;
+  let attachment: { attachmentContent?: Buffer; attachmentContentType?: string } = {};
+  if (['/ho-fuel/recurring-bills/phone-bills', '/recurring-bills/phone-bills'].includes(payload.sourcePath)) {
+    try {
+      const prepared = await preparePhoneBillEmail(auth.supabase, payload, auth.user.id);
+      payload = prepared.payload;
+      attachment = { attachmentContent: prepared.attachmentContent, attachmentContentType: prepared.attachmentContentType };
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to prepare the monthly PDF.' }, { status: 409 });
+    }
+  }
   const rendered = renderEmail(payload);
   const fromAddress = process.env.EMAIL_FROM_ADDRESS || 'reports@mspcoffee.local';
 
@@ -48,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await sendEmail({ payload, ...rendered });
+    const result = await sendEmail({ payload, ...rendered, ...attachment });
     const { error: updateError } = await auth.supabase
       .from('email_delivery_log')
       .update({

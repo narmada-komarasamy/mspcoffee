@@ -27,6 +27,7 @@ export type EmailPayload = {
   reportTitle: string;
   sourcePath: string;
   attachmentName?: string;
+  phoneBillPeriod?: string;
   data: {
     summary: EmailMetric[];
     sections?: EmailSection[];
@@ -119,6 +120,7 @@ export function validateEmailPayload(value: unknown) {
       reportTitle,
       sourcePath,
       attachmentName,
+      ...(typeof row.phoneBillPeriod === 'string' ? { phoneBillPeriod: row.phoneBillPeriod } : {}),
       data: {
         summary: dataRow.summary,
         sections: dataRow.sections,

@@ -58,6 +58,7 @@ const blankEntry: PhoneBillRow = {
 
 export default function PhoneBillsRegister({ previewRows }: { previewRows?: PhoneBillRow[] }) {
   const [baseRows, setBaseRows] = useState<PhoneBillRow[]>(previewRows || []);
+  const [emailRevision, setEmailRevision] = useState(0);
   const [saving, setSaving] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -197,8 +198,9 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
     URL.revokeObjectURL(link.href);
   };
 
-  const emailPayload = BILL_MONTHS.includes(month) && /^20\d{2}$/.test(year) && filtered.length
-    ? phoneBillEmail(filtered, month, year, activeNote)
+  const emailRows = rows.filter(row => row.month === month && row.year === year);
+  const emailPayload = BILL_MONTHS.includes(month) && /^20\d{2}$/.test(year) && emailRows.length
+    ? phoneBillEmail(emailRows, month, year, "Complete monthly statement — all accounts, regardless of register filters.")
     : null;
 
   const printReport = () => {
@@ -298,7 +300,7 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
         <div className={css.activeNote}>Showing <b>{filtered.length}</b> line items. {activeNote}</div>
       </section>
 
-      <MonthlyStatement rows={rows} month={month} year={year} preview={!!previewRows} onSelect={(selectedMonth, selectedYear) => { setMonth(selectedMonth); setYear(selectedYear); }} />
+      <MonthlyStatement rows={rows} month={month} year={year} preview={!!previewRows} refreshVersion={emailRevision} onSelect={(selectedMonth, selectedYear) => { setMonth(selectedMonth); setYear(selectedYear); }} />
 
       <section className={css.actionBar}>
         <button className={`${css.actionBtn} ${css.actionBtnPrimary}`} onClick={() => { setEditingKey(null); setDraft({ ...blankEntry, month: month === "ALL" ? "January" : month, year: year === "ALL" ? blankEntry.year : year }); setShowAddForm(value => !value); }}>
@@ -307,7 +309,7 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
         <button className={css.actionBtn} onClick={printReport} disabled={!filtered.length}>
           <Printer size={14} /> Print chosen report
         </button>
-        {emailPayload ? <EmailReportButton key={activeNote} payload={emailPayload} label="Email chosen report" disabled={!!previewRows} /> : <button className={css.actionBtn} disabled title="Select one month and year with bill entries">Email chosen report — select a month and year</button>}
+        {emailPayload ? <EmailReportButton key={activeNote} payload={emailPayload} label="Email chosen report" disabled={!!previewRows} pdfPreviewUrl={`/api/phone-bills/pdf?period=${emailPayload.phoneBillPeriod}`} onSent={() => setEmailRevision(r => r + 1)} /> : <button className={css.actionBtn} disabled title="Select one month and year with bill entries">Email chosen report — select a month and year</button>}
         <button className={css.actionBtn} onClick={() => exportCsv()} disabled={!filtered.length}>
           <Download size={14} /> Download CSV
         </button>
