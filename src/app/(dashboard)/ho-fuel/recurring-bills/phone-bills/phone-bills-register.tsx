@@ -310,7 +310,7 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
         <div className={css.activeNote}>Showing <b>{filtered.length}</b> line items. {activeNote}</div>
       </section>
 
-      <MonthlyStatement rows={rows} month={month} year={year} preview={!!previewRows} />
+      <MonthlyStatement rows={rows} month={month} year={year} preview={!!previewRows} onSelect={(selectedMonth, selectedYear) => { setMonth(selectedMonth); setYear(selectedYear); }} />
 
       <section className={css.actionBar}>
         <button className={`${css.actionBtn} ${css.actionBtnPrimary}`} onClick={() => { setEditingKey(null); setDraft({ ...blankEntry, month: month === "ALL" ? "January" : month, year: year === "ALL" ? blankEntry.year : year }); setShowAddForm(value => !value); }}>

@@ -12,6 +12,51 @@ export type PhoneStatement = {
 };
 export type StatementFile = { id: string; file_name: string; created_at: string };
 
+// User-confirmed opening balance; no payment dates or voucher references are inferred.
+export const HISTORICAL_PAID_THROUGH = '2026-02';
+export function historicallyPaid(period: string) {
+  return validPeriod(period) && period <= HISTORICAL_PAID_THROUGH;
+}
+export function paymentStatus(period: string, paymentDate: string | null, fileCount: number) {
+  if (historicallyPaid(period)) return fileCount ? 'Paid — historical · Scan saved' : 'Paid — historical';
+  if (!paymentDate) return 'Unpaid';
+  return fileCount ? 'Paid — scan saved' : 'Paid — scan pending';
+}
+export type HistoryStatement = Pick<PhoneStatement, 'id' | 'period' | 'total' | 'payment_date' | 'payment_reference'>;
+export type HistoryFile = StatementFile & { statement_id: string };
+export type PaymentHistoryRow = {
+  period: string; total: number; missingAmounts: boolean; historical: boolean;
+  paid: boolean; status: string; paymentDate: string | null; reference: string | null;
+  files: StatementFile[];
+};
+export function buildPaymentHistory(rows: PhoneBillRow[], statements: HistoryStatement[], files: HistoryFile[]): PaymentHistoryRow[] {
+  const months = new Map<string, PhoneBillRow[]>();
+  for (const row of rows) {
+    const period = billPeriod(row);
+    if (!validPeriod(period)) continue;
+    const group = months.get(period) || [];
+    group.push(row); months.set(period, group);
+  }
+  const saved = new Map(statements.map(s => [s.period, s]));
+  const attachments = new Map<string, StatementFile[]>();
+  for (const file of files) {
+    const group = attachments.get(file.statement_id) || [];
+    group.push(file); attachments.set(file.statement_id, group);
+  }
+  return [...new Set([...months.keys(), ...saved.keys()])].sort().reverse().map(period => {
+    const statement = saved.get(period);
+    const entries = months.get(period) || [];
+    const copies = statement ? attachments.get(statement.id) || [] : [];
+    return {
+      period, total: statement ? Number(statement.total) : totalBills(entries),
+      missingAmounts: !statement && entries.some(r => r.amount === null),
+      historical: historicallyPaid(period), paid: historicallyPaid(period) || !!statement?.payment_date,
+      status: paymentStatus(period, statement?.payment_date || null, copies.length),
+      paymentDate: statement?.payment_date || null, reference: statement?.payment_reference || null, files: copies,
+    };
+  });
+}
+
 export function billPayee(row: { remarks?: string; accountNo?: string; payee?: string }): BillPayee {
   if (row.payee === 'Mr. AM' || row.payee === 'Mrs. NA') return row.payee;
   if (/Mrs\.?\s*NA\b/i.test(row.remarks || '')) return 'Mrs. NA';

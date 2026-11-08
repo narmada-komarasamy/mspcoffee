@@ -594,3 +594,12 @@
     margin-top: 18px;
   }
 }
+
+.history { border-top: 1px solid var(--t-border); padding: 24px 20px; margin-top: 18px; }
+.history h2 { font-size: 20px; color: var(--t-green); margin: 0 0 10px; }
+.history > p { color: var(--t-muted); font-size: 12px; line-height: 1.7; }
+.historyFilters { display: flex; flex-wrap: wrap; gap: 16px; margin: 18px 0; }
+.historyFilters label { min-width: 180px; }
+.history td { white-space: normal; overflow-wrap: anywhere; }
+.uploadPicker { display: none; }
+@media print { .history, .workflow { display: none; } }

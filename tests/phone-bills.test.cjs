@@ -86,3 +86,64 @@ test('statement creation computes source rows on the server and ignores client-s
   assert.equal(args.actor, 'admin');
   assert.ok(args.base_rows.every(r => r.entryKey === h.billKey(r)));
 });
+
+test('historical cutoff includes February and earlier years, while March requires a recorded payment', () => {
+  for (const period of ['2020-12', '2025-12', '2026-01', '2026-02']) assert.equal(h.historicallyPaid(period), true);
+  for (const period of ['2026-03', '2027-01', 'invalid', '2026-00']) assert.equal(h.historicallyPaid(period), false);
+  assert.equal(h.paymentStatus('2026-03', null, 1), 'Unpaid');
+  assert.equal(h.paymentStatus('2026-03', '2026-04-01', 0), 'Paid — scan pending');
+  assert.equal(h.paymentStatus('2026-03', '2026-04-01', 1), 'Paid — scan saved');
+});
+test('history keeps saved totals, old scans and real payment details without inventing historical dates', () => {
+  const statements = [
+    { id: 'old', period: '2025-01', total: 123, payment_date: null, payment_reference: null },
+    { id: 'march', period: '2026-03', total: 15000, payment_date: '2026-04-01', payment_reference: 'V-1' },
+  ];
+  const files = [{ id: 'file', statement_id: 'old', file_name: 'old.pdf', created_at: '2026-11-08' }];
+  const history = h.buildPaymentHistory(rows, statements, files);
+  const old = history.find(r => r.period === '2025-01');
+  assert.equal(old.paid, true); assert.equal(old.paymentDate, null); assert.equal(old.reference, null);
+  assert.equal(old.total, 123); assert.equal(old.files[0].id, 'file');
+  const march = history.find(r => r.period === '2026-03');
+  assert.equal(march.total, 15000); assert.equal(march.reference, 'V-1'); assert.equal(march.status, 'Paid — scan pending');
+  assert.equal(history.find(r => r.period === '2026-04').paid, false);
+  assert.equal(history.find(r => r.period === '2026-02').paid, true);
+});
+test('history endpoint rejects unauthorized access', async () => {
+  const route = load('src/app/api/phone-bills/history/route.ts', { '@/lib/phone-bills-server': { phoneBillAuth: () => ({ error: new Response('Unauthorized', { status: 401 }) }) }, '@/lib/phone-bills': h });
+  assert.equal((await route.GET(new Request('http://localhost/api/phone-bills/history'))).status, 401);
+});
+test('historical payments cannot be recorded a second time through the API', async () => {
+  const route = load('src/app/api/phone-bills/statements/route.ts', {
+    '@/lib/phone-bills-server': { phoneBillAuth: async () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { total: 14914.5, payment_date: null, period: '2026-02' } }) }) }) }) } }) },
+    '@/lib/phone-bills': h, '@/lib/auth/api': { UUID_RE: /^[0-9a-f-]{36}$/ },
+  });
+  const response = await route.PATCH(new Request('http://localhost/api/phone-bills/statements', { method: 'PATCH', body: JSON.stringify({ id: '00000000-0000-0000-0000-000000000001', date: '2026-02-28', reference: 'DUPLICATE', amount: 14914.5 }) }));
+  assert.equal(response.status, 409);
+});
+
+test('history API returns persisted payments and scans and fails visibly when saved records cannot load', async () => {
+  let failed = false;
+  const route = load('src/app/api/phone-bills/history/route.ts', {
+    '@/lib/phone-bills-server': {
+      allPhoneRows: async () => feb,
+      phoneBillAuth: async () => ({ supabase: { from: table => {
+        const query = { select: () => query, order: () => query, range: async () => failed ? { error: {} } : { data: table === 'phone_bill_statements' ? [{ id: 's', period: '2026-02', total: 14914.5, payment_date: null, payment_reference: null }] : [{ id: 'f', statement_id: 's', file_name: 'signed.pdf', created_at: '2026-11-08' }] } };
+        return query;
+      } } }),
+    }, '@/lib/phone-bills': h,
+  });
+  const response = await route.GET(new Request('http://localhost/api/phone-bills/history'));
+  assert.equal(response.status, 200);
+  const { history } = await response.json();
+  assert.equal(history[0].files[0].file_name, 'signed.pdf');
+  assert.equal(history[0].status, 'Paid — historical · Scan saved');
+  failed = true;
+  assert.equal((await route.GET(new Request('http://localhost/api/phone-bills/history'))).status, 503);
+});
+test('historical printouts describe the opening balance without fabricated payment details', () => {
+  const document = html.phoneStatementHtml(feb, '2026-02');
+  assert.ok(document.includes('Paid — historical'));
+  assert.ok(document.includes('Payment date and voucher reference not recorded'));
+  assert.ok(!html.phoneStatementHtml(feb, '2026-03').includes('Paid — historical'));
+});

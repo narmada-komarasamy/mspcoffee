@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { basePhoneRows, phoneBillAuth } from '@/lib/phone-bills-server';
-import { billKey, billPeriod, paymentError, validPeriod } from '@/lib/phone-bills';
+import { billKey, billPeriod, historicallyPaid, paymentError, validPeriod } from '@/lib/phone-bills';
 import { UUID_RE } from '@/lib/auth/api';
 
 export async function GET(request: Request) {
@@ -31,9 +31,10 @@ export async function PATCH(request: Request) {
   if ('error' in auth) return auth.error;
   const body = await request.json().catch(() => null);
   if (!UUID_RE.test(body?.id || '')) return NextResponse.json({ error: 'Invalid statement.' }, { status: 400 });
-  const { data: statement, error: readError } = await auth.supabase.from('phone_bill_statements').select('total,payment_date').eq('id', body.id).maybeSingle();
+  const { data: statement, error: readError } = await auth.supabase.from('phone_bill_statements').select('total,payment_date,period').eq('id', body.id).maybeSingle();
   if (readError) return NextResponse.json({ error: 'Unable to load statement.' }, { status: 500 });
   if (!statement) return NextResponse.json({ error: 'Statement not found.' }, { status: 404 });
+  if (historicallyPaid(statement.period)) return NextResponse.json({ error: 'This month is already paid under the confirmed historical balance through February 2026.' }, { status: 409 });
   if (statement.payment_date) return NextResponse.json({ error: 'Payment is already recorded for this statement.' }, { status: 409 });
   const validation = paymentError(body, Number(statement.total));
   if (validation) return NextResponse.json({ error: validation }, { status: 400 });
