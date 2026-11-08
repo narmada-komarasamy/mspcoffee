@@ -282,7 +282,7 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
             </select>
           </div>
           <div className={css.field}>
-            <label className={css.label}>Month</label>
+            <label className={css.label}>Bill month</label>
             <select className={css.select} value={month} onChange={(e) => setMonth(e.target.value)}>
               <option value="ALL">All months</option>
               {months.map((value) => <option key={value} value={value}>{value}</option>)}
@@ -298,6 +298,7 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
           <button className={css.clearBtn} onClick={clearFilters}>Clear filters</button>
         </div>
         <div className={css.activeNote}>Showing <b>{filtered.length}</b> line items. {activeNote}</div>
+        {year === '2026' && <button className={css.actionBtn} onClick={() => { setMonth('September'); setYear('2026'); setPhoneQuery(''); setUser('ALL'); setBillType('ALL'); }}>Open October 2026 worksheet · September bills</button>}
       </section>
 
       <MonthlyStatement rows={rows} month={month} year={year} preview={!!previewRows} refreshVersion={emailRevision} onSelect={(selectedMonth, selectedYear) => { setMonth(selectedMonth); setYear(selectedYear); }} />

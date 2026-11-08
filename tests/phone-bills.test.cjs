@@ -172,7 +172,7 @@ test('monthly email includes only the chosen month, every filtered entry, recipi
 });
 
 test('monthly PDF fits one A4 page with every account across all source months', async () => {
-  const pdf = load('src/lib/phone-statement-pdf.ts', { './phone-bills': h });
+  const pdf = load('src/lib/phone-statement-pdf.ts', { './phone-bills': h, './phone-bill-sources': load('src/lib/phone-bill-sources.ts') });
   const { PDFDocument } = require('pdf-lib');
   const logo = fs.readFileSync('public/msp-logo.png');
   for (const period of new Set(rows.map(h.billPeriod))) {
@@ -189,7 +189,7 @@ test('monthly PDF fits one A4 page with every account across all source months',
 });
 test('email preparation uses the full saved snapshot and produces a real PDF attachment', async () => {
   const email = load('src/lib/phone-bill-email.ts', { './phone-bills': h });
-  const pdf = load('src/lib/phone-statement-pdf.ts', { './phone-bills': h });
+  const pdf = load('src/lib/phone-statement-pdf.ts', { './phone-bills': h, './phone-bill-sources': load('src/lib/phone-bill-sources.ts') });
   const march = rows.filter(r => r.month === 'March' && r.year === '2026');
   const snapshot = { id: 's', reference: 'MSP-PH-202603', period: '2026-03', rows: march, total: 14851.86, created_at: '2026-11-08', payment_date: null };
   let saved = snapshot; let issued = 0;
@@ -242,4 +242,17 @@ test('send endpoint passes the generated PDF bytes and MIME type to the email pr
   assert.equal(delivery.attachmentContent, bytes);
   assert.equal(delivery.attachmentContentType, 'application/pdf');
   assert.ok(delivery.payload.attachmentName.endsWith('.pdf'));
+});
+
+test('October worksheet is linked to its September bill month with a recalculated total and no duplicate reimbursement', () => {
+  const source = load('src/lib/phone-bill-sources.ts').phoneBillSource('2026-09');
+  assert.equal(source.worksheet, 'October 2026');
+  assert.equal(source.originalTotal, 12908.34);
+  const entries = rows.filter(r => r.month === source.billMonth && r.year === source.year);
+  assert.equal(entries.length, 21);
+  assert.equal(h.totalBills(entries.filter(r => r.billType === 'BSNL Mobile')), 3415);
+  assert.equal(h.totalBills(entries.filter(r => r.billType === 'Jio Mobile')), 1592.48);
+  assert.equal(h.totalBills(entries.filter(r => r.billType === 'BSNL FTTH Internet')), 8958.34);
+  assert.equal(h.totalBills(entries), 13965.82);
+  assert.deepEqual(h.payeeTotals(entries), [{ payee: 'Mr. AM', total: 11608 }, { payee: 'Mrs. NA', total: 2357.82 }]);
 });

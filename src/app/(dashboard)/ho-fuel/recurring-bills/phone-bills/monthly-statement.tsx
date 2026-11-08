@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { billMoney, billPeriod, historicallyPaid, paymentStatus, payeeTotals, totalBills, validPeriod, type PhoneBillRow, type PhoneStatement, type StatementFile } from '@/lib/phone-bills';
 import css from './phone-bills.module.css';
 import PaymentHistory from './payment-history';
+import { phoneBillSource } from '@/lib/phone-bill-sources';
 
 export default function MonthlyStatement({ rows, month, year, preview = false, onSelect, refreshVersion = 0 }: { rows: PhoneBillRow[]; month: string; year: string; preview?: boolean; refreshVersion?: number; onSelect: (month: string, year: string) => void }) {
   const period = billPeriod({ month, year });
+  const source = phoneBillSource(period);
   const historical = historicallyPaid(period);
   const [revision, setRevision] = useState(0);
   const ready = validPeriod(period) && month !== 'ALL';
@@ -81,6 +83,7 @@ export default function MonthlyStatement({ rows, month, year, preview = false, o
   return <section className={css.monthly} aria-labelledby="monthly-title">
     <div className={css.monthlyHead}><div><div className={css.eyebrow}>Monthly reimbursement</div><h2 id="monthly-title">{ready ? `${month} ${year}` : 'Select a month and year'}</h2><p>One statement · Two reimbursement recipients · Signed copies kept by month</p></div><span className={css.status}>{!ready ? 'Choose period' : paymentStatus(period, statement?.payment_date || null, files.length)}</span></div>
     {ready && <>
+      {source && <p className={css.notice}>Source worksheet: <b>{source.worksheet}</b> · Prepared {source.prepared} · Bill month: {month} {year}. The source sheet shows {billMoney(source.originalTotal)}; the accounts below are recalculated to {billMoney(total)}. This is the same monthly reimbursement, retained once.</p>}
       <div className={css.recipientGrid}>{payeeTotals(statementRows).map(p => <div key={p.payee}><span>Reimburse {p.payee}</span><b>{billMoney(p.total)}</b></div>)}<div className={css.monthlyTotal}><span>Total · {statementRows.length} accounts</span><b>{billMoney(total)}</b></div></div>
       <div className={css.workflow}>
         <div><h3>1. Prepare &amp; print</h3><p>Review all accounts, save the statement, then open its preview to print or save a PDF.</p><a className={css.actionBtn} href={`/api/phone-bills/pdf?period=${period}`} target="_blank" rel="noopener noreferrer">Preview / print one-page PDF</a>{!statement && <button className={`${css.actionBtn} ${css.actionBtnPrimary}`} disabled={preview || !loaded || !!error || !statementRows.length || missing || total <= 0 || busy} onClick={issue}>{busy ? 'Please wait…' : 'Save statement for printing'}</button>}{statement && <p className={css.reference}>{statement.reference}</p>}{missing && <p role="alert">Fill missing amounts before issuing.</p>}</div>

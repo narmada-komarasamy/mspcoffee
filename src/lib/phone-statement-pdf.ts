@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib';
 import { BILL_MONTHS, billPayee, historicallyPaid, payeeTotals, totalBills, type PhoneBillRow, type PhoneStatement } from './phone-bills';
+import { phoneBillSource } from './phone-bill-sources';
 
 const safe = (value: string) => value.replace(/₹/g, 'Rs ').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[^\x20-\x7e\xa0-\xff]/g, ' ');
 const money = (value: number) => `Rs ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -41,7 +42,8 @@ export async function phoneStatementPdf(rows: PhoneBillRow[], period: string, lo
   const reference = statement?.reference || `MSP-PH-${period.replace('-', '')}`;
   text(`Statement: ${reference}`, 30, 725, 8, true);
   text(statement ? 'Saved monthly statement' : 'DRAFT - review before saving', 390, 725, 8, false, muted);
-  text(`Consolidated monthly reimbursement | ${rows.length} accounts | Amounts in INR`, 30, 709, 8, false, muted);
+  const source = phoneBillSource(period);
+  text(source ? `${rows.length} accounts | INR | Worksheet: ${source.worksheet} | Prepared ${source.prepared}` : `Consolidated monthly reimbursement | ${rows.length} accounts | Amounts in INR`, 30, 709, 8, false, muted);
 
   const widths = [20, 65, 110, 65, 118, 68, 93];
   const ordered = [...rows].sort((a, b) => a.billType.localeCompare(b.billType) || a.location.localeCompare(b.location));
