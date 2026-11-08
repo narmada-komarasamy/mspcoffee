@@ -2,7 +2,7 @@ import 'server-only';
 import { readFile } from 'node:fs/promises';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { allPhoneRows, basePhoneRows } from './phone-bills-server';
-import { billKey, billPeriod, validPeriod, type PhoneStatement } from './phone-bills';
+import { BILL_MONTHS, billKey, billPeriod, validPeriod, type PhoneStatement } from './phone-bills';
 import { phoneBillEmail } from './phone-bill-email';
 import { phoneStatementPdf } from './phone-statement-pdf';
 import type { EmailPayload } from './email/payload';
@@ -30,7 +30,13 @@ export async function monthlyPhoneDocument(supabase: SupabaseClient, period: str
 }
 
 export async function preparePhoneBillEmail(supabase: SupabaseClient, input: EmailPayload, actor: string) {
-  const period = input.phoneBillPeriod || '';
+  // An already-open pre-PDF form has no phoneBillPeriod. Its explicit bill-month
+  // summary is the only legacy fallback; notes and filenames never choose a month.
+  const monthFields = input.data.summary.filter(item => item.label === 'Bill month');
+  const match = monthFields.length === 1 ? /^([A-Za-z]+) (20\d{2})$/.exec(monthFields[0].value) : null;
+  const summaryPeriod = match && BILL_MONTHS.includes(match[1]) ? billPeriod({ month: match[1], year: match[2] }) : '';
+  const period = input.phoneBillPeriod === undefined ? summaryPeriod : input.phoneBillPeriod;
+  if (!validPeriod(period) || (summaryPeriod && summaryPeriod !== period)) throw new Error('The report month is missing or inconsistent. Close the email window, refresh the page and select the month again.');
   const document = await monthlyPhoneDocument(supabase, period, actor);
   const first = document.rows[0];
   const canonical = phoneBillEmail(document.rows, first.month, first.year, 'Complete saved monthly statement; all accounts included.');

@@ -206,10 +206,17 @@ test('email preparation uses the full saved snapshot and produces a real PDF att
   assert.equal(prepared.payload.data.summary.find(r => r.label === 'Accounts included').value, '21');
   assert.equal(prepared.payload.data.sections, undefined);
   assert.deepEqual(prepared.payload.recipients, ['test@example.com']);
+  const legacy = { ...input, phoneBillPeriod: undefined, attachmentName: 'MSP_Phone_Bills_2026_03.html', note: 'March 2027' };
+  const compatible = await server.preparePhoneBillEmail(supabase, legacy, 'admin');
+  assert.equal(compatible.payload.phoneBillPeriod, '2026-03');
+  assert.equal(compatible.payload.note, 'March 2027');
+  assert.ok(compatible.payload.attachmentName.endsWith('.pdf'));
+  await assert.rejects(server.preparePhoneBillEmail(supabase, { ...input, phoneBillPeriod: '2027-03' }, 'admin'), /inconsistent/);
+  await assert.rejects(server.preparePhoneBillEmail(supabase, { ...legacy, data: { summary: [] } }, 'admin'), /missing/);
   saved = null;
   await server.preparePhoneBillEmail(supabase, input, 'admin');
   assert.equal(issued, 1);
-  await assert.rejects(server.preparePhoneBillEmail(supabase, {...input, phoneBillPeriod:'invalid'}, 'admin'), /valid month/);
+  await assert.rejects(server.preparePhoneBillEmail(supabase, {...input, phoneBillPeriod:'invalid'}, 'admin'), /missing or inconsistent/);
 });
 test('PDF preview route rejects unauthorized access', async () => {
   const route = load('src/app/api/phone-bills/pdf/route.ts', { '@/lib/phone-bills-server': { phoneBillAuth: () => ({ error: new Response('Unauthorized', { status: 401 }) }) }, '@/lib/phone-bills': h, '@/lib/phone-bill-email-server': {} });

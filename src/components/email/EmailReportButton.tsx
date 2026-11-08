@@ -40,12 +40,14 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
   const [cc, setCc] = useState(payload.cc?.join(', ') ?? '');
   const [note, setNote] = useState(payload.note ?? '');
   const [status, setStatus] = useState('');
+  const [statusError, setStatusError] = useState(false);
   const [providerStatus, setProviderStatus] = useState('');
   const [sending, setSending] = useState(false);
 
   async function openDialog() {
     setOpen(true);
     setStatus('');
+    setStatusError(false);
     setProviderStatus('');
 
     let response: Response;
@@ -78,6 +80,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
   async function sendReport() {
     setSending(true);
     setStatus('');
+    setStatusError(false);
 
     let response: Response;
     try {
@@ -96,6 +99,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
       });
     } catch {
       setSending(false);
+      setStatusError(true);
       setStatus('Email could not be sent');
       return;
     }
@@ -104,6 +108,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
     setSending(false);
 
     if (!response.ok) {
+      setStatusError(true);
       setStatus(body?.error ?? 'Email could not be sent');
       return;
     }
@@ -195,7 +200,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
                 />
               </label>
               <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 700, color: '#374151' }}>
-                Note
+                Note (optional message; does not change the report month)
                 <textarea
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
@@ -255,10 +260,10 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
                 }}>{providerStatus}</div>
               )}
               {status && (
-                <div style={{
+                <div role={statusError ? 'alert' : 'status'} style={{
                   border: '1px solid #e5dfc8',
-                  background: status.includes('could not') ? '#fff1f1' : '#f7fbef',
-                  color: status.includes('could not') ? '#9f1239' : '#1b4a1b',
+                  background: statusError ? '#fff1f1' : '#f7fbef',
+                  color: statusError ? '#9f1239' : '#1b4a1b',
                   borderRadius: 8,
                   padding: '9px 10px',
                   fontSize: 13,
