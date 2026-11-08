@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Loader2, Mail, Plus, Printer, RefreshCw } from "lucide-react";
+import { Download, Loader2, Plus, Printer, RefreshCw } from "lucide-react";
 import css from "./phone-bills.module.css";
 
 import { BILL_MONTHS, billKey, billPayee, cleanBillRow, parsePhoneCsv, totalBills, type PhoneBillRow } from "@/lib/phone-bills";
 import MonthlyStatement from "./monthly-statement";
+import { EmailReportButton } from "@/components/email/EmailReportButton";
+import { phoneBillEmail } from "@/lib/phone-bill-email";
 
 const DATA_URL = "/data/phone-bill-reimbursements.csv";
 const PAGE_SIZE = 100;
@@ -195,23 +197,9 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
     URL.revokeObjectURL(link.href);
   };
 
-  const emailView = () => {
-    exportCsv();
-    const transferLines = transferSummary.map(([label, amount]) => `${label}: ${money(amount)}`);
-    const subject = `Phone Bill Reimbursement Report - ${filtered.length} records`;
-    const body = [
-      "Phone & Internet Bill Reimbursement Report",
-      `Records: ${filtered.length}`,
-      `Total: ${money(stats.totalAmount)}`,
-      `Filters: ${activeNote}`,
-      "",
-      "Transfer summary:",
-      ...(transferLines.length ? transferLines : ["No transfer summary available."]),
-      "",
-      "A CSV of this filtered view has just been downloaded. Please attach it to the email.",
-    ].join("\n");
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
+  const emailPayload = BILL_MONTHS.includes(month) && /^20\d{2}$/.test(year) && filtered.length
+    ? phoneBillEmail(filtered, month, year, activeNote)
+    : null;
 
   const printReport = () => {
     setPrintMode(true);
@@ -319,9 +307,7 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
         <button className={css.actionBtn} onClick={printReport} disabled={!filtered.length}>
           <Printer size={14} /> Print chosen report
         </button>
-        <button className={css.actionBtn} onClick={emailView} disabled={!filtered.length}>
-          <Mail size={14} /> Email chosen report
-        </button>
+        {emailPayload ? <EmailReportButton key={activeNote} payload={emailPayload} label="Email chosen report" disabled={!!previewRows} /> : <button className={css.actionBtn} disabled title="Select one month and year with bill entries">Email chosen report — select a month and year</button>}
         <button className={css.actionBtn} onClick={() => exportCsv()} disabled={!filtered.length}>
           <Download size={14} /> Download CSV
         </button>

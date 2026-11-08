@@ -147,3 +147,26 @@ test('historical printouts describe the opening balance without fabricated payme
   assert.ok(document.includes('Payment date and voucher reference not recorded'));
   assert.ok(!html.phoneStatementHtml(feb, '2026-03').includes('Paid — historical'));
 });
+
+test('monthly email includes only the chosen month, every filtered entry, recipient totals and an automatic report attachment', () => {
+  const email = load('src/lib/phone-bill-email.ts', { './phone-bills': h });
+  const march = rows.filter(r => r.month === 'March' && r.year === '2026');
+  const payload = email.phoneBillEmail(march, 'March', '2026', 'month is March; year is 2026');
+  assert.equal(payload.data.sections[0].rows.length, 21);
+  assert.ok(payload.subject.includes('March 2026'));
+  assert.equal(payload.attachmentName, 'MSP_Phone_Bills_2026_03.html');
+  assert.equal(payload.data.summary.find(r => r.label === 'Total reimbursement').value, h.billMoney(14851.86));
+  assert.equal(payload.data.summary.find(r => r.label === 'Reimburse Mrs. NA').value, h.billMoney(2357.82));
+  const validate = load('src/lib/email/payload.ts');
+  assert.ok('payload' in validate.validateEmailPayload({ ...payload, recipients: ['test@example.com'] }));
+  const rendered = load('src/lib/email/render.ts').renderEmail(payload);
+  assert.ok(rendered.html.includes('March 2026'));
+  assert.ok(!rendered.html.includes('February 2026'));
+  assert.ok(rendered.html.includes('Included bill entries'));
+  assert.throws(() => email.phoneBillEmail(rows, 'March', '2026', ''));
+  assert.throws(() => email.phoneBillEmail(march, 'ALL', '2026', ''));
+  assert.throws(() => email.phoneBillEmail([], 'March', '2026', ''));
+  const partial = email.phoneBillEmail(march.slice(0, 1), 'March', '2026', 'user is Mr.MR');
+  assert.equal(partial.data.sections[0].rows.length, 1);
+  assert.equal(partial.data.summary.find(r => r.label === 'Register filters').value, 'user is Mr.MR');
+});

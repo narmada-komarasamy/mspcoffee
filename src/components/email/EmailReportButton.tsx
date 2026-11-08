@@ -11,6 +11,7 @@ type Props = {
     note?: string;
   };
   label?: string;
+  disabled?: boolean;
 };
 
 function getAuthHeaders(): Record<string, string> {
@@ -31,7 +32,7 @@ function providerLabel(provider?: string) {
   return 'email provider';
 }
 
-export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
+export function EmailReportButton({ payload, label = 'Email Report', disabled = false }: Props) {
   const [open, setOpen] = useState(false);
   const [recipients, setRecipients] = useState(payload.recipients?.join(', ') ?? '');
   const [cc, setCc] = useState(payload.cc?.join(', ') ?? '');
@@ -117,6 +118,7 @@ export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
     <>
       <button
         type="button"
+        disabled={disabled}
         onClick={openDialog}
         style={{
           display: 'inline-flex',
@@ -129,7 +131,8 @@ export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
           padding: '9px 14px',
           fontSize: 13,
           fontWeight: 700,
-          cursor: 'pointer',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
         }}
       >
         <Send size={15} />
@@ -207,6 +210,7 @@ export function EmailReportButton({ payload, label = 'Email Report' }: Props) {
                 <div style={{ padding: '10px 12px', borderBottom: '1px solid #f0ead4', display: 'grid', gap: 3 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.08em' }}>Preview</div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#1b4a1b' }}>Subject: {payload.subject || payload.reportTitle}</div>
+                  {payload.attachmentName && <div style={{ fontSize: 12, color: '#6b7280' }}>Attachment: {payload.attachmentName}</div>}
                 </div>
                 <div style={{ padding: 12, display: 'grid', gap: 12, maxHeight: 270, overflow: 'auto' }}>
                   {note && <div style={{ background: '#fff8e1', border: '1px solid #ead58a', borderRadius: 7, padding: 10, color: '#374151', fontSize: 13 }}>{note}</div>}
