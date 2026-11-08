@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Send, X } from 'lucide-react';
 import type { EmailPayload } from '@/lib/email/payload';
+import { rememberedEmails } from '@/lib/email/contacts';
+import { EmailAddressInput } from './EmailAddressInput';
 
 type Props = {
   payload: Omit<EmailPayload, 'recipients' | 'cc' | 'note'> & {
@@ -43,12 +45,20 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
   const [statusError, setStatusError] = useState(false);
   const [providerStatus, setProviderStatus] = useState('');
   const [sending, setSending] = useState(false);
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [addressError, setAddressError] = useState(false);
 
   async function openDialog() {
     setOpen(true);
     setStatus('');
     setStatusError(false);
     setProviderStatus('');
+    setAddressError(false);
+    fetch('/api/email/contacts', { cache: 'no-store', headers: getAuthHeaders() }).then(async response => {
+      const body = await response.json();
+      if (!response.ok || !Array.isArray(body.addresses)) throw new Error('Unable to load saved addresses');
+      setAddresses(body.addresses);
+    }).catch(() => { setAddresses([]); setAddressError(true); });
 
     let response: Response;
     try {
@@ -113,6 +123,7 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
       return;
     }
 
+    setAddresses(previous => rememberedEmails([{ recipients: splitEmails(recipients), cc: splitEmails(cc) }, { recipients: previous }]));
     onSent?.();
     setStatus(body?.status === 'sent'
       ? 'Sent and logged'
@@ -182,22 +193,12 @@ export function EmailReportButton({ payload, label = 'Email Report', disabled = 
             <div style={{ padding: 18, display: 'grid', gap: 12 }}>
               <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 700, color: '#374151' }}>
                 Recipients
-                <textarea
-                  value={recipients}
-                  onChange={(event) => setRecipients(event.target.value)}
-                  placeholder="manager@example.com, partner@example.com"
-                  rows={2}
-                  style={{ resize: 'vertical', border: '1px solid #d8cfb5', borderRadius: 8, padding: 10, fontSize: 13 }}
-                />
+                <EmailAddressInput label="Recipients" value={recipients} onChange={setRecipients} addresses={addresses} placeholder="Start typing an email address" />
+                <small style={{ fontWeight: 400, color: '#6b7280' }}>{addressError ? 'Saved suggestions are unavailable. You can still type an address.' : 'Addresses used in your reports are remembered. Separate multiple addresses with commas.'}</small>
               </label>
               <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 700, color: '#374151' }}>
                 CC
-                <input
-                  value={cc}
-                  onChange={(event) => setCc(event.target.value)}
-                  placeholder="Optional"
-                  style={{ border: '1px solid #d8cfb5', borderRadius: 8, padding: 10, fontSize: 13 }}
-                />
+                <EmailAddressInput label="CC" value={cc} onChange={setCc} addresses={addresses} placeholder="Optional — start typing to find a saved address" />
               </label>
               <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 700, color: '#374151' }}>
                 Note (optional message; does not change the report month)
