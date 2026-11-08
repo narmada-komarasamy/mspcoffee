@@ -1,0 +1,40 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+// Run with PHONE_BILLS_PGLITE pointing to a temporary @electric-sql/pglite install.
+const { PGlite } = require(process.env.PHONE_BILLS_PGLITE || '@electric-sql/pglite');
+const fs = require('fs');
+const assert = require('node:assert/strict');
+(async () => {
+ const db = new PGlite();
+ await db.exec("create role anon; create role authenticated; create role service_role bypassrls; create schema storage; create table storage.buckets(id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);");
+ await db.exec(fs.readFileSync('supabase/migrations/20261108060934_phone_bill_statements.sql', 'utf8'));
+ const ts = require('typescript');
+ const helpers = { exports: {} };
+ new Function('module', 'exports', ts.transpileModule(fs.readFileSync('src/lib/phone-bills.ts','utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(helpers, helpers.exports);
+ const rows = helpers.exports.parsePhoneCsv(fs.readFileSync('public/data/phone-bill-reimbursements.csv','utf8')).map(r => ({ ...r, entryKey: helpers.exports.billKey(r) }));
+ const feb = rows.filter(r => r.month === 'February' && r.year === '2026');
+ const issued = await db.query("select issue_phone_bill_statement($1,$2::jsonb,$3) as statement", ['2026-02', JSON.stringify(feb), 'test-admin']);
+ const s = issued.rows[0].statement;
+ assert.equal(Number(s.total), 14914.5);
+ assert.equal(s.rows.filter(r => r.payee === 'Mrs. NA').reduce((a,r)=>a+r.amount,0),1178);
+ await assert.rejects(db.query("select issue_phone_bill_statement($1,$2::jsonb,$3)", ['2026-02', JSON.stringify(feb), 'test-admin']), /duplicate key/);
+ await assert.rejects(db.query("insert into phone_bill_entries(entry_key,period,row_data,created_by) values('new','2026-02','{}','test')"), /issued statement/);
+ await assert.rejects(db.query("update phone_bill_statements set total=1 where id=$1",[s.id]), /cannot be overwritten/);
+ await assert.rejects(db.query("update phone_bill_statements set payment_date='2026-11-08',payment_reference='TEST',payment_amount=10,paid_by='test' where id=$1",[s.id]), /check constraint/);
+ await db.query("update phone_bill_statements set payment_date='2026-11-08',payment_reference='TEST',payment_amount=total,paid_by='test' where id=$1",[s.id]);
+ await assert.rejects(db.query("update phone_bill_statements set payment_reference='REPLACED' where id=$1",[s.id]), /cannot be overwritten/);
+ const march = rows.filter(r => r.month === 'March' && r.year === '2026');
+ await db.query("insert into phone_bill_entries(entry_key,period,row_data,created_by) values('extra','2026-03',$1::jsonb,'test')",[JSON.stringify({...march[0],phone:'NEW',accountNo:'NEW',amount:100})]);
+ const replacement = { ...march[0], amount: 500 };
+ await db.query("insert into phone_bill_entries(entry_key,period,row_data,created_by) values($1,'2026-03',$2::jsonb,'test')", [replacement.entryKey, JSON.stringify(replacement)]);
+ const next = await db.query("select issue_phone_bill_statement('2026-03',$1::jsonb,'test') as statement",[JSON.stringify(march)]);
+ assert.equal(next.rows[0].statement.rows.length,22);
+ assert.equal(Number(next.rows[0].statement.total),14980.86);
+ await assert.rejects(db.query("select issue_phone_bill_statement('2026-04',$1::jsonb,'test')",[JSON.stringify([{...march[0],amount:null}])]), /Missing bill amounts/);
+ await assert.rejects(db.query("select issue_phone_bill_statement('2026-04',$1::jsonb,'test')",[JSON.stringify([march[0],march[0]])]), /Duplicate account/);
+ await db.exec('set role anon;');
+ await assert.rejects(db.query('select * from phone_bill_statements'), /permission denied/);
+ await assert.rejects(db.query("select issue_phone_bill_statement('2026-05','[]','attacker')"), /permission denied/);
+ await db.exec('reset role;');
+ await db.close();
+ console.log('PASS: PostgreSQL migration, February total, recipient split, duplicates, locked snapshots, payment validation, saved additions, missing amounts and anonymous access.');
+})().catch(e => { console.error(e); process.exit(1); });

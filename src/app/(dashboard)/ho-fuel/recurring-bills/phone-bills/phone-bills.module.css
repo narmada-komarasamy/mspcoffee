@@ -3,6 +3,39 @@
   font-family: var(--t-font);
 }
 
+.monthly { margin: 0 0 20px; border: 1px solid #d6d1b9; border-radius: 10px; background: #fffdf6; overflow: hidden; }
+.monthlyHead { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 20px 22px; border-bottom: 1px solid #e5dfcb; }
+.monthlyHead h2 { margin: 5px 0; font-size: 24px; color: var(--t-green); }
+.monthlyHead p, .workflow p { margin: 7px 0 12px; color: var(--t-muted); font-size: 12px; line-height: 1.55; }
+.status { background: #e8eddd; border: 1px solid #d7dfc7; border-radius: 20px; padding: 7px 12px; color: #315d36; font-weight: 700; font-size: 11px; }
+.recipientGrid { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid #e5dfcb; }
+.recipientGrid > div { padding: 16px 22px; border-right: 1px solid #e5dfcb; }
+.recipientGrid span { display: block; font-size: 11px; color: #6f7162; }
+.recipientGrid b { display: block; margin-top: 6px; font-size: 24px; color: #2a6034; font-variant-numeric: tabular-nums; }
+.recipientGrid .monthlyTotal { background: #eef0e2; border-right: none; }
+.workflow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 20px 22px; }
+.workflow > div { min-width: 0; }
+.workflow h3 { font-size: 13px; color: #315537; margin: 0 0 10px; }
+.workflow button { margin: 5px 6px 0 0; white-space: normal; padding: 8px 12px; }
+.workflow input { display: block; margin: 5px 0 9px; max-width: 100%; font-size: 12px; }
+.workflow small { font-size: 10px; color: #787765; }
+.monthlyNote { padding: 12px 22px; margin: 0; border-top: 1px solid #e5dfcb; font-size: 11px; line-height: 1.6; color: #6e725f; }
+.notice { margin: 10px 22px 18px; padding: 10px 12px; font-size: 12px; line-height: 1.5; background: #f6efd9; border-left: 3px solid #ac8f43; }
+.reference { font-family: monospace; color: #315537; }
+.fileList { list-style: none; padding: 0; margin: 12px 0 0; }
+.fileList li { margin: 8px 0; font-size: 12px; overflow-wrap: anywhere; }
+.fileList a { text-decoration: underline; color: #2d6537; }
+.fileList small { display: block; margin-top: 3px; }
+.statementDialog { padding: 0; width: min(1000px, 95vw); max-width: 95vw; height: 92vh; max-height: 92vh; border: 1px solid #d3cbb6; border-radius: 10px; color: #25362b; background: #f4f0e6; }
+.statementDialog::backdrop { background: #102518aa; }
+.statementDialog iframe { display: block; border: 0; width: 100%; height: calc(100% - 65px); background: #f3efe4; }
+.dialogBar { padding: 12px 18px; display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 65px; background: white; }
+.dialogBar h2 { font-size: 15px; margin: 0; }
+.dialogBar > div { display: flex; gap: 8px; }
+@media (max-width: 900px) { .workflow { grid-template-columns: 1fr; gap: 20px; } .recipientGrid b { font-size: 19px; } }
+@media (max-width: 640px) { .recipientGrid { grid-template-columns: 1fr; } .monthlyHead, .dialogBar { align-items: flex-start; flex-direction: column; } }
+@media print { .monthly { display: none; } }
+
 .masthead {
   position: relative;
   display: flex;

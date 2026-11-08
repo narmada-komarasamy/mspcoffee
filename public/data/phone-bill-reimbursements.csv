@@ -1,45 +1,152 @@
 Month,Year,Bill Type,Estate/Location,User,Phone,Account No,Due Date,Amount,Remarks
-April,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,"MSP C P Ltd.,",0427 - 2403464,9041904329,,0,
-April,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,0,
-April,2026,BSNL FTTH Internet,Ranga Shree Apartment ( AM Apt Salem ),Mr.AM,0427-2910996,9040918097,,0,
-April,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,0,
-April,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,0,
-April,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,0,
-April,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,
-April,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,0,
-April,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,0,
-April,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,0,
-April,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,0,
-April,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,0,
-April,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,0,
-April,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,0,
-April,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,0,
-April,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,0,
-April,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,0,
-April,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,0,
-April,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,0,
-April,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,0,
-March,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,"MSP C P Ltd.,",0427 - 2403464,9041904329,,0,
-March,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,0,
-March,2026,BSNL FTTH Internet,Ranga Shree Apartment ( AM Apt Salem ),Mr.AM,0427-2910996,9040918097,,0,
-March,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,0,
-March,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,0,
-March,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,0,
-March,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,
-March,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,0,
-March,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,0,
-March,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,0,
-March,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,0,
-March,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,0,
-March,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,0,
-March,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,0,
-March,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,0,
-March,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,0,
-March,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,0,
-March,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,0,
-March,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,0,
-March,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,0,
-February,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,"MSP C P Ltd.,",0427 - 2403464,9041904329,,0,
+March,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,Paid by Mr.AM CC
+March,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+March,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,589,Paid by Mr.AM CC
+March,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471,Paid by Mr.AM CC
+March,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471,Paid by Mr.AM CC
+March,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471,Paid by Mr.AM CC
+March,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471,Paid by Mr.AM CC
+March,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,382.52,Paid by Mr.AM CC
+March,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,589,Paid by Mr.AM CC
+March,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,382.52,Paid by Mr.AM CC
+March,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,589,Paid by Mr.AM CC
+March,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+March,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+March,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+April,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,Paid by Mr.AM CC
+April,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+April,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,589,Paid by Mr.AM CC
+April,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471,Paid by Mr.AM CC
+April,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471,Paid by Mr.AM CC
+April,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471,Paid by Mr.AM CC
+April,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471,Paid by Mr.AM CC
+April,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,382.52,Paid by Mr.AM CC
+April,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,589,Paid by Mr.AM CC
+April,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,382.52,Paid by Mr.AM CC
+April,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,589,Paid by Mr.AM CC
+April,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+April,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+April,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+May,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,Paid by Mr.AM CC
+May,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+May,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,589,Paid by Mr.AM CC
+May,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471,Paid by Mr.AM CC
+May,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471,Paid by Mr.AM CC
+May,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471,Paid by Mr.AM CC
+May,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471,Paid by Mr.AM CC
+May,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,382.52,Paid by Mr.AM CC
+May,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,589,Paid by Mr.AM CC
+May,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,382.52,Paid by Mr.AM CC
+May,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,589,Paid by Mr.AM CC
+May,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+May,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+May,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+June,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471.52,Paid by Mr.AM CC
+June,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+June,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,589,Paid by Mr.AM CC
+June,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471.25,Paid by Mr.AM CC
+June,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471,Paid by Mr.AM CC
+June,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471,Paid by Mr.AM CC
+June,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471.25,Paid by Mr.AM CC
+June,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,382.52,Paid by Mr.AM CC
+June,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,489,Paid by Mr.AM CC
+June,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,382.52,Paid by Mr.AM CC
+June,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,489,Paid by Mr.AM CC
+June,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+June,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+June,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+July,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,Paid by Mr.AM CC
+July,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+July,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,589,Paid by Mr.AM CC
+July,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471,Paid by Mr.AM CC
+July,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471.52,Paid by Mr.AM CC
+July,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471.85,Paid by Mr.AM CC
+July,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471.85,Paid by Mr.AM CC
+July,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,382.52,Paid by Mr.AM CC
+July,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,589.25,Paid by Mr.AM CC
+July,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,382.52,Paid by Mr.AM CC
+July,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,452,Paid by Mr.AM CC
+July,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1178.52,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+July,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+July,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+August,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,Paid by Mr.AM CC
+August,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+August,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,586,Paid by Mr.AM CC
+August,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471,Paid by Mr.AM CC
+August,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471,Paid by Mr.AM CC
+August,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471.56,Paid by Mr.AM CC
+August,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,879,Paid by Mr.AM CC
+August,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,352.82,Paid by Mr.AM CC
+August,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,546,Paid by Mr.AM CC
+August,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,352.82,Paid by Mr.AM CC
+August,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,497.55,Paid by Mr.AM CC
+August,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+August,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+August,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+September,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,Paid by Mr.AM CC
+September,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,Paid by Mr.AM CC
+September,2026,BSNL Mobile,MSP Coffee P Ltd.,Manager,94432 63464,500469728,,589,Paid by Mr.AM CC
+September,2026,BSNL Mobile,Moganad Estate,Mr.NM,94878 48276,520223128,,471,Paid by Mr.AM CC
+September,2026,BSNL Mobile,Moganad Estate,Mrs.Sheryl,94878 38276,520223131,,471,Paid by Mr.AM CC
+September,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,471,Paid by Mr.AM CC
+September,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471,Paid by Mr.AM CC
+September,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,352.82,Paid by Mr.AM CC
+September,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,540,Paid by Mr.AM CC
+September,2026,Jio Mobile,Stanmore Estate,Mr.AM,63834 20927,520 033 861 448,,82.33,Paid by Mr.AM CC
+September,2026,Jio Mobile,Stanmore Estate,Mrs.Narmada,63834 31798,520 033 861 599,,82.33,Paid by Mr.AM CC
+September,2026,Jio Mobile,Stanmore Estate,Minor.Ashna,93636 20927,,,535,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1178,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Moganad Estate (MD's Office),Mr.MR,04281 - 290630,9039882944,,707,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Moganad Estate (Pulphouse),Mr.MR,04281 - 290683,9039514851,,589.52,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Stanmore Estate (SE B'low),Mr.AM,04281 - 290653,9039201446,,1179,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Stanmore Estate (SE Pulphouse),Mr.AM,04281 - 290652,9039515139,,589,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,Ranga Shree Apartment (AM Apt Salem),Mr.AM,0427-2910996,9040918097,,1179,Paid by Mr.AM CC
+September,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd. (Salem B'low),MSP C P Ltd.,0427 - 4043464,7005724759,,1178.82,Paid by Mrs.NA CC
+September,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,MSP C P Ltd.,0427 - 2403464,9041904329,,1179,Paid by Mrs.NA CC
+February,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,"MSP C P Ltd.,",0427 - 2403464,9041904329,,1178,Paid by Mrs.NA CC
 February,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471,
 February,2026,BSNL FTTH Internet,Ranga Shree Apartment ( AM Apt Salem ),Mr.AM,0427-2910996,9040918097,,1178,
 February,2026,BSNL Mobile,Stanmore Estate,Mr.AM,94428 29996,566769068,,470,
@@ -57,7 +164,7 @@ February,2026,BSNL Mobile,MSP Coffee P Ltd.,Mrs.VM,94432 67682,500450630,,471,
 February,2026,Jio Mobile,Moganad Estate,Mrs.VM,63824 36412,,,529.82,
 February,2026,BSNL FTTH Internet,Moganad Estate (H.O),Mr.NM,04281 - 290640,9039201454,,1179,
 February,2026,BSNL Mobile,Stanmore Estate,Mr.MR,94432 22676,500133437,,471,
-February,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,11178,
+February,2026,Jio Mobile,Moganad Estate,Mr.MR,63811 95115,510 067 296 177,,1178,
 February,2026,BSNL FTTH Internet,Moganad Estate (ME B'low),Mr.MR,04281 - 290682,9039201441,,1179,
 January,2026,BSNL FTTH Internet,MSP Coffee Pvt Ltd.,"MSP C P Ltd.,",0427 - 2403464,9041904329,,0,
 January,2026,BSNL Mobile,Stanmore Estate,Mrs.Narmada,94439 29998,566769082,,471,
