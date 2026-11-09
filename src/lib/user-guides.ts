@@ -10,5 +10,11 @@ export const USER_GUIDES = [{
   languages: 'English + தமிழ்', version: '1.0', updated: '1 November 2026', pages: 4,
   featureHref: '/fuel-expenses', featureLabel: 'Fleet Fuel Expenses',
   pdfFile: 'MSP_Coffee_Fleet_Fuel_Guide.pdf', pagePrefix: 'fleet-guide-page',
+}, {
+  id: 'ho-fuel', title: 'HO Fuel Stock & Entries',
+  description: 'Record store purchases and issues, review consumers and the transaction log, and reconcile physical fuel stock.',
+  languages: 'English + தமிழ்', version: '1.0', updated: '9 November 2026', pages: 2,
+  featureHref: '/ho-fuel', featureLabel: 'HO Fuel',
+  pdfFile: 'MSP_Coffee_HO_Fuel_Guide.pdf', pagePrefix: 'ho-fuel-guide-page',
 }] as const;
 export type UserGuide = (typeof USER_GUIDES)[number];

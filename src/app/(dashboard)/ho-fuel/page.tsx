@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import {
   LineChart, Line,
   BarChart, Bar,
@@ -9,6 +10,7 @@ import {
 } from "recharts";
 import { AlertTriangle, Download, Palette } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { fuelPeriod, hoFuelToday, currentFuelRows, fuelTotals } from "@/lib/ho-fuel";
 import css from "./ho-fuel.module.css";
 
 const LOW_DIESEL_THRESHOLD = 100;
@@ -68,7 +70,7 @@ export default function HoFuelPage() {
   const [tab, setTab] = useState<"overview" | "consumers" | "log" | "entry">("overview");
   const [rows, setRows] = useState<TxRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const realtimeRef = useRef(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   /* ── Theme ────────────────────────────────────────────────────────────────────── */
   const [theme, setTheme]                       = useState<HoThemeConfig>({ ...HO_THEME_DEFAULT });
@@ -104,7 +106,6 @@ export default function HoFuelPage() {
   const colors: HoColors = { teal: 'var(--t-accent)', gold: 'var(--t-gold)', red: '#e8524a', green: 'var(--t-green)' };
 
   const loadData = useCallback(async () => {
-    setLoading(true);
     const all: TxRow[] = [];
     let from = 0;
     const size = 1000;
@@ -113,21 +114,29 @@ export default function HoFuelPage() {
         .from("ho_fuel_log")
         .select("*")
         .order("date", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, from + size - 1);
-      if (error || !data || data.length === 0) break;
+      if (error) {
+        setLoadError("Could not load the complete fuel register. Totals are unavailable until a successful reload.");
+        setLoading(false);
+        return;
+      }
+      if (!data || data.length === 0) break;
       all.push(...(data as TxRow[]));
       if (data.length < size) break;
       from += size;
     }
-    setRows(all);
+    setLoadError(null);
+    setRows(all.map(row => ({ ...row, ...fuelPeriod(row.date), qty_l: Number(row.qty_l), amount: Number(row.amount) })));
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    const timer = setTimeout(() => { void loadData(); }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   useEffect(() => {
-    if (realtimeRef.current) return;
-    realtimeRef.current = true;
     const ch = supabase
       .channel("ho_fuel_log_changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "ho_fuel_log" }, () => loadData())
@@ -135,26 +144,20 @@ export default function HoFuelPage() {
     return () => { supabase.removeChannel(ch); };
   }, [loadData]);
 
-  const totals = useMemo(() => {
-    let dP = 0, dI = 0, pP = 0, pI = 0, amt = 0;
-    for (const r of rows) {
-      if (r.fuel_type === "DIESEL") {
-        if (r.transaction_type === "PURCHASE") { dP += r.qty_l; amt += r.amount; }
-        else dI += r.qty_l;
-      } else {
-        if (r.transaction_type === "PURCHASE") { pP += r.qty_l; amt += r.amount; }
-        else pI += r.qty_l;
-      }
-    }
-    return { dP, dI, pP, pI, amt,
-      dieselStock: dP - dI, petrolStock: pP - pI,
-      totalPurchased: dP + pP, totalIssued: dI + pI };
-  }, [rows]);
+  const asOf = hoFuelToday();
+  const currentRows = useMemo(() => currentFuelRows(rows, asOf), [rows, asOf]);
+  const futureCount = rows.length - currentRows.length;
+  const totals = useMemo(() => fuelTotals(currentRows), [currentRows]);
 
   if (loading) return <div className={css.loading}>Loading HO Fuel data…</div>;
 
+  if (loadError) return <div role="alert" className={css.alertBanner}>{loadError} <button onClick={loadData}>Retry</button></div>;
+
   return (
     <div style={{} as React.CSSProperties}>
+      <div style={{ textAlign: 'right', marginBottom: '0.75rem' }}><Link href="/user-guides/ho-fuel" style={{ color: 'var(--t-accent)', fontWeight: 600 }}>How to use this page →</Link></div>
+      <p className={css.chartSubTitle}>Stock and consumption through {asOf} (India time). Stock = recorded purchases − recorded issues; opening stock is not recorded separately.</p>
+      {futureCount > 0 && <div role="alert" className={css.alertBanner}>{futureCount} future-dated entries are excluded from stock and consumption totals. Review their dates in Transaction Log.</div>}
       <div className={css.tabs}>
         {([
           ["overview",  "📊 Overview"],
@@ -179,8 +182,8 @@ export default function HoFuelPage() {
         </button>
       </div>
 
-      {tab === "overview"  && <OverviewTab  rows={rows} totals={totals} colors={colors} />}
-      {tab === "consumers" && <ConsumersTab rows={rows} colors={colors} />}
+      {tab === "overview"  && <OverviewTab  rows={currentRows} totals={totals} colors={colors} />}
+      {tab === "consumers" && <ConsumersTab rows={currentRows} colors={colors} />}
       {tab === "log"       && <LogTab       rows={rows} />}
       {tab === "entry"     && <EntryTab     rows={rows} onSaved={loadData} />}
 
@@ -266,9 +269,9 @@ function OverviewTab({ rows, totals, colors }: {
       else cur.issued += r.qty_l;
       map.set(key, cur);
     }
-    let running = 0;
-    return Array.from(map.entries()).sort().map(([key, v]) => {
-      running += v.purchase - v.issued;
+    const months = Array.from(map.entries()).sort();
+    return months.map(([key, v], index) => {
+      const running = months.slice(0, index + 1).reduce((sum, [, month]) => sum + month.purchase - month.issued, 0);
       const [y, m] = key.split("-");
       return {
         label: MONTHS[parseInt(m)-1] + " " + y.slice(2),
@@ -351,7 +354,7 @@ function OverviewTab({ rows, totals, colors }: {
           <div className={css.kpiSub}>Purchased: {fmt(dP)}L · Issued: {fmt(dI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(dieselStock/LOW_DIESEL_THRESHOLD)*100)}%`, background: lowDiesel ? "#e8524a" : "var(--t-accent)" }} />
+              style={{ width: `${Math.max(0,Math.min(100,(dieselStock/LOW_DIESEL_THRESHOLD)*100))}%`, background: lowDiesel ? "#e8524a" : "var(--t-accent)" }} />
           </div>
         </div>
         {/* Petrol */}
@@ -364,7 +367,7 @@ function OverviewTab({ rows, totals, colors }: {
           <div className={css.kpiSub}>Purchased: {fmt(pP)}L · Issued: {fmt(pI)}L</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
-              style={{ width: `${Math.min(100,(petrolStock/LOW_PETROL_THRESHOLD)*100)}%`, background: lowPetrol ? "#e8524a" : "var(--t-accent)" }} />
+              style={{ width: `${Math.max(0,Math.min(100,(petrolStock/LOW_PETROL_THRESHOLD)*100))}%`, background: lowPetrol ? "#e8524a" : "var(--t-accent)" }} />
           </div>
         </div>
         {/* Total Purchased */}
@@ -374,7 +377,7 @@ function OverviewTab({ rows, totals, colors }: {
             <span className={css.kpiValue}>{fmt(totalPurchased)}</span>
             <span className={css.kpiUnit}>L</span>
           </div>
-          <div className={css.kpiSub}>All time · Diesel + Petrol</div>
+          <div className={css.kpiSub}>Through today · Diesel + Petrol</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill} style={{ width: "100%", background: "var(--t-accent)" }} />
           </div>
@@ -386,7 +389,7 @@ function OverviewTab({ rows, totals, colors }: {
             <span className={css.kpiValue}>{fmt(totalIssued)}</span>
             <span className={css.kpiUnit}>L</span>
           </div>
-          <div className={css.kpiSub}>All time · Diesel + Petrol</div>
+          <div className={css.kpiSub}>Through today · Diesel + Petrol</div>
           <div className={css.kpiBar}>
             <div className={css.kpiBarFill}
               style={{ width: totalPurchased > 0 ? `${Math.min(100,(totalIssued/totalPurchased)*100)}%` : "0%", background: "#e8524a" }} />
@@ -397,7 +400,7 @@ function OverviewTab({ rows, totals, colors }: {
       {/* Timeline chart */}
       <div className={css.sectionHdr}><span>◆</span> PURCHASE vs ISSUE OVER TIME</div>
       <div className={`${css.chartCard} ${css.chartsFullRow}`}>
-        <div className={css.chartSubTitle}>Daily Fuel Flow (Litres) — Purchases into store vs Issues to fleet</div>
+        <div className={css.chartSubTitle}>Monthly Fuel Flow (Litres) — Purchases into store vs Issues to fleet</div>
         <div className={css.legendRow}>
           <span className={css.legendDot}><span className={css.dot} style={{ background: "var(--t-accent)" }} />Purchased (L)</span>
           <span className={css.legendDot}><span className={css.dot} style={{ background: "var(--t-gold)" }} />Issued (L)</span>
@@ -805,10 +808,10 @@ function LogTab({ rows }: { rows: TxRow[] }) {
     }).sort((a,b) => b.date.localeCompare(a.date));
   }, [rows, filterType, filterFuel, filterMonth, filterEstate, filterVehicle, search]);
 
-  const prevFilter = useRef("");
+  const [prevFilter, setPrevFilter] = useState("");
   const filterKey = `${filterType}|${filterFuel}|${filterMonth}|${filterEstate}|${filterVehicle}|${search}`;
-  if (prevFilter.current !== filterKey) {
-    prevFilter.current = filterKey;
+  if (prevFilter !== filterKey) {
+    setPrevFilter(filterKey);
     if (page !== 0) setPage(0);
   }
 
@@ -891,7 +894,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
               <th>Date</th><th>Type</th><th>Fuel</th><th>Source</th>
               <th>Vehicle / Equipment</th><th>Estate</th><th>Vehicle Name</th>
               <th className={css.tdRight}>Qty (L)</th>
-              <th className={css.tdRight}>Rate (₹)</th>
+              <th className={css.tdRight}>Total Cost (₹)</th>
               <th>Remarks</th>
             </tr>
           </thead>
@@ -932,10 +935,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY TAB
 // ─────────────────────────────────────────────────────────────────────────────
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
+function todayStr() { return hoFuelToday(); }
 
 const EMPTY_PURCHASE = { date: todayStr(), fuel_type: "DIESEL", source: "", qty_l: "", amount: "", mode_of_payment: "", remarks: "" };
 const EMPTY_ISSUE    = { date: todayStr(), fuel_type: "PETROL", vehicle_number: "", vehicle_name: "", estate: "", qty_l: "", receiver_name: "", source: "HO STORE", remarks: "" };
@@ -953,14 +953,17 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
   const vehicles = useMemo(() => Array.from(new Set(rows.filter(r=>r.vehicle_number).map(r=>r.vehicle_number))).sort(), [rows]);
 
   function parseDate(s: string) {
-    const d = new Date(s);
-    return { date: s, month: d.getMonth()+1, year: d.getFullYear() };
+    return { date: s, ...fuelPeriod(s) };
   }
 
   async function savePurchase() {
     if (!purchase.date || !purchase.source || !purchase.qty_l) {
       setPMsg({ type:"error", text:"Date, Supplier/Source and Quantity are required." }); return;
     }
+    if (!(Number(purchase.qty_l) > 0) || !Number.isFinite(Number(purchase.qty_l)) || !Number.isFinite(Number(purchase.amount)) || Number(purchase.amount) < 0 || !purchase.source.trim()) {
+      setPMsg({ type: "error", text: "Enter a supplier, a positive quantity and a non-negative total cost." }); return;
+    }
+    if (purchase.date > hoFuelToday()) { setPMsg({ type: "error", text: "Fuel purchases cannot be dated in the future." }); return; }
     setPSaving(true); setPMsg(null);
     const { date, month, year } = parseDate(purchase.date);
     const { error } = await supabase.from("ho_fuel_log").insert([{
@@ -989,6 +992,10 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
     if (!issue.date || !issue.vehicle_number || !issue.estate || !issue.qty_l) {
       setIMsg({ type:"error", text:"Date, Vehicle/Equipment, Estate and Quantity are required." }); return;
     }
+    if (!(Number(issue.qty_l) > 0) || !Number.isFinite(Number(issue.qty_l)) || !issue.vehicle_number.trim()) {
+      setIMsg({ type: "error", text: "Enter a vehicle/equipment and a positive quantity." }); return;
+    }
+    if (issue.date > hoFuelToday()) { setIMsg({ type: "error", text: "Fuel issues cannot be dated in the future." }); return; }
     setISaving(true); setIMsg(null);
     const { date, month, year } = parseDate(issue.date);
     const { error } = await supabase.from("ho_fuel_log").insert([{

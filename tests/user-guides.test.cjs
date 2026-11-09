@@ -64,7 +64,7 @@ test('each guide is listed and served only with its own feature permission',asyn
  for(const [blocked,allowed] of [['courier-tracking','fleet-fuel'],['fleet-fuel','courier-tracking']]){
   const h=handlers(0,{[blocked]:403});
   const list=await (await h.list(req())).json();
-  assert.deepEqual(list.guides.map(guide=>guide.id),[allowed]);
+  assert.deepEqual(list.guides.map(guide=>guide.id),registry.USER_GUIDES.filter(guide=>guide.id!==blocked).map(guide=>guide.id));
   assert.equal((await h.asset(req(),context(blocked))).status,403);
   assert.equal((await h.asset(req(),context(allowed))).status,200);
  }
@@ -82,8 +82,38 @@ test('guide authorization dispatches to feature guards with read-only fleet acce
  const auth=load('src/lib/user-guide-auth.ts',{
   '@/app/api/courier/_auth':{courierAuth:async()=>{calls.push('courier');return {user:{id:'courier'}}}},
   '@/lib/fleet/auth':{fleetAuth:async(_req,write)=>{calls.push(['fleet',write]);return {user:{id:'fleet'}}}},
+  '@/lib/auth/api':{requireApiUser:async()=>({user:{id:'admin',role:'admin'}}),UUID_RE:/^uuid$/},
  }).userGuideAuth;
  await auth(req(),'courier-tracking');await auth(req(),'fleet-fuel');
  assert.deepEqual(calls,['courier',['fleet',false]]);
  assert.equal((await auth(req(),'unknown')).error.status,404);
 });
+
+ test('HO Fuel guide provides two private page previews and its PDF',async()=>{
+ const h=handlers(),ctx=context('ho-fuel');
+ const pdf=await h.asset(req('?download=1'),ctx);
+ assert.equal(pdf.status,200);
+ assert.match(pdf.headers.get('Content-Disposition'),/MSP_Coffee_HO_Fuel_Guide.pdf/);
+ for(const page of [1,2])assert.equal((await h.asset(req('?page='+page),ctx)).status,200);
+ assert.equal((await h.asset(req('?page=3'),ctx)).status,404);
+ const denied=handlers(0,{'ho-fuel':403});
+ assert.equal((await denied.asset(req(),ctx)).status,403);
+ assert.equal((await denied.asset(req('?page=1'),ctx)).status,403);
+ assert.ok(!(await (await denied.list(req())).json()).guides.some(g=>g.id==='ho-fuel'));
+ });
+ test('HO Fuel guide checks its own role and user overrides and fails closed',async()=>{
+ const id='123e4567-e89b-12d3-a456-426614174000';
+ for(const scenario of [
+ {role:'read',user:null,status:200}, {role:'none',user:'read',status:200},
+ {role:'read',user:'none',status:403}, {role:'none',user:null,status:403},
+ {role:'read',user:null,fail:true,status:503},
+ ]) {
+ const tables=[];
+ const auth=load('src/lib/user-guide-auth.ts',{
+ '@/app/api/courier/_auth':{},'@/lib/fleet/auth':{},
+ '@/lib/auth/api':{UUID_RE:/^[0-9a-f-]{36}$/,requireApiUser:async()=>({user:{id,role:'supervisor'},supabase:{from(table){tables.push(table);const chain={select(){return chain},eq(_key,value){if(_key==='page_href')assert.equal(value,'/ho-fuel');return chain},async maybeSingle(){return {data:table==='role_permissions'?{access:scenario.role}:scenario.user?{access:scenario.user}:null,error:scenario.fail?{message:'failed'}:null}}};return chain;}}})},
+ }).userGuideAuth;
+ const result=await auth(req(),'ho-fuel');assert.equal(result.error?.status??200,scenario.status);
+ assert.equal(tables[0],'role_permissions');
+ }
+ });

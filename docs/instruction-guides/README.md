@@ -49,3 +49,7 @@ Run the guide access tests with `node --test tests/user-guides.test.cjs`.
 ## Approved Fleet Fuel guide
 
 `MSP_Coffee_Fleet_Fuel_Guide.pdf` is the four-page English/Tamil staff guide, version 1.0. The Fleet Fuel Expenses page links to `/user-guides/fleet-fuel`. Its page previews are `fleet-guide-page-1.png` through `fleet-guide-page-4.png`; reproducible source and blank-screen screenshots are retained in `sources/fleet-fuel/`. The guide covers the deployed photo retention and insert-only Excel import safeguards.
+
+## HO Fuel guide
+
+`MSP_Coffee_HO_Fuel_Guide.pdf` is the two-page English/Tamil guide, version 1.0 (9 November 2026). HO Fuel links to `/user-guides/ho-fuel`. Previews use `ho-fuel-guide-page-1.png` and `ho-fuel-guide-page-2.png`; source and blank captures of the actual components are retained in `sources/ho-fuel/`. It covers all four tabs, purchase total cost, save verification, filtered CSV exports, future dates and physical stock reconciliation. Access is verified against `/ho-fuel`, including per-user overrides.
