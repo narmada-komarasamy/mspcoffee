@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { MR_MONEY_SECTIONS } from '@/lib/mr-money';
 import { Coffee, Home, LogOut, Maximize2, Menu, Minimize2, Plane, Vote, Wallet, X } from 'lucide-react';
 
 const THEMES = {
@@ -94,7 +95,8 @@ export default function FamilyLayout({ children }: { children: React.ReactNode }
 
   if (!user) return null;
 
-  const currentTitle = navItems.find(item => item.href === pathname)?.label ?? 'Family and Personal';
+  const currentTitle = MR_MONEY_SECTIONS.find(item => item.href === pathname)?.label
+    ?? navItems.find(item => item.href === pathname)?.label ?? 'Family and Personal';
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   const sidebarGrad = `linear-gradient(180deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
   const headerGrad = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
@@ -131,14 +133,27 @@ export default function FamilyLayout({ children }: { children: React.ReactNode }
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
           {navItems.map(item => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active = pathname === item.href || (item.href === '/mr-money' && pathname.startsWith('/mr-money/'));
             return (
-              <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
+              <div key={item.href}>
+              <Link href={item.href} onClick={() => setSidebarOpen(false)}
+                aria-current={pathname === item.href ? 'page' : undefined}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
                 style={active ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
                 <Icon className="h-4 w-4 shrink-0" />
                 {item.label}
               </Link>
+              {item.href === '/mr-money' && <ul aria-label="MR Money submenus" className="ml-5 mt-1 space-y-0.5 border-l border-white/20 pl-3">
+                {MR_MONEY_SECTIONS.map(section => <li key={section.href}>
+                  <Link href={section.href} onClick={() => setSidebarOpen(false)}
+                    aria-current={pathname === section.href ? 'page' : undefined}
+                    className="block rounded-lg px-3 py-2 text-sm font-medium transition"
+                    style={pathname === section.href ? { background: 'rgba(255,255,255,0.18)', color: '#e8c84a' } : { color: 'rgba(255,255,255,0.75)' }}>
+                    {section.label}
+                  </Link>
+                </li>)}
+              </ul>}
+              </div>
             );
           })}
         </nav>

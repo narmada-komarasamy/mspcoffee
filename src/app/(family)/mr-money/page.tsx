@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Wallet } from 'lucide-react';
+import { MR_MONEY_SECTIONS } from '@/lib/mr-money';
 
 export default function MrMoneyPage() {
   return (
@@ -10,6 +11,14 @@ export default function MrMoneyPage() {
           <Wallet className="h-7 w-7" aria-hidden="true" />
           MR Money
         </h1>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {MR_MONEY_SECTIONS.map(section => (
+          <Link key={section.href} href={section.href} className="rounded-xl border p-5 text-lg font-bold transition hover:shadow-md"
+            style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)', color: 'var(--t-text)' }}>
+            {section.label} →
+          </Link>
+        ))}
       </div>
       <Link href="/family" className="inline-block text-sm font-semibold" style={{ color: 'var(--t-accent)' }}>
         ← Family and Personal
