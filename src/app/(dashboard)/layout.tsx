@@ -90,6 +90,7 @@ function employeeSectionLink(employeeSlug: string, section: { label: string; slu
 
 const navItems: NavItem[] = [
  { label: 'User Guides', href: '/user-guides', icon: BookOpen, roles: ['admin', 'supervisor', 'worker', 'ceo', 'hr'] },
+ { label: 'Reports', href: '/reports', icon: FileText, roles: ['admin','ceo'] },
  { label: 'Rain Gauge', href: '/rainfall', icon: CloudRain, roles: ['admin', 'supervisor', 'worker', 'ceo'],
  children: [
  { label: 'Rainfall Infographic', href: '/rainfall/infographic', icon: BarChart2, roles: ['admin', 'supervisor', 'worker', 'ceo'] },
