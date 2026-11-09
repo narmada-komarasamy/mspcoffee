@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Coffee, Home, LogOut, Maximize2, Menu, Minimize2, Plane, Vote, X } from 'lucide-react';
+import { Coffee, Home, LogOut, Maximize2, Menu, Minimize2, Plane, Vote, Wallet, X } from 'lucide-react';
 
 const THEMES = {
   forest: { dark: '#1b4a1b', mid: '#2d6e2d' },
@@ -22,6 +22,7 @@ const isLocalPreview = process.env.NODE_ENV === 'development';
 const navItems = [
   { label: 'Family Decisions', href: '/family-decisions', icon: Vote },
   { label: 'Travel Allowance', href: '/travel-allowance', icon: Plane },
+  { label: 'MR Money', href: '/mr-money', icon: Wallet },
 ];
 
 export default function FamilyLayout({ children }: { children: React.ReactNode }) {
