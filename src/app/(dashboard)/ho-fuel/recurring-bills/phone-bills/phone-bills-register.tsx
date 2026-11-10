@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Loader2, Plus, Printer, RefreshCw } from "lucide-react";
 import css from "./phone-bills.module.css";
 
-import { BILL_MONTHS, billKey, billPayee, cleanBillRow, parsePhoneCsv, totalBills, type PhoneBillRow } from "@/lib/phone-bills";
+import { BILL_MONTHS, billKey, billPayee, cleanBillRow, parsePhoneCsv, totalBills, transferTotals, type PhoneBillRow } from "@/lib/phone-bills";
 import MonthlyStatement from "./monthly-statement";
 import { EmailReportButton } from "@/components/email/EmailReportButton";
 import { phoneBillEmail } from "@/lib/phone-bill-email";
@@ -149,15 +149,8 @@ export default function PhoneBillsRegister({ previewRows }: { previewRows?: Phon
     return `${first.month.slice(0, 3)} ${first.year} - ${last.month.slice(0, 3)} ${last.year}`;
   }, [rows]);
 
-  const transferSummary = useMemo(() => {
-    const buckets = new Map<string, number>();
-    for (const row of filtered) {
-      const estate = row.location.includes("Moganad") ? "ME" : row.location.includes("Stanmore") ? "SE" : "MSPCC";
-      const key = `${estate} to ${billPayee(row)}`;
-      buckets.set(key, (buckets.get(key) ?? 0) + Math.round((row.amount ?? 0) * 100));
-    }
-    return Array.from(buckets.entries()).map(([label, cents]) => [label, cents / 100] as [string, number]).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [filtered]);
+  const transferSummary = useMemo(() => transferTotals(filtered)
+    .map(({ account, payee, total }) => [`${account} to ${payee}`, total] as [string, number]), [filtered]);
 
   const activeNote = useMemo(() => {
     const filters = [

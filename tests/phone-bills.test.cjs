@@ -15,6 +15,24 @@ const rows = h.parsePhoneCsv(fs.readFileSync('public/data/phone-bill-reimburseme
 const feb = rows.filter(r => r.month === 'February' && r.year === '2026');
 const example = { ...feb[0], payee: 'Mrs. NA' };
 
+test('printed transfer breakup matches the August screenshot and reconciles every month', () => {
+  const august = rows.filter(r => r.month === 'August' && r.year === '2026');
+  assert.deepEqual(h.transferTotals(august), [
+    { account: 'ME', payee: 'Mr. AM', total: 5494.82 },
+    { account: 'MSPCC', payee: 'Mr. AM', total: 2236 },
+    { account: 'MSPCC', payee: 'Mrs. NA', total: 2357.82 },
+    { account: 'SE', payee: 'Mr. AM', total: 4974.93 },
+  ]);
+  for (const period of new Set(rows.map(h.billPeriod))) {
+    const monthly = rows.filter(r => h.billPeriod(r) === period);
+    const transfers = h.transferTotals(monthly);
+    assert.equal(transfers.reduce((sum, t) => sum + Math.round(t.total * 100), 0), Math.round(h.totalBills(monthly) * 100), period);
+    for (const recipient of h.payeeTotals(monthly)) {
+      assert.equal(transfers.filter(t => t.payee === recipient.payee).reduce((sum, t) => sum + Math.round(t.total * 100), 0), Math.round(recipient.total * 100), period);
+    }
+  }
+});
+
 test('February corrections reconcile exactly to the user-confirmed amount and recipient', () => {
   assert.equal(h.totalBills(feb), 14914.5);
   assert.equal(feb.find(r => r.phone.replace(/\s/g, '') === '6381195115').amount, 1178);

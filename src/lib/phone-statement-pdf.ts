@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib';
-import { BILL_MONTHS, billPayee, historicallyPaid, payeeTotals, totalBills, type PhoneBillRow, type PhoneStatement } from './phone-bills';
+import { BILL_MONTHS, billPayee, historicallyPaid, payeeTotals, transferTotals, totalBills, type PhoneBillRow, type PhoneStatement } from './phone-bills';
 import { phoneBillSource } from './phone-bill-sources';
 
 const safe = (value: string) => value.replace(/₹/g, 'Rs ').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[^\x20-\x7e\xa0-\xff]/g, ' ');
@@ -48,25 +48,27 @@ export async function phoneStatementPdf(rows: PhoneBillRow[], period: string, lo
   const widths = [20, 65, 110, 65, 118, 68, 93];
   const ordered = [...rows].sort((a, b) => a.billType.localeCompare(b.billType) || a.location.localeCompare(b.location));
   const cells = ordered.map((r, i) => [String(i + 1), r.billType, r.location, r.user, [r.phone, r.accountNo].filter(Boolean).join(' / '), billPayee(r), money(r.amount!)]);
+  const transfers = transferTotals(rows);
+  const detailBudget = 440 - transfers.length * 17;
   let size = 7.3;
   let wrapped = cells.map(row => row.map((v, i) => wrap(v, widths[i] - 9, font, size)));
-  const height = () => wrapped.reduce((sum, row) => sum + Math.max(20, Math.max(...row.map(c => c.length)) * (size + 2) + 9), 0);
-  while (height() > 455 && size > 6.1) {
-    size -= .2;
+  const height = () => wrapped.reduce((sum, row) => sum + Math.max(16, Math.max(...row.map(c => c.length)) * (size + 1) + 5), 0);
+  while (height() > detailBudget && size > 6.1) {
+    size = Math.max(6.1, size - .2);
     wrapped = cells.map(row => row.map((v, i) => wrap(v, widths[i] - 9, font, size)));
   }
-  if (height() > 455) throw new Error('This month has too many details for a readable one-page statement.');
+  if (height() > detailBudget) throw new Error('This month has too many details for a readable one-page statement.');
   let y = 695;
   page.drawRectangle({ x: 28, y: y - 22, width: 539, height: 22, color: rgb(.91, .93, .86) });
   let x = 28;
   ['No.', 'Service', 'Estate / location', 'User', 'Phone / account', 'Reimburse to', 'Amount'].forEach((heading, i) => { text(heading, x + 4, y - 14, 7, true, green); x += widths[i]; });
   y -= 22;
   wrapped.forEach((row, index) => {
-    const rowHeight = Math.max(20, Math.max(...row.map(c => c.length)) * (size + 2) + 9);
+    const rowHeight = Math.max(16, Math.max(...row.map(c => c.length)) * (size + 1) + 5);
     if (index % 2 === 0) page.drawRectangle({ x: 28, y: y - rowHeight, width: 539, height: rowHeight, color: rgb(.97, .96, .92) });
     let x = 28;
     row.forEach((cell, i) => {
-      cell.forEach((value, j) => text(value, i === 6 ? x + widths[i] - 5 - font.widthOfTextAtSize(value, size) : x + 4, y - size - 5 - j * (size + 2), size));
+      cell.forEach((value, j) => text(value, i === 6 ? x + widths[i] - 5 - font.widthOfTextAtSize(value, size) : x + 4, y - size - 3 - j * (size + 1), size));
       x += widths[i];
     });
     y -= rowHeight; line(28, y, 539);
@@ -76,18 +78,33 @@ export async function phoneStatementPdf(rows: PhoneBillRow[], period: string, lo
   text('TOTAL REIMBURSEMENT', 34, y - 17, 9, true, green);
   const totalText = money(total);
   text(totalText, 561 - bold.widthOfTextAtSize(totalText, 11), y - 17, 11, true, green);
-  y -= 43;
-  text('REIMBURSEMENT RECIPIENTS', 33, y, 8, true, green);
-  payeeTotals(rows).forEach((p, i) => { text(p.payee, 33 + i * 270, y - 17, 9); text(money(p.total), 120 + i * 270, y - 17, 10, true, green); });
-  y -= 40;
+  y -= 39;
+  text('TO BE TRANSFERRED - PAYMENT BREAKUP', 33, y, 8, true, green);
+  y -= 7;
+  page.drawRectangle({ x: 28, y: y - 18, width: 539, height: 18, color: rgb(.91, .93, .86) });
+  text('Paying account / estate', 34, y - 12, 7, true, green);
+  text('Pay to', 300, y - 12, 7, true, green);
+  text('Amount (INR)', 482, y - 12, 7, true, green);
+  y -= 18;
+  for (const transfer of transfers) {
+    const names: Record<string, string> = { ME: 'Moganad Estate', SE: 'Stanmore Estate', MSPCC: 'MSP Coffee' };
+    text(`${transfer.account} - ${names[transfer.account]}`, 34, y - 12, 8);
+    text(transfer.payee, 300, y - 12, 8);
+    const amount = money(transfer.total);
+    text(amount, 561 - bold.widthOfTextAtSize(amount, 8), y - 12, 8, true, green);
+    y -= 17; line(28, y, 539);
+  }
+  y -= 14;
+  payeeTotals(rows).forEach((p, i) => { text(`Total to ${p.payee}: ${money(p.total)}`, 33 + i * 270, y, 8, true, green); });
+  y -= 20;
   const payment = statement?.payment_date ? `Payment: ${statement.payment_date} | Reference: ${statement.payment_reference || ''}` : historicallyPaid(period) ? 'Paid - historical. Confirmed through February 2026; date and voucher not recorded.' : 'Payment date: ____________________     Reference / voucher: ____________________';
   const paymentLines = wrap(payment, 525, font, 8);
   paymentLines.forEach((value, i) => text(value, 33, y - i * 11, 8));
   y -= paymentLines.length * 11 + 36;
   if (y < 48) throw new Error('Statement details do not fit on one A4 page.');
-  [['Ashok', 'Prepared by'], ['Ponraj', 'Checked by'], ['Ashok', 'Payment received by']].forEach(([name, role], i) => {
-    const x = 33 + i * 182;
-    line(x, y, 150); text(name, x, y - 13, 9, true); text(role, x, y - 26, 8, false, muted); text('Date: __________________', x, y - 39, 7, false, muted);
+  [['Ashok Rajes', 'Prepared by'], ['Ponraj', 'Checked by · Cashier'], ['Chandrashekaran', 'Approved by · Manager'], ['Ashok Rajes', 'Payment received by']].forEach(([name, role], i) => {
+    const x = 33 + i * 136;
+    line(x, y, 123); text(name, x, y - 13, 8, true); text(role, x, y - 26, 7.2, false, muted); text('Date: __________________', x, y - 39, 7, false, muted);
   });
   line(28, 27, 539);
   text(`${reference} | ${title} | Retain signed copy with this monthly statement`, 30, 15, 7, false, muted);

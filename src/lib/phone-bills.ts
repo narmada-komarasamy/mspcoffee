@@ -84,6 +84,19 @@ export function mergeBillRows(base: PhoneBillRow[], saved: PhoneBillRow[]) {
 export function payeeTotals(rows: PhoneBillRow[]) {
   return (['Mr. AM', 'Mrs. NA'] as const).map(payee => ({ payee, total: totalBills(rows.filter(r => billPayee(r) === payee)) }));
 }
+export function transferTotals(rows: PhoneBillRow[]) {
+  const buckets = new Map<string, { account: string; payee: BillPayee; cents: number }>();
+  for (const row of rows) {
+    const account = row.location.includes('Moganad') ? 'ME' : row.location.includes('Stanmore') ? 'SE' : 'MSPCC';
+    const payee = billPayee(row);
+    const key = `${account} to ${payee}`;
+    const bucket = buckets.get(key) || { account, payee, cents: 0 };
+    bucket.cents += Math.round((row.amount ?? 0) * 100);
+    buckets.set(key, bucket);
+  }
+  return [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b))
+    .map(([, { account, payee, cents }]) => ({ account, payee, total: cents / 100 }));
+}
 export function billMoney(value: number) {
   return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
