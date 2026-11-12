@@ -17,3 +17,9 @@ For all MSPPROJECT instruction guides, follow the user-approved cream standard i
 reference PDF in that directory. Default to English and Tamil, numbered steps,
 actual privacy-safe screenshots, A4 pages, and print-friendly MSP Coffee branding.
 Do not ask the user to choose white versus cream again unless they request a redesign.
+
+## MSP Coffee app buttons
+
+Follow the user-approved green primary/upload and cream secondary button standard in
+`docs/button-standard.md` throughout MSP Coffee. Use the shared upload control or
+shared button styles for new and updated actions. Keep destructive actions red.

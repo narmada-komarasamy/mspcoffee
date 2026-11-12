@@ -415,3 +415,54 @@
   margin-bottom: 4px;
   display: block;
 }
+
+/* Approved MSP Coffee actions: green primary/upload, cream secondary (12/11/2026).
+   Keep this unlayered so Tailwind's reset cannot erase native file buttons. */
+.msp-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #4a9e4a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.msp-action-button:hover:not(:disabled) { background: #2d6e2d; }
+.msp-action-button--secondary {
+  background: #f4efdd;
+  border-color: #e2dbc2;
+  color: #596357;
+}
+.msp-action-button--secondary:hover:not(:disabled) { background: #e8e0cc; color: #212621; }
+.msp-action-button:focus-visible,
+input[type="file"]:focus-visible::file-selector-button {
+  outline: 3px solid #244a33;
+  outline-offset: 3px;
+}
+.msp-action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.msp-upload-control { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin: 0.75rem 0; }
+.msp-upload-status { color: var(--t-muted, #596357); font-size: 0.875rem; overflow-wrap: anywhere; }
+/* Native file pickers throughout the portal use the same visible upload standard. */
+input[type="file"]::file-selector-button {
+  background: #4a9e4a;
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  min-height: 44px;
+  padding: 0.65rem 1.25rem;
+  margin-inline-end: 0.75rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+input[type="file"]:not(:disabled)::file-selector-button:hover { background: #2d6e2d; }
+input[type="file"]:disabled::file-selector-button { opacity: 0.5; cursor: not-allowed; }

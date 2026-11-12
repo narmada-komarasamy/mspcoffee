@@ -12,8 +12,8 @@ export const USER_GUIDES = [{
   pdfFile: 'MSP_Coffee_Fleet_Fuel_Guide.pdf', pagePrefix: 'fleet-guide-page',
 }, {
   id: 'ho-fuel', title: 'HO Fuel Stock & Entries',
-  description: 'Record store purchases and issues, review consumers and the transaction log, and reconcile physical fuel stock.',
-  languages: 'English + தமிழ்', version: '1.0', updated: '9 November 2026', pages: 2,
+  description: 'Upload purchase bills, review automatically read details, record issues, find saved bills and reconcile physical fuel stock.',
+  languages: 'English + தமிழ்', version: '1.1', updated: '12 November 2026', pages: 2,
   featureHref: '/ho-fuel', featureLabel: 'HO Fuel',
   pdfFile: 'MSP_Coffee_HO_Fuel_Guide.pdf', pagePrefix: 'ho-fuel-guide-page',
 }] as const;

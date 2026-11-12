@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { FileUploadButton } from '@/components/ui/file-upload-button';
 export type FuelBill = { id: string; file_name: string };
 export async function fuelRequest(url: string, options?: RequestInit) {
   const response = await fetch(url, options);
@@ -15,7 +16,9 @@ export function BillUpload({ files, onFiles, purchaseId, disabled = false, onBus
  return <div style={{ marginBottom:16 }}>
   <label style={{ display:'block',fontWeight:600 }}>Upload bill {purchaseId ? '' : '*'} (PDF or photos)</label>
   <p>Attach all pages of one purchase. Up to 10 files, 3 MB each.</p>
-  <input aria-label="Upload purchase bills" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple disabled={busy || disabled}
+  <FileUploadButton buttonLabel={busy ? "Uploading…" : "Upload Bill"}
+    statusText={files.length ? `${files.length} bill file${files.length === 1 ? '' : 's'} uploaded` : 'No bill uploaded yet'}
+    aria-label="Upload purchase bills" accept="application/pdf,image/jpeg,image/png,image/webp" multiple disabled={busy || disabled}
     onChange={async event => {
       const chosen = Array.from(event.target.files || []);
       event.target.value = '';
@@ -38,7 +41,7 @@ export function BillUpload({ files, onFiles, purchaseId, disabled = false, onBus
     }} />
   {files.length > 0 && <ul>{files.map(file => <li key={file.id}>
     <a href={`/api/ho-fuel/bills?id=${file.id}`} target="_blank" rel="noreferrer">{file.file_name}</a>
-    {!purchaseId && <button type="button" disabled={busy || disabled} onClick={() => onFiles(files.filter(f => f.id !== file.id))} aria-label={`Remove ${file.file_name}`}>Remove</button>}
+    {!purchaseId && <button type="button" className="msp-action-button msp-action-button--secondary" disabled={busy || disabled} onClick={() => onFiles(files.filter(f => f.id !== file.id))} aria-label={`Remove ${file.file_name}`}>Remove</button>}
   </li>)}</ul>}
   {message && <p role="status">{message}</p>}
  </div>;

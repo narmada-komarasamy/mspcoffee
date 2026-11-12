@@ -1055,7 +1055,8 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
           <div className={css.formCard}>
             <fieldset disabled={pSaving || reading || billBusy} style={{ border:0,padding:0,margin:0,minWidth:0 }}>
             <BillUpload files={bills} onFiles={files => { setBills(files); setReviewed(false); setReadNote(''); }} disabled={pSaving || reading} onBusy={setBillBusy} onUploaded={readBills} />
-            <button type="button" className={css.btnClear} disabled={!bills.length || reading || billBusy} onClick={() => void readBills()}>{reading ? 'Reading bill…' : 'Read bill and fill details'}</button>
+            <button type="button" className="msp-action-button msp-action-button--secondary" disabled={!bills.length || reading || billBusy} onClick={() => void readBills()}>{reading ? 'Reading bill…' : 'Read bill and fill details'}</button>
+            <p style={{ color:'var(--t-muted)',fontSize:'0.875rem',margin:'0.75rem 0 1rem' }}>Upload a bill first. Details will be filled automatically for your review.</p>
             {readNote && <p role="status">{readNote}</p>}
             <div className={css.formGrid}>
               <div className={css.formGroup}>
