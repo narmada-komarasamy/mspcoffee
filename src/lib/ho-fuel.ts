@@ -32,3 +32,25 @@ export function fuelTotals(rows: FuelTransaction[]) {
   return { dP, dI, pP, pI, amt, dieselStock: dP - dI, petrolStock: pP - pI,
     totalPurchased: dP + pP, totalIssued: dI + pI };
 }
+
+export function formatFuelDate(date: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.split('-').reverse().join('/') : date;
+}
+export function parseFuelDate(value: string) {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return '';
+  const iso = value.split('/').reverse().join('-');
+  const parsed = new Date(iso);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso ? iso : '';
+}
+export function cleanFuelExtraction(value: Record<string, unknown>) {
+  const str = (v: unknown, max = 500) => typeof v === 'string' ? v.trim().slice(0, max) : '';
+  const number = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+  const date = str(value.date);
+  return {
+    date: /^\d{4}-\d{2}-\d{2}$/.test(date) && parseFuelDate(formatFuelDate(date)) === date ? date : '',
+    source: str(value.source),
+    fuel_type: value.fuel_type === 'DIESEL' || value.fuel_type === 'PETROL' ? value.fuel_type : '',
+    qty_l: number(value.qty_l), amount: number(value.amount),
+    notes: str(value.notes, 2000),
+  };
+}

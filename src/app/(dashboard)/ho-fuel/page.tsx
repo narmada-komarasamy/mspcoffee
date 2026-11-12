@@ -10,7 +10,8 @@ import {
 } from "recharts";
 import { AlertTriangle, Download, Palette } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { fuelPeriod, hoFuelToday, currentFuelRows, fuelTotals } from "@/lib/ho-fuel";
+import { fuelPeriod, hoFuelToday, currentFuelRows, fuelTotals, formatFuelDate, parseFuelDate } from "@/lib/ho-fuel";
+import { BillUpload, PurchaseBills, fuelRequest, type FuelBill } from "./bills";
 import css from "./ho-fuel.module.css";
 
 const LOW_DIESEL_THRESHOLD = 100;
@@ -156,7 +157,7 @@ export default function HoFuelPage() {
   return (
     <div style={{} as React.CSSProperties}>
       <div style={{ textAlign: 'right', marginBottom: '0.75rem' }}><Link href="/user-guides/ho-fuel" style={{ color: 'var(--t-accent)', fontWeight: 600 }}>How to use this page →</Link></div>
-      <p className={css.chartSubTitle}>Stock and consumption through {asOf} (India time). Stock = recorded purchases − recorded issues; opening stock is not recorded separately.</p>
+      <p className={css.chartSubTitle}>Stock and consumption through {formatFuelDate(asOf)} (India time). Stock = recorded purchases − recorded issues; opening stock is not recorded separately.</p>
       {futureCount > 0 && <div role="alert" className={css.alertBanner}>{futureCount} future-dated entries are excluded from stock and consumption totals. Review their dates in Transaction Log.</div>}
       <div className={css.tabs}>
         {([
@@ -821,7 +822,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
   const downloadCSV = useCallback(() => {
     const hdr = ["Date","Type","Fuel","Source","Vehicle #","Vehicle Name","Estate","Qty (L)","Amount (₹)","Receiver","Remarks"];
     const body = filtered.map((r) =>
-      [r.date,r.transaction_type,r.fuel_type,`"${r.source}"`,`"${r.vehicle_number}"`,
+      [formatFuelDate(r.date),r.transaction_type,r.fuel_type,`"${r.source}"`,`"${r.vehicle_number}"`,
        `"${r.vehicle_name}"`,`"${r.estate}"`,r.qty_l,r.amount,`"${r.receiver_name}"`,`"${r.remarks}"`].join(",")
     );
     const blob = new Blob([[hdr.join(","), ...body].join("\n")], { type: "text/csv" });
@@ -895,17 +896,17 @@ function LogTab({ rows }: { rows: TxRow[] }) {
               <th>Vehicle / Equipment</th><th>Estate</th><th>Vehicle Name</th>
               <th className={css.tdRight}>Qty (L)</th>
               <th className={css.tdRight}>Total Cost (₹)</th>
-              <th>Remarks</th>
+              <th>Remarks</th><th>Purchase bill</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
-              <tr><td colSpan={10} style={{ textAlign:"center", color:"var(--t-muted)", padding:"2.5rem" }}>
+              <tr><td colSpan={11} style={{ textAlign:"center", color:"var(--t-muted)", padding:"2.5rem" }}>
                 No transactions match the selected filters
               </td></tr>
             ) : pageRows.map((r) => (
               <tr key={r.id}>
-                <td style={{ whiteSpace:"nowrap" }}>{r.date}</td>
+                <td style={{ whiteSpace:"nowrap" }}>{formatFuelDate(r.date)}</td>
                 <td><span className={r.transaction_type === "PURCHASE" ? css.badgePurchase : css.badgeIssue}>{r.transaction_type}</span></td>
                 <td><span className={r.fuel_type === "DIESEL" ? css.badgeDiesel : css.badgePetrol}>{r.fuel_type}</span></td>
                 <td>{r.source}</td>
@@ -915,6 +916,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
                 <td className={css.tdNum}>{fmt(r.qty_l)}</td>
                 <td className={css.tdNum}>{r.amount > 0 ? fmtCur(r.amount) : "—"}</td>
                 <td style={{ color:"var(--t-muted)", fontSize:"0.75rem" }}>{r.remarks}</td>
+                <td>{r.transaction_type === "PURCHASE" ? <PurchaseBills purchaseId={r.id} /> : "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -935,7 +937,7 @@ function LogTab({ rows }: { rows: TxRow[] }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY TAB
 // ─────────────────────────────────────────────────────────────────────────────
-function todayStr() { return hoFuelToday(); }
+function todayStr() { return formatFuelDate(hoFuelToday()); }
 
 const EMPTY_PURCHASE = { date: todayStr(), fuel_type: "DIESEL", source: "", qty_l: "", amount: "", mode_of_payment: "", remarks: "" };
 const EMPTY_ISSUE    = { date: todayStr(), fuel_type: "PETROL", vehicle_number: "", vehicle_name: "", estate: "", qty_l: "", receiver_name: "", source: "HO STORE", remarks: "" };
@@ -946,6 +948,21 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
   const [issue,    setIssue]    = useState({ ...EMPTY_ISSUE });
   const [pMsg, setPMsg] = useState<{ type: "success"|"error"; text: string } | null>(null);
   const [iMsg, setIMsg] = useState<{ type: "success"|"error"; text: string } | null>(null);
+  const [bills, setBills] = useState<FuelBill[]>([]);
+  const [billBusy, setBillBusy] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
+  const [readNote, setReadNote] = useState('');
+  function changePurchase(update: React.SetStateAction<typeof EMPTY_PURCHASE>) { setPurchase(update); setReviewed(false); }
+  async function readBills(selected = bills) {
+    setReading(true); setReviewed(false); setReadNote('');
+    try {
+      const data = await fuelRequest('/api/ho-fuel/extract', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ bill_ids:selected.map(b => b.id) }) });
+      setPurchase(p => ({ ...p, date:data.date ? formatFuelDate(data.date) : '', source:data.source || '', fuel_type:data.fuel_type || '', qty_l:data.qty_l == null ? '' : String(data.qty_l), amount:data.amount == null ? '' : String(data.amount) }));
+      setReadNote(data.notes || 'Details read. Check every field against the attached bill before saving.');
+    } catch (e) { setReadNote(e instanceof Error ? e.message : 'Reading failed. Enter details manually.'); }
+    finally { setReading(false); }
+  }
   const [pSaving, setPSaving] = useState(false);
   const [iSaving, setISaving] = useState(false);
 
@@ -953,7 +970,8 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
   const vehicles = useMemo(() => Array.from(new Set(rows.filter(r=>r.vehicle_number).map(r=>r.vehicle_number))).sort(), [rows]);
 
   function parseDate(s: string) {
-    return { date: s, ...fuelPeriod(s) };
+    const date = parseFuelDate(s);
+    return { date, ...fuelPeriod(date) };
   }
 
   async function savePurchase() {
@@ -961,31 +979,21 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
       setPMsg({ type:"error", text:"Date, Supplier/Source and Quantity are required." }); return;
     }
     if (!(Number(purchase.qty_l) > 0) || !Number.isFinite(Number(purchase.qty_l)) || !Number.isFinite(Number(purchase.amount)) || Number(purchase.amount) < 0 || !purchase.source.trim()) {
-      setPMsg({ type: "error", text: "Enter a supplier, a positive quantity and a non-negative total cost." }); return;
+      setPMsg({ type: "error", text: "Enter a supplier, a positive quantity and the bill’s total cost." }); return;
     }
-    if (purchase.date > hoFuelToday()) { setPMsg({ type: "error", text: "Fuel purchases cannot be dated in the future." }); return; }
+    const date = parseFuelDate(purchase.date);
+    if (!date || date > hoFuelToday()) { setPMsg({ type:"error",text:"Enter a valid date in DD/MM/YYYY format, through today." }); return; }
+    if (!bills.length || !reviewed || !['DIESEL','PETROL'].includes(purchase.fuel_type) || !(Number(purchase.amount) > 0)) { setPMsg({ type:"error",text:"Attach a bill, enter its fuel type and total cost, and confirm all details." }); return; }
     setPSaving(true); setPMsg(null);
-    const { date, month, year } = parseDate(purchase.date);
-    const { error } = await supabase.from("ho_fuel_log").insert([{
-      date, month, year,
-      transaction_type: "PURCHASE",
-      fuel_type: purchase.fuel_type,
-      source: purchase.source.trim(),
-      vehicle_number: "", estate: "", vehicle_name: "",
-      qty_l: parseFloat(purchase.qty_l),
-      amount: parseFloat(purchase.amount || "0") || 0,
-      mode_of_payment: purchase.mode_of_payment.trim(),
-      receiver_name: "",
-      remarks: purchase.remarks.trim(),
-    }]);
-    setPSaving(false);
-    if (error) { setPMsg({ type:"error", text: error.message }); }
-    else {
-      setPMsg({ type:"success", text: `✓ Purchase saved — ${purchase.qty_l} L of ${purchase.fuel_type} on ${purchase.date}` });
+    try {
+      await fuelRequest('/api/ho-fuel/purchases', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ ...purchase, date, qty_l:Number(purchase.qty_l), amount:Number(purchase.amount), bill_ids:bills.map(b => b.id), reviewed }) });
+      setPMsg({ type:"success",text:`✓ Purchase saved — ${purchase.qty_l} L of ${purchase.fuel_type} on ${purchase.date}` });
       setSessionCount(c => c+1);
-      setPurchase({ ...EMPTY_PURCHASE, date: purchase.date, fuel_type: purchase.fuel_type });
+      setPurchase({ ...EMPTY_PURCHASE, date:purchase.date, fuel_type:purchase.fuel_type });
+      setBills([]); setReviewed(false); setReadNote('');
       onSaved();
-    }
+    } catch (error) { setPMsg({ type:"error",text:error instanceof Error ? error.message : 'Unable to save purchase.' }); }
+    finally { setPSaving(false); }
   }
 
   async function saveIssue() {
@@ -995,7 +1003,7 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
     if (!(Number(issue.qty_l) > 0) || !Number.isFinite(Number(issue.qty_l)) || !issue.vehicle_number.trim()) {
       setIMsg({ type: "error", text: "Enter a vehicle/equipment and a positive quantity." }); return;
     }
-    if (issue.date > hoFuelToday()) { setIMsg({ type: "error", text: "Fuel issues cannot be dated in the future." }); return; }
+    if (!parseFuelDate(issue.date) || parseFuelDate(issue.date) > hoFuelToday()) { setIMsg({ type: "error", text: "Enter a valid date in DD/MM/YYYY format, through today." }); return; }
     setISaving(true); setIMsg(null);
     const { date, month, year } = parseDate(issue.date);
     const { error } = await supabase.from("ho_fuel_log").insert([{
@@ -1045,17 +1053,21 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
         <div>
           <div className={css.sectionHdr}><span>◆</span> LOG FUEL PURCHASE (INTO STORE)</div>
           <div className={css.formCard}>
+            <fieldset disabled={pSaving || reading || billBusy} style={{ border:0,padding:0,margin:0,minWidth:0 }}>
+            <BillUpload files={bills} onFiles={files => { setBills(files); setReviewed(false); setReadNote(''); }} disabled={pSaving || reading} onBusy={setBillBusy} onUploaded={readBills} />
+            <button type="button" className={css.btnClear} disabled={!bills.length || reading || billBusy} onClick={() => void readBills()}>{reading ? 'Reading bill…' : 'Read bill and fill details'}</button>
+            {readNote && <p role="status">{readNote}</p>}
             <div className={css.formGrid}>
               <div className={css.formGroup}>
-                <label className={css.formLabel}>Date *</label>
-                <input type="date" className={css.formInput} value={purchase.date}
-                  onChange={e => setPurchase(p=>({...p, date:e.target.value}))} />
+                <label className={css.formLabel} htmlFor="purchase-date">Date (DD/MM/YYYY) *</label>
+                <input id="purchase-date" type="text" placeholder="DD/MM/YYYY" inputMode="numeric" maxLength={10} className={css.formInput} value={purchase.date}
+                  onChange={e => changePurchase(p=>({...p, date:e.target.value}))} />
               </div>
               <div className={css.formGroup}>
                 <label className={css.formLabel}>Fuel Type *</label>
                 <select className={css.formInput} value={purchase.fuel_type}
-                  onChange={e => setPurchase(p=>({...p, fuel_type:e.target.value}))}>
-                  <option value="DIESEL">Diesel</option>
+                  onChange={e => changePurchase(p=>({...p, fuel_type:e.target.value}))}>
+                  <option value="">— Select fuel —</option><option value="DIESEL">Diesel</option>
                   <option value="PETROL">Petrol</option>
                 </select>
               </div>
@@ -1063,41 +1075,43 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
                 <label className={css.formLabel}>Supplier / Source *</label>
                 <input type="text" className={css.formInput} placeholder="e.g. Shanmugha Traders"
                   value={purchase.source}
-                  onChange={e => setPurchase(p=>({...p, source:e.target.value}))} />
+                  onChange={e => changePurchase(p=>({...p, source:e.target.value}))} />
               </div>
               <div className={css.formGroup}>
                 <label className={css.formLabel}>Quantity (Litres) *</label>
                 <input type="number" className={css.formInput} placeholder="e.g. 200" min="0" step="0.5"
                   value={purchase.qty_l}
-                  onChange={e => setPurchase(p=>({...p, qty_l:e.target.value}))} />
+                  onChange={e => changePurchase(p=>({...p, qty_l:e.target.value}))} />
               </div>
               <div className={css.formGroup}>
-                <label className={css.formLabel}>Total Cost (₹)</label>
+                <label className={css.formLabel}>Total Cost (₹) *</label>
                 <input type="number" className={css.formInput} placeholder="e.g. 18500" min="0"
                   value={purchase.amount}
-                  onChange={e => setPurchase(p=>({...p, amount:e.target.value}))} />
+                  onChange={e => changePurchase(p=>({...p, amount:e.target.value}))} />
               </div>
               <div className={css.formGroup}>
                 <label className={css.formLabel}>Mode of Payment</label>
                 <input type="text" className={css.formInput} placeholder="e.g. Cash / UPI"
                   value={purchase.mode_of_payment}
-                  onChange={e => setPurchase(p=>({...p, mode_of_payment:e.target.value}))} />
+                  onChange={e => changePurchase(p=>({...p, mode_of_payment:e.target.value}))} />
               </div>
               <div className={css.formGroupFull}>
                 <label className={css.formLabel}>Remarks</label>
                 <textarea className={css.formTextarea} placeholder="Any notes…"
                   value={purchase.remarks}
-                  onChange={e => setPurchase(p=>({...p, remarks:e.target.value}))} />
+                  onChange={e => changePurchase(p=>({...p, remarks:e.target.value}))} />
               </div>
             </div>
+            <label style={{display:'block',marginTop:16}}><input type="checkbox" checked={reviewed} onChange={e => setReviewed(e.target.checked)} /> I checked the date, supplier, fuel, litres and total cost against the attached bill.</label>
             <div className={css.formActions}>
-              <button className={css.btnSave} disabled={pSaving} onClick={savePurchase}>
+              <button className={css.btnSave} disabled={pSaving || reading || billBusy || !bills.length || !reviewed} onClick={savePurchase}>
                 {pSaving ? "Saving…" : "✅ Save Purchase"}
               </button>
-              <button className={css.btnClear} onClick={() => { setPurchase({...EMPTY_PURCHASE}); setPMsg(null); }}>
+              <button className={css.btnClear} onClick={() => { setPurchase({...EMPTY_PURCHASE,date:todayStr()}); setPMsg(null); setBills([]); setReviewed(false); setReadNote(''); }}>
                 Clear
               </button>
             </div>
+            </fieldset>
             {pMsg && (
               <div className={`${css.formMsg} ${pMsg.type === "success" ? css.formMsgSuccess : css.formMsgError}`}>
                 {pMsg.text}
@@ -1112,8 +1126,8 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
           <div className={css.formCard}>
             <div className={css.formGrid}>
               <div className={css.formGroup}>
-                <label className={css.formLabel}>Date *</label>
-                <input type="date" className={css.formInput} value={issue.date}
+                <label className={css.formLabel} htmlFor="issue-date">Date (DD/MM/YYYY) *</label>
+                <input id="issue-date" type="text" placeholder="DD/MM/YYYY" inputMode="numeric" maxLength={10} className={css.formInput} value={issue.date}
                   onChange={e => setIssue(i=>({...i, date:e.target.value}))} />
               </div>
               <div className={css.formGroup}>
