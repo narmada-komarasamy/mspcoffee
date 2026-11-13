@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { rainfallReadingSummary } from '@/lib/rainfall-dates';
 import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
 import {
@@ -99,7 +100,7 @@ export default function RainfallInfographic() {
  if (rows.length < BATCH) break;
  from += BATCH;
  }
- if (!cancelled) { setData(allRows); setLoading(false); }
+ if (!cancelled) { setData(rainfallReadingSummary(allRows).current); setLoading(false); }
  })();
  return () => { cancelled = true; };
  }, []);

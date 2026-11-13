@@ -1,5 +1,6 @@
 "use client";
 
+import { parseRainfallImportDate, rainfallDateError, rainfallDateLabel } from '@/lib/rainfall-dates';
 import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { CloudUpload, X, CheckCircle, AlertCircle, Loader2, FileSpreadsheet } from "lucide-react";
@@ -38,16 +39,16 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target?.result as ArrayBuffer);
-      const wb = XLSX.read(data, { type: "array", cellDates: true });
+      const wb = XLSX.read(data, { type: "array", cellDates: false });
       const ws = wb.Sheets["Rainfall Data"] ?? wb.Sheets[wb.SheetNames[0]];
-      const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { raw: false });
+      const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { raw: true });
 
       const parsed: ParsedRow[] = [];
       const errs: string[] = [];
 
       raw.forEach((r, i) => {
         const rowNum = i + 2;
-        const dateRaw = String(r["Date"] ?? "").trim();
+        const dateRaw = r["Date"];
         const estate = String(r["Estate"] ?? "").trim();
         const mmRaw = r["mm"] ?? r["Rainfall_mm"] ?? r["rainfall_mm"];
         const inRaw = r["Inches"] ?? r["inches"];
@@ -55,19 +56,15 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
         if (!dateRaw) { errs.push(`Row ${rowNum}: missing Date`); return; }
         if (!VALID_ESTATES.includes(estate)) { errs.push(`Row ${rowNum}: unknown estate "${estate}"`); return; }
 
-        // Normalise date to YYYY-MM-DD
-        let date = dateRaw;
-        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateRaw)) {
-          const [m, d, y] = dateRaw.split("/");
-          date = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-        } else if (/^\d{4}-\d{2}-\d{2}/.test(dateRaw)) {
-          date = dateRaw.slice(0, 10);
-        } else {
-          // Try parsing as JS Date
-          const d = new Date(dateRaw);
-          if (isNaN(d.getTime())) { errs.push(`Row ${rowNum}: unrecognised date "${dateRaw}"`); return; }
-          date = d.toISOString().slice(0, 10);
+        // Decode Excel serials directly to avoid timezone/millisecond shifts in Date cells.
+        let value = dateRaw;
+        if (typeof value === 'number') {
+          const parts = XLSX.SSF.parse_date_code(value, { date1904: !!wb.Workbook?.WBProps?.date1904 });
+          value = parts ? `${parts.y}-${String(parts.m).padStart(2,'0')}-${String(parts.d).padStart(2,'0')}` : '';
         }
+        const date = parseRainfallImportDate(value);
+        const dateError = date ? rainfallDateError(date) : 'Use a real Excel date, DD/MM/YYYY or YYYY-MM-DD.';
+        if (dateError) { errs.push(`Row ${rowNum}: ${dateError}`); return; }
 
         const mm = parseFloat(String(mmRaw ?? "0")) || 0;
         const inches = inRaw != null ? parseFloat(String(inRaw)) : parseFloat((mm * 0.0394).toFixed(3));
@@ -153,7 +150,7 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
                 <p className="text-white font-medium mb-1">Drop your Excel file here</p>
                 <p className="text-white/40 text-sm">or click to browse · .xlsx or .xls</p>
               </div>
-              <p className="text-xs text-white/30">Expects columns: Date, Estate, mm, Inches</p>
+              <p className="text-xs text-white/30">Expects columns: Date, Estate, mm, Inches. Text dates: DD/MM/YYYY or YYYY-MM-DD; future dates are skipped.</p>
               <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
             </div>
           )}
@@ -198,7 +195,7 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
                     <tbody>
                       {rows.slice(0, 50).map((r, i) => (
                         <tr key={i} className="border-t border-white/5 text-white/80">
-                          <td className="px-3 py-1.5">{r.date}</td>
+                          <td className="px-3 py-1.5">{rainfallDateLabel(r.date)}</td>
                           <td className="px-3 py-1.5">{r.estate}</td>
                           <td className="px-3 py-1.5 text-right text-msp-teal-light">{r.rainfall_mm}</td>
                           <td className="px-3 py-1.5 text-right text-white/50">{r.inches.toFixed(3)}</td>

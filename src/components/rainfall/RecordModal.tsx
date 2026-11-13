@@ -1,5 +1,6 @@
 "use client";
 
+import { rainfallToday, rainfallDateError } from '@/lib/rainfall-dates';
 import { useState } from "react";
 import { X, Trash2, Save, Loader2 } from "lucide-react";
 
@@ -30,7 +31,7 @@ export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess
   const isEdit = record?.id != null;
   const requestHeaders = authHeaders ?? { "Content-Type": "application/json" };
   const [form, setForm] = useState<RainfallRecord>(
-    record ?? { date: new Date().toISOString().slice(0, 10), estate: "Gowri", rainfall_mm: 0, inches: 0 }
+    record ?? { date: rainfallToday(), estate: "Gowri", rainfall_mm: 0, inches: 0 }
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -54,6 +55,8 @@ export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess
     setError("");
     if (!form.date || !form.estate) { setError("Date and estate are required"); return; }
 
+    const dateError = rainfallDateError(form.date);
+    if (dateError) { setError(dateError); return; }
     setSaving(true);
     const payload = { date: form.date, estate: form.estate, rainfall_mm: form.rainfall_mm, inches: form.inches };
     const response = await fetch(isEdit ? `/api/rainfall/${record!.id!}` : "/api/rainfall", {
@@ -101,6 +104,7 @@ export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess
             <label className="block text-xs text-white/50 uppercase tracking-widest mb-2">Date</label>
             <input
               type="date"
+              max={rainfallToday()}
               value={form.date}
               onChange={(e) => set("date", e.target.value)}
               className="w-full bg-msp-surface border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-msp-teal-light/50"

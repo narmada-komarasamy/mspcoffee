@@ -1,3 +1,4 @@
+import { rainfallDateError } from '@/lib/rainfall-dates';
 import { requireApiUser } from '@/lib/auth/api';
 
 export const RAINFALL_ROLES = ['admin', 'supervisor', 'worker', 'ceo'];
@@ -24,9 +25,8 @@ export function parseRainfallPayload(payload: unknown) {
   const estate = typeof row.estate === 'string' ? row.estate.trim() : '';
   const rainfallMm = Number(row.rainfall_mm);
 
-  if (!DATE_RE.test(date) || Number.isNaN(new Date(`${date}T00:00:00Z`).getTime())) {
-    return { error: 'Enter a valid date' };
-  }
+  const dateError = rainfallDateError(date);
+  if (dateError) return { error: dateError };
 
   if (!VALID_ESTATES.includes(estate)) {
     return { error: 'Enter a valid estate' };

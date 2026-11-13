@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { rainfallToday, rainfallReadingSummary, rainfallDateLabel } from '@/lib/rainfall-dates';
 import { supabase } from "@/lib/supabase";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Upload, Plus, Pencil, Cloud, CloudRain, Sun, CloudSun, Wind, Droplets, Palette, Maximize2, Minimize2 } from "lucide-react";
@@ -131,7 +132,8 @@ const canDeleteRainfall = (user: AppUser | null) =>
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function RainfallPage() {
-  const [data, setData]     = useState<Row[]>([]);
+  const [records, setRecords] = useState<Row[]>([]);
+  const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [clock, setClock]   = useState("");
@@ -169,7 +171,10 @@ export default function RainfallPage() {
   const [showPalettePanel, setShowPalettePanel] = useState(false);
 
   // Last updated
-  const [maxDataDate, setMaxDataDate]   = useState<string>("");
+  const today = rainfallToday();
+  const { current: data, future: futureReadings, latest: maxDataDate } = useMemo(
+    () => rainfallReadingSummary(records, today), [records, today]
+  );
   const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
   // Fullscreen
@@ -264,8 +269,8 @@ export default function RainfallPage() {
   useEffect(() => {
     const tick = () => {
       const now = new Date();
-      setClock(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
-      setDateStr(now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+      setClock(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }));
+      setDateStr(now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }));
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -322,9 +327,15 @@ export default function RainfallPage() {
         .from("rainfall")
         .select("*")
         .order("date", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, from + BATCH - 1);
 
-      if (error || !rows || rows.length === 0) break;
+      if (error) {
+        setLoadError('Could not load the complete rainfall register. Reload before relying on these figures.');
+        setLoading(false);
+        return;
+      }
+      if (!rows || rows.length === 0) break;
 
       const normalised: Row[] = rows.map((r) => {
         const [y, m] = r.date.split("-").map(Number);
@@ -336,9 +347,9 @@ export default function RainfallPage() {
       from += BATCH;
     }
 
-    setData(allRows);
-    if (allRows.length > 0) setMaxDataDate(allRows[allRows.length - 1].date);
-    setLastRefreshed(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
+    setRecords(allRows);
+    setLoadError("");
+    setLastRefreshed(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }));
     setLoading(false);
   }, []);
 
@@ -376,7 +387,7 @@ export default function RainfallPage() {
     const withRain = filtered.filter((r) => r.rainfall_mm > 0);
     const total    = r1(withRain.reduce((s, r) => s + val(r), 0));
     const maxRow   = withRain.reduce<Row | null>((a, b) => (!a || val(b) > val(a) ? b : a), null);
-    const curYear  = new Date().getFullYear();
+    const curYear  = Number(today.slice(0,4));
     const rtdYear  = year !== "all" ? Number(year) : curYear;
     const rtd      = r1(data.filter((r) =>
       r.year === rtdYear &&
@@ -386,9 +397,9 @@ export default function RainfallPage() {
     const rainyDates = new Set(withRain.map((r) => r.date));
     const allRainy = [...new Set(data.filter((r) => r.rainfall_mm > 0).map((r) => r.date))].sort();
     const lastRain = allRainy[allRainy.length - 1];
-    const dslr     = lastRain ? daysBetween(lastRain, new Date().toISOString().slice(0, 10)) : null;
+    const dslr     = lastRain ? daysBetween(lastRain, today) : null;
     return { total, maxRow, rtd, curYear: rtdYear, rainyDays: rainyDates.size, dslr, lastRain };
-  }, [filtered, data, val, year, estateFilter]);
+  }, [filtered, data, val, year, estateFilter, today]);
 
   // ─── Year-over-Year helpers ────────────────────────────────────────────────
   const priorYearNum = year !== "all" ? Number(year) - 1 : null;
@@ -459,7 +470,7 @@ export default function RainfallPage() {
 
   // ─── Compare cards ─────────────────────────────────────────────────────────
   const compareCards = useMemo(() => {
-    const curYear = new Date().getFullYear();
+    const curYear = Number(today.slice(0,4));
     const allTotals = ESTATES.map((e) => ({
       estate: e,
       total: filteredNoEstate.filter((r) => r.estate === e && r.rainfall_mm > 0).reduce((s, r) => s + val(r), 0),
@@ -474,12 +485,12 @@ export default function RainfallPage() {
       const avg      = rainyDays > 0 ? r1(total / rainyDays) : 0;
       const allRainy = [...new Set(data.filter((r) => r.estate === estate && r.rainfall_mm > 0).map((r) => r.date))].sort();
       const lastRain = allRainy[allRainy.length - 1];
-      const dslr     = lastRain ? daysBetween(lastRain, new Date().toISOString().slice(0, 10)) : null;
+      const dslr     = lastRain ? daysBetween(lastRain, today) : null;
       const rtdE     = r1(data.filter((r) => r.estate === estate && r.year === curYear && r.rainfall_mm > 0).reduce((s, r) => s + val(r), 0));
       const rank     = allTotals.findIndex((x) => x.estate === estate) + 1;
       return { estate, total, maxEvent, rainyDays, avg, dslr, lastRain, rtdE, rank };
     });
-  }, [compareEstates, filteredNoEstate, data, val]);
+  }, [compareEstates, filteredNoEstate, data, val, today]);
 
   // ─── YoY delta summary ─────────────────────────────────────────────────────
   const yoyDelta = useMemo(() => {
@@ -538,14 +549,24 @@ export default function RainfallPage() {
               <div className={s.clockDisplay}>{clock}</div>
               <div className={s.dateDisplay}>{dateStr}</div>
               <div className={s.lastUpdated}>
-                Data last updated: <span>{maxDataDate ? fmtDate(maxDataDate) : "—"}</span>
-                {lastRefreshed && <span style={{ color: "var(--t-label)", marginLeft: 8 }}>· refreshed {lastRefreshed}</span>}
+                Latest reading: <span>{maxDataDate ? rainfallDateLabel(maxDataDate) : "No readings through today"}</span>
+                {lastRefreshed && <span style={{ color: "var(--t-label)", marginLeft: 8 }}>· last refreshed {lastRefreshed} IST</span>}
               </div>
               <button className={s.headerFullscreenBtn} onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
                 {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
             </div>
           </header>
+
+          {loadError && <div role="alert" className={s.dateWarning}>{loadError} <button className="msp-action-button msp-action-button--secondary" onClick={loadData}>Retry</button></div>}
+          {futureReadings.length > 0 && <div role="alert" className={s.dateWarning}>
+            <strong>{futureReadings.length} future-dated reading{futureReadings.length === 1 ? '' : 's'} excluded from rainfall totals and charts.</strong>
+            <p>Check the source register before correcting these dates.</p>
+            <details><summary>Review future-dated readings</summary><ul>{futureReadings.map(row => <li key={row.id}>
+              {rainfallDateLabel(row.date)} · {row.estate} · {row.rainfall_mm} mm{' '}
+              <button className="msp-action-button msp-action-button--secondary" onClick={() => setEditRecord(row)}>Review / Edit</button>
+            </li>)}</ul></details>
+          </div>}
 
           {/* ─── Weather Strip ──────────────────────────────────────────── */}
           <div className={s.weatherStrip}>

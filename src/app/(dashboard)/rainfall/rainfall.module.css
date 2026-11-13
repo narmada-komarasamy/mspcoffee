@@ -1401,3 +1401,7 @@
  margin-top: 3px;
  font-weight: 600;
 }
+
+.dateWarning { margin: 1rem 0; padding: 1rem; border: 1px solid #d69a48; border-radius: 8px; background: #fff7e8; color: #654412; }
+.dateWarning p, .dateWarning li { margin: 0.5rem 0; }
+.dateWarning summary { cursor: pointer; text-decoration: underline; }

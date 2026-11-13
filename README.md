@@ -86,3 +86,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Rainfall date safeguards
+
+Rain Gauge labels the latest actual reading through today in India as **Latest reading**, separately from the page refresh time. Existing future-dated rows remain available under **Review future-dated readings** but are excluded from the dashboard and infographic totals. Correct their dates only against the source register.
+
+Manual entry, edits and bulk uploads share strict calendar and future-date validation. Excel serial dates are decoded without JavaScript Date conversion; text dates use DD/MM/YYYY or YYYY-MM-DD. Apply `supabase/migrations/20261113112116_rainfall_prevent_future_readings.sql` to prevent direct database imports from saving future readings too. This migration does not rewrite or delete existing readings.
+
+Run `node --test tests/rainfall-dates.test.cjs` for the regression checks.
