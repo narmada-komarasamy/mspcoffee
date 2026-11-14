@@ -114,6 +114,17 @@ export const NAV_ITEMS: NavItemDef[] = [
     label: 'Processing Data', href: '/processing-dashboard', iconName: 'BarChart2', roles: ['admin', 'supervisor', 'ceo'],
     children: [
       {
+        label: '2026–2027',
+        children: [
+          { label: 'Season setup & all batches', href: '/processing-dashboard/2026-2027' },
+          { label: 'Stanmore Estate', href: '/processing-dashboard/2026-2027/stanmore-estate' },
+          { label: 'Bison Valley Estate', href: '/processing-dashboard/2026-2027/bve' },
+          { label: 'Moganad Estate', href: '/processing-dashboard/2026-2027/moganad-estate' },
+          { label: 'Orchardale Estate', href: '/processing-dashboard/2026-2027/orchardale-estate' },
+          { label: 'Hidden Falls Estate', href: '/processing-dashboard/2026-2027/hidden-falls-estate' },
+        ],
+      },
+      {
         label: '2025–2026',
         children: [
           { label: 'Stanmore Estate',     href: '/processing-dashboard/stanmore-estate' },

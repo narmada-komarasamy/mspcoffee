@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
 import { estateStockAuth } from '../_auth';
-import {
-  BUCKET,
-  indentFileError,
-  nonNegative,
-  requireEstate,
-  text,
-  validDate,
-} from '@/lib/estate-stock';
+import { BUCKET, indentFileError, text } from '@/lib/estate-stock';
+import { cleanInvoice } from '@/lib/estate-stock-validation';
 
 export async function GET(request: Request) {
   const auth = await estateStockAuth(request);
@@ -23,28 +17,6 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: 'Unable to load invoices.' }, { status: 500 });
   return NextResponse.json({ invoices: data ?? [] }, { headers: { 'Cache-Control': 'private, no-store' } });
-}
-
-export function cleanInvoice(body: Record<string, unknown>, actor: string) {
-  const no = text(body.no);
-  if (!no) throw new Error('Enter the invoice number.');
-  const date = text(body.date);
-  if (!validDate(date)) throw new Error('Enter a valid invoice date.');
-  const supplier = text(body.supplier);
-  if (!supplier) throw new Error('Enter the supplier.');
-  const item = text(body.item);
-  if (!item) throw new Error('Enter the item purchased.');
-  const estate = requireEstate(text(body.estate));
-  return {
-    invoice_no: no,
-    invoice_date: date,
-    supplier,
-    item,
-    estate,
-    amount: nonNegative(body.amount),
-    notes: text(body.notes, 2000) || null,
-    created_by: actor,
-  };
 }
 
 export async function POST(request: Request) {

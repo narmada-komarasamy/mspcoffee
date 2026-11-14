@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { estateStockAuth, UUID_RE } from '../../_auth';
-import { cleanIndent } from '../route';
+import { cleanIndent } from '@/lib/estate-stock-validation';
 
 // PATCH /api/estate-stock/indents/[id]
 // Body: { no, date, fromEstate, toEstate, item, quantity, weightKg, status, receivedBy, notes }

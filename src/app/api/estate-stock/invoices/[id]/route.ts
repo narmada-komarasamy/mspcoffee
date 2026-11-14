@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { estateStockAuth, UUID_RE } from '../../_auth';
 import { BUCKET } from '@/lib/estate-stock';
-import { cleanInvoice } from '../route';
+import { cleanInvoice } from '@/lib/estate-stock-validation';
 
 // GET /api/estate-stock/invoices/[id]?attachment=1
 // Redirects to a short-lived signed URL for the scanned bill, or 404.

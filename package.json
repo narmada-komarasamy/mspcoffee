@@ -10,7 +10,8 @@
     "test:courier": "node --test tests/user-guides.test.cjs tests/courier.test.cjs tests/courier-api.test.cjs tests/courier-tickets.test.cjs tests/courier-reconciliation.test.cjs tests/courier-reconciliation-api.test.cjs tests/courier-bills.test.cjs",
     "check:courier": "npm run test:courier && next typegen && tsc --noEmit",
     "test:fleet": "node --test tests/fleet-evidence.test.cjs tests/fleet-bill-safeguards.test.cjs tests/fleet-maintenance.test.cjs tests/fleet-maintenance-card.test.cjs tests/fleet-odometer.test.cjs",
-    "test:reports": "node --test tests/reports.test.cjs"
+    "test:reports": "node --test tests/reports.test.cjs",
+    "test:processing": "node --test tests/processing.test.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

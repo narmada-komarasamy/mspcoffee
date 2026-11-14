@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { estateStockAuth } from '../_auth';
-import { includesValue, nonNegative, requireEstate, text, STOCK_STATUSES, STOCK_UNITS } from '@/lib/estate-stock';
+import { text } from '@/lib/estate-stock';
+import { cleanItem } from '@/lib/estate-stock-validation';
 
 export async function GET(request: Request) {
   const auth = await estateStockAuth(request);
@@ -15,27 +16,6 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: 'Unable to load stock items.' }, { status: 500 });
   return NextResponse.json({ items: data ?? [] }, { headers: { 'Cache-Control': 'private, no-store' } });
-}
-
-export function cleanItem(body: Record<string, unknown>, actor: string) {
-  const item = text(body.item);
-  if (!item) throw new Error('Enter the item name.');
-  const estate = requireEstate(text(body.estate));
-  const status = text(body.status) || 'In Stock';
-  if (!includesValue(STOCK_STATUSES, status)) throw new Error('Choose a valid status.');
-  const unit = text(body.unit) || 'Nos';
-  if (!includesValue(STOCK_UNITS, unit)) throw new Error('Choose a valid unit.');
-  return {
-    item,
-    estate,
-    unit,
-    status,
-    quantity: nonNegative(body.quantity),
-    weight_kg: nonNegative(body.weight_kg),
-    storage_location: text(body.storage_location, 200) || null,
-    notes: text(body.notes, 2000) || null,
-    created_by: actor,
-  };
 }
 
 export async function POST(request: Request) {

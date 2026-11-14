@@ -138,6 +138,9 @@ export default function ProcessingDashboardPage() {
           <h1 style={{ margin: 0, color: '#1b4a1b', fontSize: '1.45rem', fontWeight: 800 }}>Processing Data</h1>
           <p style={{ margin: '3px 0 0', color: '#6b7280', fontSize: '.84rem' }}>Review estate production and share season summaries.</p>
         </div>
+        <Link href="/processing-dashboard/2026-2027" className="msp-action-button">
+          Enter 2026–2027 batches
+        </Link>
       </div>
 
       {/* ── Season tabs ─────────────────────────────────────────────────────── */}

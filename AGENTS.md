@@ -8,6 +8,23 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## MSP Coffee development and deployment workflow
+
+User instruction confirmed on 14 November 2026: use the established workflow for
+all MSP Coffee app development, deployments, and bug fixes.
+
+- Work in the existing MSP Coffee repository and follow its implementation and testing practices.
+- Use the existing Supabase project for database changes and verify them.
+- Commit the relevant changes and push to the existing GitHub repository.
+- Use the existing Vercel project for deployment and verify the production result.
+- Do not introduce another platform, deployment pipeline, coding CLI, or workflow,
+  or ask the user to install or switch to one, unless the user explicitly requests
+  or approves that change. In particular, do not redirect the user to a separate
+  Terminal Codex session to complete work that should be done here.
+- If the established workflow is blocked, explain the specific blocker and resolve
+  it within that workflow. Ask before proposing a replacement.
+- Preserve unrelated work and report deployment as complete only after verification.
+
 ## Imported Claude Cowork project instructions
 
 ## MSP Coffee instruction guides

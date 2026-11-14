@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
 import { estateStockAuth } from '../_auth';
-import {
-  includesValue,
-  INDENT_STATUSES,
-  nonNegative,
-  requireEstate,
-  text,
-  validDate,
-} from '@/lib/estate-stock';
+import { text } from '@/lib/estate-stock';
+import { cleanIndent } from '@/lib/estate-stock-validation';
 
 export async function GET(request: Request) {
   const auth = await estateStockAuth(request);
@@ -27,33 +21,6 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: 'Unable to load indents.' }, { status: 500 });
   return NextResponse.json({ indents: data ?? [] }, { headers: { 'Cache-Control': 'private, no-store' } });
-}
-
-export function cleanIndent(body: Record<string, unknown>, actor: string) {
-  const date = text(body.date);
-  if (!validDate(date)) throw new Error('Enter a valid indent date.');
-  const fromEst = requireEstate(text(body.fromEstate));
-  const toEst = requireEstate(text(body.toEstate));
-  if (fromEst === toEst) throw new Error('An indent must move between two different estates.');
-  const item = text(body.item);
-  if (!item) throw new Error('Enter the item being transferred.');
-  const status = text(body.status) || 'In Transit';
-  if (!includesValue(INDENT_STATUSES, status)) throw new Error('Choose a valid status.');
-  const no = text(body.no) || `IND-${Date.now().toString(36).toUpperCase()}`;
-  return {
-    indent_no: no,
-    indent_date: date,
-    from_estate: fromEst,
-    to_estate: toEst,
-    item,
-    quantity: nonNegative(body.quantity),
-    weight_kg: nonNegative(body.weight_kg),
-    status,
-    signed_by: actor,
-    received_by: status === 'In Transit' ? null : text(body.receivedBy) || null,
-    notes: text(body.notes, 2000) || null,
-    created_by: actor,
-  };
 }
 
 export async function POST(request: Request) {

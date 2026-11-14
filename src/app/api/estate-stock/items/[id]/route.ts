@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { estateStockAuth, UUID_RE } from '../../_auth';
-import { cleanItem } from '../route';
+import { cleanItem } from '@/lib/estate-stock-validation';
 
 export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const auth = await estateStockAuth(request, true);
