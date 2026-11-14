@@ -1,4 +1,6 @@
 'use client';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -96,7 +98,7 @@ export default function TradingLayout({ children }: { children: React.ReactNode 
   const filteredNav  = navItems.filter(item => item.roles.includes(user.role));
   const allItems     = navItems.flatMap(item => [item, ...(item.children ?? [])]);
   const currentTitle = allItems.find(item => item.href === pathname)?.label ?? 'Trading Management';
-  const today        = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const today        = formatAppDate(new Date());
   const sidebarGrad  = `linear-gradient(180deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
   const headerGrad   = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
 

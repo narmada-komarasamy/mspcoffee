@@ -1,4 +1,7 @@
 'use client';
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import {useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
@@ -88,8 +91,8 @@ export default function ReconciliationPreview(){
           <label>Courier<select value={bill.courier} onChange={e=>changeBill('courier',e.target.value)}><option>Professional Courier</option><option>DTDC</option><option>DHL</option></select></label>
           <label>Currency<input value={bill.currency} maxLength={3} onChange={e=>changeBill('currency',e.target.value.toUpperCase())}/></label>
           <label>Invoice number<input value={bill.invoiceNumber} onChange={e=>changeBill('invoiceNumber',e.target.value)}/></label>
-          <label>Invoice date<input type="date" value={bill.invoiceDate} onChange={e=>changeBill('invoiceDate',e.target.value)}/></label>
-          <div className={styles.twoFields}><label>Period from<input type="date" value={bill.periodFrom} onChange={e=>changeBill('periodFrom',e.target.value)}/></label><label>Period to<input type="date" value={bill.periodTo} onChange={e=>changeBill('periodTo',e.target.value)}/></label></div>
+          <label>Invoice date<DateInput type="date" value={bill.invoiceDate} onChange={e=>changeBill('invoiceDate',e.target.value)}/></label>
+          <div className={styles.twoFields}><label>Period from<DateInput type="date" value={bill.periodFrom} onChange={e=>changeBill('periodFrom',e.target.value)}/></label><label>Period to<DateInput type="date" value={bill.periodTo} onChange={e=>changeBill('periodTo',e.target.value)}/></label></div>
           <label>Billed company / account<input value={bill.billedTo} onChange={e=>changeBill('billedTo',e.target.value)}/></label>
         </div>
         <h3>Invoice totals</h3><p className={styles.help}>Amounts as printed. GST and fuel stay separate from parcel freight. Do not assume a blank amount is zero.</p>
@@ -102,7 +105,7 @@ export default function ReconciliationPreview(){
         <div className={styles.resultsHeading}><div><h3 id="matching-title">Match on courier and consignment</h3><p>Recipient names alone never create an automatic match.</p></div><label className={styles.toggle}><input type="checkbox" checked={onlyIssues} onChange={e=>setOnlyIssues(e.target.checked)}/> Only issues</label></div>
         <div className={styles.tableWrap}><table><thead><tr><th>Consignment / AWB</th><th>Sent</th><th>Destination</th><th>Freight ₹</th><th>Register match</th><th>Check result</th><th><span className={styles.srOnly}>Remove preview line</span></th></tr></thead><tbody>{visibleRows.map(row=><tr key={row.line.id}>
           <td><input aria-label={'Consignment '+row.line.id} value={row.line.tracking} onChange={e=>changeBill('lines',bill.lines.map(l=>l.id===row.line.id?{...l,tracking:e.target.value}:l))}/></td>
-          <td><input aria-label={'Dispatch date '+row.line.id} type="date" value={row.line.sent} onChange={e=>changeBill('lines',bill.lines.map(l=>l.id===row.line.id?{...l,sent:e.target.value}:l))}/></td>
+          <td><DateInput aria-label={'Dispatch date '+row.line.id} type="date" value={row.line.sent} onChange={e=>changeBill('lines',bill.lines.map(l=>l.id===row.line.id?{...l,sent:e.target.value}:l))}/></td>
           <td><input aria-label={'Destination '+row.line.id} value={row.line.destination} onChange={e=>changeBill('lines',bill.lines.map(l=>l.id===row.line.id?{...l,destination:e.target.value}:l))}/></td>
           <td><input aria-label={'Freight '+row.line.id} type="number" min="0" step="0.01" value={row.line.amount??''} onChange={e=>changeBill('lines',bill.lines.map(l=>l.id===row.line.id?{...l,amount:e.target.value===''?null:Number(e.target.value)}:l))}/></td>
           <td>{row.shipment?<><strong>{row.shipment.recipientName}</strong><small>{row.shipment.onBehalfOf||'Sender reference not recorded'}</small></>:<span className={styles.muted}>No confirmed match</span>}</td>
@@ -110,7 +113,7 @@ export default function ReconciliationPreview(){
           <td><button className={styles.remove} aria-label={'Remove preview line '+row.line.id} onClick={()=>changeBill('lines',bill.lines.filter(l=>l.id!==row.line.id))}>×</button></td>
         </tr>)}</tbody></table>{!visibleRows.length&&<p className={styles.empty}>No lines in this view.</p>}</div>
         <button className={styles.addLine} onClick={()=>changeBill('lines',[...bill.lines,{id:crypto.randomUUID(),tracking:'',sent:bill.periodFrom,destination:'',amount:null}])}>+ Add a missing bill line</button>
-        {result.unbilled.length>0&&<details className={styles.notBilled}><summary>{result.unbilled.length} recorded dispatches not found on this bill</summary><p>These may be missing line items or late billing. Check the receipt or contact the courier before closing the month.</p>{result.unbilled.map(s=><div key={s.id}><b>{s.recipientName}</b><span>{s.sent} · {s.tracking||'AWB not recorded'} · {s.onBehalfOf||'Sender not recorded'}</span></div>)}</details>}
+        {result.unbilled.length>0&&<details className={styles.notBilled}><summary>{result.unbilled.length} recorded dispatches not found on this bill</summary><p>These may be missing line items or late billing. Check the receipt or contact the courier before closing the month.</p>{result.unbilled.map(s=><div key={s.id}><b>{s.recipientName}</b><span>{formatAppDate(s.sent)} · {s.tracking||'AWB not recorded'} · {s.onBehalfOf||'Sender not recorded'}</span></div>)}</details>}
         <div className={styles.totalCheck}><div><span>Extracted freight</span><b>{money(result.lineSum)}</b></div><div><span>Printed freight subtotal</span><b>{money(bill.subtotal)}</b></div><div><span>Final invoice total</span><b>{money(bill.total)}</b></div></div>
         {(result.issues.length>0||bill.warnings.length>0)&&<div className={styles.checks}><h3><AlertCircle size={17}/> Check against the original</h3><ul>{[...result.issues,...bill.warnings].map((text,i)=><li key={i}>{text}</li>)}</ul></div>}
         <div className={styles.approval}><div><h3>{approved?'Ramesh approval preview complete':result.canApprove?'Ready for Ramesh to review':'Resolve exceptions before approval'}</h3><p>{approved?'This demonstration has not saved an approval, changed a shipment, or recorded a payment.':result.canApprove?'All listed parcels match and invoice totals balance. Approval does not mean paid.':'Correct extracted details, complete missing pages and investigate unmatched dispatches.'}</p></div><button disabled={!result.canApprove||approved||busy} onClick={()=>setApproved(true)}><CheckCircle2 size={17}/>{approved?'Preview approved':'Preview Ramesh’s approval'}</button></div>

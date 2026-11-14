@@ -1,3 +1,5 @@
+
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 import { readFile } from 'node:fs/promises';
 import { financialYearLabel, periodLabel, reportMoney, reportNumber, REPORT_LABELS, type ReportSnapshot } from './reports';
@@ -29,7 +31,7 @@ export async function renderReportPdf(snapshot: ReportSnapshot) {
     titleLines.forEach((line,i)=>write(page,line,89,770-i*21,18,true,green));
     const y = 770 - titleLines.length*21;
     write(page,`${periodLabel(snapshot.period)} | ${financialYearLabel(snapshot.period.financialYear)}`,30,y-8,10,true);
-    write(page,`${REPORT_LABELS[snapshot.config.type]} report | Generated ${new Date(snapshot.generatedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} IST`,30,y-25,7.5,false,muted);
+    write(page,`${REPORT_LABELS[snapshot.config.type]} report | Generated ${formatAppDateTime(new Date(snapshot.generatedAt))} IST`,30,y-25,7.5,false,muted);
     page.drawLine({start:{x:28,y:36},end:{x:567,y:36},thickness:.5,color:border});
     write(page,snapshot.reference,30,23,7,false,muted);
     write(page,'Saved report versions retain the figures available when generated.',30,12,6.5,false,muted);

@@ -1,4 +1,7 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -204,7 +207,7 @@ function weekDays(anchor: Date) {
 }
 
 function prettyDate(date: Date) {
-  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return formatAppDate(date);
 }
 
 function timeRange(event: CalendarEvent) {
@@ -567,7 +570,7 @@ export default function OperationsCalendarPage() {
             </div>
             <div className={css.composerGrid}>
               <label className={css.fieldWide}><span className={css.label}>Title</span><input className={css.input} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></label>
-              <label className={css.field}><span className={css.label}>Date</span><input className={css.input} type="date" value={draft.event_date} onChange={(event) => setDraft((current) => ({ ...current, event_date: event.target.value }))} /></label>
+              <label className={css.field}><span className={css.label}>Date</span><DateInput className={css.input} type="date" value={draft.event_date} onChange={(event) => setDraft((current) => ({ ...current, event_date: event.target.value }))} /></label>
               <label className={css.field}><span className={css.label}>Start</span><input className={css.input} type="time" value={draft.start_time} onChange={(event) => setDraft((current) => ({ ...current, start_time: event.target.value }))} /></label>
               <label className={css.field}><span className={css.label}>Estate</span><input className={css.input} value={draft.estate} onChange={(event) => setDraft((current) => ({ ...current, estate: event.target.value }))} /></label>
               <label className={css.field}><span className={css.label}>Type</span><select className={css.input} value={draft.event_type} onChange={(event) => setDraft((current) => ({ ...current, event_type: event.target.value as EventKind }))}><option value="schedule">Schedule</option><option value="report">Report</option><option value="email">Email</option><option value="timeline">Timeline</option></select></label>

@@ -1,4 +1,7 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { ChangeEvent, InputHTMLAttributes, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -232,10 +235,7 @@ const missingRelation = (message: string, relationName: string) =>
     message.includes("does not exist"));
 
 const formatDateTime = (value: string) =>
-  new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  formatAppDateTime(new Date(value));
 
 const formFromEmployee = (employee: EmployeeRow): FormState => ({
   estateName: employee.estate_name || "Stanmore Estate",
@@ -1834,7 +1834,7 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Date of Birth" ta="பிறந்த தேதி" />
-                    <input type="date" className={css.input} value={form.dob} onChange={(e) => update("dob", e.target.value)} />
+                    <DateInput type="date" className={css.input} value={form.dob} onChange={(e) => update("dob", e.target.value)} />
                   </div>
                   <div className={css.field}>
                     <FieldLabel en="Age" ta="வயது" />
@@ -1968,7 +1968,7 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
             </div>
             <div className={`${css.grid} ${css.cols3}`}>
               <div className={css.field}><FieldLabel en="Employee ID / Code" ta="பணியாளர் எண்" /><input className={css.input} placeholder="MSP / SE / HR / ____" value={form.empId} onChange={(e) => update("empId", e.target.value)} /></div>
-              <div className={css.field}><FieldLabel en="Date of Joining" ta="பணியில் சேர்ந்த தேதி" /><input type="date" className={css.input} value={form.doj} onChange={(e) => update("doj", e.target.value)} /></div>
+              <div className={css.field}><FieldLabel en="Date of Joining" ta="பணியில் சேர்ந்த தேதி" /><DateInput type="date" className={css.input} value={form.doj} onChange={(e) => update("doj", e.target.value)} /></div>
               <div className={css.field}><FieldLabel en="Job Role / Designation" ta="பணி பதவி" /><TamilTextInput className={css.input} placeholder="e.g. Field Worker, Harvester" value={form.jobRole} onValueChange={(value) => update("jobRole", value)} /></div>
               <div className={css.field}><FieldLabel en="Section / Division" ta="பிரிவு" /><TamilTextInput className={css.input} value={form.section} onValueChange={(value) => update("section", value)} /></div>
               <div className={css.field}><FieldLabel en="Daily Wage / Salary" ta="தினசரி கூலி / சம்பளம்" /><TamilTextInput className={css.input} value={form.wage} onValueChange={(value) => update("wage", value)} /></div>
@@ -2027,19 +2027,19 @@ ${field("emName", "Emergency Contact Name & Relation", form.emName)}${field("emN
                 <div className={css.sigLine} />
                 <div className={css.roleEn}>Signature of Employee</div>
                 <div className={`${css.roleTa} ${css.tamil}`}>தொழிலாளியின் கையொப்பம்</div>
-                <div className={css.dateLine}>Date: <input type="date" className={css.input} value={form.empSigDate} onChange={(e) => update("empSigDate", e.target.value)} /></div>
+                <div className={css.dateLine}>Date: <DateInput type="date" className={css.input} value={form.empSigDate} onChange={(e) => update("empSigDate", e.target.value)} /></div>
               </div>
               <div className={css.sigCell}>
                 <div className={css.sigLine} />
                 <div className={css.roleEn}>Signature of HR (Manager)</div>
                 <div className={`${css.roleTa} ${css.tamil}`}>மனித வளங்கள் மேலாளர் கையொப்பம்</div>
-                <div className={css.dateLine}>Date: <input type="date" className={css.input} value={form.hrSigDate} onChange={(e) => update("hrSigDate", e.target.value)} /></div>
+                <div className={css.dateLine}>Date: <DateInput type="date" className={css.input} value={form.hrSigDate} onChange={(e) => update("hrSigDate", e.target.value)} /></div>
               </div>
               <div className={css.sigCell}>
                 <div className={css.sigLine} />
                 <div className={css.roleEn}>Managing Director</div>
                 <div className={`${css.roleTa} ${css.tamil}`}>நிர்வாக இயக்குநர்</div>
-                <div className={css.dateLine}>Date: <input type="date" className={css.input} value={form.mdSigDate} onChange={(e) => update("mdSigDate", e.target.value)} /></div>
+                <div className={css.dateLine}>Date: <DateInput type="date" className={css.input} value={form.mdSigDate} onChange={(e) => update("mdSigDate", e.target.value)} /></div>
               </div>
             </div>
           </section>

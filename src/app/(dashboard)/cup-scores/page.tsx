@@ -1,4 +1,6 @@
 "use client";
+import { formatDate as formatAppDate, formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -171,7 +173,7 @@ function CoffeeCard({ coffee: c, onDelete }: { coffee: Coffee; onDelete: (id: st
         </div>
       )}
       <div className={s.cardBottom}>
-        <div className={s.metaItem}><div className={s.metaLbl}>Date</div><div className={s.metaVal}>{c.date}</div></div>
+        <div className={s.metaItem}><div className={s.metaLbl}>Date</div><div className={s.metaVal}>{formatAppDate(c.date)}</div></div>
         {c.field !== "—" && <div className={s.metaItem}><div className={s.metaLbl}>Field</div><div className={s.metaVal}>{c.field}</div></div>}
         <div className={s.metaItem}><div className={s.metaLbl}>Qty</div><div className={s.metaVal}>{c.qty}</div></div>
       </div>
@@ -219,7 +221,7 @@ export default function CupScoresPage() {
     const tick = () => {
       const now = new Date();
       setClockTime(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-      setClockDate(now.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }));
+      setClockDate(formatAppDate(now));
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -339,7 +341,7 @@ export default function CupScoresPage() {
         : [...scores, dbToCoffee(saved)];
 
       setScores(updated);
-      const now = new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const now = formatAppDateTime(new Date());
       setLastUpdated(now);
       setModalOpen(false);
       setEditId(null);
@@ -359,7 +361,7 @@ export default function CupScoresPage() {
     }
 
     setScores(prev => prev.filter(r => r._id !== id));
-    setLastUpdated(new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }));
+    setLastUpdated(formatAppDateTime(new Date()));
   };
 
   const openAdd = () => {

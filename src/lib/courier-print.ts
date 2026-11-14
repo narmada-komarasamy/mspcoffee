@@ -1,9 +1,11 @@
+
+import { formatDate as formatAppDate } from '@/lib/date-format';
 import { text } from '@/lib/courier';
 import { ticketNumber, type CourierTicket } from '@/lib/courier-tickets';
 
 export const SENDER_ADDRESS = 'MSP Coffee P Ltd.,\nMoganad Estate,\nSemmanatham Post,\nYercaud - 636 602, Salem Dt.\nMobile: +91 94432 67682';
 export const htmlEscape = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-const date = (value: unknown) => typeof value === 'string' && value ? new Date(value.length === 10 ? value + 'T12:00:00' : value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'Not recorded';
+const date = (value: unknown) => typeof value === 'string' && value ? formatAppDate(new Date(value.length === 10 ? value + 'T12:00:00' : value)) : 'Not recorded';
 const short = (value: unknown, max = 220) => { const v = String(value ?? '') || 'Not recorded'; return htmlEscape(v.length > max ? v.slice(0, max) + '… [full text in app]' : v); };
 
 function page(title: string, content: string, kind: 'label' | 'ticket') {

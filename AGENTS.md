@@ -27,6 +27,18 @@ all MSP Coffee app development, deployments, and bug fixes.
 
 ## Imported Claude Cowork project instructions
 
+## MSP Coffee dates and processing timeline
+
+- User-approved calendar date format is DDMMYYYY (for example, 14112026) throughout
+  entry controls, displayed records, reports, printouts and exports. Use the shared
+  `src/lib/date-format.ts` helpers and `DateInput` / `DateTimeInput` controls.
+- Keep ISO dates for database values, API payloads, filtering and chronological
+  calculations. Preserve existing lot-number identifiers and period labels.
+- Record fermentation hours manually. No-fermentation methods use 0 hours and go
+  directly to drying.
+- Record the actual date put out to dry separately from the date bagged and weighed.
+  Days on the yard means bagged date minus put-out-to-dry date, not harvest to godown.
+
 ## MSP Coffee instruction guides
 
 For all MSPPROJECT instruction guides, follow the user-approved cream standard in

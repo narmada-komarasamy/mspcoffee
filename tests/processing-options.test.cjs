@@ -6,6 +6,9 @@ function load(path, dependencies = {}) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   new Function('require', 'module', 'exports', code)(name => {
+    const dateDependency = require('./helpers/date-test-support.cjs')(name);
+    if (dateDependency) return dateDependency;
+
     if (name in dependencies) return dependencies[name];
     if (name === './processing-options.json') return JSON.parse(fs.readFileSync('src/lib/processing-options.json', 'utf8'));
     return require(name);
@@ -14,7 +17,7 @@ function load(path, dependencies = {}) {
 }
 const lib = load('src/lib/processing.ts');
 const setup = { id: '2026-2027', start_date: '2026-04-01', revision: 1 };
-function sample(fields = {}) { return { ...lib.emptyProcessingBatch(), harvest_date: '2026-11-01', processing_date: '2026-11-02', field_name: 'All Fields', picking_round: 'Fly', variety: 'MIXED', ...fields }; }
+function sample(fields = {}) { return { ...lib.emptyProcessingBatch(), harvest_date: '2026-11-01', processing_date: '2026-11-02', drying_started_on: '2026-11-04', field_name: 'All Fields', picking_round: 'Fly', variety: 'MIXED', ...fields }; }
 function clean(row) { return lib.cleanProcessingBatch(row, setup, '2026-11-14'); }
 
 test('estate dropdowns contain the workbook master fields before any batches have been saved', () => {
@@ -49,8 +52,8 @@ test('wet parchment calculations, floats and yard days follow the workbook witho
   assert.equal(lib.processingWetOutturn(row), 40);
   assert.equal(lib.processingDryFromWet(row), 50);
   assert.equal(lib.processingOutturn(row), 20);
-  assert.equal(lib.processingYardDays(row), 13);
-  assert.equal(lib.processingYardDays({ ...row, godown_date: null }), null);
+  assert.equal(lib.processingYardDays(row), 6);
+  assert.equal(lib.processingYardDays({ ...row, dried_on: null }), null);
   assert.equal(lib.processingDryFromWet({ wet_kg: 0, actual_dry_kg: 100 }), null);
   assert.equal(lib.processingNet({ entry_version: 1, gross_kg: 1000, tare_kg: 10 }), 990);
   assert.throws(() => clean(sample({ harvest_date: '2026-11-03' })), /Harvest date/);

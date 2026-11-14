@@ -4,7 +4,10 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const ts=require('typescript');
 const {NextResponse}=require('next/server');
-function load(path,deps={}){const mod={exports:{}};new Function('exports','module','require',ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod.exports,mod,name=>{if(name==='next/server')return {NextResponse};if(name in deps)return deps[name];throw Error(name)});return mod.exports;}
+function load(path,deps={}){const mod={exports:{}};new Function('exports','module','require',ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod.exports,mod,name=>{
+    const dateDependency = require('./helpers/date-test-support.cjs')(name);
+    if (dateDependency) return dateDependency;
+if(name==='next/server')return {NextResponse};if(name in deps)return deps[name];throw Error(name)});return mod.exports;}
 const courier=load('src/lib/courier.ts');
 const tickets=load('src/lib/courier-tickets.ts',{'@/lib/courier':courier});
 const print=load('src/lib/courier-print.ts',{'@/lib/courier':courier,'@/lib/courier-tickets':tickets});

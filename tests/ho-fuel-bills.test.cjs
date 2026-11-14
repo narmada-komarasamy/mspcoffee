@@ -6,7 +6,7 @@ const ts = require('typescript');
 function load(path, mocks = {}) {
   const module = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path,'utf8'), { compilerOptions: { module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022 } }).outputText;
-  new Function('require','module','exports',code)(name => name in mocks ? mocks[name] : require(name),module,module.exports);
+  new Function('require','module','exports',code)(name => { const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return name in mocks ? mocks[name] : require(name); },module,module.exports);
   return module.exports;
 }
 const fuel = load('src/lib/ho-fuel.ts');
@@ -21,11 +21,13 @@ function purchases(supabase = {}, authOverride) {
     '@/lib/ho-fuel':fuel,'@/lib/auth/api':{ UUID_RE:uuidRE },
   });
 }
-test('DD/MM/YYYY is strict and round trips without locale or timezone ambiguity', () => {
-  assert.equal(fuel.formatFuelDate('2026-12-04'),'04/12/2026');
+test('DDMMYYYY is strict and round trips without locale or timezone ambiguity', () => {
+  assert.equal(fuel.formatFuelDate('2026-12-04'),'04122026');
+  assert.equal(fuel.parseFuelDate('04122026'),'2026-12-04');
+  assert.equal(fuel.parseFuelDate('2026-12-04'),'2026-12-04');
   assert.equal(fuel.parseFuelDate('04/12/2026'),'2026-12-04');
   assert.equal(fuel.parseFuelDate('29/02/2028'),'2028-02-29');
-  for (const invalid of ['29/02/2026','31/04/2026','1/2/2026','2026-12-04','04/13/2026']) assert.equal(fuel.parseFuelDate(invalid),'');
+  for (const invalid of ['29/02/2026','31/04/2026','1/2/2026','04132026','04/13/2026']) assert.equal(fuel.parseFuelDate(invalid),'');
 });
 test('unreadable, invalid and non-finite extraction fields are left empty', () => {
   const data = fuel.cleanFuelExtraction({ date:'2026-02-30',source:' Supplier ',fuel_type:'UNKNOWN',qty_l:-2,amount:Infinity,notes:'check original' });

@@ -1,4 +1,6 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { rainfallToday, rainfallReadingSummary, rainfallDateLabel } from '@/lib/rainfall-dates';
@@ -118,7 +120,7 @@ const r1 = (n: number) => Math.round(n * 10) / 10;
 const daysBetween = (a: string, b: string) =>
   Math.floor((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 const fmtDate = (d: string) =>
-  new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  formatAppDate(new Date(d + "T00:00:00"));
 const rainfallAuthHeaders = (user: AppUser | null) => {
   if (!user?.id || !user?.pin) return null;
   return {
@@ -270,7 +272,7 @@ export default function RainfallPage() {
     const tick = () => {
       const now = new Date();
       setClock(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }));
-      setDateStr(now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }));
+      setDateStr(formatAppDate(now));
     };
     tick();
     const id = setInterval(tick, 1000);

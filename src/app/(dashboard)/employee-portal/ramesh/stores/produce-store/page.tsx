@@ -1,4 +1,6 @@
 'use client';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -61,11 +63,7 @@ function kg(value: number) {
 }
 
 function dateLabel(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatAppDate(new Date(`${value}T00:00:00`));
 }
 
 function csvEscape(value: unknown) {

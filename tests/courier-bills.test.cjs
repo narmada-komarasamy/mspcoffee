@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const ts=require('typescript');
 const {NextResponse}=require('next/server');
-function load(path,deps={}){const mod={exports:{}};new Function('exports','module','require',ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod.exports,mod,key=>key==='next/server'?{NextResponse}:key in deps?deps[key]:require(key));return mod.exports;}
+function load(path,deps={}){const mod={exports:{}};new Function('exports','module','require',ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod.exports,mod,key=>{ const dateDependency = require('./helpers/date-test-support.cjs')(key); if (dateDependency) return dateDependency; return key==='next/server'?{NextResponse}:key in deps?deps[key]:require(key); });return mod.exports;}
 const paymentLib=load('src/lib/courier-bills.ts'),matching=load('src/lib/courier-reconciliation.ts'),courier=load('src/lib/courier.ts');
 const uuid={UUID_RE:/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i};
 const id='aa6b7734-6782-4a93-ae73-5fcb380cf125',context={params:Promise.resolve({id})};

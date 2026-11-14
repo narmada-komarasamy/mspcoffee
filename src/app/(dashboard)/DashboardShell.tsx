@@ -1,4 +1,6 @@
 'use client';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
@@ -69,7 +71,7 @@ export default function DashboardShell({
     const tick = () => {
       const now = new Date();
       setClock(now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-      setDateStr(now.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }));
+      setDateStr(formatAppDate(now));
     };
     tick();
     const t = setInterval(tick, 1000);

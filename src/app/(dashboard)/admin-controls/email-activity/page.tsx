@@ -1,4 +1,6 @@
 'use client';
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Send, AlertCircle, CheckCircle2, Clock3 } from 'lucide-react';
@@ -26,13 +28,7 @@ function authHeaders(): Record<string, string> {
 
 function fmtTime(iso: string | null) {
   if (!iso) return '-';
-  return new Date(iso).toLocaleString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatAppDateTime(new Date(iso));
 }
 
 function statusStyle(status: EmailLogRow['status']): React.CSSProperties {

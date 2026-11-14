@@ -1,4 +1,6 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { rainfallReadingSummary } from '@/lib/rainfall-dates';
@@ -570,7 +572,7 @@ const yoyLabel = `${analysisMonth ? MONTH_NAMES[analysisMonth - 1] : "Full year"
 
  {/* footer */}
  <div className={s.footer}>
- MSP Coffee Rainfall Infographic · Generated {new Date().toLocaleDateString("en-IN")}
+ MSP Coffee Rainfall Infographic · Generated {formatAppDate(new Date())}
  </div>
  </div>
  );

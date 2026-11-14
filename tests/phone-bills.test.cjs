@@ -6,7 +6,7 @@ const ts = require('typescript');
 function load(path, mocks = {}) {
   const m = { exports: {} };
   const output = ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  new Function('require', 'module', 'exports', output)(name => name in mocks ? mocks[name] : require(name), m, m.exports);
+  new Function('require', 'module', 'exports', output)(name => { const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return name in mocks ? mocks[name] : require(name); }, m, m.exports);
   return m.exports;
 }
 const h = load('src/lib/phone-bills.ts');

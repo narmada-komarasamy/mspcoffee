@@ -1,4 +1,9 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
+import { DateInput } from '@/components/ui/date-input';
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -138,11 +143,7 @@ const blankAgenda = (): AgendaItem[] => [
   { item_no: 1, topic: "", presenter: "", time_minutes: 15, status: "pending", notes: "" },
 ];
 
-function fmtDate(s: string | null | undefined) {
-  if (!s) return "-";
-  const [y, m, d] = s.split("-");
-  return d && m && y ? `${d}/${m}/${y}` : s;
-}
+function fmtDate(s: string | null | undefined) { return formatAppDate(s); }
 
 function displayTime(s: string | null | undefined) {
   return s ? s.slice(0, 5) : "-";
@@ -150,13 +151,7 @@ function displayTime(s: string | null | undefined) {
 
 function fmtTimestamp(s: string | null | undefined) {
   if (!s) return "No comment timestamp yet";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(s));
+  return formatAppDateTime(new Date(s));
 }
 
 function statusClass(status: Meeting["approval_status"] | MeetingAction["status"]) {
@@ -680,7 +675,7 @@ export default function BoardMeetingsPage() {
                 <span className={`${css.badge} ${statusClass(form.approval_status)}`}>{form.approval_status}</span>
               </div>
               <div className={css.formGrid}>
-                <div className={css.field}><label className={css.label}>Date</label><input className={css.input} type="date" value={form.meeting_date} onChange={(e) => updateForm("meeting_date", e.target.value)} /></div>
+                <div className={css.field}><label className={css.label}>Date</label><DateInput className={css.input} type="date" value={form.meeting_date} onChange={(e) => updateForm("meeting_date", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Type</label><input className={css.input} value={form.meeting_type} onChange={(e) => updateForm("meeting_type", e.target.value)} /></div>
                 <div className={`${css.field} ${css.full}`}><label className={css.label}>Title</label><input className={css.input} value={form.title} onChange={(e) => updateForm("title", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Start Time</label><input className={css.input} type="time" value={form.start_time ?? ""} onChange={(e) => updateForm("start_time", e.target.value)} /></div>
@@ -754,7 +749,7 @@ export default function BoardMeetingsPage() {
                   <div className={css.muted}>{minutesStamp}</div>
                 </div>
                 <div className={css.field}><label className={css.label}>Approval Status</label><select className={css.select} value={form.approval_status} onChange={(e) => updateForm("approval_status", e.target.value as Meeting["approval_status"])}><option value="draft">Draft</option><option value="in-review">In review</option><option value="approved">Approved</option><option value="signed">Signed</option></select></div>
-                <div className={css.field}><label className={css.label}>Approval Date</label><input className={css.input} type="date" value={form.approval_date ?? ""} onChange={(e) => updateForm("approval_date", e.target.value)} /></div>
+                <div className={css.field}><label className={css.label}>Approval Date</label><DateInput className={css.input} type="date" value={form.approval_date ?? ""} onChange={(e) => updateForm("approval_date", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Minute Owner</label><input className={css.input} value={form.minute_owner ?? ""} onChange={(e) => updateForm("minute_owner", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Approver</label><input className={css.input} value={form.approver ?? ""} onChange={(e) => updateForm("approver", e.target.value)} /></div>
               </div>
@@ -763,7 +758,7 @@ export default function BoardMeetingsPage() {
             <div className={css.section}>
               <div className={css.sectionTitle}>Next Meeting</div>
               <div className={css.formGrid} style={{ marginTop: 10 }}>
-                <div className={css.field}><label className={css.label}>Date</label><input className={css.input} type="date" value={form.next_meeting_date ?? ""} onChange={(e) => updateForm("next_meeting_date", e.target.value)} /></div>
+                <div className={css.field}><label className={css.label}>Date</label><DateInput className={css.input} type="date" value={form.next_meeting_date ?? ""} onChange={(e) => updateForm("next_meeting_date", e.target.value)} /></div>
                 <div className={css.field}><label className={css.label}>Time</label><input className={css.input} type="time" value={form.next_meeting_time ?? ""} onChange={(e) => updateForm("next_meeting_time", e.target.value)} /></div>
                 <div className={`${css.field} ${css.full}`}><label className={css.label}>Location</label><input className={css.input} value={form.next_meeting_location ?? ""} onChange={(e) => updateForm("next_meeting_location", e.target.value)} /></div>
                 <div className={`${css.field} ${css.full}`}><label className={css.label}>Next Agenda</label><textarea className={css.textarea} value={form.next_meeting_agenda ?? ""} onChange={(e) => updateForm("next_meeting_agenda", e.target.value)} /></div>
@@ -816,7 +811,7 @@ export default function BoardMeetingsPage() {
             <div className={css.actionForm}>
               <div className={css.field}><label className={css.label}>Action</label><input className={css.input} value={newAction.action_text} onChange={(e) => setNewAction((a) => ({ ...a, action_text: e.target.value }))} /></div>
               <div className={css.field}><label className={css.label}>Assigned To</label><input className={css.input} value={newAction.assigned_to} onChange={(e) => setNewAction((a) => ({ ...a, assigned_to: e.target.value }))} /></div>
-              <div className={css.field}><label className={css.label}>Due Date</label><input className={css.input} type="date" value={newAction.due_date} onChange={(e) => setNewAction((a) => ({ ...a, due_date: e.target.value }))} /></div>
+              <div className={css.field}><label className={css.label}>Due Date</label><DateInput className={css.input} type="date" value={newAction.due_date} onChange={(e) => setNewAction((a) => ({ ...a, due_date: e.target.value }))} /></div>
               <button className={`${css.btn} ${css.btnPrimary}`} onClick={addAction}><Plus size={14} /> Add Action</button>
             </div>
 

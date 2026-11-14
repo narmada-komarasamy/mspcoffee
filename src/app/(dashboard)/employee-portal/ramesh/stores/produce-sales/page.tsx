@@ -1,4 +1,7 @@
 'use client';
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -425,7 +428,7 @@ export default function ProduceSalesPage() {
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Sale Date</span>
-                <input type="date" value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                <DateInput type="date" value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase text-stone-500">Sale Type</span>
@@ -727,7 +730,7 @@ export default function ProduceSalesPage() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="border border-stone-700 px-2 py-2">{new Date(`${previewSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+                        <td className="border border-stone-700 px-2 py-2">{formatAppDate(new Date(`${previewSale.date}T00:00:00`))}</td>
                         <td className="border border-stone-700 px-2 py-2">
                           {previewSale.product} ({previewSale.piecesSold} Nos)
                           <div className="text-xs">Token: {previewSale.itemCode || 'Not recorded'}</div>
@@ -740,7 +743,7 @@ export default function ProduceSalesPage() {
                         <td className="border border-stone-700 px-2 py-2 text-right">{previewSale.produceAmount.toFixed(2)}</td>
                       </tr>
                       <tr>
-                        <td className="border border-stone-700 px-2 py-2">{new Date(`${previewSale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+                        <td className="border border-stone-700 px-2 py-2">{formatAppDate(new Date(`${previewSale.date}T00:00:00`))}</td>
                         <td className="border border-stone-700 px-2 py-2">Courier and Packing Charges</td>
                         <td className="border border-stone-700 px-2 py-2"></td>
                         <td className="border border-stone-700 px-2 py-2"></td>

@@ -1,4 +1,6 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+
 
 import { rainfallToday, rainfallDateError } from '@/lib/rainfall-dates';
 import { useState } from "react";
@@ -102,7 +104,7 @@ export function RecordModal({ record, authHeaders, canDelete, onClose, onSuccess
           {/* Date */}
           <div>
             <label className="block text-xs text-white/50 uppercase tracking-widest mb-2">Date</label>
-            <input
+            <DateInput
               type="date"
               max={rainfallToday()}
               value={form.date}

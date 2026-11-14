@@ -1,3 +1,5 @@
+
+import { formatDate as formatAppDate } from '@/lib/date-format';
 export const REPORT_TYPES = ['daily', 'weekly', 'monthly', 'quarterly', 'half_yearly', 'yearly'] as const;
 export type ReportType = typeof REPORT_TYPES[number];
 export const REPORT_MODULES = ['rainfall', 'fleet_fuel', 'ho_fuel', 'distance'] as const;
@@ -34,7 +36,7 @@ export function previousPeriod(type: ReportType, period: ReportPeriod) {
 export function lastCompletedPeriod(type: ReportType, today = indiaToday()) { return previousPeriod(type, reportPeriod(type, today)); }
 export function financialYearLabel(year: number) { return `FY ${year}–${String(year + 1).slice(-2)}`; }
 export function periodLabel(period: Pick<ReportPeriod, 'start' | 'end'>) {
-  const format = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+  const format = (date: string) => formatAppDate(new Date(`${date}T00:00:00Z`));
   return period.start === period.end ? format(period.start) : `${format(period.start)} – ${format(period.end)}`;
 }
 export type ReportConfig = { type: ReportType; anchor: string; modules: ReportModule[]; title: string; detail: boolean };

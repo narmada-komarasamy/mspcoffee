@@ -24,7 +24,7 @@ export type ProcessingBatch = {
   picking_round: string; gross_kg: number | null; floats_kg: number | null; wet_kg: number | null;
   tare_kg?: number | null;
   actual_dry_kg: number | null; brix: number | null; ph: number | null; moisture: number | null;
-  fermentation_hours: number | null; dried_on: string | null;
+  fermentation_hours: number | null; drying_started_on: string | null; dried_on: string | null; workflow_version: number;
   net_kg?: number | null; revision: number; updated_at?: string; updated_by?: string;
 };
 export type ProcessingSeason = { id: string; start_date: string | null; revision: number };
@@ -81,7 +81,9 @@ export function cleanProcessingBatch(input: unknown, season: ProcessingSeason, t
     gross_kg: number(b.gross_kg, 'ripe cherry weight', 10000000), floats_kg: number(b.floats_kg, 'floats weight', 10000000), wet_kg: number(b.wet_kg, 'wet parchment weight', 10000000),
     actual_dry_kg: number(b.actual_dry_kg, 'actual dry weight', 10000000),
     brix: number(b.brix, 'BRIX', 100), ph: number(b.ph, 'pH', 14), moisture: number(b.moisture, 'moisture', 100),
-    fermentation_hours: number(b.fermentation_hours, 'fermentation hours', 10000),
+    fermentation_hours: isNoFermentation(String(b.method)) ? 0 : number(b.fermentation_hours, 'fermentation hours', 10000),
+    drying_started_on: b.drying_started_on === '' || b.drying_started_on == null ? null : b.drying_started_on,
+    workflow_version: 2,
     dried_on: b.dried_on === '' || b.dried_on == null ? null : b.dried_on,
   };
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.id)) throw new Error('Invalid batch identifier.');
@@ -89,10 +91,13 @@ export function cleanProcessingBatch(input: unknown, season: ProcessingSeason, t
   if (row.floats_kg !== null && row.gross_kg !== null && row.floats_kg > row.gross_kg) throw new Error('Floats cannot exceed ripe cherry weight.');
   if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]*$/.test(row.variety)) throw new Error('Variety must use letters, numbers, spaces, dots, underscores or hyphens.');
   if (row.godown_date !== null && (!validProcessingDate(row.godown_date) || row.godown_date < (row.dried_on || row.processing_date) || row.godown_date > today)) throw new Error('Godown transfer must be on or after drying (or processing if drying date is pending), and no later than today.');
-  if (row.dried_on !== null && (!validProcessingDate(row.dried_on) || row.dried_on < row.processing_date || row.dried_on > today)) throw new Error('Drying completion date must be between processing date and today.');
+  if (row.drying_started_on !== null && (!validProcessingDate(row.drying_started_on) || row.drying_started_on < row.processing_date || row.drying_started_on > today)) throw new Error('Put out to dry date must be between processing date and today.');
+  if ((row.stage === 'Drying' || row.stage === 'Dried' || row.dried_on !== null) && !row.drying_started_on) throw new Error('Enter the date this batch was put out to dry.');
+  if (row.dried_on !== null && (!validProcessingDate(row.dried_on) || row.dried_on < (row.drying_started_on || row.processing_date) || row.dried_on > today)) throw new Error('Bagged and weighed date must be between put out to dry and today.');
+  if (isNoFermentation(row.method) && row.stage === 'Fermenting') throw new Error('A no-fermentation batch goes directly to drying; choose Received or Drying.');
   const net = processingNet(row);
   if (row.actual_dry_kg !== null && net !== null && row.actual_dry_kg > net) throw new Error('Actual dry weight cannot exceed net cherry weight.');
-  if (row.status === 'Complete' && (row.stage !== 'Dried' || row.actual_dry_kg === null || !row.dried_on || row.moisture === null || net === null || net <= 0)) throw new Error('To complete a batch, enter ripe cherry and floats weights, actual dry weight, moisture and drying date, and choose Dried.');
+  if (row.status === 'Complete' && (row.stage !== 'Dried' || row.actual_dry_kg === null || !row.drying_started_on || !row.dried_on || row.fermentation_hours === null || row.moisture === null || net === null || net <= 0)) throw new Error('To complete a batch, enter ripe cherry and floats weights, actual dry weight, moisture, fermentation hours, put out to dry and bagged dates, and choose Dried.');
   return row as Omit<ProcessingBatch, 'revision'>;
 }
 type ProcessingWeights = { gross_kg: number | null; floats_kg?: number | null; tare_kg?: number | null; entry_version?: number };
@@ -111,10 +116,11 @@ export function processingWetOutturn(row: ProcessingWeights & { wet_kg: number |
 export function processingDryFromWet(row: { wet_kg: number | null; actual_dry_kg: number | null }) {
   return row.wet_kg !== null && row.wet_kg > 0 && row.actual_dry_kg !== null ? row.actual_dry_kg / row.wet_kg * 100 : null;
 }
-export function processingYardDays(row: { harvest_date: string; godown_date: string | null }) {
-  if (!validProcessingDate(row.harvest_date) || !validProcessingDate(row.godown_date)) return null;
-  return Math.round((Date.parse(row.godown_date) - Date.parse(row.harvest_date)) / 86400000);
+export function processingYardDays(row: { drying_started_on: string | null; dried_on: string | null }) {
+  if (!validProcessingDate(row.drying_started_on) || !validProcessingDate(row.dried_on)) return null;
+  return Math.round((Date.parse(row.dried_on) - Date.parse(row.drying_started_on)) / 86400000);
 }
+export function isNoFermentation(method: string) { return /\bno\s+fermentation\b/i.test(method); }
 export function isGowriOption(value: string) { return /gowri|^(?:ge|gwe)\b/i.test(value.trim()); }
 export function processingQualities(lotType: string): string[] {
   if (lotType === 'Gleanings' || lotType === 'Regular') return ['2'];
@@ -134,5 +140,5 @@ export function processingLotKey(row: Pick<ProcessingBatch, 'estate' | 'lot_numb
   return row.lot_number.trim().toLowerCase();
 }
 export function emptyProcessingBatch(estate = PROCESSING_ESTATES[0].slug as string): ProcessingBatch {
-  return { id: crypto.randomUUID(), season_id: PROCESSING_SEASON, estate, lot_number: '', split_reference: '', processing_date: indiaToday(), harvest_date: indiaToday(), lot_type: 'Regular', quality_code: '2', entry_version: 2, drying_surface: '', storage_location: '', godown_date: null, product_type: 'Dry cherry', method: 'Naturals - No Fermentation', stage: 'Received', status: 'In progress', field_name: '', variety: '', recipe_notes: '', remarks: '', picking_round: '', gross_kg: null, floats_kg: null, wet_kg: null, actual_dry_kg: null, brix: null, ph: null, moisture: null, fermentation_hours: null, dried_on: null, revision: 0 };
+  return { id: crypto.randomUUID(), season_id: PROCESSING_SEASON, estate, lot_number: '', split_reference: '', processing_date: indiaToday(), harvest_date: indiaToday(), lot_type: 'Regular', quality_code: '2', entry_version: 2, drying_surface: '', storage_location: '', godown_date: null, product_type: 'Dry cherry', method: 'Naturals - No Fermentation', stage: 'Drying', status: 'In progress', field_name: '', variety: '', recipe_notes: '', remarks: '', picking_round: '', gross_kg: null, floats_kg: null, wet_kg: null, actual_dry_kg: null, brix: null, ph: null, moisture: null, fermentation_hours: 0, drying_started_on: indiaToday(), dried_on: null, workflow_version: 2, revision: 0 };
 }

@@ -1,4 +1,6 @@
 'use client';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -510,9 +512,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     allLeaves.find(c => c.href === pathname)?.label ??
     navItems.find((item) => item.href === pathname)?.label ??
     'Dashboard';
-  const today        = new Date().toLocaleDateString('en-IN', {
-    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-  });
+  const today        = formatAppDate(new Date());
 
   const sidebarGrad = `linear-gradient(180deg, ${theme.dark} 0%, ${theme.mid} 100%)`;
   const headerGrad  = `linear-gradient(135deg, ${theme.dark} 0%, ${theme.mid} 100%)`;

@@ -1,4 +1,6 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { FleetRecord } from "./RecordModal";
@@ -49,7 +51,7 @@ function BillsDialog({ rows, selection, total, onClose, onEdit }: Pick<Props, "r
           <caption className={s.srOnly}>Maintenance entries and original bills for {selection}</caption>
           <thead><tr><th scope="col">Date</th><th scope="col">Vehicle</th><th scope="col">Workshop / Work</th><th scope="col">Amount</th><th scope="col">Original bill</th></tr></thead>
           <tbody>{entries.map(row => <tr key={row.id}>
-            <td>{new Date(`${row.date}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
+            <td>{formatAppDate(new Date(`${row.date}T00:00:00`))}</td>
             <td>{row.vehicle_id}</td>
             <td><strong>{row.maintenance_vendor || "Workshop not recorded"}</strong>
               {row.maintenance_performed && <p className={s.description}>{row.maintenance_performed}</p>}</td>

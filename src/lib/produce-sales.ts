@@ -1,3 +1,5 @@
+
+import { formatDate as formatAppDate } from '@/lib/date-format';
 export type PaymentStatus = 'Paid' | 'Pending' | 'Partial';
 export type PaymentMode = 'Cash' | 'UPI' | 'Bank' | 'Cheque' | 'Other';
 export const SALE_TYPES = ['Charged Sale', 'Complementary', 'Replacement', 'MSP Coffee Processing', 'Bungalow Consumption'];
@@ -193,11 +195,7 @@ export function kg(value: number) {
 
 export function dateLabel(value: string) {
   if (!value) return 'Choose sale date';
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatAppDate(new Date(`${value}T00:00:00`));
 }
 
 export function invoiceNumber(sale: SaleRecord) {
@@ -301,7 +299,7 @@ export function invoiceHtml(sale: SaleRecord) {
     </thead>
     <tbody>
       <tr>
-        <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+        <td>${formatAppDate(new Date(`${sale.date}T00:00:00`))}</td>
         <td>${safe(sale.product)} (${sale.piecesSold} Nos)<br/>Token: ${safe(sale.itemCode || 'Not recorded')}<br/>Estate: ${safe(sale.estate)}${isNoChargeProduce ? `<br/><strong>${safe(sale.saleType)} - produce not charged</strong>` : ''}</td>
         <td>${kg(sale.weightSoldKg)} Kgs</td>
         <td>${isNoChargeProduce ? 'No charge' : `Rs.${sale.ratePerKg}/-`}</td>
@@ -309,7 +307,7 @@ export function invoiceHtml(sale: SaleRecord) {
         <td class="num">${sale.produceAmount.toFixed(2)}</td>
       </tr>
       <tr>
-        <td>${new Date(`${sale.date}T00:00:00`).toLocaleDateString('en-GB')}</td>
+        <td>${formatAppDate(new Date(`${sale.date}T00:00:00`))}</td>
         <td>Courier and Packing Charges</td>
         <td></td><td></td><td>=</td>
         <td class="num">${sale.courierPacking.toFixed(2)}</td>

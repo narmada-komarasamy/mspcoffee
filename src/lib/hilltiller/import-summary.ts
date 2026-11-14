@@ -1,3 +1,5 @@
+
+import { formatDate as formatAppDate } from '@/lib/date-format';
 export type CsvRow = Record<string, string>;
 
 export type HillTillerImportFileKind = 'orders' | 'transactions' | 'products' | 'inventory';
@@ -414,7 +416,7 @@ function parseShopifyDate(value: string) {
 }
 
 function formatDayLabel(date: Date) {
-  return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(date);
+  return formatAppDate(date);
 }
 
 function extractWeight(lineItemName: string) {

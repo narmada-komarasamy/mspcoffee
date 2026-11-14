@@ -1,4 +1,6 @@
 'use client';
+import { DateInput } from '@/components/ui/date-input';
+
 
 import { useState, useCallback } from 'react';
 import { Download, Plus, Trash2 } from 'lucide-react';
@@ -192,7 +194,7 @@ export default function StanmoreLabourPage() {
       <div className="ds-filter-bar" style={{ marginBottom: '1.25rem' }}>
         <div>
           <span className="ds-filter-label">Date</span>
-          <input type="date" value={reportDate} onChange={e => setReportDate(e.target.value)}
+          <DateInput type="date" value={reportDate} onChange={e => setReportDate(e.target.value)}
             className={fieldCls} style={{ ...fieldStyle, width: 160 }} />
         </div>
         <div>

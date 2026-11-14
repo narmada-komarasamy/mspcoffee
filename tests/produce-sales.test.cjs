@@ -9,7 +9,7 @@ function load(path, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   const fixtureModule = { exports: {} };
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), fixtureModule, fixtureModule.exports);
+  new Function('require', 'module', 'exports', code)(name => { const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return name in mocks ? mocks[name] : require(name); }, fixtureModule, fixtureModule.exports);
   return fixtureModule.exports;
 }
 const lib = load('src/lib/produce-sales.ts');

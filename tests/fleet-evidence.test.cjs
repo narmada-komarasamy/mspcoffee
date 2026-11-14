@@ -4,7 +4,7 @@ const fs=require('node:fs');const ts=require('typescript');
 function load(file,mocks={}){
  const mod={exports:{}};
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- new Function('require','module','exports',code)(name=>name in mocks?mocks[name]:require(name),mod,mod.exports);return mod.exports;
+ new Function('require','module','exports',code)(name=>{ const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return name in mocks?mocks[name]:require(name); },mod,mod.exports);return mod.exports;
 }
 const maintenance=load('src/lib/fleet/maintenance.ts');
 const evidence=load('src/lib/fleet/evidence.ts',{'./maintenance':maintenance});

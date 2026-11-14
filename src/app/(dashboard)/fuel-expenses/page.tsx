@@ -1,4 +1,7 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+import { formatDateTime as formatAppDateTime, formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -238,7 +241,7 @@ export default function FleetPage() {
 
   /* ─── Clock ──────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    const tick = () => setClock(new Date().toLocaleString("en-IN", { weekday:"short", day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false }));
+    const tick = () => setClock(formatAppDateTime(new Date()));
     tick();
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
@@ -551,7 +554,7 @@ export default function FleetPage() {
     URL.revokeObjectURL(url);
   }, [logRows]);
 
-  const today = new Date().toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short", year:"numeric" });
+  const today = formatAppDate(new Date());
 
   /* ══════════════════════════════════════════════════════════════════════════════ */
   return (
@@ -1168,12 +1171,12 @@ export default function FleetPage() {
               </div>
               <div className={s.ctrlGroup}>
                 <span className={s.ctrlLabel}>From Date</span>
-                <input type="date" className={s.dateInput} value={logDateFrom}
+                <DateInput type="date" className={s.dateInput} value={logDateFrom}
                   onChange={e => { setLogDateFrom(e.target.value); setLogPage(1); }}/>
               </div>
               <div className={s.ctrlGroup}>
                 <span className={s.ctrlLabel}>To Date</span>
-                <input type="date" className={s.dateInput} value={logDateTo}
+                <DateInput type="date" className={s.dateInput} value={logDateTo}
                   onChange={e => { setLogDateTo(e.target.value); setLogPage(1); }}/>
               </div>
               <button className={s.csvBtn} onClick={downloadCSV}>⬇ Download CSV</button>
@@ -1206,7 +1209,7 @@ export default function FleetPage() {
                   {logSlice.map(r => (
                     <tr key={r.id} aria-current={savedLogKey === `${r.vehicle_id}|${r.date}` ? "true" : undefined}
                       style={savedLogKey === `${r.vehicle_id}|${r.date}` ? { background:"var(--t-subtle)", outline:`2px solid ${TEAL}`, outlineOffset:-2 } : undefined}>
-                      <td className={s.colDate}>{r.date}</td>
+                      <td className={s.colDate}>{formatAppDate(r.date)}</td>
                       <td className={s.colVehicle} style={{ color: vColor(r.vehicle_id) }}>{r.vehicle_id}</td>
                       <td className={s.colAccount}>{r.account}</td>
                       <td className={s.colNumber}>{fmt(r.starting_km,0)}</td>
@@ -1298,7 +1301,7 @@ export default function FleetPage() {
             const firstDate = vrows.slice().sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]?.date ?? "";
             return {
               vehicle_id: vid, account,
-              firstDate: firstDate ? new Date(firstDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—",
+              firstDate: firstDate ? formatAppDate(new Date(firstDate)) : "—",
               startKm: agg.startKm, closeKm: agg.closeKm, kmRun: agg.totalKm,
               fuelFilled: agg.totalLitres, fuelCost: agg.fuelCost,
               maintCost: agg.maintCost, totalCost: agg.totalCost,
@@ -1509,7 +1512,7 @@ export default function FleetPage() {
                     <tbody>
                       {summaryRows.map((r, i) => (
                         <tr key={r.vehicle_id} style={{ background: i % 2 === 0 ? "var(--t-card)" : "var(--t-bg)" }}>
-                          <td style={{ ...td, fontSize:"11px", color:"var(--t-muted)" }}>{r.firstDate}</td>
+                          <td style={{ ...td, fontSize:"11px", color:"var(--t-muted)" }}>{formatAppDate(r.firstDate)}</td>
                           <td style={{ ...td, fontWeight:700, color:"var(--t-heading)" }}>{r.vehicle_id}</td>
                           <td style={td}><span style={{ background:"var(--t-subtle)", color:"var(--t-heading)", borderRadius:"6px", padding:"2px 7px", fontSize:"11px", fontWeight:700 }}>{r.account}</span></td>
                           <td style={{ ...tdR, color:"var(--t-muted)" }}>{fmt(r.startKm,0)}</td>

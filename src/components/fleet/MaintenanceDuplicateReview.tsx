@@ -1,4 +1,6 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { BILL_BUCKET } from '@/lib/fleet/maintenance';
 import { signedStorageUrl } from '@/lib/storage/urls';
@@ -22,7 +24,7 @@ export function MaintenanceDuplicateReview({ matches, hasBill, checked, disabled
     <h3 className="font-semibold text-amber-200">Possible duplicate expense</h3>
     <p>This vehicle already has maintenance entries for the same amount. Check these dates before adding another expense.</p>
     <ul className="space-y-3">{matches.map(row => <li key={row.id} className="border-t border-white/10 pt-3">
-      <p className="font-medium">{row.vehicle_id} · {row.date} · ₹{Number(row.maint_cost).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+      <p className="font-medium">{row.vehicle_id} · {formatAppDate(row.date)} · ₹{Number(row.maint_cost).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
       {row.maintenance_vendor && <p className="text-white/60">{row.maintenance_vendor}</p>}
       <div className="flex flex-wrap gap-3 mt-1">
         {row.maintenance_bill_path && <a className="text-msp-teal underline" href={signedStorageUrl(BILL_BUCKET, row.maintenance_bill_path)} target="_blank" rel="noopener noreferrer">View existing bill</a>}

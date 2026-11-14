@@ -1,4 +1,8 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useMemo, useState } from "react";
 import { Mail, Printer, X } from "lucide-react";
@@ -70,11 +74,7 @@ type MeetingPrintPreviewProps = {
   files: PrintFile[];
 };
 
-function fmtDate(value: string | null | undefined) {
-  if (!value) return "-";
-  const [year, month, day] = value.split("-");
-  return day && month && year ? `${day}/${month}/${year}` : value;
-}
+function fmtDate(value: string | null | undefined) { return formatAppDate(value); }
 
 function fmtTime(value: string | null | undefined) {
   return value ? value.slice(0, 5) : "-";
@@ -82,13 +82,7 @@ function fmtTime(value: string | null | undefined) {
 
 function fmtTimestamp(value: string | null | undefined) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return formatAppDateTime(new Date(value));
 }
 
 function clean(value: string | null | undefined) {

@@ -7,7 +7,7 @@ const XLSX = require('xlsx');
 function load(path,mocks={}) {
  const mod={exports:{}};
  const code=ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- new Function('require','module','exports',code)(name=>name in mocks?mocks[name]:require(name),mod,mod.exports);
+ new Function('require','module','exports',code)(name=>{ const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return name in mocks?mocks[name]:require(name); },mod,mod.exports);
  return mod.exports;
 }
 const dates=load('src/lib/rainfall-dates.ts');
@@ -34,7 +34,7 @@ test('latest reading and totals ignore future readings while retaining them for 
  assert.equal(rows.length,3);
  assert.equal(dates.rainfallReadingSummary([],today).latest,'');
  assert.equal(dates.rainfallReadingSummary([rows[0]],today).latest,'');
- assert.equal(dates.rainfallDateLabel(summary.latest),'09/11/2026');
+ assert.equal(dates.rainfallDateLabel(summary.latest),'09112026');
 });
 test('text import dates always use day/month/year and reject ambiguous native parsing',()=>{
  assert.equal(dates.parseRainfallImportDate('04/11/2026'),'2026-11-04');

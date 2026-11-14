@@ -466,3 +466,15 @@ input[type="file"]::file-selector-button {
 }
 input[type="file"]:not(:disabled)::file-selector-button:hover { background: #2d6e2d; }
 input[type="file"]:disabled::file-selector-button { opacity: 0.5; cursor: not-allowed; }
+
+/* Fixed DDMMYYYY text display; storage and the calendar picker keep ISO values. */
+.msp-date-control { position: relative; display: inline-flex; align-items: stretch; gap: 4px; width: 100%; min-width: 0; max-width: 100%; vertical-align: middle; }
+.msp-date-control > input:first-child { flex: 1 1 0%; min-width: 0; width: 0; font-variant-numeric: tabular-nums; }
+.msp-date-calendar { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; min-height: 36px; padding: 4px; border: 1px solid #e2dbc2; border-radius: 6px; background: #f4efdd; color: #596357; }
+.msp-date-calendar:hover:not(:disabled) { background: #e8e0cc; }
+.msp-date-calendar:focus-visible { outline: 2px solid #244a33; outline-offset: 2px; }
+.msp-date-calendar:disabled { opacity: .5; }
+@media (pointer: coarse) { .msp-date-calendar { flex-basis: 44px; min-height: 44px; } }
+@media print { .msp-date-calendar { display: none; } }
+.msp-date-time-control { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(90px, .5fr); gap: 8px; }
+@media (max-width: 420px) { .msp-date-time-control { grid-template-columns: 1fr; } }

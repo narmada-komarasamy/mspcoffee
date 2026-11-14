@@ -1,4 +1,7 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate, formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useEffect, useState, useCallback, useMemo, useReducer, useRef } from "react";
 import {
@@ -90,11 +93,7 @@ function fmtINR(v: number) {
   if (abs >= 100_000)    return `${sign}₹${(abs / 100_000).toFixed(2)}L`;
   return `${sign}₹${Math.round(abs).toLocaleString("en-IN")}`;
 }
-function fmtDate(s: string | null | undefined) {
-  if (!s) return "—";
-  const [y, m, d] = s.split("-");
-  return `${d}/${m}/${y}`;
-}
+function fmtDate(s: string | null | undefined) { return formatAppDate(s); }
 
 function isMissingLotAllocationsColumn(error: unknown) {
   const message = String((error as { message?: unknown } | null)?.message ?? error ?? "").toLowerCase();
@@ -193,7 +192,7 @@ function isViewOnly(): boolean {
 }
 function noteStamp(): string {
   const now = new Date();
-  const d = now.toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const d = formatAppDate(now);
   const t = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
   return `[${d} ${t} – ${getUser()}] `;
 }
@@ -1028,11 +1027,11 @@ function SendToMillDrawer({ batches, onClose, reload }: { batches: ParchBatch[];
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Sent Date *</label>
-          <input type="date" className={css.formInput} value={sentDate} onChange={e=>setSentDate(e.target.value)} />
+          <DateInput type="date" className={css.formInput} value={sentDate} onChange={e=>setSentDate(e.target.value)} />
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Expected Return</label>
-          <input type="date" className={css.formInput} value={expReturn} onChange={e=>setExpReturn(e.target.value)} />
+          <DateInput type="date" className={css.formInput} value={expReturn} onChange={e=>setExpReturn(e.target.value)} />
         </div>
       </div>
       <div className={css.formGroup} style={{ marginTop:12 }}>
@@ -1226,7 +1225,7 @@ function NewBatchDrawer({ onClose, reload }: { onClose: () => void; reload: () =
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Date *</label>
-          <input type="date" className={css.formInput} value={form.date} onChange={set("date")} />
+          <DateInput type="date" className={css.formInput} value={form.date} onChange={set("date")} />
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Field *</label>
@@ -1464,7 +1463,7 @@ function ReceiveGreenDrawer({ batches, onClose, reload }: { batches: ParchBatch[
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Received Date *</label>
-          <input type="date" className={css.formInput} value={recDate} onChange={e=>setRecDate(e.target.value)} />
+          <DateInput type="date" className={css.formInput} value={recDate} onChange={e=>setRecDate(e.target.value)} />
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Grade</label>
@@ -1586,7 +1585,7 @@ function AddLotDrawer({ season, onClose, reload }: { season: string; onClose: ()
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Milled Date</label>
-          <input type="date" className={css.formInput} value={milledDate} onChange={e=>setMilledDate(e.target.value)} />
+          <DateInput type="date" className={css.formInput} value={milledDate} onChange={e=>setMilledDate(e.target.value)} />
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Estate / Field</label>
@@ -2214,7 +2213,7 @@ function RecordSaleDrawer({ greenLots, defaultLot, onClose, reload, onSuccess }:
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Date *</label>
-          <input type="date" className={css.formInput} value={date} onChange={e=>setDate(e.target.value)} />
+          <DateInput type="date" className={css.formInput} value={date} onChange={e=>setDate(e.target.value)} />
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Reference / Invoice #</label>
@@ -2474,7 +2473,7 @@ function SellBlendDrawer({ blend, greenLots, onClose, reload, onSuccess }: {
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Date *</label>
-          <input type="date" className={css.formInput} value={date} onChange={e=>setDate(e.target.value)} />
+          <DateInput type="date" className={css.formInput} value={date} onChange={e=>setDate(e.target.value)} />
         </div>
         <div className={css.formGroup}>
           <label className={css.formLabel}>Reference</label>
@@ -3145,7 +3144,7 @@ function AuditTab({ audit }: { audit: AuditEntry[] }) {
                 {audit.map(a => (
                   <tr key={a.id}>
                     <td className={css.tdMono} style={{ fontSize:11, color:"#7a90b0" }}>
-                      {new Date(a.ts).toLocaleString("en-IN", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}
+                      {formatAppDateTime(new Date(a.ts))}
                     </td>
                     <td className={css.tdMono} style={{ fontSize:11.5 }}>{a.actor}</td>
                     <td><span className={`${css.badge} ${auditActionClass(a.action)}`}>{a.action}</span></td>

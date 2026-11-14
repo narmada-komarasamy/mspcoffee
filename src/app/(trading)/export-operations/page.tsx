@@ -1,4 +1,8 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
+import { DateInput } from '@/components/ui/date-input';
+
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
@@ -78,11 +82,7 @@ function fmtNum(v: number | null | undefined, d = 2): string {
   if (v === null || v === undefined || isNaN(Number(v))) return "—";
   return Number(v).toLocaleString("en-IN", { maximumFractionDigits: d, minimumFractionDigits: d });
 }
-function fmtDate(s: string | null | undefined): string {
-  if (!s) return "—";
-  const [y, m, d] = s.split("-");
-  return `${d}/${m}/${y}`;
-}
+function fmtDate(s: string | null | undefined): string { return formatAppDate(s); }
 function daysBetween(d1: string, d2: string): number | null {
   if (!d1 || !d2) return null;
   const diff = new Date(d2).getTime() - new Date(d1).getTime();
@@ -331,7 +331,7 @@ export default function ExportPage() {
                 <div className={css.formGrid4}>
                   <div className={css.formGroup}>
                     <label className={css.formLabel}>Date of Shipment *</label>
-                    <input type="date" className={css.formInput} value={form.date}
+                    <DateInput type="date" className={css.formInput} value={form.date}
                       onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
                   </div>
                   <div className={css.formGroup}>
@@ -373,7 +373,7 @@ export default function ExportPage() {
                   </div>
                   <div className={css.formGroup}>
                     <label className={css.formLabel}>Contract Signed On</label>
-                    <input type="date" className={css.formInput} value={form.contract_date}
+                    <DateInput type="date" className={css.formInput} value={form.contract_date}
                       onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))} />
                   </div>
                   <div className={css.formGroup}>
@@ -403,7 +403,7 @@ export default function ExportPage() {
                   </div>
                   <div className={css.formGroup}>
                     <label className={css.formLabel}>Date Borrowed</label>
-                    <input type="date" className={css.formInput} value={form.date_borrowed}
+                    <DateInput type="date" className={css.formInput} value={form.date_borrowed}
                       onChange={e => setForm(f => ({ ...f, date_borrowed: e.target.value }))} />
                   </div>
                   <div className={css.formGroup}>
@@ -421,7 +421,7 @@ export default function ExportPage() {
                 <div className={css.formGrid3}>
                   <div className={css.formGroup}>
                     <label className={css.formLabel}>Date Money Received</label>
-                    <input type="date" className={css.formInput} value={form.date_received}
+                    <DateInput type="date" className={css.formInput} value={form.date_received}
                       onChange={e => setForm(f => ({ ...f, date_received: e.target.value }))} />
                   </div>
                   <div className={css.formGroup}>

@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/date-format';
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib';
 import { BILL_MONTHS, billPayee, historicallyPaid, payeeTotals, transferTotals, totalBills, type PhoneBillRow, type PhoneStatement } from './phone-bills';
 import { phoneBillSource } from './phone-bill-sources';
@@ -43,7 +44,7 @@ export async function phoneStatementPdf(rows: PhoneBillRow[], period: string, lo
   text(`Statement: ${reference}`, 30, 725, 8, true);
   text(statement ? 'Saved monthly statement' : 'DRAFT - review before saving', 390, 725, 8, false, muted);
   const source = phoneBillSource(period);
-  text(source ? `${rows.length} accounts | INR | Worksheet: ${source.worksheet} | Prepared ${source.prepared}` : `Consolidated monthly reimbursement | ${rows.length} accounts | Amounts in INR`, 30, 709, 8, false, muted);
+  text(source ? `${rows.length} accounts | INR | Worksheet: ${source.worksheet} | Prepared ${formatDate(source.prepared)}` : `Consolidated monthly reimbursement | ${rows.length} accounts | Amounts in INR`, 30, 709, 8, false, muted);
 
   const widths = [20, 65, 110, 65, 118, 68, 93];
   const ordered = [...rows].sort((a, b) => a.billType.localeCompare(b.billType) || a.location.localeCompare(b.location));
@@ -97,7 +98,7 @@ export async function phoneStatementPdf(rows: PhoneBillRow[], period: string, lo
   y -= 14;
   payeeTotals(rows).forEach((p, i) => { text(`Total to ${p.payee}: ${money(p.total)}`, 33 + i * 270, y, 8, true, green); });
   y -= 20;
-  const payment = statement?.payment_date ? `Payment: ${statement.payment_date} | Reference: ${statement.payment_reference || ''}` : historicallyPaid(period) ? 'Paid - historical. Confirmed through February 2026; date and voucher not recorded.' : 'Payment date: ____________________     Reference / voucher: ____________________';
+  const payment = statement?.payment_date ? `Payment: ${formatDate(statement.payment_date)} | Reference: ${statement.payment_reference || ''}` : historicallyPaid(period) ? 'Paid - historical. Confirmed through February 2026; date and voucher not recorded.' : 'Payment date: ____________________     Reference / voucher: ____________________';
   const paymentLines = wrap(payment, 525, font, 8);
   paymentLines.forEach((value, i) => text(value, 33, y - i * 11, 8));
   y -= paymentLines.length * 11 + 36;

@@ -63,7 +63,7 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
           value = parts ? `${parts.y}-${String(parts.m).padStart(2,'0')}-${String(parts.d).padStart(2,'0')}` : '';
         }
         const date = parseRainfallImportDate(value);
-        const dateError = date ? rainfallDateError(date) : 'Use a real Excel date, DD/MM/YYYY or YYYY-MM-DD.';
+        const dateError = date ? rainfallDateError(date) : 'Use a real Excel date, DDMMYYYY or YYYY-MM-DD.';
         if (dateError) { errs.push(`Row ${rowNum}: ${dateError}`); return; }
 
         const mm = parseFloat(String(mmRaw ?? "0")) || 0;
@@ -150,7 +150,7 @@ export function UploadModal({ authHeaders, onClose, onSuccess }: Props) {
                 <p className="text-white font-medium mb-1">Drop your Excel file here</p>
                 <p className="text-white/40 text-sm">or click to browse · .xlsx or .xls</p>
               </div>
-              <p className="text-xs text-white/30">Expects columns: Date, Estate, mm, Inches. Text dates: DD/MM/YYYY or YYYY-MM-DD; future dates are skipped.</p>
+              <p className="text-xs text-white/30">Expects columns: Date, Estate, mm, Inches. Text dates: DDMMYYYY or YYYY-MM-DD; future dates are skipped.</p>
               <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
             </div>
           )}

@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/date-format';
 import type { EmailMetric, EmailPayload, EmailSection } from './payload';
 
 export type ReportBlockId =
@@ -169,10 +170,10 @@ export function normalizeTemplate(value: unknown): EmailReportTemplate {
     : 'MSP Coffee';
   const subject = typeof row.subject === 'string' && row.subject.trim()
     ? row.subject.trim()
-    : `MSP Coffee Report - ${date}`;
+    : `MSP Coffee Report - ${formatDate(date)}`;
 
   return {
-    name: typeof row.name === 'string' && row.name.trim() ? row.name.trim() : `Email Report - ${date}`,
+    name: typeof row.name === 'string' && row.name.trim() ? row.name.trim() : `Email Report - ${formatDate(date)}`,
     subject,
     estateName,
     date,
@@ -189,7 +190,7 @@ export function applyVariables(text: string, variables: Record<string, string>) 
 function variablesFor(template: EmailReportTemplate, recipient: RecipientReportConfig) {
   return {
     estate_name: template.estateName,
-    date: template.date,
+    date: formatDate(template.date),
     recipient_name: recipient.name || recipient.email,
     recipient_email: recipient.email,
     custom_text: template.customText || '',

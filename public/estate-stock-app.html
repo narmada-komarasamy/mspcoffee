@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/msp-dates.js"></script>
+<style>.msp-date-control{position:relative;display:flex;gap:4px;min-width:150px;width:100%;max-width:100%}.msp-date-control>input:first-child{flex:1;min-width:0;width:0}.msp-date-calendar{border:1px solid #e2dbc2;border-radius:6px;background:#f4efdd;color:#596357;min-width:36px;min-height:36px}.msp-date-native{position:absolute!important;right:0!important;top:0!important;width:36px!important;height:100%!important;opacity:0!important;pointer-events:none!important}.msp-date-calendar:focus-visible{outline:2px solid #244a33;outline-offset:2px}@media(pointer:coarse){.msp-date-calendar{min-width:44px;min-height:44px}}@media print{.msp-date-calendar{display:none}}</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Estate Stock &amp; Storage</title>
@@ -266,7 +268,7 @@ const EST_STATE={estates:[],items:[],indents:[],invoices:[],editIndentId:null,ed
 const $=(id)=>document.getElementById(id);
 function esc(s){const d=document.createElement('i');d.textContent=s??'';return d.innerHTML}
 function toast(msg,err){const t=$('toast');t.textContent=msg;t.className=err?'err':'';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3200)}
-function fmtDate(d){if(!d)return '—';const p=String(d).slice(0,10);return p.split('-').reverse().join(' ')}
+function fmtDate(d){return window.MSPDates.formatDate(d);}
 function fmtMoney(n){return n==null?'—':'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2})}
 function badge(status){const key=(status||'').replace(/\s+/g,'');return `<span class="badge ${esc(status)}">${esc(status)}</span>`}
 

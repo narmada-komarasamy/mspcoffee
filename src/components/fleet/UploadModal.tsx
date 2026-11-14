@@ -1,4 +1,6 @@
 "use client";
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
@@ -246,7 +248,7 @@ export function UploadModal({ existingRows, onClose, onSuccess }: Props) {
                     <tbody>
                       {rows.slice(0, 50).map((r, i) => (
                         <tr key={i} className="border-t border-msp-navy-light text-white/80">
-                          <td className="px-3 py-1.5 whitespace-nowrap">{r.date}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{formatAppDate(r.date)}</td>
                           <td className="px-3 py-1.5 whitespace-nowrap text-msp-teal">{r.vehicle_id}</td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.account}</td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.fuel_type}</td>
@@ -299,7 +301,7 @@ export function UploadModal({ existingRows, onClose, onSuccess }: Props) {
               <CheckCircle className="h-10 w-10 text-msp-green" />
               <p className="text-white font-medium">Upload complete</p>
               <p className="text-white/50 text-sm">{uploadedCount.toLocaleString()} new rows saved · {skipped.length} skipped. Existing records and attachments were kept.</p>
-              {skipped.length > 0 && <div className="max-h-48 overflow-y-auto text-sm text-white/70 px-6" role="status">{skipped.map((row,index)=><p key={index}>{row.vehicle_id} · {row.date}: {row.reason}</p>)}</div>}
+              {skipped.length > 0 && <div className="max-h-48 overflow-y-auto text-sm text-white/70 px-6" role="status">{skipped.map((row,index)=><p key={index}>{row.vehicle_id} · {formatAppDate(row.date)}: {row.reason}</p>)}</div>}
               <button className="px-4 py-2 rounded-lg bg-msp-teal text-msp-bg" onClick={() => { onSuccess(); onClose(); }}>Done</button>
             </div>
           )}

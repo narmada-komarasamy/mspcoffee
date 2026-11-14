@@ -1,3 +1,4 @@
+import { formatDate, parseAppDate } from '@/lib/date-format';
 /** Use the transaction date, never imported month/year fields, for reporting. */
 export function fuelPeriod(date: string) {
   const [year, month] = date.split('-').map(Number);
@@ -33,15 +34,8 @@ export function fuelTotals(rows: FuelTransaction[]) {
     totalPurchased: dP + pP, totalIssued: dI + pI };
 }
 
-export function formatFuelDate(date: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.split('-').reverse().join('/') : date;
-}
-export function parseFuelDate(value: string) {
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return '';
-  const iso = value.split('/').reverse().join('-');
-  const parsed = new Date(iso);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso ? iso : '';
-}
+export function formatFuelDate(date: string) { return formatDate(date, ''); }
+export function parseFuelDate(value: string) { return /^(?:\d{8}|\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})$/.test(value) ? parseAppDate(value) : ''; }
 export function cleanFuelExtraction(value: Record<string, unknown>) {
   const str = (v: unknown, max = 500) => typeof v === 'string' ? v.trim().slice(0, max) : '';
   const number = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;

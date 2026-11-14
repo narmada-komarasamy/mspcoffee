@@ -1,4 +1,9 @@
 'use client';
+import { parseAppDate } from '@/lib/date-format';
+
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate, formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ExternalLink, Plus, Printer, Search, Trash2, Upload } from 'lucide-react';
@@ -73,22 +78,7 @@ function validDateKey(date: string) {
     && parsed.getUTCDate() === day;
 }
 
-function normalizeDateInput(value: string) {
-  const trimmed = value.trim();
-  if (DATE_KEY_RE.test(trimmed)) return validDateKey(trimmed) ? trimmed : '';
-
-  const slashMatch = SLASH_DATE_RE.exec(trimmed);
-  if (!slashMatch) return '';
-
-  const first = Number(slashMatch[1]);
-  const second = Number(slashMatch[2]);
-  const year = Number(slashMatch[3]);
-  const month = first > 12 ? second : first;
-  const day = first > 12 ? first : second;
-  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-  return validDateKey(date) ? date : '';
-}
+function normalizeDateInput(value: string) { return parseAppDate(value); }
 
 function weekStartKey() {
   const d = new Date();
@@ -736,7 +726,7 @@ export default function TravelAllowancePage() {
         <div className="space-y-4">
           <section className="rounded-xl border p-4" style={{ background: 'var(--t-card)', borderColor: 'var(--t-border)' }}>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_120px_auto] gap-3 items-end">
-              <Field label="Date"><input type="date" value={entryDate} onChange={e => setEntryDate(e.target.value)} className="ta-input" /></Field>
+              <Field label="Date"><DateInput type="date" value={entryDate} onChange={e => setEntryDate(e.target.value)} className="ta-input" /></Field>
               <Field label="Employee">
                 <select value={employeeId} onChange={e => setEmployeeId(e.target.value)} className="ta-input">
                   {employees.length ? employees.map(employee => <option key={employee.id} value={employee.id}>{employee.name}</option>) : <option>Add an employee first</option>}
@@ -775,7 +765,7 @@ export default function TravelAllowancePage() {
                   <option value="employee">By employee</option>
                 </select>
               </Field>
-              {reportType === 'week' && <Field label="Week starting"><input type="date" value={reportWeek} onChange={e => setReportWeek(e.target.value)} className="ta-input" /></Field>}
+              {reportType === 'week' && <Field label="Week starting"><DateInput type="date" value={reportWeek} onChange={e => setReportWeek(e.target.value)} className="ta-input" /></Field>}
               {reportType === 'month' && <Field label="Month"><input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="ta-input" /></Field>}
               {reportType === 'employee' && (
                 <Field label="Employee">
@@ -784,8 +774,8 @@ export default function TravelAllowancePage() {
                   </select>
                 </Field>
               )}
-              <Field label="From date"><input type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} className="ta-input" /></Field>
-              <Field label="To date"><input type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} className="ta-input" /></Field>
+              <Field label="From date"><DateInput type="date" value={reportStartDate} onChange={e => setReportStartDate(e.target.value)} className="ta-input" /></Field>
+              <Field label="To date"><DateInput type="date" value={reportEndDate} onChange={e => setReportEndDate(e.target.value)} className="ta-input" /></Field>
             </div>
             <button onClick={printReport} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold transition active:scale-95" style={{ borderColor: 'var(--t-border)', color: 'var(--t-text)', background: 'var(--t-card)' }}>
               <Printer className="h-4 w-4" />
@@ -987,7 +977,7 @@ function EntryTable({ entries, loading, onDelete, canDelete, compact = false }: 
               <tr><td className="px-4 py-8 text-center" colSpan={colSpan} style={{ color: 'var(--t-muted)' }}>Loading travel allowance data...</td></tr>
             ) : entries.length ? entries.map(entry => (
               <tr key={entry.id} className="border-t" style={{ borderColor: 'var(--t-border)' }}>
-                <td className="px-4 py-2">{entry.entry_date}</td>
+                <td className="px-4 py-2">{formatAppDate(entry.entry_date)}</td>
                 <td className="px-4 py-2">{safeName(entry.employee?.name)}</td>
                 <td className="px-4 py-2">{safeName(entry.location?.name)}</td>
                 <td className="px-4 py-2">{entry.times}</td>
@@ -1075,7 +1065,7 @@ function PaymentRegisterTable({
                       {paid && <CheckCircle2 className="h-3.5 w-3.5" />}
                       {paid ? 'Paid' : 'Unpaid'}
                     </span>
-                    {row.payment?.paid_at && <div className="mt-1 text-xs" style={{ color: 'var(--t-muted)' }}>{new Date(row.payment.paid_at).toLocaleString('en-IN')}</div>}
+                    {row.payment?.paid_at && <div className="mt-1 text-xs" style={{ color: 'var(--t-muted)' }}>{formatAppDateTime(new Date(row.payment.paid_at))}</div>}
                   </td>
                   <td className="px-4 py-3 min-w-[260px]">
                     {row.payment?.receipt_signed_url ? (

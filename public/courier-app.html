@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="/msp-dates.js"></script>
+<style>.msp-date-control{position:relative;display:flex;gap:4px;min-width:150px;width:100%;max-width:100%}.msp-date-control>input:first-child{flex:1;min-width:0;width:0}.msp-date-calendar{border:1px solid #e2dbc2;border-radius:6px;background:#f4efdd;color:#596357;min-width:36px;min-height:36px}.msp-date-native{position:absolute!important;right:0!important;top:0!important;width:36px!important;height:100%!important;opacity:0!important;pointer-events:none!important}.msp-date-calendar:focus-visible{outline:2px solid #244a33;outline-offset:2px}@media(pointer:coarse){.msp-date-calendar{min-width:44px;min-height:44px}}@media print{.msp-date-calendar{display:none}}</style>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MSP Coffee · Courier and Tracking</title>
 <style>
@@ -98,7 +100,7 @@ h1{font-family:'Cormorant Garamond',Georgia,serif;color:var(--forest);font-weigh
 const $=id=>document.getElementById(id);
 let recipients=[],shipments=[];
 let selectedRecipient=null,editingId=null,timer,newId=null;let saving=false,loading=false;const money=v=>(v===''||v==null)?'—':new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(Number(v));
-const labelDate=v=>v?new Date(v+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+const labelDate=v=>v?window.MSPDates.formatDate(new Date(v+'T12:00:00')):'—';
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(timer);timer=setTimeout(()=>$('toast').hidden=true,3200)}
 function showError(msg){$('error').textContent=msg;$('error').hidden=false}
 function cell(tr,text,sub){const td=document.createElement('td');const strong=document.createElement('strong');strong.textContent=text;td.append(strong);if(sub){const small=document.createElement('small');small.textContent=sub;td.append(small)}tr.append(td);return td}
@@ -153,7 +155,7 @@ $('shipmentForm').onsubmit=async e=>{
 };
 $('clear').onclick=reset;$('search').oninput=render;$('filter').onchange=render;$('closeDetails').onclick=()=>$('details').close();
 function csv(v){let t=String(v??'');if(/^[\s]*[=+@-]/.test(t))t="'"+t;return '"'+t.replace(/"/g,'""')+'"'}
-$('export').onclick=()=>{if(!validDateRange())return toast('From date must be on or before To date.');const list=filteredShipments();if(!list.length)return toast('No shipments match these filters');const cols=['recipientName','phone','address','city','courier','tracking','sent','expected','status','cost','contents','invoiceNumber','paymentStatus','onBehalfOf','deliveredBy','sourceRef','reviewRequired'];const data=[cols.map(csv).join(','),...list.map(s=>cols.map(k=>csv(s[k])).join(','))].join('\r\n');const blob=new Blob(['\uFEFF'+data],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='msp-courier-'+($('fromDate').value||'beginning')+'-to-'+($('toDate').value||'latest')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$('export').onclick=()=>{if(!validDateRange())return toast('From date must be on or before To date.');const list=filteredShipments();if(!list.length)return toast('No shipments match these filters');const cols=['recipientName','phone','address','city','courier','tracking','sent','expected','status','cost','contents','invoiceNumber','paymentStatus','onBehalfOf','deliveredBy','sourceRef','reviewRequired'];const data=[cols.map(csv).join(','),...list.map(s=>cols.map(k=>csv(k==='sent'||k==='expected'?labelDate(s[k]):s[k])).join(','))].join('\r\n');const blob=new Blob(['\uFEFF'+data],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='msp-courier-'+($('fromDate').value||'beginning')+'-to-'+($('toDate').value||'latest')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $('uploadTracking').onclick=()=>$('trackingSheet').click();
 $('trackingSheet').onchange=async()=>{
  const file=$('trackingSheet').files[0];if(!file)return;

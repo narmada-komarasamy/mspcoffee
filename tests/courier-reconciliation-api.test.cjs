@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const ts=require('typescript');
 const {NextResponse}=require('next/server');
-function load(path,deps={}){const mod={exports:{}};new Function('exports','module','require',ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod.exports,mod,key=>key==='next/server'?{NextResponse}:key in deps?deps[key]:(()=>{throw Error(key)})());return mod.exports;}
+function load(path,deps={}){const mod={exports:{}};new Function('exports','module','require',ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(mod.exports,mod,key=>{ const dateDependency = require('./helpers/date-test-support.cjs')(key); if (dateDependency) return dateDependency; return key==='next/server'?{NextResponse}:key in deps?deps[key]:(()=>{throw Error(key)})(); });return mod.exports;}
 const lib=load('src/lib/courier.ts'),matching=load('src/lib/courier-reconciliation.ts'),samples=load('src/lib/courier-reconciliation-samples.ts');
 function extract(auth){return load('src/app/api/courier/reconciliation/extract/route.ts',{'../../_auth':{courierAuth:auth},'@/lib/courier':lib,'@/lib/courier-reconciliation':matching,'@/lib/auth/rate-limit':{checkRateLimit:()=>({}),rateLimitKey:()=>''}});}
 function fileRequest(){const form=new FormData();form.set('file',new File(['fixture'],'bill.pdf',{type:'application/pdf'}));return new Request('http://localhost/api/courier/reconciliation/extract',{method:'POST',body:form});}

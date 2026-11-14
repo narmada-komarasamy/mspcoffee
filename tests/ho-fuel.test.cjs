@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const ts = require('typescript');
 const fs = require('node:fs');
 const mod = { exports: {} };
-new Function('module', 'exports', ts.transpileModule(fs.readFileSync('src/lib/ho-fuel.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(mod, mod.exports);
+new Function('module', 'exports', 'require', ts.transpileModule(fs.readFileSync('src/lib/ho-fuel.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(mod, mod.exports, name => { const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return require('./helpers/date-test-support.cjs')(name) || require(name); });
 const { fuelPeriod, currentFuelRows, fuelTotals, hoFuelToday } = mod.exports;
 test('month follows transaction date including month boundaries', () => {
   assert.deepEqual(fuelPeriod('2026-04-01'), { year: 2026, month: 4 });

@@ -10,6 +10,9 @@ function load(path, mocks = {}) {
   }).outputText;
   const fixtureModule = { exports: {} };
   const resolve = name => {
+    const dateDependency = require('./helpers/date-test-support.cjs')(name);
+    if (dateDependency) return dateDependency;
+
     if (name === '@/lib/fleet/evidence') return load('src/lib/fleet/evidence.ts', { './maintenance': load('src/lib/fleet/maintenance.ts') });
     if (name === '@/lib/storage/urls' && !mocks[name]) return load('src/lib/storage/urls.ts');
     if (name === '@/lib/fleet/auth' && mocks['@/lib/auth/api']) return { fleetAuth: mocks['@/lib/auth/api'].requireApiUser };
@@ -137,7 +140,7 @@ test('spotlight filters stay accurate; the daily log shows by default and reveal
   }
   const initialTable = nodes(render()).find(node => node.type === 'table' && node.props.className === 'dailyTable' && nodes(node).some(child => child.type === 'th' && text(child) === 'Date'));
   assert.ok(initialTable, 'Daily log must show without searching or filtering');
-  assert.ok(text(initialTable).includes('2026-09-20'));
+  assert.ok(text(initialTable).includes('20092026'));
   assert.ok(text(initialTable).includes('OTHER'));
   change('Select Vehicle', 'TN 54 M 6336'); change('Year', '2026'); change('Month', 'Sep');
   const card = nodes(render()).find(node => node.type === Card);
@@ -149,7 +152,7 @@ test('spotlight filters stay accurate; the daily log shows by default and reveal
   nodes(render()).find(node => node.type === Modal).props.onSuccess(rows[1]);
   for (let i = 0; i < 3; i++) await new Promise(resolve => setImmediate(resolve));
   const savedTable = nodes(render()).find(node => node.type === 'table' && node.props.className === 'dailyTable' && nodes(node).some(child => child.type === 'th' && text(child) === 'Date'));
-  assert.ok(text(savedTable).includes('2026-09-20'));
+  assert.ok(text(savedTable).includes('20092026'));
   assert.ok(!text(savedTable).includes('OTHER'));
   assert.ok(!text(savedTable).includes('2026-08-15'));
   assert.equal(nodes(savedTable).filter(node => node.type === 'tr' && node.props['aria-current'] === 'true').length, 1);

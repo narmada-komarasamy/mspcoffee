@@ -11,7 +11,8 @@
     "check:courier": "npm run test:courier && next typegen && tsc --noEmit",
     "test:fleet": "node --test tests/fleet-evidence.test.cjs tests/fleet-bill-safeguards.test.cjs tests/fleet-maintenance.test.cjs tests/fleet-maintenance-card.test.cjs tests/fleet-odometer.test.cjs",
     "test:reports": "node --test tests/reports.test.cjs",
-    "test:processing": "node --test tests/processing.test.cjs tests/processing-options.test.cjs"
+    "test:processing": "node --test tests/processing.test.cjs tests/processing-options.test.cjs tests/processing-timeline.test.cjs",
+    "test:dates": "node --test tests/date-format.test.cjs tests/ho-fuel.test.cjs tests/ho-fuel-bills.test.cjs tests/rainfall-dates.test.cjs tests/phone-bills.test.cjs tests/produce-sales.test.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

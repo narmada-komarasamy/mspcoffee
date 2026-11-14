@@ -8,6 +8,9 @@ function load(file,dependencies){
  const mod={exports:{}};
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  new Function('exports','module','require',code)(mod.exports,mod,name=>{
+    const dateDependency = require('./helpers/date-test-support.cjs')(name);
+    if (dateDependency) return dateDependency;
+
   if(name==='next/server')return {NextResponse};
   if(name in dependencies)return dependencies[name];
   throw Error('Unexpected import '+name);

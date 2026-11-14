@@ -1,4 +1,8 @@
 'use client';
+import { DateInput } from '@/components/ui/date-input';
+import { DateTimeInput } from '@/components/ui/date-time-input';
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -362,7 +366,7 @@ export function EmailReportsClient() {
     }
 
     if (action === 'schedule') {
-      setMessage(`Batch scheduled for ${new Date(scheduleAt).toLocaleString('en-IN')}`);
+      setMessage(`Batch scheduled for ${formatAppDateTime(new Date(scheduleAt))}`);
       return;
     }
 
@@ -413,7 +417,7 @@ export function EmailReportsClient() {
               </label>
               <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 800 }}>
                 Date
-                <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={input} />
+                <DateInput type="date" value={date} onChange={(event) => setDate(event.target.value)} style={input} />
               </label>
             </div>
             <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 800 }}>
@@ -481,7 +485,7 @@ export function EmailReportsClient() {
             {message && <div style={{ padding: 10, borderRadius: 8, border: '1px solid var(--t-border)', background: message.includes('Could not') ? '#fff1f1' : 'var(--t-subtle)', color: message.includes('Could not') ? '#9f1239' : 'var(--t-heading)', fontSize: 13 }}>{message}</div>}
             <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 800 }}>
               Schedule Time
-              <input type="datetime-local" value={scheduleAt} onChange={(event) => setScheduleAt(event.target.value)} style={input} />
+              <DateTimeInput type="datetime-local" value={scheduleAt} onChange={(event) => setScheduleAt(event.target.value)} style={input} />
             </label>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button type="button" onClick={loadPreview} disabled={loadingPreview || !hasRecipients} style={buttonStyle(secondaryButton, loadingPreview || !hasRecipients)}><Eye size={14} /> {loadingPreview ? 'Previewing...' : 'Preview'}</button>

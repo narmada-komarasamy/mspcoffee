@@ -1,4 +1,6 @@
 'use client';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -645,7 +647,7 @@ export default function FamilyDecisionsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold" style={{ color: 'var(--t-text)' }}>{step.label}</p>
-                  <p className="text-xs" style={{ color: 'var(--t-muted)' }}>{step.date}</p>
+                  <p className="text-xs" style={{ color: 'var(--t-muted)' }}>{formatAppDate(step.date)}</p>
                 </div>
               </div>
             ))}

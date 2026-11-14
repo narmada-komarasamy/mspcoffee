@@ -1,4 +1,7 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -285,16 +288,16 @@ export function RecordModal({ record, rows, vehicles, onClose, onSuccess }: Prop
             {billNotice && <p role="status" className="text-sm text-msp-gold-light">{billNotice}</p>}
             {(bill || form.maintenance_bill_date) && <div>
               <label htmlFor="maintenance-bill-date" className={labelCls}>Bill Date (separate from vehicle log date)</label>
-              <input id="maintenance-bill-date" type="date" value={form.maintenance_bill_date || ''} disabled={busy}
+              <DateInput id="maintenance-bill-date" type="date" value={form.maintenance_bill_date || ''} disabled={busy}
                 onChange={event => set('maintenance_bill_date', event.target.value)} className={inputCls} />
               <p className="mt-1 text-xs text-white/50">The bill date does not move the expense to another log date.</p>
             </div>}
             {dateMismatch && <label className="flex items-start gap-2 rounded-lg border border-amber-500/50 p-3 text-sm text-amber-200">
               <input type="checkbox" checked={dateReviewed} disabled={busy} className="mt-1" onChange={event => setDateReviewedKey(event.target.checked ? dateKey : '')} />
-              <span>Bill date {form.maintenance_bill_date} differs from log date {form.date}. I have checked both dates and want to keep this log date.</span>
+              <span>Bill date {formatAppDate(form.maintenance_bill_date)} differs from log date {formatAppDate(form.date)}. I have checked both dates and want to keep this log date.</span>
             </label>}
             {duplicateFile && <div role="alert" className="rounded-lg border border-amber-500/50 p-3 space-y-2 text-sm text-amber-200">
-              <p>This exact bill is already saved for {duplicateFile.vehicle_id} on {duplicateFile.date}, ₹{Number(duplicateFile.maint_cost).toLocaleString('en-IN')}. It cannot be uploaded again.</p>
+              <p>This exact bill is already saved for {duplicateFile.vehicle_id} on {formatAppDate(duplicateFile.date)}, ₹{Number(duplicateFile.maint_cost).toLocaleString('en-IN')}. It cannot be uploaded again.</p>
               <a className="block text-msp-teal underline" href={signedStorageUrl(BILL_BUCKET, duplicateFile.maintenance_bill_path)} target="_blank" rel="noopener noreferrer">View saved bill</a>
               <button type="button" disabled={busy} onClick={() => void selectExisting(duplicateFile.id, false)} className="block text-msp-teal underline">Open existing entry</button>
               <button type="button" disabled={busy} onClick={() => { setDuplicateFile(null); setBill(null); }} className="block text-white/60 underline">Continue without this bill</button>
@@ -308,7 +311,7 @@ export function RecordModal({ record, rows, vehicles, onClose, onSuccess }: Prop
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="fleet-log-date" className={labelCls}>Vehicle Log Date</label>
-              <input id="fleet-log-date" type="date" value={form.date}
+              <DateInput id="fleet-log-date" type="date" value={form.date}
                 onChange={(e) => set("date", e.target.value)}
                 className={inputCls} />
             </div>

@@ -11,6 +11,9 @@ function load(path, mocks = {}) {
   }).outputText;
   const fixtureModule = { exports: {} };
   const resolve = name => {
+    const dateDependency = require('./helpers/date-test-support.cjs')(name);
+    if (dateDependency) return dateDependency;
+
     if (name === '@/lib/fleet/evidence') return load('src/lib/fleet/evidence.ts', { './maintenance': load('src/lib/fleet/maintenance.ts') });
     if (name === '@/lib/storage/urls' && !mocks[name]) return load('src/lib/storage/urls.ts');
     if (name === '@/lib/fleet/auth' && mocks['@/lib/auth/api']) return { fleetAuth: mocks['@/lib/auth/api'].requireApiUser };

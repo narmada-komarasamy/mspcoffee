@@ -1,4 +1,5 @@
-/** Shared rainfall date rules. Stored dates are ISO; user-facing dates are DD/MM/YYYY. */
+import { formatDate, parseAppDate } from '@/lib/date-format';
+/** Shared rainfall date rules. Stored dates are ISO; user-facing dates are DDMMYYYY. */
 export function rainfallToday(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit' }).format(now);
 }
@@ -13,21 +14,14 @@ export function rainfallDateError(date: string, today = rainfallToday()) {
   return '';
 }
 export function rainfallDateLabel(date: string) {
-  return validRainfallDate(date) ? date.split('-').reverse().join('/') : date;
+  return formatDate(date, '');
 }
 /** Excel date cells are read as Date values; text dates use day/month/year explicitly. */
 export function parseRainfallImportDate(raw: unknown) {
   let date = '';
   if (raw instanceof Date && Number.isFinite(raw.getTime())) {
     date = `${raw.getFullYear()}-${String(raw.getMonth()+1).padStart(2,'0')}-${String(raw.getDate()).padStart(2,'0')}`;
-  } else if (typeof raw === 'string') {
-    const text = raw.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) date = text;
-    else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(text)) {
-      const [day,month,year] = text.split('/');
-      date = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
-    }
-  }
+  } else if (typeof raw === 'string') { date = parseAppDate(raw); }
   return validRainfallDate(date) ? date : '';
 }
 export function rainfallReadingSummary<T extends {date: string}>(rows: T[], today = rainfallToday()) {

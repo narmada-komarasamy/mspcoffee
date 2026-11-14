@@ -1,4 +1,8 @@
 'use client';
+import { DateInput } from '@/components/ui/date-input';
+
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { ChangeEvent, ClipboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -186,26 +190,7 @@ function aiCountLabel(count?: AiPhotoCount) {
 }
 
 function toDateLabel(value: string) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
-function dateToDisplayValue(value: string) {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [year, month, day] = value.split('-');
-    return `${day}/${month}/${year}`;
-  }
-  return value;
-}
-
-function displayToDateValue(value: string) {
-  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!match) return value;
-  const [, day, month, year] = match;
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  return formatAppDate(new Date(`${value}T00:00:00`));
 }
 
 function parseWhatsAppMessage(message: string, current: Draft): Draft {
@@ -1062,7 +1047,7 @@ export default function EstateProduceTrackerPage() {
                     <button onClick={() => setEntryMode('whatsapp')} className={`rounded-md px-4 py-2 text-sm font-semibold ${entryMode === 'whatsapp' ? 'bg-emerald-800 text-white' : 'border border-emerald-200 text-emerald-900'}`}>WhatsApp Paste</button>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input value={dateToDisplayValue(draft.date)} onChange={(event) => updateDraft('date', displayToDateValue(event.target.value))} placeholder="dd/mm/yyyy" className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
+                    <DateInput type="date" value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <input type="time" value={draft.time} onChange={(event) => updateDraft('time', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm" />
                     <select value={draft.estate} onChange={(event) => updateDraft('estate', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{ESTATES.map((estate) => <option key={estate}>{estate}</option>)}</select>
                     <select value={draft.product} onChange={(event) => updateDraft('product', event.target.value)} className="rounded-md border border-stone-200 px-3 py-2 text-sm">{PRODUCTS.map((product) => <option key={product}>{product}</option>)}</select>

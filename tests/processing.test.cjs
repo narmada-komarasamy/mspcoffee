@@ -7,6 +7,9 @@ function load(path, dependencies = {}) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true, target: ts.ScriptTarget.ES2022 } }).outputText;
   new Function('require', 'module', 'exports', code)(name => {
+    const dateDependency = require('./helpers/date-test-support.cjs')(name);
+    if (dateDependency) return dateDependency;
+
     if (name in dependencies) return dependencies[name];
     if (name === 'server-only') return {};
     if (name === './processing-options.json') return JSON.parse(fs.readFileSync('src/lib/processing-options.json', 'utf8'));
@@ -16,7 +19,7 @@ function load(path, dependencies = {}) {
 }
 const lib = load('src/lib/processing.ts');
 const season = { id: lib.PROCESSING_SEASON, start_date: '2026-04-01', revision: 1 };
-const input = () => ({ ...lib.emptyProcessingBatch(), processing_date: '2026-11-01', harvest_date: '2026-11-01', lot_number: '  LOT-1  ', field_name: 'All Fields', variety: 'MIXED', picking_round: 'Fly' });
+const input = () => ({ ...lib.emptyProcessingBatch(), processing_date: '2026-11-01', drying_started_on: '2026-11-01', harvest_date: '2026-11-01', lot_number: '  LOT-1  ', field_name: 'All Fields', variety: 'MIXED', picking_round: 'Fly' });
 const clean = (value, setup = season) => lib.cleanProcessingBatch(value, setup, '2026-11-14');
 
 test('unfinished measurements remain null; explicit zero remains zero; notes are retained', () => {
@@ -35,10 +38,10 @@ test('actual outturn uses actual dry weight and requires a known positive net', 
 test('rejects invalid dates, future dates, pre-season dates and missing setup', () => {
   for (const processing_date of ['2026-02-30', '2026-11-15', '2026-03-31', 'bad']) assert.throws(() => clean({ ...input(), processing_date }), /date/i);
   assert.throws(() => clean(input(), { ...season, start_date: null }), /season start/);
-  assert.throws(() => clean({ ...input(), dried_on: '2026-10-31' }), /Drying completion/);
+  assert.throws(() => clean({ ...input(), dried_on: '2026-10-31' }), /Bagged and weighed/);
 });
 test('rejects invalid weights, ranges, booleans, nonnumeric input and fractional picking rounds', () => {
-  for (const fields of [{ gross_kg: -1 }, { gross_kg: true }, { gross_kg: [] }, { gross_kg: 'bad' }, { gross_kg: Infinity }, { gross_kg: 10, floats_kg: 11 }, { floats_kg: 2 }, { gross_kg: 10, floats_kg: 0, actual_dry_kg: 11 }, { ph: 15 }, { moisture: 101 }, { fermentation_hours: -1 }, { picking_round: 1.5 }]) assert.throws(() => clean({ ...input(), ...fields }));
+  for (const fields of [{ gross_kg: -1 }, { gross_kg: true }, { gross_kg: [] }, { gross_kg: 'bad' }, { gross_kg: Infinity }, { gross_kg: 10, floats_kg: 11 }, { floats_kg: 2 }, { gross_kg: 10, floats_kg: 0, actual_dry_kg: 11 }, { ph: 15 }, { moisture: 101 }, { method: 'MSP 90 + Special Washed', fermentation_hours: -1 }, { picking_round: 1.5 }]) assert.throws(() => clean({ ...input(), ...fields }));
 });
 test('completion requires actual dry, moisture, drying date, net weight and Dried stage', () => {
   assert.throws(() => clean({ ...input(), status: 'Complete' }), /complete a batch/);

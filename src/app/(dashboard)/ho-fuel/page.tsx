@@ -1,4 +1,6 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
@@ -982,7 +984,7 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
       setPMsg({ type: "error", text: "Enter a supplier, a positive quantity and the bill’s total cost." }); return;
     }
     const date = parseFuelDate(purchase.date);
-    if (!date || date > hoFuelToday()) { setPMsg({ type:"error",text:"Enter a valid date in DD/MM/YYYY format, through today." }); return; }
+    if (!date || date > hoFuelToday()) { setPMsg({ type:"error",text:"Enter a valid date in DDMMYYYY format, through today." }); return; }
     if (!bills.length || !reviewed || !['DIESEL','PETROL'].includes(purchase.fuel_type) || !(Number(purchase.amount) > 0)) { setPMsg({ type:"error",text:"Attach a bill, enter its fuel type and total cost, and confirm all details." }); return; }
     setPSaving(true); setPMsg(null);
     try {
@@ -1003,7 +1005,7 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
     if (!(Number(issue.qty_l) > 0) || !Number.isFinite(Number(issue.qty_l)) || !issue.vehicle_number.trim()) {
       setIMsg({ type: "error", text: "Enter a vehicle/equipment and a positive quantity." }); return;
     }
-    if (!parseFuelDate(issue.date) || parseFuelDate(issue.date) > hoFuelToday()) { setIMsg({ type: "error", text: "Enter a valid date in DD/MM/YYYY format, through today." }); return; }
+    if (!parseFuelDate(issue.date) || parseFuelDate(issue.date) > hoFuelToday()) { setIMsg({ type: "error", text: "Enter a valid date in DDMMYYYY format, through today." }); return; }
     setISaving(true); setIMsg(null);
     const { date, month, year } = parseDate(issue.date);
     const { error } = await supabase.from("ho_fuel_log").insert([{
@@ -1060,8 +1062,8 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
             {readNote && <p role="status">{readNote}</p>}
             <div className={css.formGrid}>
               <div className={css.formGroup}>
-                <label className={css.formLabel} htmlFor="purchase-date">Date (DD/MM/YYYY) *</label>
-                <input id="purchase-date" type="text" placeholder="DD/MM/YYYY" inputMode="numeric" maxLength={10} className={css.formInput} value={purchase.date}
+                <label className={css.formLabel} htmlFor="purchase-date">Date (DDMMYYYY) *</label>
+                <DateInput id="purchase-date" type="date" placeholder="DDMMYYYY" inputMode="numeric" maxLength={10} className={css.formInput} value={purchase.date}
                   onChange={e => changePurchase(p=>({...p, date:e.target.value}))} />
               </div>
               <div className={css.formGroup}>
@@ -1127,8 +1129,8 @@ function EntryTab({ rows, onSaved }: { rows: TxRow[]; onSaved: () => void }) {
           <div className={css.formCard}>
             <div className={css.formGrid}>
               <div className={css.formGroup}>
-                <label className={css.formLabel} htmlFor="issue-date">Date (DD/MM/YYYY) *</label>
-                <input id="issue-date" type="text" placeholder="DD/MM/YYYY" inputMode="numeric" maxLength={10} className={css.formInput} value={issue.date}
+                <label className={css.formLabel} htmlFor="issue-date">Date (DDMMYYYY) *</label>
+                <DateInput id="issue-date" type="date" placeholder="DDMMYYYY" inputMode="numeric" maxLength={10} className={css.formInput} value={issue.date}
                   onChange={e => setIssue(i=>({...i, date:e.target.value}))} />
               </div>
               <div className={css.formGroup}>

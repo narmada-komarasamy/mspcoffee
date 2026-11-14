@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/date-format';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { EmailMetric, EmailPayload, EmailSection } from './payload';
 
@@ -63,7 +64,7 @@ async function rainfallSection(supabase: SupabaseClient, date: string): Promise<
       title: 'Rainfall',
       rows: rows.length
         ? [
-            { label: 'Records', value: String(rows.length), detail: `For ${date}` },
+            { label: 'Records', value: String(rows.length), detail: `For ${formatDate(date)}` },
             { label: 'Wettest Estate', value: max?.estate ?? 'No rainfall', detail: max ? `${fmt(n(max.rainfall_mm), 1)} mm` : 'All recorded values were zero' },
             ...rows.map((row) => ({
               label: String(row.estate),
@@ -71,7 +72,7 @@ async function rainfallSection(supabase: SupabaseClient, date: string): Promise<
               detail: `${fmt(n(row.inches), 3)} inches`,
             })),
           ]
-        : [{ label: 'Status', value: 'No rainfall records', detail: `No entries found for ${date}` }],
+        : [{ label: 'Status', value: 'No rainfall records', detail: `No entries found for ${formatDate(date)}` }],
     },
   };
 }
@@ -109,7 +110,7 @@ async function fleetFuelSection(supabase: SupabaseClient, date: string): Promise
               detail: `${String(row.account)} - ${fmt(n(row.km_run), 1)} km - ${rupee(n(row.fuel_cost))}`,
             })),
           ]
-        : [{ label: 'Status', value: 'No fleet fuel records', detail: `No entries found for ${date}` }],
+        : [{ label: 'Status', value: 'No fleet fuel records', detail: `No entries found for ${formatDate(date)}` }],
     },
   };
 }
@@ -148,7 +149,7 @@ async function hoFuelSection(supabase: SupabaseClient, date: string): Promise<{ 
                 : `${String(row.vehicle_number || row.estate || 'Receiver not set')} - ${String(row.receiver_name || 'Receiver not set')}`,
             })),
           ]
-        : [{ label: 'Status', value: 'No HO fuel records', detail: `No entries found for ${date}` }],
+        : [{ label: 'Status', value: 'No HO fuel records', detail: `No entries found for ${formatDate(date)}` }],
     },
   };
 }
@@ -161,7 +162,7 @@ function labourAttendanceSection(date: string): { summary: EmailMetric[]; sectio
     section: {
       title: 'Labour Attendance',
       rows: [
-        { label: 'Status', value: 'Needs data connection', detail: `The Stanmore daily report for ${date} currently lives in browser state only` },
+        { label: 'Status', value: 'Needs data connection', detail: `The Stanmore daily report for ${formatDate(date)} currently lives in browser state only` },
         { label: 'Phase 2 Prep', value: 'Add attendance table', detail: 'Once attendance is saved, this block can report present, half-day, absent, and work allocation totals' },
       ],
     },
@@ -210,11 +211,11 @@ export async function buildDailyOperationsDigest({
     type: 'daily_operations_digest',
     recipients: [],
     cc: [],
-    reportTitle: `Daily Operations Digest - ${date}`,
+    reportTitle: `Daily Operations Digest - ${formatDate(date)}`,
     sourcePath: currentPage || '/estate-management/email-reports',
-    subject: `MSP Coffee Daily Operations Digest - ${date}`,
+    subject: `MSP Coffee Daily Operations Digest - ${formatDate(date)}`,
     note,
-    attachmentName: `daily-operations-digest-${date}.html`,
+    attachmentName: `daily-operations-digest-${formatDate(date)}.html`,
     data: {
       summary: summary.length ? summary : [{ label: 'Digest', value: 'No sections selected' }],
       sections,

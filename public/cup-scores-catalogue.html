@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="/msp-dates.js"></script>
+<style>.msp-date-control{position:relative;display:flex;gap:4px;min-width:150px;width:100%;max-width:100%}.msp-date-control>input:first-child{flex:1;min-width:0;width:0}.msp-date-calendar{border:1px solid #e2dbc2;border-radius:6px;background:#f4efdd;color:#596357;min-width:36px;min-height:36px}.msp-date-native{position:absolute!important;right:0!important;top:0!important;width:36px!important;height:100%!important;opacity:0!important;pointer-events:none!important}.msp-date-calendar:focus-visible{outline:2px solid #244a33;outline-offset:2px}@media(pointer:coarse){.msp-date-calendar{min-width:44px;min-height:44px}}@media print{.msp-date-calendar{display:none}}</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MSP Coffee — Cup Score Catalogue</title>
@@ -900,7 +902,7 @@ document.addEventListener('click', e=>{
 function updateClock(){
   const now = new Date();
   const time = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const date = now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  const date = window.MSPDates.formatDate(now);
   const el = document.getElementById('live-time');
   const de = document.getElementById('live-date');
   if(el) el.textContent = time;

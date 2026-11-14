@@ -1,4 +1,6 @@
 'use client';
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -45,10 +47,7 @@ function fmtDuration(secs: number | null): string {
 }
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  return formatAppDateTime(new Date(iso));
 }
 
 function DeviceIcon({ type }: { type: string }) {

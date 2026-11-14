@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
-function load(file, mocks={}){const m={exports:{}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(name=>name in mocks?mocks[name]:require(name),m,m.exports);return m.exports;}
+function load(file, mocks={}){const m={exports:{}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(name=>{ const dateDependency = require('./helpers/date-test-support.cjs')(name); if (dateDependency) return dateDependency; return name in mocks?mocks[name]:require(name); },m,m.exports);return m.exports;}
 const r=load('src/lib/reports.ts');
 const config={type:'weekly',anchor:'2026-11-08',modules:[...r.REPORT_MODULES],title:r.REPORT_TITLES.weekly,detail:false};
 test('report periods use Monday–Sunday and April–March quarters, halves and financial years',()=>{

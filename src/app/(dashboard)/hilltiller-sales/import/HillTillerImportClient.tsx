@@ -1,4 +1,6 @@
 'use client';
+import { formatDateTime as formatAppDateTime } from '@/lib/date-format';
+
 
 import { useMemo, useState } from 'react';
 import { CheckCircle2, Database, FileSpreadsheet, Upload } from 'lucide-react';
@@ -155,7 +157,7 @@ export function HillTillerImportClient() {
 
       {savedAt && (
         <div className={`${s.notice} ${s.successNotice}`}>
-          Dashboard data saved in Supabase {new Date(savedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST.
+          Dashboard data saved in Supabase {formatAppDateTime(new Date(savedAt))} IST.
           Open the dashboard to view the imported KPIs and charts.
         </div>
       )}

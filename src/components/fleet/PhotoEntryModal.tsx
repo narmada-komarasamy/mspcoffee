@@ -1,4 +1,7 @@
 "use client";
+import { DateInput } from '@/components/ui/date-input';
+import { formatDate as formatAppDate } from '@/lib/date-format';
+
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Camera, CheckCircle2, Loader2, Save, Sparkles, X } from "lucide-react";
@@ -383,7 +386,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess, onOpenExis
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Date</label>
-                <input disabled={saving || extracting} type="date" value={draft.date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+                <DateInput disabled={saving || extracting} type="date" value={draft.date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Vehicle ID</label>
@@ -473,7 +476,7 @@ export function PhotoEntryModal({ rows, vehicles, onClose, onSuccess, onOpenExis
             )}
 
             {existingEntry && <section role="alert" className="rounded-lg border border-amber-500/50 p-3 text-sm space-y-2 text-white">
-              <strong>Existing record: {existingEntry.vehicle_id} - {existingEntry.date}</strong>
+              <strong>Existing record: {existingEntry.vehicle_id} - {formatAppDate(existingEntry.date)}</strong>
               <p>Fuel ₹{existingEntry.fuel_cost} · Maintenance ₹{existingEntry.maint_cost} · KM {existingEntry.starting_km} to {existingEntry.closing_km}. No saved values have been changed.</p>
               {existingEntry.fuel_bill_path && <a className="block underline text-msp-teal" href={signedStorageUrl(PHOTO_BUCKET,existingEntry.fuel_bill_path)} target="_blank" rel="noreferrer">View saved fuel bill</a>}
               {conflictCode === 'EXISTING_ENTRY' && <button disabled={saving} className="block underline text-msp-teal" onClick={() => void handleApprove(true)}>Attach photos only - keep saved amounts</button>}
