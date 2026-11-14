@@ -21,8 +21,8 @@ function purchases(supabase = {}, authOverride) {
     '@/lib/ho-fuel':fuel,'@/lib/auth/api':{ UUID_RE:uuidRE },
   });
 }
-test('DDMMYYYY is strict and round trips without locale or timezone ambiguity', () => {
-  assert.equal(fuel.formatFuelDate('2026-12-04'),'04122026');
+test('Day-first dates are strict and round trips without locale or timezone ambiguity', () => {
+  assert.equal(fuel.formatFuelDate('2026-12-04'),'04/12/2026');
   assert.equal(fuel.parseFuelDate('04122026'),'2026-12-04');
   assert.equal(fuel.parseFuelDate('2026-12-04'),'2026-12-04');
   assert.equal(fuel.parseFuelDate('04/12/2026'),'2026-12-04');

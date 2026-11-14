@@ -1,5 +1,5 @@
 import { formatDate, parseAppDate } from '@/lib/date-format';
-/** Shared rainfall date rules. Stored dates are ISO; user-facing dates are DDMMYYYY. */
+/** Shared rainfall date rules. Stored dates are ISO; user-facing dates are DD/MM/YYYY. */
 export function rainfallToday(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit' }).format(now);
 }

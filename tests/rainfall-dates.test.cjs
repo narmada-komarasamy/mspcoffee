@@ -34,7 +34,7 @@ test('latest reading and totals ignore future readings while retaining them for 
  assert.equal(rows.length,3);
  assert.equal(dates.rainfallReadingSummary([],today).latest,'');
  assert.equal(dates.rainfallReadingSummary([rows[0]],today).latest,'');
- assert.equal(dates.rainfallDateLabel(summary.latest),'09112026');
+ assert.equal(dates.rainfallDateLabel(summary.latest),'09/11/2026');
 });
 test('text import dates always use day/month/year and reject ambiguous native parsing',()=>{
  assert.equal(dates.parseRainfallImportDate('04/11/2026'),'2026-11-04');

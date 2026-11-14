@@ -1,5 +1,5 @@
-/** MSP Coffee date convention: DDMMYYYY on screen and in exports; ISO in storage. */
-export const APP_DATE_FORMAT = 'DDMMYYYY';
+/** MSP Coffee date convention: DD/MM/YYYY on screen and in exports; ISO in storage. */
+export const APP_DATE_FORMAT = 'DD/MM/YYYY';
 export function validIsoDate(value: unknown): value is string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
@@ -19,7 +19,7 @@ export function parseAppDate(value: unknown): string {
 export function formatDate(value: unknown, empty = '—'): string {
   if (value == null || value === '') return empty;
   const iso = typeof value === 'string' ? parseAppDate(value) : '';
-  if (iso) return iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(0, 4);
+  if (iso) return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
   // Only timestamps / Date objects reach the timezone conversion path.
   if (typeof value === 'string' && !/^\d{4}-\d{2}-\d{2}T/.test(value)) return value;
   if (!(value instanceof Date) && typeof value !== 'string' && typeof value !== 'number') return empty;
@@ -27,7 +27,7 @@ export function formatDate(value: unknown, empty = '—'): string {
   if (!Number.isFinite(date.getTime())) return empty;
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(date);
   const get = (type: string) => parts.find(part => part.type === type)?.value || '';
-  return get('day') + get('month') + get('year');
+  return get('day') + '/' + get('month') + '/' + get('year');
 }
 export function formatDateTime(value: unknown, empty = '—'): string {
   if (value == null || value === '') return empty;
@@ -38,7 +38,7 @@ export function formatDateTime(value: unknown, empty = '—'): string {
 export function dateInputError(draft: string, min?: string, max?: string): string {
   if (!draft) return '';
   const iso = parseAppDate(draft);
-  if (!iso) return 'Enter a real date as DDMMYYYY, for example 14112026.';
+  if (!iso) return 'Enter a real date as DD/MM/YYYY, for example 14/11/2026.';
   if (min && iso < min) return `Choose ${formatDate(min)} or a later date.`;
   if (max && iso > max) return `Choose ${formatDate(max)} or an earlier date.`;
   return '';

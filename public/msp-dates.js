@@ -1,4 +1,4 @@
-/* Shared MSP Coffee DDMMYYYY controls and formatters. */
+/* Shared MSP Coffee DD/MM/YYYY controls and formatters. */
 (()=>{ const exports={};
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -8,8 +8,8 @@ exports.parseAppDate = parseAppDate;
 exports.formatDate = formatDate;
 exports.formatDateTime = formatDateTime;
 exports.dateInputError = dateInputError;
-/** MSP Coffee date convention: DDMMYYYY on screen and in exports; ISO in storage. */
-exports.APP_DATE_FORMAT = 'DDMMYYYY';
+/** MSP Coffee date convention: DD/MM/YYYY on screen and in exports; ISO in storage. */
+exports.APP_DATE_FORMAT = 'DD/MM/YYYY';
 function validIsoDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value))
         return false;
@@ -35,7 +35,7 @@ function formatDate(value, empty = '—') {
         return empty;
     const iso = typeof value === 'string' ? parseAppDate(value) : '';
     if (iso)
-        return iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(0, 4);
+        return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
     // Only timestamps / Date objects reach the timezone conversion path.
     if (typeof value === 'string' && !/^\d{4}-\d{2}-\d{2}T/.test(value))
         return value;
@@ -46,7 +46,7 @@ function formatDate(value, empty = '—') {
         return empty;
     const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(date);
     const get = (type) => parts.find(part => part.type === type)?.value || '';
-    return get('day') + get('month') + get('year');
+    return get('day') + '/' + get('month') + '/' + get('year');
 }
 function formatDateTime(value, empty = '—') {
     if (value == null || value === '')
@@ -61,7 +61,7 @@ function dateInputError(draft, min, max) {
         return '';
     const iso = parseAppDate(draft);
     if (!iso)
-        return 'Enter a real date as DDMMYYYY, for example 14112026.';
+        return 'Enter a real date as DD/MM/YYYY, for example 14/11/2026.';
     if (min && iso < min)
         return `Choose ${formatDate(min)} or a later date.`;
     if (max && iso > max)
@@ -78,7 +78,7 @@ const api=exports; window.MSPDates=api;
     const state = { iso: api.parseAppDate(initial) };
     states.set(input, state);
     input.dataset.mspDateReady = 'true';
-    input.type = 'text'; input.defaultValue = api.formatDate(input.defaultValue, ''); input.inputMode = 'numeric'; input.placeholder = 'DDMMYYYY'; input.maxLength = 10; input.pattern = '[0-9]{8}';
+    input.type = 'text'; input.defaultValue = api.formatDate(input.defaultValue, ''); input.inputMode = 'numeric'; input.placeholder = 'DD/MM/YYYY'; input.maxLength = 10; input.pattern = '[0-9]{2}/[0-9]{2}/[0-9]{4}';
     const wrapper = document.createElement('span'); wrapper.className = 'msp-date-control';
     input.parentNode.insertBefore(wrapper, input); wrapper.append(input);
     const picker = document.createElement('input'); picker.type = 'date'; picker.dataset.mspDateInternal = 'true'; picker.tabIndex = -1; picker.setAttribute('aria-hidden','true'); picker.className = 'msp-date-native';
@@ -100,7 +100,8 @@ const api=exports; window.MSPDates=api;
       nativeValue.set.call(input, iso ? api.formatDate(iso) : raw.replace(/\D/g,'').slice(0,8)); validate();
     }
     input.addEventListener('input', changed, true); input.addEventListener('change', changed, true);
-    button.onclick = () => { try { picker.showPicker(); } catch { input.focus(); } };
+    function openCalendar() { if (input.disabled || input.readOnly) return; try { picker.showPicker(); } catch { /* Typing remains available. */ } }
+    button.onclick = openCalendar; input.addEventListener('click', openCalendar);
     picker.onchange = () => { input.value = picker.value; input.dispatchEvent(new Event('input', { bubbles:true })); input.dispatchEvent(new Event('change', { bubbles:true })); };
     new MutationObserver(validate).observe(input, { attributes:true, attributeFilter:['min','max','disabled','readonly'] });
     if (input.form) {

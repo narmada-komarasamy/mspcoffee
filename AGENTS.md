@@ -29,7 +29,7 @@ all MSP Coffee app development, deployments, and bug fixes.
 
 ## MSP Coffee dates and processing timeline
 
-- User-approved calendar date format is DDMMYYYY (for example, 14112026) throughout
+- User-approved calendar date format is DD/MM/YYYY (for example, 14/11/2026) throughout
   entry controls, displayed records, reports, printouts and exports. Use the shared
   `src/lib/date-format.ts` helpers and `DateInput` / `DateTimeInput` controls.
 - Keep ISO dates for database values, API payloads, filtering and chronological
