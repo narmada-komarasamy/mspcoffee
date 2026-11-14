@@ -27,7 +27,10 @@ async function save(request: Request, editing: boolean) {
   let row;
   try { row = cleanProcessingBatch(body, season); }
   catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Invalid batch.' }, { status: 400 }); }
-  const data = { ...row, updated_by: auth.user.id, updated_by_name: auth.user.name };
+  // The database assigns and preserves the lot number atomically; clients cannot override it.
+  const { lot_number: ignoredLot, ...values } = row;
+  void ignoredLot;
+  const data = { ...values, updated_by: auth.user.id, updated_by_name: auth.user.name };
   if (editing && (!Number.isInteger(body.revision) || body.revision < 1)) return NextResponse.json({ error: 'Reopen the saved batch before editing.' }, { status: 400 });
   const query = editing
     ? auth.supabase.from('processing_batches').update(data).eq('id', row.id).eq('season_id', PROCESSING_SEASON).eq('revision', body.revision)

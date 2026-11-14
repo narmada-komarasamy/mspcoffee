@@ -27,7 +27,7 @@ export async function processingSeason(db: ProcessingClient) {
   return result.data;
 }
 export function processingError(error: { code?: string; message?: string }) {
-  if (error.code === '23505') return NextResponse.json({ error: 'This estate already has that lot and split reference. Open the existing batch, or enter a distinct split reference for a legitimate split.' }, { status: 409 });
+  if (error.code === '23505') return NextResponse.json({ error: 'This batch or lot number already exists. Reload the register and open the saved batch before retrying.' }, { status: 409 });
   if (error.code === '23514' || error.code === 'P0001') return NextResponse.json({ error: error.code === 'P0001' ? error.message : 'The batch contains invalid measurements. Check the dates, weights and completion details.' }, { status: 400 });
   return NextResponse.json({ error: 'Unable to save the processing record. Please retry.' }, { status: 503 });
 }
